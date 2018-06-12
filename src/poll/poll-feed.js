@@ -1,6 +1,6 @@
 import * as db from '/src/db.js';
 import {fetch_feed} from '/src/fetch-feed.js';
-import * as list from '/src/lib/lang/list.js';
+import * as array from '/src/lib/lang/array.js';
 import {OfflineError, TimeoutError} from '/src/lib/net/fetch2.js';
 import {notify} from '/src/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
@@ -20,12 +20,12 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
 
   // Although this is borderline a programmer error, tolerate location-less
   // feed objects and simply ignore them
-  if (list.list_is_empty(feed.urls)) {
+  if (array.is_empty(feed.urls)) {
     console.warn('Attempted to poll feed missing url', feed);
     return 0;
   }
 
-  const tail_url = new URL(list.list_peek(feed.urls));
+  const tail_url = new URL(array.peek(feed.urls));
 
   if (!feed.active) {
     console.debug('Ignoring inactive feed', tail_url.href);
@@ -95,7 +95,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
 }
 
 async function poll_entries(rconn, iconn, channel, options, entries, feed) {
-  const feed_url_string = list.list_peek(feed.urls);
+  const feed_url_string = array.peek(feed.urls);
 
   console.debug(
       'Processing %d entries for feed', entries.length, feed_url_string);
@@ -131,9 +131,9 @@ async function poll_entries(rconn, iconn, channel, options, entries, feed) {
 // feed. Fields from the new feed take precedence, except for urls, which are
 // merged to generate a distinct ordered set of oldest to newest url. Impure
 // because of copying by reference. Internally, after assignment, the merged
-// feed has only the urls from the new feed. So the output feed's url list needs
-// to be fixed. First copy over the old feed's urls, then try and append each
-// new feed url.
+// feed has only the urls from the new feed. So the output feed's url array
+// needs to be fixed. First copy over the old feed's urls, then try and append
+// each new feed url.
 function merge_feed(old_feed, new_feed) {
   const merged_feed = Object.assign(db.create_feed(), old_feed, new_feed);
   merged_feed.urls = [...old_feed.urls];
@@ -197,7 +197,7 @@ function dedup_entries(entries) {
   const seen_url_strings = [];
 
   for (const entry of entries) {
-    if (list.list_is_empty(entry.urls)) {
+    if (array.is_empty(entry.urls)) {
       distinct_entries.push(entry);
       continue;
     }

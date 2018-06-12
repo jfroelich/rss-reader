@@ -1,6 +1,6 @@
 import * as db from '/src/db.js';
 import {FaviconService} from '/src/lib/favicon-service.js';
-import * as list from '/src/lib/lang/list.js';
+import * as array from '/src/lib/lang/array.js';
 
 // Return a promise that resolves to a new connection to the favicon cache
 // database
@@ -46,7 +46,7 @@ export function create_lookup_url(feed) {
     return new URL(feed.link);
   }
 
-  const tail_url = new URL(list.list_peek(feed.urls));
+  const tail_url = new URL(array.peek(feed.urls));
   return new URL(tail_url.origin);
 }
 
@@ -62,7 +62,7 @@ export async function refresh_feeds(rconn, iconn, channel) {
 
 // Update the favicon of a feed in the database
 async function refresh_feed(rconn, iconn, channel, feed) {
-  if (list.list_is_empty(feed.urls)) {
+  if (array.is_empty(feed.urls)) {
     return;
   }
 

@@ -1,4 +1,4 @@
-import {list_peek} from '/src/lib/lang/list.js';
+import * as array from '/src/lib/lang/array.js';
 
 export function feeds_container_append_feed(feed) {
   const feeds_container = document.getElementById('feeds-container');
@@ -47,7 +47,7 @@ export function feeds_container_append_feed(feed) {
   col.textContent = 'URL';
   row.appendChild(col);
   col = document.createElement('td');
-  col.textContent = list_peek(feed.urls);
+  col.textContent = array.peek(feed.urls);
   row.appendChild(col);
   feed_info_element.appendChild(row);
 

@@ -3,7 +3,7 @@ import {filter_publisher} from '/src/lib/filter-publisher.js';
 import {escape_html} from '/src/lib/html/escape-html.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {format_date} from '/src/lib/lang/format-date.js';
-import * as list from '/src/lib/lang/list.js';
+import * as array from '/src/lib/lang/array.js';
 import {localstorage_read_int} from '/src/lib/localstorage.js';
 import {hide_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
 import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
@@ -17,7 +17,7 @@ export function append_slide(entry) {
     return;
   }
 
-  if (list.list_is_empty(entry.urls)) {
+  if (array.is_empty(entry.urls)) {
     console.warn('%s: skipping entry without url', append_slide.name, entry);
     return;
   }
@@ -50,7 +50,7 @@ function create_slide(entry) {
 // value. I partially fixed by not escaping ampersand but that's not right.
 function create_article_title_element(entry) {
   const title_element = document.createElement('a');
-  title_element.setAttribute('href', list.list_peek(entry.urls));
+  title_element.setAttribute('href', array.peek(entry.urls));
   title_element.setAttribute('class', 'entry-title');
   title_element.setAttribute('rel', 'noreferrer');
 

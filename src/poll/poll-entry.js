@@ -4,7 +4,7 @@ import * as favicon from '/src/favicon.js';
 import {fetch_html} from '/src/fetch-html.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
-import * as list from '/src/lib/lang/list.js';
+import * as array from '/src/lib/lang/array.js';
 import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
@@ -31,7 +31,7 @@ import {sanitize_document} from '/src/sanitize-document.js';
 const rewrite_rules = build_rewrite_rules();
 
 export async function poll_entry(entry) {
-  if (list.list_is_empty(entry.urls)) {
+  if (array.is_empty(entry.urls)) {
     return;
   }
 
@@ -76,7 +76,7 @@ async function handle_entry_redirect(rconn, entry, response, rewrite_rules) {
     return false;
   }
 
-  const request_url = new URL(list.list_peek(entry.urls));
+  const request_url = new URL(array.peek(entry.urls));
   const response_url = new URL(response.url);
   if (!url_did_change(request_url, response_url)) {
     return false;
@@ -88,7 +88,7 @@ async function handle_entry_redirect(rconn, entry, response, rewrite_rules) {
 }
 
 function entry_rewrite_tail_url(entry, rewrite_rules) {
-  const tail_url = new URL(list.list_peek(entry.urls));
+  const tail_url = new URL(array.peek(entry.urls));
   const new_url = rewrite_url(tail_url, rewrite_rules);
   if (!new_url) {
     return false;
@@ -97,7 +97,7 @@ function entry_rewrite_tail_url(entry, rewrite_rules) {
 }
 
 async function entry_exists(rconn, entry) {
-  const url = new URL(list.list_peek(entry.urls));
+  const url = new URL(array.peek(entry.urls));
   const mode_url = 'url', key_only = true;
   const existing_entry = await db.get_entry(rconn, mode_url, url, key_only);
   return existing_entry ? true : false;
@@ -106,7 +106,7 @@ async function entry_exists(rconn, entry) {
 // TODO: this should just bubble up the error
 // TODO: undecided, but maybe augmentability is not this function's concern?
 async function fetch_entry(entry, fetch_html_timeout) {
-  const url = new URL(list.list_peek(entry.urls));
+  const url = new URL(array.peek(entry.urls));
   if (url_is_augmentable(url)) {
     try {
       return await fetch_html(url, fetch_html_timeout);
@@ -157,7 +157,7 @@ function update_entry_title(entry, document) {
 }
 
 async function update_entry_icon(iconn, entry, document) {
-  const lookup_url = new URL(list.list_peek(entry.urls));
+  const lookup_url = new URL(array.peek(entry.urls));
   const fetch = false;
   const icon_url_string =
       await favicon.lookup(iconn, lookup_url, document, fetch);
@@ -177,9 +177,8 @@ async function update_entry_content(entry, document, fetch_image_timeout) {
   }
 
   // sanitize_document requires the document have document.baseURI set.
-  const document_url = new URL(list.list_peek(entry.urls));
+  const document_url = new URL(array.peek(entry.urls));
   set_document_base_uri(document, document_url);
-
 
   await sanitize_document(document);
   entry.content = document.documentElement.outerHTML;

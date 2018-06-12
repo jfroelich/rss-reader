@@ -1,7 +1,7 @@
 import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
 import {fetch_feed} from '/src/fetch-feed.js';
-import {list_peek} from '/src/lib/lang/list.js';
+import * as array from '/src/lib/lang/array.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {notify} from '/src/notify.js';
 
@@ -35,7 +35,7 @@ export async function subscribe(
   // exists in the database. If the database query fails then throw an error.
   // If the redirect url exists then throw an error.
   if (feed.urls.length > 1) {
-    const res_url = new URL(list_peek(feed.urls));
+    const res_url = new URL(array.peek(feed.urls));
     if (url_did_change(url, res_url) && await feed_exists(rconn, res_url)) {
       throw new Error('Already subscribed ' + res_url.href);
     }
@@ -70,7 +70,7 @@ async function set_feed_favicon(conn, feed) {
 
 function show_success_notification(feed) {
   const title = 'Subscribed!';
-  const feed_title = feed.title || list_peek(feed.urls);
+  const feed_title = feed.title || array.peek(feed.urls);
   const message = 'Subscribed to ' + feed_title;
   notify(title, message, feed.faviconURLString);
 }

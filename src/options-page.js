@@ -5,7 +5,7 @@ import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
-import {list_peek} from '/src/lib/lang/list.js';
+import * as array from '/src/lib/lang/array.js';
 import {localstorage_read_array} from '/src/lib/localstorage.js';
 import * as perm from '/src/lib/permissions.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
@@ -237,7 +237,7 @@ async function feed_list_item_onclick(event) {
   }
 
   const feed_url_element = document.getElementById('details-feed-url');
-  feed_url_element.textContent = list_peek(feed.urls);
+  feed_url_element.textContent = array.peek(feed.urls);
   const feed_link_element = document.getElementById('details-feed-link');
   feed_link_element.textContent = feed.link || '';
 
@@ -299,8 +299,7 @@ async function subscribe_form_onsubmit(event) {
   // TODO: subscribe can now throw an error, this should catch the error and
   // show a nice error message or something instead of panic
   // TODO: move this to a helper
-  const conn_promises =
-      Promise.all([db.open_db(), favicon.open()]);
+  const conn_promises = Promise.all([db.open_db(), favicon.open()]);
   const [rconn, iconn] = await conn_promises;
   const channel = new BroadcastChannel(localStorage.channel_name);
   let subscribe_fetch_timeout;
@@ -313,7 +312,8 @@ async function subscribe_form_onsubmit(event) {
   channel.close();
 
   feed_list_append_feed(feed);
-  subscription_monitor_append_message('Subscribed to ' + list_peek(feed.urls));
+  subscription_monitor_append_message(
+      'Subscribed to ' + array.peek(feed.urls));
   subscription_monitor_hide();
   section_show_by_id('subs-list-section');
 
@@ -323,8 +323,7 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const conn_promises =
-      Promise.all([db.open_db(), favicon.open()]);
+  const conn_promises = Promise.all([db.open_db(), favicon.open()]);
   const [rconn, iconn] = await conn_promises;
   const channel = new BroadcastChannel(localStorage.channel_name);
 

@@ -1,6 +1,6 @@
 import * as db from '/src/db.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
-import {list_is_empty} from '/src/lib/lang/list.js';
+import * as array from '/src/lib/lang/array.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 
