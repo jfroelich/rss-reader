@@ -1,11 +1,7 @@
 import {parse_opml} from '/src/lib/parse-opml.js';
 import {subscribe} from '/src/subscribe.js';
 
-// Supported opml file mime types
-const opml_mime_types = [
-  'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
-  'application/opml+xml'
-];
+
 
 // Concurrently reads in the files from the file list and subscribes to the
 // feeds in all of the files. Returns a promise that resolves to an array of
@@ -52,6 +48,11 @@ export async function import_opml(files, options) {
 // more than one concurrent subscribe operation to the same feed, one will
 // eventually succeed and the rest will fail.
 async function import_file(subscribe_promises, file, options) {
+  const opml_mime_types = [
+    'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
+    'application/opml+xml'
+  ];
+
   if (!file.size || !opml_mime_types.includes(file.type)) {
     console.debug(
         'Empty or bad mime type for file', file.name, file.size, file.type);
