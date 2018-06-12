@@ -6,6 +6,8 @@ export function peek(array) {
   }
 }
 
+// Return true if the array is empty
+// Return true if the array is undefined/null
 export function is_empty(array) {
-  return array.length === 0;
+  return array === null || array === undefined || array.length === 0;
 }
