@@ -16,17 +16,23 @@ function import_opml_button_onclick(event) {
 
 // Fired when user submits file browser dialog
 async function uploader_input_onchange(event) {
+  // TEMP: monitoring recent changes
   console.debug('Received input change event');
-  const op = {};
-  [op.rconn, op.iconn] = await Promise.all([db.open_db(), favicon.open()]);
-  op.channel = new BroadcastChannel(localStorage.channel_name);
-  op.fetch_timeout = 5 * 1000;
-  op.import_opml = import_opml;
-  await op.import_opml(event.target.files);
-  op.rconn.close();
-  op.iconn.close();
-  op.channel.close();
-  console.debug('Completed opml import');
+
+  const promises = [db.open_db(), favicon.open()];
+  const [rconn, iconn] = await Promise.all(promises);
+  const channel = new BroadcastChannel(localStorage.channel_name);
+  const fetch_timeout = 5000;
+  const skip_icon_lookup = false;
+  const files = event.target.files;
+  await import_opml(
+      rconn, iconn, channel, files, fetch_timeout, skip_icon_lookup);
+  rconn.close();
+  iconn.close();
+  channel.close();
+
+  // TEMP: monitoring recent changes
+  console.debug('Completed uploader_input_onchange');
 }
 
 async function export_button_onclick(event) {

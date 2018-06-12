@@ -1,20 +1,20 @@
 import {parse_opml} from '/src/lib/parse-opml.js';
 import {subscribe} from '/src/subscribe.js';
 
-
-
 // Concurrently reads in the files from the file list and subscribes to the
 // feeds in all of the files. Returns a promise that resolves to an array of
 // subscribe promise results. The input file list is not modified.
 // Expected context properties: rconn, iconn, channel
 // @param files {array-like} an array-like collection of file objects, such as
 // a FileList, or an array
-export async function import_opml(files, options) {
+export async function import_opml(
+    rconn, iconn, channel, files, fetch_timeout, skip_icon_lookup) {
   const subscribe_promises = [];
   const import_file_promises = [];
-  const import_file_bound = import_file.bind(this, subscribe_promises);
   for (const file of files) {
-    const import_file_promise = import_file_bound(file, options);
+    const import_file_promise = import_file(
+        subscribe_promises, rconn, iconn, channel, file, fetch_timeout,
+        skip_icon_lookup);
     import_file_promises.push(import_file_promise);
   }
 
@@ -47,7 +47,9 @@ export async function import_opml(files, options) {
 // array, so if used concurrently there could be dupe promises. When there is
 // more than one concurrent subscribe operation to the same feed, one will
 // eventually succeed and the rest will fail.
-async function import_file(subscribe_promises, file, options) {
+async function import_file(
+    subscribe_promises, rconn, iconn, channel, file, fetch_timeout,
+    skip_icon_lookup) {
   const opml_mime_types = [
     'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
     'application/opml+xml'
@@ -86,8 +88,7 @@ async function import_file(subscribe_promises, file, options) {
 
   for (const url of urls) {
     const subscribe_promise = subscribe(
-        this.rconn, this.iconn, this.channel, url, options.fetch_timeout, false,
-        options.skip_icon_lookup);
+        rconn, iconn, channel, url, fetch_timeout, false, skip_icon_lookup);
 
     // subscribe_promises will eventually be used with Promise.all, this avoids
     // the shortcircuiting behavior when an error occurs (untested)
