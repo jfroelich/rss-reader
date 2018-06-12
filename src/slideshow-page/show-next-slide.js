@@ -16,6 +16,8 @@ export async function show_next_slide() {
     return;
   }
 
+
+
   // show_next_slide is a potential source of jank, as well as just being not
   // very well designed, so this function is heavily commented for now.
 
@@ -60,7 +62,22 @@ export async function show_next_slide() {
   // check here if we wanted though. I just do not have a clear picture of who
   // should be responsible, the caller or the callee.
 
-  mark_slide_read(conn, current_slide).catch(console.error);
+  // NOTE: awaiting because I am getting a ton of errors and want to see if this
+  // somewhat fixes it without introducing lag
+
+  await mark_slide_read(conn, current_slide).catch(console.error);
+
+  // Prematurely update the view, while the state change is still pending, to
+  // avoid issues with latency and such. Note this can causes strange
+  // interaction with counting loaded unread.
+  // Note this must occur after the call to mark_slide_read as otherwise that
+  // exits early if it finds this attribute
+  // Note this causes other issues, but it kind of fixes the mark-read error
+  // that is happening.
+  // TODO: maybe a better fix would be to await mark_slide_read so that there
+  // is more of a delay and the race fixes it
+  // current_slide.setAttribute('read', '');
+
 
   // Our next step is to consider loading additional slides. If there are still
   // unread articles queued up, then just cleanup and exit.
@@ -104,7 +121,9 @@ export async function show_next_slide() {
   // next-slide navigation should always work (even if slides not yet loaded in
   // view) because users should almost always be presented with a consistent
   // view of application state.
-  append_entries_as_slides(entries);
+  if (entries.length) {
+    append_entries_as_slides(entries);
+  }
 
   // Show the next slide. Note this is done before checking if no entries
   // loaded, because that does not imply there is not a slide to navigate to.
