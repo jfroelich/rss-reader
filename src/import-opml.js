@@ -10,7 +10,7 @@ export async function import_opml(
   const read_promises = [];
   for (const file of files) {
     const promise = read_file_feeds(file);
-    catch catch_promise = promise.catch(console.warn);
+    const catch_promise = promise.catch(console.warn);
     read_promises.push(catch_promise);
   }
   const read_results = await Promise.all(read_promises);
