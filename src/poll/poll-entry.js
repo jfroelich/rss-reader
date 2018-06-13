@@ -50,25 +50,12 @@ export async function poll_entry(entry) {
   await update_entry_icon(this.iconn, entry, document);
   await update_entry_content(entry, document, this.fetch_image_timeout);
 
-  // Explicitly validate the entry. This was previously done via the call to
-  // db.update_entry, and threw a type error which was not caught here. For now,
-  // just throw a basic error to match the previous behavior. In the future,
-  // think about whether this should be throwing an error at all or doing
-  // something else.
   if (!db.is_valid_entry(entry)) {
     throw new Error('Invalid entry ' + entry);
   }
 
-  // Explicitly sanitize the entry. This was previously done by db.update_entry
-  // but that is no longer the case. For now, replace the parameter value with
-  // itself, even though sanitize clones. Also note that sanitize now filters
-  // empty properties implicitly
   entry = db.sanitize_entry(entry);
-
-  const op = {};
-  op.conn = this.rconn;
-  op.channel = this.channel;
-  return await db.update_entry.call(op, entry);
+  return await update_entry(this.rconn, this.channel, entry);
 }
 
 async function handle_entry_redirect(rconn, entry, response, rewrite_rules) {

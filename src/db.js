@@ -7,13 +7,10 @@ import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js'
 import {filter_unprintable_characters} from '/src/lib/lang/filter-unprintable-characters.js';
 import {localstorage_read_int} from '/src/lib/localstorage.js';
 
-// The db.js module encapsulates database storage operations and formats
-// for the app.
-
 // indexedDB does not support storing Function objects, because Function objects
-// are not serializable (aka structured-cloneable). Therefore, because
-// instanceof is out of the question, and typeof is not useful, we use a hidden
-// property to partially guarantee the type.
+// are not serializable. Therefore instanceof and typeof are not usable for
+// making assertions about type. Therefore, use a hidden "magic" property to
+// enable some minimal form of type checking.
 const FEED_MAGIC = 0xfeedfeed;
 const ENTRY_MAGIC = 0xdeadbeef;
 
@@ -536,18 +533,14 @@ export function sanitize_feed(feed, options) {
 // Some initial state is supplied automatically, such as marking a new entry as
 // unread. If creating, then the id property should not exist. The database is
 // modified even when a post message error occurs.
-//
-// Context: conn, channel
-export function update_entry(entry) {
+export function update_entry(conn, channel, entry) {
   return new Promise((resolve, reject) => {
     if (!is_entry(entry)) {
       throw new TypeError('Invalid entry argument ' + entry);
     }
 
-    const is_create = !entry.id;
-
-    // Implied setup
-    if (is_create) {
+    const creating = !entry.id;
+    if (creating) {
       entry.readState = ENTRY_STATE_UNREAD;
       entry.archiveState = ENTRY_STATE_UNARCHIVED;
       entry.dateCreated = new Date();
@@ -556,29 +549,19 @@ export function update_entry(entry) {
       entry.dateUpdated = new Date();
     }
 
-    const txn = this.conn.transaction('entry', 'readwrite');
+    filter_empty_properties(entry);
 
-    // In order to avoid misrepresenting state, wait until the transaction
-    // completes, and not merely the request, before posting a message or
-    // resolving
+    const txn = conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
-      const message = {type: 'entry-write', id: entry.id, 'create': is_create};
+      const message = {type: 'entry-write', id: entry.id, 'create': creating};
       console.debug(message);
-      this.channel.postMessage(message);
+      channel.postMessage(message);
       resolve(entry.id);
     };
     txn.onerror = _ => reject(txn.error);
-
     const store = txn.objectStore('entry');
     const request = store.put(entry);
-
-    // Do not listen for request errors. Request errors bubble up to
-    // transactional errors, and we are already listening for transaction
-    // errors.
-
-    // put returns the keypath for both new and existing objects. We only care
-    // about catching it when creating a new entry
-    if (is_create) {
+    if (creating) {
       request.onsuccess = _ => entry.id = request.result;
     }
   });
