@@ -1,45 +1,51 @@
 import {mark_entry_read} from '/src/db.js';
 
-// Transitions a slide into the unread state. Asynchronously updates the
-// database.
-export function mark_slide_read(conn, slide) {
-  // Ignore the slide if was already read, or is in the stale state for some
-  // reason (e.g. deleted from database while being viewed). In other words,
-  // transform ourselves into a no-operation. Note there is the unresolved
-  // question of whether this should be a caller or callee concern.
-
-  if (slide.hasAttribute('read') || slide.hasAttribute('stale')) {
-    // NOTE: returning undefined (by just returning) would be incorrect here.
-    // This was previously a bug. This function should always return a promise.
-    // This is similar to returning an optional. The bug was the caller was
-    // trying to await on undefined when viewing an already-read slide. This
-    // was a consequence of removing the async qualifier to the function without
-    // fully considering the exit paths. Ironically, I increased complexity in
-    // the implementation (the function body) by trying to reduce complexity in
-    // the API (the function signature).
-    return Promise.resolve();
-  }
-
+// Starts transitioning a slide into the read state. Updates both the view and
+// the database. This resolves before the view is fully updated. This only sets
+// the slide's read-pending attribute, not its read attribute.
+export async function mark_slide_read_start(conn, slide) {
   const entry_id_string = slide.getAttribute('entry');
   const entry_id = parseInt(entry_id_string, 10);
 
-  // Create a short-lived local channel. Cannot use the slideshow global channel
-  // because instances of BroadcastChannels cannot hear their messages.
+  // Exit if prior call still in flight. Callers may naively make concurrent
+  // calls to mark_slide_read_start. This is routine, expected, and not an
+  // error.
+  if (slide.hasAttribute('read-pending')) {
+    console.debug('Slide is already read-pending', entry_id);  // TEMP
+    return;
+  }
+
+  // The slide was already read. Typically happens when navigating away from a
+  // slide a second time. Not an error.
+  if (slide.hasAttribute('read')) {
+    console.debug('Slide is already read', entry_id);  // TEMP
+    return;
+  }
+
+  // A slide is stale for various reasons such as its corresponding entry being
+  // deleted from the database. Callers are not expected to avoid calling this
+  // on stale slides. Not an error.
+  if (slide.hasAttribute('stale')) {
+    return;
+  }
+
+  // Signal to future calls that this is now in progress
+  slide.setAttribute('read-pending', '');
+
+  // Use a short-lived local channel instead of the global page-lifetime channel
+  // because BroadcastChannel instances cannot hear their own messages.
   const channel = new BroadcastChannel(localStorage.channel_name);
-  const promise = mark_entry_read(conn, channel, entry_id);
+  await mark_entry_read(conn, channel, entry_id);
+  channel.close();
+}
 
-  // NOTE: to be frank, the fluent api is so opaque and confusing I do not know
-  // what is returned by then or catch. Are the return values promises, are they
-  // non-promise values? If promises, are they the same input promise or a new
-  // promise? Or is it a matter of timing and whether I am doing something
-  // synchronously? Or is it up to me based on what I return from the function
-  // parameter to them? What a horrible API. I am almost tempted to revert to
-  // using an await qualifier. But that just disguises my confusion here. I am
-  // leaving this comment here as a reminder to review this junk. Need to learn
-  // it before critizing it in order to have valid criticism. Sadly what
-  // happened here is I learned this years ago, but it is so hard to remember.
-
-  promise.then(_ => channel.close());
-  promise.catch(console.error);
-  return promise;
+// This should be called once the view acknowledges it has received the message
+// sent to the channel by mark_slide_read_start to fully resolve the mark read
+// operation.
+export function mark_slide_read_end(slide) {
+  // Do not exit early if the slide is stale. Even though updating the state of
+  // a stale slide seems meaningless, other algorithms such as counting unread
+  // slides may be naive and only consider the read attribute
+  slide.setAttribute('read', '');
+  slide.removeAttribute('read-pending');
 }

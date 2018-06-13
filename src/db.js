@@ -274,7 +274,7 @@ export function mark_entry_read(conn, channel, entry_id) {
 
     const txn = conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
-      channel.postMessage({type: 'entry-marked-read', id: entry_id});
+      channel.postMessage({type: 'entry-read', id: entry_id});
       resolve();
     };
     txn.onerror = _ => reject(txn.error);

@@ -1,5 +1,5 @@
 import {open_db} from '/src/db.js';
-import {mark_slide_read} from '/src/slideshow-page/mark-slide-read.js';
+import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';
 import {get_current_slide} from '/src/slideshow-page/slideshow-state.js';
 
 export async function slide_onclick(event) {
@@ -41,11 +41,11 @@ export async function slide_onclick(event) {
 
   // There is no need to await here for logical purposes because this is a click
   // listener where it is irrelevant when this ever completes, and because an
-  // indexedDB IDBDatabase instance can be closed while transactions are
-  // pending. However, awaiting here is an eloquent and terse style of ensuring
-  // an error is explicitly forwarded to the console instead of being muted
-  // within a promise.
-  await mark_slide_read(conn, clicked_slide);
+  // IDBDatabase instance can be closed while transactions are pending. However,
+  // awaiting here is an eloquent and terse style of ensuring an error is
+  // explicitly forwarded to the console instead of being muted within a
+  // promise.
+  await mark_slide_read_start(conn, clicked_slide);
   conn.close();
 }
 
