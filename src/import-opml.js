@@ -3,76 +3,62 @@ import {subscribe} from '/src/subscribe.js';
 
 // Concurrently reads in the files from the file list and subscribes to the
 // feeds in all of the files. Returns a promise that resolves to an array of
-// subscribe promise results. The input file list is not modified.
-// Expected context properties: rconn, iconn, channel
-// @param files {array-like} an array-like collection of file objects, such as
-// a FileList, or an array
+// subscribe promise results.
 export async function import_opml(
     rconn, iconn, channel, files, fetch_timeout, skip_icon_lookup) {
-  const subscribe_promises = [];
-  const import_file_promises = [];
+  // Read in all the feed urls into an array of arrays
+  const read_promises = [];
   for (const file of files) {
-    const import_file_promise = import_file(
-        subscribe_promises, rconn, iconn, channel, file, fetch_timeout,
-        skip_icon_lookup);
-    const catch_promise = import_file_promise.catch(console.warn);
-    import_file_promises.push(catch_promise);
+    const promise = read_file_feeds(file);
+    catch catch_promise = promise.catch(console.warn);
+    read_promises.push(catch_promise);
+  }
+  const read_results = await Promise.all(read_promises);
+
+  // Flatten the results into a single array and filter missing values
+  const urls = [];
+  for (const file_urls of read_results) {
+    if (file_urls) {
+      for (const url of file_urls) {
+        if (url) {
+          urls.push(url);
+        }
+      }
+    }
   }
 
-  // Wait for all import file promises to settle to ensure that we spawned all
-  // of the subscribe promises from each file. Note that we only wait until
-  // those promises are spawned, not settled.
-  await Promise.all(import_file_promises);
+  const unique_urls = dedup_urls(urls);
 
-  // Construct and return a promise that settles when all of the subscribe
-  // promises settle
+  // Subscribe to all urls concurrently
+  const subscribe_promises = [];
+  const notify_per_subscribe = false;
+  for (const url of unique_urls) {
+    const promise = subscribe(
+        rconn, iconn, channel, url, fetch_timeout, notify_per_subscribe,
+        skip_icon_lookup);
+    const catch_promise = promise.catch(console.warn);
+    subscribe_promises.push(catch_promise);
+  }
+
   return Promise.all(subscribe_promises);
 }
 
-
-// Reads a file, parses its contents, finds all feeds in the parsed file, and
-// then spawns subscribe promises for all feeds in the file. Returns prior to
-// the susbcribe promises settling. A reference to each subscribe promise is
-// pushed to the promises array so that they can be awaited at the caller's
-// choosing. This does check before spawning a subscribe promise that a similar
-// feed url does not exist in the file, but it does not check if a similar feed
-// url exists from promises that existed in the array prior to calling. This
-// does not check if an equivalent subscribe promise already exists in the
-// array, so if used concurrently there could be dupe promises. When there is
-// more than one concurrent subscribe operation to the same feed, one will
-// eventually succeed and the rest will fail.
-async function import_file(
-    subscribe_promises, rconn, iconn, channel, file, fetch_timeout,
-    skip_icon_lookup) {
-  // Not an error. Just noop.
+// Returns a promise that resolves to an array of feed urls in the opml file.
+// Throws errors if bad parameter, bad file type, i/o, parsing. Does not filter
+// dupes. The return value is always a defined array, but may be empty.
+async function read_file_feeds(file) {
   if (!file.size) {
-    return;
+    return [];
   }
 
-  // Tried to import a non-opml file. Error
   if (!file_is_opml(file)) {
-    throw new Error(
-        'Unaccepted mime type ' + file.type + ' for file ' + file.name);
+    throw new TypeError(
+        'Unacceptable type ' + file.type + ' for file ' + file.name);
   }
 
-  // If any i/o error occurs, rethrow it
   const file_text = await file_read_text(file);
-  // If any parse error occurs, rethrow it
   const document = parse_opml(file_text);
-
-  const urls = dedup_urls(find_feed_urls(document));
-
-  // Create subscribe promises for each of the urls. Use promise.catch to
-  // suppress errors to avoid any one subscription error causing the entire
-  // import to fail when later using Promise.all on the promises array.
-  const should_notify = false;
-  for (const url of urls) {
-    const subscribe_promise = subscribe(
-        rconn, iconn, channel, url, fetch_timeout, should_notify,
-        skip_icon_lookup);
-    const catch_promise = subscribe_promise.catch(e => console.warn(e));
-    subscribe_promises.push(catch_promise);
-  }
+  return find_feed_urls(document);
 }
 
 // Return a new array of distinct URLs. The output array is always defined.
