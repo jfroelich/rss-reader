@@ -1,7 +1,7 @@
-// Provides a way to strip publisher information
-// from an article title. The input title variable is a `DOMString` and an
-// optional options object. The function returns a new string where the
-// publisher information has been stripped.
+// Provides a way to strip publisher information from an article title. The
+// input title variable is a `DOMString` and an optional options object. The
+// function returns a new string where the publisher information has been
+// stripped.
 
 // The function basically works by looking for typical delimiters found in
 // document titles, such as the dash character found in &quot;Florida man shoots
@@ -12,17 +12,17 @@
 // whether it found a publisher substring and decided not to remove it.
 
 // ### Options
-// * **max_tail_words** - the maximum number of words following delimiter, if
+// * max_tail_words - the maximum number of words following delimiter, if
 // the number of words following the delimiter is greater than this number then
 // the publisher is considered too long and therefore unlikely a publisher and
 // therefore is not filtered
-// * **min_title_length** - the minimum number of characters in a title, if the
+// * min_title_length - the minimum number of characters in a title, if the
 // title is too short before or after filtering the publisher then the publisher
 // is not filtered
-// * **min_publisher_length** - minimum number of characters in publisher name,
+// * min_publisher_length - minimum number of characters in publisher name,
 // including spaces, if the publisher is too short then the publisher is not
 // filtered
-// * **delims** - array of strings, delimiters (currently including spaces
+// * delims - array of strings, delimiters (currently including spaces
 // between the delimiter and other words)
 
 // If any option is not set, a default value is used. Options are not validated
