@@ -2,7 +2,7 @@ import {fetch_html} from '/src/fetch-html.js';
 import {parse_html} from '/src/lib/html/parse-html.js';
 import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
 import * as mime from '/src/lib/mime.js';
-import {fetch_image} from '/src/lib/net/fetch-image.js';
+import {fetch2} from '/src/lib/net/fetch2.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 
 export function FaviconService() {
@@ -384,6 +384,21 @@ FaviconService.prototype.try_resolve = function(url_string, base_url) {
     }
   }
 };
+
+function fetch_image(url, options) {
+  const image_mime_types = [
+    'application/octet-stream', 'image/x-icon', 'image/jpeg', 'image/gif',
+    'image/png', 'image/svg+xml', 'image/tiff', 'image/webp',
+    'image/vnd.microsoft.icon'
+  ];
+
+  // Pretend that options is immutable, so clone as to remain pure
+  const options_clone = Object.assign({types: image_mime_types}, options);
+
+  // Defer to the load's default policy by using an undefined parameter
+  let undefined_policy;
+  return fetch2(url, options_clone, undefined_policy);
+}
 
 function assert(value, message) {
   if (!value) {
