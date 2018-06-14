@@ -1,4 +1,3 @@
-import {parse_opml} from '/src/lib/parse-opml.js';
 import {subscribe} from '/src/subscribe.js';
 
 // Concurrently reads in the files from the file list and subscribes to the
@@ -114,4 +113,26 @@ function file_read_text(file) {
     reader.onload = _ => resolve(reader.result);
     reader.onerror = _ => reject(reader.error);
   });
+}
+
+// Parses a string containing opml into a xml-flagged document object. Throws an
+// error if the parameter is unexpected or if there is a parse error.
+function parse_opml(xml_string) {
+  const parser = new DOMParser();
+  const document = parser.parseFromString(xml_string, 'application/xml');
+  const error = document.querySelector('parsererror');
+  if (error) {
+    throw new Error(condense_whitespace(error.textContent));
+  }
+
+  // Need to normalize localName when document is xml-flagged
+  const name = document.documentElement.localName.toLowerCase();
+  if (name !== 'opml') {
+    throw new Error('Document element is not opml: ' + name);
+  }
+  return document;
+}
+
+function condense_whitespace(value) {
+  return value.replace(/\s{2,}/g, ' ');
 }
