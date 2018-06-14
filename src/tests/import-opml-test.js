@@ -1,7 +1,6 @@
 import {open_db} from '/src/db.js';
 import {import_opml} from '/src/import-opml.js';
 import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
-import {parse_opml} from '/src/lib/parse-opml.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 
@@ -18,6 +17,8 @@ import {register_test} from '/src/tests/test-registry.js';
 // response. But I only partially cut it out because of the icon issue?
 // I guess it is kind of annoying to not abstract away the fetch though. It
 // leads to having too many pieces to compose.
+
+// TODO: stub channel instead of creating a real one
 
 // TODO: add option to import-opml to pass along to subscribe to skip
 // icon lookup, then skip it here in the test
