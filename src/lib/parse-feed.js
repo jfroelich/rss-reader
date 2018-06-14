@@ -11,19 +11,17 @@ import {decode_entities} from '/src/lib/html/decode-entities.js';
 // a defined entries array, although it may be zero length. Returns a feed
 // object or throws
 
-// Params
-// * value {String} the xml string to parse
-// * skip_entries {Boolean} if true, entries are not processed, and an empty
-// entries array is included in the result
-// * resolve_entry_urls {Boolean} if true, entry urls are canonicalized using
-// feed.link as the base url
-
+// @param value {String} the xml string to parse
+// @param skip_entries {Boolean} if true, entries are not processed, and an
+// empty entries array is included in the result
+// @param resolve_entry_urls {Boolean} if true, entry urls are canonicalized
+// using feed.link as the base url
 export function parse_feed(value, skip_entries, resolve_entry_urls) {
-  const document = xml_parse(value);
+  const document = parse_xml(value);
   return unmarshall_xml(document, skip_entries, resolve_entry_urls);
 }
 
-function xml_parse(value) {
+function parse_xml(value) {
   if (typeof value !== 'string') {
     throw new Error('value is not a string');
   }
