@@ -4,6 +4,10 @@ import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 
+export function cron_register_listener() {
+  chrome.alarms.onAlarm.addListener(cron_alarm_listener);
+}
+
 async function cron_alarm_listener(alarm) {
   console.debug('Wakeup', alarm.name);
   localStorage.LAST_ALARM = alarm.name;
@@ -76,9 +80,6 @@ function query_idle_state(idle_period_secs) {
   });
 }
 
-// TODO: do not bind on every page load somehow
-chrome.alarms.onAlarm.addListener(cron_alarm_listener);
-
 export function create_alarms() {
   chrome.alarms.create(
       'cleanup-refresh-badge-lock', {periodInMinutes: 60 * 12});
@@ -93,14 +94,10 @@ export function create_alarms() {
   chrome.alarms.create('compact-favicon-db', {periodInMinutes: 60 * 24 * 7});
 }
 
-// NOTE: previous_version is not currently in use, but it might be in the
-// future, this might try and only remove alarms that were recently removed
-// instead of always trying to remove all alarms
 export function remove_legacy_alarms(previous_version) {
   const legacy_alarm_names = ['test-install-binding-alarms'];
 
   // See https://developer.chrome.com/extensions/alarms#method-clear
-
   function onclear(alarm_name, was_cleared) {
     if (was_cleared) {
       console.debug('Alarm removed:', alarm_name);
