@@ -6,12 +6,14 @@ import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';
 import {remove_slide} from '/src/slideshow-page/remove-slide.js';
 import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
 
+// TODO: perhaps instead of exiting if there is no current slide, I only try and
+// mark a slide read if the current slide exists, and continue and maybe append,
+// this will enable transition away from no-slides-loaded screen via next-slide
+// shortcut.
+
 export async function show_next_slide() {
   const current_slide = slideshow_state.get_current_slide();
   // There may not be a current slide (this is routine)
-  // TODO: perhaps instead I only mark-read if current-slide, and still do
-  // dynamic append and transition instead of exiting early here, to enable
-  // transition away from no-slides-loaded screen via next-slide shortcut.
   if (!current_slide) {
     return;
   }
@@ -26,18 +28,47 @@ export async function show_next_slide() {
   await mark_slide_read_start(conn, current_slide);
 
   let entries = [];
+
+  // TODO: this condition needs some tweaking to reflect the new offset
+  // calculation. The current behavior is harmless, but I would rather not even
+  // try to load entries. basically this condition should consider read-pending
+  // along with read. slide_unread_count only considers read at the moment.
+  // TODO: furthermore, it may be just that slide_unread_count should be
+  // considering read-pending, or that I should use some separate function that
+  // makes it clear it considers both states. There is no other use of
+  // slide_unread_count in this function so it kind of makes sense. I would not
+  // need a separate offset calculation here either.
   if (slide_unread_count < 3) {
-    console.debug('Maybe loading entries (unread %d)', slide_unread_count);
-    entries = await load_entries(conn, slide_unread_count);
+    const selector = 'slide:not([read]):not([read-pending])';
+    const slides = document.body.querySelectorAll(selector);
+    const offset = slides.length;
+
+    // TEMP: monitoring new offset calculation
+    console.debug(
+        'Maybe loading entries, offset %d, unread %d', offset,
+        slide_unread_count);
+
+    entries = await load_entries(conn, offset);
   }
   conn.close();
 
   // If we loaded some more entries, append them as slides. Do this prior to
   // transitioning to allow for dynamic loading.
+  // TODO: if things work, this condition isn't needed, as the loop noops
   if (entries.length) {
     // TEMP: monitoring recent changes
     console.debug('Appending %d slides', entries.length);
-    append_entries_as_slides(entries);
+    for (const entry of entries) {
+      // TEMP: investigating sporadic error. This condition should not be needed
+      // but it occassionally is at the moment. Although I may have fixed it
+      // with changes to offset calculation above.
+      if (document.querySelector('slide[entry="' + entry.id + '"]')) {
+        console.warn('Entry already loaded, not appending again', entry.id);
+        continue;
+      }
+
+      append_slide(entry);
+    }
   }
 
   transition_next_slide();
@@ -70,17 +101,6 @@ function compact_slides() {
          first_slide !== current_slide) {
     remove_slide(first_slide);
     first_slide = container.firstElementChild;
-  }
-}
-
-function append_entries_as_slides(entries) {
-  for (const entry of entries) {
-    // TEMP: investigating sporadic error
-    if (document.querySelector('slide[entry="' + entry.id + '"]')) {
-      console.warn('Slide already loaded', entry.id);
-    }
-
-    append_slide(entry);
   }
 }
 
