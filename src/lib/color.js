@@ -57,19 +57,9 @@ export function get_luminance(color) {
   const rr = get_red(color) / 255;
   const rg = get_green(color) / 255;
   const rb = get_blue(color) / 255;
-
-  // Experimenting with infix notation
-  // Using ** operator instead of Math.pow call
-  // ** is supported in at least Chrome 66, maybe earlier, not sure
-  // At the moment I have mixed feelings. I dunno maybe I will warm up to it
-  // const r = rr <= 0.03928 ? rr / 12.92 : Math.pow((rr + 0.055) / 1.055, 2.4);
-  // const g = rg <= 0.03928 ? rg / 12.92 : Math.pow((rg + 0.055) / 1.055, 2.4);
-  // const b = rb <= 0.03928 ? rb / 12.92 : Math.pow((rb + 0.055) / 1.055, 2.4);
-  // TODO: are the extra parentheses necessary? What is the operator precedence?
   const r = rr <= 0.03928 ? rr / 12.92 : ((rr + 0.055) / 1.055) ** 2.4;
   const g = rg <= 0.03928 ? rg / 12.92 : ((rg + 0.055) / 1.055) ** 2.4;
   const b = rb <= 0.03928 ? rb / 12.92 : ((rb + 0.055) / 1.055) ** 2.4;
-
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
