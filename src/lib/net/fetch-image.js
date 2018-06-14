@@ -1,8 +1,5 @@
 import {fetch2} from '/src/lib/net/fetch2.js';
 
-// TODO: this is no longer correct. fetch2 just throws errors
-
-
 export function fetch_image(url, options) {
   const image_mime_types = [
     'application/octet-stream', 'image/x-icon', 'image/jpeg', 'image/gif',
