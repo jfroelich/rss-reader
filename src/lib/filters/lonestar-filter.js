@@ -1,7 +1,5 @@
 import {element_is_hidden_inline} from '/src/lib/dom/element-is-hidden-inline.js';
 import {remove_image} from '/src/lib/dom/remove-image.js';
-import {filter_anchor_noref} from '/src/lib/filters/filter-anchor-noref.js';
-import {filter_pings} from '/src/lib/filters/filter-pings.js';
 
 // The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
 // can be found here: https://youtu.be/rGvblGCD7qM
@@ -55,6 +53,10 @@ export function lonestar_filter(document) {
   // This is exception worthy because this indicates a programmer error, not
   // simply a bad data error. The programmer is responsible for calling this
   // filter correctly, with a document object in the correct state.
+
+  // TODO: eventually remove this once I look into more, I think it is too
+  // paranoid
+
   if (!document.baseURI) {
     throw new TypeError('document missing baseURI');
   }
@@ -102,14 +104,8 @@ export function lonestar_filter(document) {
     }
   }
 
-  // TODO: now that this is here, this is pretty much the sole caller. Given
-  // its simplicity I think it would be better as a local helper function. It
-  // will probably not be accessed independently, and its purpose is central
-  // to this module, and it is coherent.
-  filter_anchor_noref(document);
-
-  // TODO: same as above note
-  filter_pings(document);
+  add_rel_noreferrer(document);
+  remove_ping_attributes(document);
 }
 
 // Returns true if an image is a pixel-sized image
@@ -214,6 +210,26 @@ function image_has_telemetry_source(image, document_url) {
 
   // Nothing indicated telemetry.
   return false;
+}
+
+// Specifies that all links are noreferrer
+function add_rel_noreferrer(document) {
+  if (document.body) {
+    const anchors = document.body.getElementsByTagName('a');
+    for (const anchor of anchors) {
+      anchor.setAttribute('rel', 'noreferrer');
+    }
+  }
+}
+
+// Removes ping attributes from anchor elements
+function remove_ping_attributes(document) {
+  if (document.body) {
+    const anchors = document.body.querySelectorAll('a[ping]');
+    for (const anchor of anchors) {
+      anchor.removeAttribute('ping');
+    }
+  }
 }
 
 // Returns true when the other_url is external to the document_url. A url is
