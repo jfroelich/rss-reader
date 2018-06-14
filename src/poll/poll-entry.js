@@ -55,7 +55,7 @@ export async function poll_entry(entry) {
   }
 
   entry = db.sanitize_entry(entry);
-  return await update_entry(this.rconn, this.channel, entry);
+  return await db.update_entry(this.rconn, this.channel, entry);
 }
 
 async function handle_entry_redirect(rconn, entry, response, rewrite_rules) {
