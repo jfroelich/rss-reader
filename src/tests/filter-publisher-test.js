@@ -2,6 +2,9 @@ import {filter_publisher as f} from '/src/lib/filter-publisher.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 
+// TODO: test using additional parameters where other parameters are not the
+// default values
+
 async function filter_publisher_test() {
   // no delimiters found
   assert(f('Hello World') === 'Hello World');
