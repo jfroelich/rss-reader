@@ -1,6 +1,7 @@
 // TODO: review handling of html entities
-// TODO: revise as a method of a more general nlp module
 // TODO: support other whitespace than space around delims
+
+// The nlp module provides various text processing utilities
 
 // Returns a new string where the publisher information has been stripped, such
 // as the string "Your Florida news" in the string "Florida man shoots self -
@@ -11,19 +12,16 @@
 // @param title {String}
 // @param delims {Array} array of strings, delimiters (currently including
 // spaces between the delimiter and other words)
-// @param max_tail_words - the maximum number of words following delimiter, if
-// the number of words following the delimiter is greater than this number then
-// the publisher is considered too long and therefore unlikely a publisher and
-// therefore is not filtered
-// @param min_title_length - the minimum number of characters in a title, if the
-// title is too short before or after filtering the publisher then the publisher
-// is not filtered
-// @param min_publisher_length - minimum number of characters in publisher name,
-// including spaces, if the publisher is too short then the publisher is not
-// filtered
+// @param max_tail_words - if there are too many words after the delimiter then
+// publisher is not filtered
+// @param min_title_length - if the title has too few characters before or after
+// filtering then publisher is not filtered
+// @param min_publisher_length - if the publisher has too few characters then
+// the publisher is not filtered
 export function filter_publisher(
     title, delims = ['-', '|', ':'], max_tail_words = 4, min_title_length = 20,
     min_publisher_length = 5) {
+  // Tolerate bad input (Postel's Law)
   if (typeof title !== 'string') {
     return title;
   }
@@ -58,12 +56,12 @@ export function filter_publisher(
   return title.substring(0, delim_pos).trim();
 }
 
-function count_words(value) {
+export function count_words(value) {
   return tokenize(value).length;
 }
 
 // Split a string into smaller strings based on intermediate whitespace
-function tokenize(value) {
+export function tokenize(value) {
   if (typeof value === 'string') {
     // Avoid empty tokens
     const trimmed = value.trim();

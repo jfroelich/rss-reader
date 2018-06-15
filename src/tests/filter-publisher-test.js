@@ -1,4 +1,4 @@
-import {filter_publisher as f} from '/src/lib/filter-publisher.js';
+import {filter_publisher as f} from '/src/lib/nlp.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 
