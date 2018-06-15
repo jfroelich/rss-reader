@@ -5,9 +5,10 @@ import * as db from '/src/db.js';
 // @param locker_name {String} optional, for debugging who obtained an internal
 // cross-page lock
 export async function refresh_badge(locker_name = 'unknown') {
-  // Cancel if locked
+  // Check if locked by looking for the lock and then cancel if locked. A key's
+  // presence in storage is enough, do not care about its value.
   const existing_lock = localStorage.refresh_badge_cross_page_lock;
-  if (existing_lock) {
+  if (typeof existing_lock !== 'undefined') {
     return;
   }
 
