@@ -6,7 +6,7 @@ import * as favicon from '/src/favicon.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import * as array from '/src/lib/lang/array.js';
-import {localstorage_read_array} from '/src/lib/localstorage.js';
+import * as localstorage from '/src/lib/localstorage.js';
 import * as perm from '/src/lib/permissions.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
@@ -312,8 +312,7 @@ async function subscribe_form_onsubmit(event) {
   channel.close();
 
   feed_list_append_feed(feed);
-  subscription_monitor_append_message(
-      'Subscribed to ' + array.peek(feed.urls));
+  subscription_monitor_append_message('Subscribed to ' + array.peek(feed.urls));
   subscription_monitor_hide();
   section_show_by_id('subs-list-section');
 
@@ -614,7 +613,7 @@ function options_page_init() {
       current_path = current_path.substring('/images/'.length);
     }
 
-    const background_images = localstorage_read_array('background_images');
+    const background_images = localstorage.read_array('background_images');
 
     for (const path of background_images) {
       let option = document.createElement('option');

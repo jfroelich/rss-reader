@@ -1,5 +1,5 @@
 import * as db from '/src/db.js';
-import {localstorage_read_int} from '/src/lib/localstorage.js';
+import * as localstorage from '/src/lib/localstorage.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';
@@ -81,7 +81,7 @@ export async function show_next_slide() {
 // Returns a promise
 function load_entries(conn, offset) {
   // TODO: cleanup this "|| 3" crap
-  const limit = localstorage_read_int('initial_entry_load_limit') || 3;
+  const limit = localstorage.read_int('initial_entry_load_limit') || 3;
   const mode = 'viewable';
   return db.get_entries(conn, mode, offset, limit);
 }

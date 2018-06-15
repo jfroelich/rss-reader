@@ -3,7 +3,7 @@ import {create_alarms, remove_legacy_alarms} from '/src/cron.js';
 import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
 import * as color from '/src/lib/color.js';
-import {localstorage_set_if_undefined} from '/src/lib/localstorage.js';
+import * as localstorage from '/src/lib/localstorage.js';
 import {open_view} from '/src/open-view.js';
 
 // The default set of background images for slides
@@ -68,7 +68,7 @@ function init_localstorage(previousVersion) {
   remove_legacy_localstorage_keys();
 
   // shorthand
-  const s = localstorage_set_if_undefined;
+  const s = localstorage.set_if_undef;
 
   // The default background color used by the low-contrast pass
   s('sanitize_document_low_contrast_default_matte', color.WHITE);

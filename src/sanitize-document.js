@@ -38,7 +38,7 @@ import {filter_unknown_attrs} from '/src/lib/filters/filter-unknown-attrs.js';
 import {lonestar_filter} from '/src/lib/filters/lonestar-filter.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import {trim_document} from '/src/lib/filters/trim-document.js';
-import {localstorage_read_float, localstorage_read_int} from '/src/lib/localstorage.js';
+import * as localstorage from '/src/lib/localstorage.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense content
@@ -67,10 +67,10 @@ export async function sanitize_document(document) {
 
   // TODO: shorten name, drop sandoc prefix
   const matte =
-      localstorage_read_int('sanitize_document_low_contrast_default_matte');
+      localstorage.read_int('sanitize_document_low_contrast_default_matte');
 
   // TODO: lowercase
-  const mcr = localstorage_read_float('MIN_CONTRAST_RATIO');
+  const mcr = localstorage.read_float('MIN_CONTRAST_RATIO');
   filter_hidden_elements(document, matte, mcr);
 
   const general_blacklist = [
@@ -111,7 +111,7 @@ export async function sanitize_document(document) {
   filter_dead_images(document);
 
   const image_size_fetch_timeout =
-      localstorage_read_int('set_image_sizes_timeout');
+      localstorage.read_int('set_image_sizes_timeout');
   await set_image_sizes(document, image_size_fetch_timeout, is_allowed_request);
 
 
@@ -134,11 +134,11 @@ export async function sanitize_document(document) {
   filter_lists(document);
 
   const table_scan_max_rows =
-      localstorage_read_int('sanitize_document_table_scan_max_rows');
+      localstorage.read_int('sanitize_document_table_scan_max_rows');
   filter_tables(document, table_scan_max_rows);
 
   const emphasis_max_length =
-      localstorage_read_int('sanitize_document_emphasis_max_length');
+      localstorage.read_int('sanitize_document_emphasis_max_length');
   filter_emphasis(document, emphasis_max_length);
   filter_node_whitespace(document);
 

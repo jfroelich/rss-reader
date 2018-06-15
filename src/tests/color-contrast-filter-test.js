@@ -1,6 +1,7 @@
 import * as color from '/src/lib/color.js';
 import * as css_color from '/src/lib/dom/css-color.js';
 import * as ccf from '/src/lib/filters/color-contrast-filter.js';
+import * as localstorage from '/src/lib/localstorage.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 
@@ -12,7 +13,7 @@ async function color_contrast_filter_test1() {
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
 
   const matte = color.WHITE;
-  const threshold = localstorage_read_float('MIN_CONTRAST_RATIO');
+  const threshold = localstorage.read_float('MIN_CONTRAST_RATIO');
 
   let node = it.nextNode();
   while (node) {

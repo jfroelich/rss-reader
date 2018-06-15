@@ -2,7 +2,7 @@ import {is_entry} from '/src/db.js';
 import {escape_html} from '/src/lib/html/escape-html.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import * as array from '/src/lib/lang/array.js';
-import {localstorage_read_int} from '/src/lib/localstorage.js';
+import * as localstorage from '/src/lib/localstorage.js';
 import {filter_publisher} from '/src/lib/nlp.js';
 import {hide_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
 import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
@@ -60,8 +60,8 @@ function create_article_title_element(entry) {
 
     title = filter_publisher(title);
 
-    const max_length =
-        localstorage_read_int(localStorage.article_title_display_max_length);
+    const max_length = localstorage.read_int(
+        localStorage.article_title_display_max_length);
     if (!isNaN(max_length)) {
       title = truncate_html(title, max_length);
     }

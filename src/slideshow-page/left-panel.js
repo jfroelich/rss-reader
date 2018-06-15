@@ -2,7 +2,7 @@ import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
 import {import_opml} from '/src/import-opml.js';
 import * as array from '/src/lib/lang/array.js';
-import {localstorage_read_array} from '/src/lib/localstorage.js';
+import * as localstorage from '/src/lib/localstorage.js';
 import {create_opml_document} from '/src/lib/opml-document.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 
@@ -232,7 +232,7 @@ function leftpanel_init() {
   menu_options.onclick = options_menu_onclick;
 
   // Load fonts from local storage once for both init helpers
-  const fonts = localstorage_read_array('fonts');
+  const fonts = localstorage.read_array('fonts');
   header_font_menu_init(fonts);
   body_font_menu_init(fonts);
 

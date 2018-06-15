@@ -5,7 +5,7 @@ import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lib/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
 import {filter_unprintable_characters} from '/src/lib/lang/filter-unprintable-characters.js';
-import {localstorage_read_int} from '/src/lib/localstorage.js';
+import * as localstorage from '/src/lib/localstorage.js';
 
 // indexedDB does not support storing Function objects, because Function objects
 // are not serializable. Therefore instanceof and typeof are not usable for
@@ -342,8 +342,8 @@ export function open_db(name, version, timeout) {
   // function can still be easily overloaded in order to reuse the
   // on_upgrade_needed handler with a different database name and version.
   name = typeof name === 'string' ? name : localStorage.db_name;
-  version = isNaN(version) ? localstorage_read_int('db_version') : version;
-  timeout = isNaN(timeout) ? localstorage_read_int('db_open_timeout') : timeout;
+  version = isNaN(version) ? localstorage.read_int('db_version') : version;
+  timeout = isNaN(timeout) ? localstorage.read_int('db_open_timeout') : timeout;
 
   return indexeddb_open(name, version, on_upgrade_needed, timeout);
 }
