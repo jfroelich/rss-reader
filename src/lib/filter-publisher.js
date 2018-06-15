@@ -1,18 +1,16 @@
-// Provides a way to strip publisher information from an article title. The
-// input title variable is a `DOMString` and an optional options object. The
-// function returns a new string where the publisher information has been
-// stripped.
+// TODO: review handling of html entities
+// TODO: revise as a method of a more general nlp module
+// TODO: support other whitespace than space around delims
 
-// The function basically works by looking for typical delimiters found in
-// document titles, such as the dash character found in &quot;Florida man shoots
-// self - Your Florida News&quot;.
-
-// If there is any problem, then the original title is returned. For example,
-// the function received bad input. Or the function was not confident about
-// whether it found a publisher substring and decided not to remove it.
-
-// @param delims - array of strings, delimiters (currently including spaces
-// between the delimiter and other words)
+// Returns a new string where the publisher information has been stripped, such
+// as the string "Your Florida news" in the string "Florida man shoots self -
+// Your Florida News". The algorithm identifies the publisher by looking for a
+// delimiter and comparing the word count before and after it. If there is any
+// problem, then the original title is returned.
+//
+// @param title {String}
+// @param delims {Array} array of strings, delimiters (currently including
+// spaces between the delimiter and other words)
 // @param max_tail_words - the maximum number of words following delimiter, if
 // the number of words following the delimiter is greater than this number then
 // the publisher is considered too long and therefore unlikely a publisher and
@@ -64,6 +62,7 @@ function count_words(value) {
   return tokenize(value).length;
 }
 
+// Split a string into smaller strings based on intermediate whitespace
 function tokenize(value) {
   if (typeof value === 'string') {
     // Avoid empty tokens
