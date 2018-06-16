@@ -1,5 +1,4 @@
-import {show_next_slide} from '/src/slideshow-page/show-next-slide.js';
-import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
+import {show_next_slide, show_prev_slide} from '/src/slideshow-page/slide-nav.js';
 
 export function onkeydown(event) {
   const code = event.keyCode;
@@ -27,7 +26,7 @@ export function onkeydown(event) {
     case LEFT:
     case P: {
       event.preventDefault();
-      prev();
+      show_prev_slide();
       break;
     }
 
@@ -38,30 +37,4 @@ export function onkeydown(event) {
 function is_edit_intent(event) {
   return event.target.localName === 'input' ||
       event.target.localName === 'textarea';
-}
-
-function prev() {
-  if (slideshow_state.get_active_transition_count() > 0) {
-    console.debug('Canceling previous navigation, too many transitions');
-    return;
-  }
-
-  if (!slideshow_state.get_current_slide()) {
-    return;
-  }
-
-  const previous_slide =
-      slideshow_state.get_current_slide().previousElementSibling;
-  if (!previous_slide) {
-    return;
-  }
-
-  slideshow_state.increment_active_transition_count();
-  slideshow_state.get_current_slide().style.left = '100%';
-
-  // TEMP: testing proper transition count
-  slideshow_state.increment_active_transition_count();
-
-  previous_slide.style.left = '0';
-  slideshow_state.set_current_slide(previous_slide);
 }

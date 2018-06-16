@@ -123,3 +123,29 @@ function transition_next_slide() {
   next_slide.style.left = '0';  // show new
   slideshow_state.set_current_slide(next_slide);
 }
+
+export function show_prev_slide() {
+  if (slideshow_state.get_active_transition_count() > 0) {
+    console.debug('Canceling previous navigation, too many transitions');
+    return;
+  }
+
+  if (!slideshow_state.get_current_slide()) {
+    return;
+  }
+
+  const previous_slide =
+      slideshow_state.get_current_slide().previousElementSibling;
+  if (!previous_slide) {
+    return;
+  }
+
+  slideshow_state.increment_active_transition_count();
+  slideshow_state.get_current_slide().style.left = '100%';
+
+  // TEMP: testing proper transition count
+  slideshow_state.increment_active_transition_count();
+
+  previous_slide.style.left = '0';
+  slideshow_state.set_current_slide(previous_slide);
+}
