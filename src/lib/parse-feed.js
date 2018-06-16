@@ -3,14 +3,19 @@ import '/third-party/he.js';
 // Represents a deserialized feed in memory. Note this format may not correspond
 // to the feed format in other modules (and does not care).
 export function feed_t() {
+  // {String}
   this.type = undefined;
+  // {String}
   this.title = undefined;
+  // {String}
   this.description = undefined;
+  // {String}
   this.link = undefined;
+  // {Date}
   this.date_published = undefined;
+  // {Array<Object>}
   this.entries = [];
 }
-
 
 // The parse_feed function accepts a string as input. The string should be the
 // full text of an xml file. The xml is parsed into a Document object, and then
@@ -29,8 +34,8 @@ export function feed_t() {
 // @param resolve_entry_urls {Boolean} if true, entry urls are canonicalized
 // using feed.link as the base url
 export function parse_feed(value, skip_entries, resolve_entry_urls) {
-  const document = parse_xml(value);
-  return unmarshall_xml(document, skip_entries, resolve_entry_urls);
+  const doc = parse_xml(value);
+  return unmarshall_xml(doc, skip_entries, resolve_entry_urls);
 }
 
 function parse_xml(value) {
@@ -39,37 +44,37 @@ function parse_xml(value) {
   }
 
   const parser = new DOMParser();
-  const document = parser.parseFromString(value, 'application/xml');
-  const error = document.querySelector('parsererror');
+  const doc = parser.parseFromString(value, 'application/xml');
+  const error = doc.querySelector('parsererror');
   if (error) {
     throw new Error(error.textContent);
   }
-  return document;
+  return doc;
 }
 
-function unmarshall_xml(document, skip_entries, resolve_entry_urls) {
-  const document_element = document.documentElement;
-  const document_element_name = element_get_local_name(document_element);
+function unmarshall_xml(doc, skip_entries, resolve_entry_urls) {
+  const doc_element = doc.documentElement;
+  const doc_element_name = element_get_local_name(doc_element);
 
   const supported_feed_names = ['feed', 'rdf', 'rss'];
-  if (!supported_feed_names.includes(document_element_name)) {
-    throw new Error('Unsupported document element ' + document_element_name);
+  if (!supported_feed_names.includes(doc_element_name)) {
+    throw new Error('Unsupported document element ' + doc_element_name);
   }
 
-  const channel_element = find_channel_element(document_element);
-  if (!channel_element) {
+  const chan_element = find_channel_element(doc_element);
+  if (!chan_element) {
     throw new Error('Missing channel element');
   }
 
   const feed = new feed_t();
-  feed.type = find_feed_type(document_element);
-  feed.title = find_feed_title(channel_element);
-  feed.description = find_feed_description(document, channel_element);
-  feed.link = find_feed_link(channel_element);
-  feed.date_published = find_feed_date(channel_element);
+  feed.type = find_feed_type(doc_element);
+  feed.title = find_feed_title(chan_element);
+  feed.description = find_feed_description(doc, chan_element);
+  feed.link = find_feed_link(chan_element);
+  feed.date_published = find_feed_date(chan_element);
 
   if (!skip_entries) {
-    const entry_elements = find_entry_elements(channel_element);
+    const entry_elements = find_entry_elements(chan_element);
     feed.entries = entry_elements.map(create_entry);
 
     if (resolve_entry_urls) {
@@ -80,39 +85,38 @@ function unmarshall_xml(document, skip_entries, resolve_entry_urls) {
   return feed;
 }
 
-function find_feed_title(channel_element) {
-  return find_child_element_text(channel_element, 'title');
+function find_feed_title(chan_element) {
+  return find_child_element_text(chan_element, 'title');
 }
 
-function find_feed_description(document, channel_element) {
-  const document_element = document.documentElement;
-  const document_element_name = document_element.localName.toLowerCase();
-  const element_name =
-      document_element_name === 'feed' ? 'subtitle' : 'description';
-  return find_child_element_text(channel_element, element_name);
+function find_feed_description(doc, chan_element) {
+  const doc_element = doc.documentElement;
+  const doc_element_name = doc_element.localName.toLowerCase();
+  const element_name = doc_element_name === 'feed' ? 'subtitle' : 'description';
+  return find_child_element_text(chan_element, element_name);
 }
 
-function find_channel_element(document_element) {
-  if (document_element.localName.toLowerCase() === 'feed') {
-    return document_element;
+function find_channel_element(doc_element) {
+  if (doc_element.localName.toLowerCase() === 'feed') {
+    return doc_element;
   } else {
-    return find_child_element_by_name(document_element, 'channel');
+    return find_child_element_by_name(doc_element, 'channel');
   }
 }
 
-function find_entry_elements(channel_element) {
-  const document_element = channel_element.ownerDocument.documentElement;
-  const document_element_name = element_get_local_name(document_element);
+function find_entry_elements(chan_element) {
+  const doc_element = chan_element.ownerDocument.documentElement;
+  const doc_element_name = element_get_local_name(doc_element);
 
   let parent_node, entry_element_name;
-  if (document_element_name === 'feed') {
-    parent_node = document_element;
+  if (doc_element_name === 'feed') {
+    parent_node = doc_element;
     entry_element_name = 'entry';
-  } else if (document_element_name === 'rdf') {
-    parent_node = document_element;
+  } else if (doc_element_name === 'rdf') {
+    parent_node = doc_element;
     entry_element_name = 'item';
-  } else if (document_element_name === 'rss') {
-    parent_node = channel_element;
+  } else if (doc_element_name === 'rss') {
+    parent_node = chan_element;
     entry_element_name = 'item';
   } else {
     throw new Error('Reached unreachable');
@@ -127,22 +131,22 @@ function find_entry_elements(channel_element) {
   return entries;
 }
 
-function find_feed_type(document_element) {
-  return document_element.localName.toLowerCase();
+function find_feed_type(doc_element) {
+  return doc_element.localName.toLowerCase();
 }
 
-function find_feed_date(channel_element) {
-  const document_element = channel_element.ownerDocument.documentElement;
-  const feed_type = find_feed_type(document_element);
+function find_feed_date(chan_element) {
+  const doc_element = chan_element.ownerDocument.documentElement;
+  const feed_type = find_feed_type(doc_element);
 
   let date_text;
   if (feed_type === 'feed') {
-    date_text = find_child_element_text(channel_element, 'updated');
+    date_text = find_child_element_text(chan_element, 'updated');
   } else {
-    date_text = find_child_element_text(channel_element, 'pubdate');
+    date_text = find_child_element_text(chan_element, 'pubdate');
     date_text =
-        date_text || find_child_element_text(channel_element, 'lastbuilddate');
-    date_text = date_text || find_child_element_text(channel_element, 'date');
+        date_text || find_child_element_text(chan_element, 'lastbuilddate');
+    date_text = date_text || find_child_element_text(chan_element, 'date');
   }
 
   if (!date_text) {
@@ -158,39 +162,38 @@ function find_feed_date(channel_element) {
   return feed_date;
 }
 
-function find_atom_link_element(channel_element) {
-  let link_element =
-      find_child_element(channel_element, element_is_link_rel_alt);
+function find_atom_link_element(chan_element) {
+  let link_element = find_child_element(chan_element, element_is_link_rel_alt);
   if (link_element) {
     return link_element;
   }
 
-  link_element = find_child_element(channel_element, element_is_link_rel_self);
+  link_element = find_child_element(chan_element, element_is_link_rel_self);
   if (link_element) {
     return link_element;
   }
 
-  link_element = find_child_element(channel_element, element_is_link_with_href);
+  link_element = find_child_element(chan_element, element_is_link_with_href);
   return link_element;
 }
 
-function find_feed_link(channel_element) {
-  const document_element = channel_element.ownerDocument.documentElement;
-  const document_element_name = element_get_local_name(document_element);
+function find_feed_link(chan_element) {
+  const doc_element = chan_element.ownerDocument.documentElement;
+  const doc_element_name = element_get_local_name(doc_element);
   let link_text, link_element;
-  if (document_element_name === 'feed') {
-    link_element = find_atom_link_element(channel_element);
+  if (doc_element_name === 'feed') {
+    link_element = find_atom_link_element(chan_element);
     if (link_element) {
       link_text = link_element.getAttribute('href');
     }
   } else {
     link_element =
-        find_child_element(channel_element, element_is_link_without_href);
+        find_child_element(chan_element, element_is_link_without_href);
     if (link_element) {
       link_text = link_element.textContent;
     } else {
       link_element =
-          find_child_element(channel_element, element_is_link_with_href);
+          find_child_element(chan_element, element_is_link_with_href);
       if (link_element) {
         link_text = link_element.getAttribute('href');
       }
@@ -261,10 +264,10 @@ function find_entry_author(entry_element) {
 }
 
 function find_entry_link(entry_element) {
-  const document_element = entry_element.ownerDocument.documentElement;
-  const document_element_name = element_get_local_name(document_element);
+  const doc_element = entry_element.ownerDocument.documentElement;
+  const doc_element_name = element_get_local_name(doc_element);
   let link_text;
-  if (document_element_name === 'feed') {
+  if (doc_element_name === 'feed') {
     let link = find_child_element(entry_element, element_is_link_rel_alt);
     link = link || find_child_element(entry_element, element_is_link_rel_self);
     link = link || find_child_element(entry_element, element_is_link_with_href);
@@ -277,10 +280,10 @@ function find_entry_link(entry_element) {
 }
 
 function find_entry_date(entry_element) {
-  const document_element = entry_element.ownerDocument.documentElement;
-  const document_element_name = element_get_local_name(document_element);
+  const doc_element = entry_element.ownerDocument.documentElement;
+  const doc_element_name = element_get_local_name(doc_element);
   let date_string;
-  if (document_element_name === 'feed') {
+  if (doc_element_name === 'feed') {
     date_string = find_child_element_text(entry_element, 'published') ||
         find_child_element_text(entry_element, 'updated');
   } else {
@@ -306,10 +309,10 @@ function find_entry_date(entry_element) {
 // any situation?
 
 function find_entry_content(entry_element) {
-  const document_element = entry_element.ownerDocument.documentElement;
-  const document_element_name = element_get_local_name(document_element);
+  const doc_element = entry_element.ownerDocument.documentElement;
+  const doc_element_name = element_get_local_name(doc_element);
   let result;
-  if (document_element_name === 'feed') {
+  if (doc_element_name === 'feed') {
     const content = find_child_element_by_name(entry_element, 'content');
 
     if (!content) {
@@ -392,8 +395,9 @@ function find_child_element_by_name(parent, name) {
   }
 }
 
-function find_child_element_text(parentElement, element_name) {
-  const child_element = find_child_element_by_name(parentElement, element_name);
+function find_child_element_text(parent_element, element_name) {
+  const child_element =
+      find_child_element_by_name(parent_element, element_name);
   if (child_element) {
     const text = child_element.textContent;
     if (text) {
