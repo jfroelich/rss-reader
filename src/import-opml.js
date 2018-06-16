@@ -6,8 +6,8 @@ import {subscribe} from '/src/subscribe.js';
 export async function import_opml(
     rconn, iconn, channel, files, fetch_timeout, skip_icon_lookup) {
   const read_results = await read_files(files);
-  const urls = flatten_file_urls(read_results);
-  const unique_urls = dedup_urls(urls);
+  let urls = flatten_file_urls(read_results);
+  urls = dedup_urls(urls);
   return subscribe_all(
       rconn, iconn, channel, fetch_timeout, skip_icon_lookup, urls);
 }
