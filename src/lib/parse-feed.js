@@ -1,4 +1,4 @@
-import {decode_entities} from '/src/lib/html/decode-entities.js';
+import '/third-party/he.js';
 
 // The parse_feed function accepts a string as input. The string should be the
 // full text of an xml file. The xml is parsed into a Document object, and then
@@ -311,7 +311,8 @@ function find_entry_content(entry_element) {
     for (let node of nodes) {
       if (node.nodeType === Node.CDATA_SECTION_NODE) {
         let node_value = node.nodeValue;
-        node_value = decode_entities(node_value);
+        const is_attr_value = false;
+        node_value = decode_entities(node_value, is_attr_value);
         texts.push(node_value);
       } else if (node.nodeType === Node.TEXT_NODE) {
         const node_text = node.textContent;
@@ -391,31 +392,31 @@ function find_child_element_text(parentElement, element_name) {
   }
 }
 
-
-// get-local-name notes
 // One of the counter-intuitive things about the Document object is that it
 // secretly holds a flag for whether the document is xml or html. Certain
 // Document method behavior changes based on this private flag. The flag is not
-// exposed.
-
-// One of the behaviors that changes is how node names are produced. In
+// exposed. One of the behaviors that changes is how node names are produced. In
 // xml-flagged documents, element.localName is case-sensitive. This function
-// exists so that it can normalize the name to lowercase.
-
-// I've chosen lowercase arbitrarily over uppercase. I simply need a canonical
-// form for element names.
-
+// exists so that it can normalize the name to lowercase. I've chosen lowercase
+// arbitrarily over uppercase. I simply need a canonical form for element names.
 // This function largely exists to expose this subtlety in a very clear manner,
 // to highlight how fundamental this knowledge is to properly processing parsed
 // xml. It is quite unfortunate that it is not clear on its face from the
 // documentation. It is also surprising that behavior changes based on a private
 // flag. So this is trying to abstract away the surprise by making the
 // non-simple logic very clear. There is a required overhead to get the name of
-// an element. I think of this as a design flaw.
-
-// This uses local name to avoid dealing with qualified names.
-
-
+// an element. I think of this as a design flaw. This uses local name to avoid
+// dealing with qualified names.
 function element_get_local_name(element) {
   return element.localName.toLowerCase();
+}
+
+// Replaces html entities. Relies on third-party library. Exported just for
+// testing purposes.
+// @param value {DOMString} the value to decode
+// @param is_attr_value {Boolean} true if value comes from element attribute
+// @return {String} the decoded value
+export function decode_entities(value, is_attr_value = false) {
+  const decode_options = {strict: false, isAttributeValue: is_attr_value};
+  return he.decode(value, decode_options);
 }

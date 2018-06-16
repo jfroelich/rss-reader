@@ -338,7 +338,12 @@
 			}
 		}
 	} else { // in Rhino or a web browser
-		root.he = he;
+		//root.he = he;
+
+		// MODIFICATION
+		// root is undefined for some reason when imported as module so I
+		// just write to window. I don't care about browser.
+		window.he = he;
 	}
 
 }(this));
