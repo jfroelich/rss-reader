@@ -108,7 +108,7 @@ function file_is_opml(file) {
 }
 
 function file_read_text(file) {
-  return new Promise(function executor(resolve, reject) {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsText(file);
     reader.onload = _ => resolve(reader.result);
