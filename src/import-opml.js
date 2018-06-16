@@ -75,7 +75,7 @@ function dedup_urls(urls) {
 // Searches the nodes of the document for feed urls. Returns an array of URL
 // objects. The array is always defined even when no urls found.
 function find_feed_urls(document) {
-  const elements = document.querySelectorAll('opml > body > outline');
+  const elements = document.querySelectorAll('opml > body > outline[type]');
   const type_pattern = /^\s*(rss|rdf|feed)\s*$/i;
   const urls = [];
   for (const element of elements) {
