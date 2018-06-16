@@ -96,10 +96,10 @@ export function delete_feed(conn, channel, feed_id, reason) {
 export function get_entries(conn, mode = 'all', offset = 0, limit = 0) {
   return new Promise((resolve, reject) => {
     assert(
-        offset === null || typeof offset === 'undefined' ||
+        offset === null || typeof offset === 'undefined' || offset === NaN ||
         (Number.isInteger(offset) && offset >= 0));
     assert(
-        limit === null || typeof limit === 'undefined' ||
+        limit === null || typeof limit === 'undefined' || limit === NaN ||
         (Number.isInteger(limit) && limit >= 0));
 
     const entries = [];
