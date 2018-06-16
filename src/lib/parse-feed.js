@@ -303,11 +303,6 @@ function find_entry_date(entry_element) {
   return entry_date;
 }
 
-
-// NOTE: So I think I handle cdata content correctly, but note the issue with
-// title still having raw entities. Or, rather, should content be not encoded in
-// any situation?
-
 function find_entry_content(entry_element) {
   const doc_element = entry_element.ownerDocument.documentElement;
   const doc_element_name = element_get_local_name(doc_element);
