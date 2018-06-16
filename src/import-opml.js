@@ -73,29 +73,30 @@ function dedup_urls(urls) {
 }
 
 // Searches the nodes of the document for feed urls. Returns an array of URL
-// objects (not strings). Never returns undefined.
+// objects. The array is always defined even when no urls found.
 function find_feed_urls(document) {
-  // Using the descendant selector to try and be somewhat strict here. Really
-  // the strictness does not matter too much but I want to use some semblance of
-  // the ideal approach without going as far as explicit tree walking.
   const elements = document.querySelectorAll('opml > body > outline');
-
   const type_pattern = /^\s*(rss|rdf|feed)\s*$/i;
   const urls = [];
   for (const element of elements) {
     const type = element.getAttribute('type');
     if (type_pattern.test(type)) {
-      const url_string = element.getAttribute('xmlUrl');
-      if (url_string) {
-        try {
-          urls.push(new URL(url_string));
-        } catch (error) {
-        }
+      const url = parse_url_noexcept(element.getAttribute('xmlUrl'));
+      if (url) {
+        urls.push(url);
       }
     }
   }
-
   return urls;
+}
+
+function parse_url_noexcept(url_string) {
+  if (url_string) {
+    try {
+      return new URL(url_string);
+    } catch (error) {
+    }
+  }
 }
 
 function file_is_opml(file) {
