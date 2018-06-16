@@ -55,8 +55,8 @@ export async function fetch_feed(
     db.set_feed_description(feed, parsed_feed.description);
   }
 
-  if (parsed_feed.datePublished) {
-    db.set_feed_date_published(feed, parsed_feed.datePublished);
+  if (parsed_feed.date_published) {
+    db.set_feed_date_published(feed, parsed_feed.date_published);
   } else {
     db.set_feed_date_published(feed, new Date());
   }

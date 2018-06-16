@@ -54,7 +54,7 @@ function unmarshall_xml(document, skip_entries, resolve_entry_urls) {
   feed.title = find_feed_title(channel_element);
   feed.description = find_feed_description(document, channel_element);
   feed.link = find_feed_link(channel_element);
-  feed.datePublished = find_feed_date(channel_element);
+  feed.date_published = find_feed_date(channel_element);
 
   if (skip_entries) {
     feed.entries = [];
