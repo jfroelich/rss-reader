@@ -24,7 +24,7 @@ export async function slide_onclick(event) {
     return;
   }
 
-  open_tab(url_string);
+  chrome.tabs.create({active: true, url: url_string});
 
   const clicked_slide = anchor.parentNode.closest('slide');
   if (!clicked_slide) {
@@ -47,8 +47,4 @@ export async function slide_onclick(event) {
   // promise.
   await mark_slide_read_start(conn, clicked_slide);
   conn.close();
-}
-
-function open_tab(url_string) {
-  chrome.tabs.create({active: true, url: url_string});
 }
