@@ -1,50 +1,42 @@
-import {open_db} from '/src/db.js';
+import * as db from '/src/db.js';
 import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';
 import {get_current_slide} from '/src/slideshow-page/slideshow-state.js';
 
 export async function slide_onclick(event) {
+  // Only intercept left clicks
   const LEFT_MOUSE_BUTTON_CODE = 1;
   if (event.which !== LEFT_MOUSE_BUTTON_CODE) {
     return true;
   }
 
+  // Only intercept clicks on or within an anchor element
   const anchor = event.target.closest('a');
   if (!anchor) {
     return true;
   }
 
-  if (!anchor.hasAttribute('href')) {
+  // Only intercept if the anchor has an href
+  const url_string = anchor.getAttribute('href');
+  if (!url_string) {
     return true;
   }
 
+  // Begin intercept. Cancel the normal click reaction
   event.preventDefault();
 
-  const url_string = anchor.getAttribute('href');
-  if (!url_string) {
-    return;
-  }
-
+  // Open the link in a new tab via a technique that Chrome tolerates
   chrome.tabs.create({active: true, url: url_string});
 
-  const clicked_slide = anchor.parentNode.closest('slide');
-  if (!clicked_slide) {
-    return;
+  // Find the clicked slide. Start from parent because we know that the anchor
+  // itself is not a slide
+  const slide = anchor.parentNode.closest('slide');
+
+  // Mark the clicked slide as read. While these conditions are redundant with
+  // the checks within mark_slide_read_start, it avoids opening the connection.
+  if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
+      !slide.hasAttribute('read-pending')) {
+    const conn = await db.open_db();
+    await mark_slide_read_start(conn, slide);
+    conn.close();
   }
-
-  const current_slide = get_current_slide();
-
-  if (clicked_slide.hasAttribute('stale')) {
-    return false;
-  }
-
-  const conn = await open_db();
-
-  // There is no need to await here for logical purposes because this is a click
-  // listener where it is irrelevant when this ever completes, and because an
-  // IDBDatabase instance can be closed while transactions are pending. However,
-  // awaiting here is an eloquent and terse style of ensuring an error is
-  // explicitly forwarded to the console instead of being muted within a
-  // promise.
-  await mark_slide_read_start(conn, clicked_slide);
-  conn.close();
 }
