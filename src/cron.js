@@ -100,14 +100,11 @@ export function remove_legacy_alarms(previous_version) {
   // See https://developer.chrome.com/extensions/alarms#method-clear
   function onclear(alarm_name, was_cleared) {
     if (was_cleared) {
-      console.debug('Alarm removed:', alarm_name);
-    } else {
-      console.debug('Failed to clear alarm, alarm not found:', alarm_name);
+      console.debug('Removed alarm', alarm_name);
     }
   }
 
   for (const alarm_name of legacy_alarm_names) {
-    console.debug('Removing legacy alarm', alarm_name);
     chrome.alarms.clear(alarm_name, onclear.bind(null, alarm_name));
   }
 }
