@@ -33,13 +33,6 @@ const fonts = [
 export async function oninstalled(event) {
   console.debug('Received install event', JSON.stringify(event));
 
-  // NOTE: this has to be here, at least during development stages, otherwise
-  // reloading without restarting Chrome somehow does not retain the binding
-  // that occured on startup.
-  console.debug(
-      'Registering browser action click listener in install listener');
-  chrome.browserAction.onClicked.addListener(open_view);
-
   console.debug('Refreshing badge from install listener');
   badge.refresh_badge(location.pathname);
 
