@@ -6,11 +6,6 @@ import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';
 import {remove_slide} from '/src/slideshow-page/remove-slide.js';
 import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
 
-// TODO: perhaps instead of exiting if there is no current slide, I only try and
-// mark a slide read if the current slide exists, and continue and maybe append,
-// this will enable transition away from no-slides-loaded screen via next-slide
-// shortcut.
-
 export async function show_next_slide() {
   const current_slide = slideshow_state.get_current_slide();
   // There may not be a current slide (this is routine)
@@ -121,6 +116,10 @@ function transition_next_slide() {
 
   slideshow_state.increment_active_transition_count();
   current.style.left = '-100%';  // hide old
-  next_slide.style.left = '0';   // show new
+
+  // TEMP: testing correct transition count
+  slideshow_state.increment_active_transition_count();
+
+  next_slide.style.left = '0';  // show new
   slideshow_state.set_current_slide(next_slide);
 }

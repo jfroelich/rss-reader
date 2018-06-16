@@ -24,16 +24,18 @@ function onkeydown(event) {
     case N:
     case SPACE: {
       event.preventDefault();
-      cancelIdleCallback(timer_id);
-      timer_id = requestIdleCallback(show_next_slide);
+      // cancelIdleCallback(timer_id);
+      // timer_id = requestIdleCallback(show_next_slide);
+      show_next_slide();
       break;
     }
 
     case LEFT:
     case P: {
       event.preventDefault();
-      cancelIdleCallback(timer_id);
-      timer_id = requestIdleCallback(prev);
+      // cancelIdleCallback(timer_id);
+      // timer_id = requestIdleCallback(prev);
+      prev();
       break;
     }
 
@@ -68,6 +70,7 @@ function is_edit_intent(event) {
 
 function prev() {
   if (slideshow_state.get_active_transition_count() > 0) {
+    console.debug('Canceling previous navigation, too many transitions');
     return;
   }
 
@@ -83,7 +86,10 @@ function prev() {
 
   slideshow_state.increment_active_transition_count();
   slideshow_state.get_current_slide().style.left = '100%';
-  // active_transition_count++;
+
+  // TEMP: testing proper transition count
+  slideshow_state.increment_active_transition_count();
+
   previous_slide.style.left = '0';
   slideshow_state.set_current_slide(previous_slide);
 }
