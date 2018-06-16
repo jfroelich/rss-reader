@@ -1,5 +1,17 @@
 import '/third-party/he.js';
 
+// Represents a deserialized feed in memory. Note this format may not correspond
+// to the feed format in other modules (and does not care).
+export function feed_t() {
+  this.type = undefined;
+  this.title = undefined;
+  this.description = undefined;
+  this.link = undefined;
+  this.date_published = undefined;
+  this.entries = [];
+}
+
+
 // The parse_feed function accepts a string as input. The string should be the
 // full text of an xml file. The xml is parsed into a Document object, and then
 // the Document object is coerced into a basic JavaScript object. Feed
@@ -49,16 +61,14 @@ function unmarshall_xml(document, skip_entries, resolve_entry_urls) {
     throw new Error('Missing channel element');
   }
 
-  const feed = {};
+  const feed = new feed_t();
   feed.type = find_feed_type(document_element);
   feed.title = find_feed_title(channel_element);
   feed.description = find_feed_description(document, channel_element);
   feed.link = find_feed_link(channel_element);
   feed.date_published = find_feed_date(channel_element);
 
-  if (skip_entries) {
-    feed.entries = [];
-  } else {
+  if (!skip_entries) {
     const entry_elements = find_entry_elements(channel_element);
     feed.entries = entry_elements.map(create_entry);
 
