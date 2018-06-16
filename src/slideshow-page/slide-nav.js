@@ -22,8 +22,7 @@ export async function show_next_slide() {
   const slide_unread_count = count_unread_slides();
   let entries = [];
   if (slide_unread_count < 3) {
-    // TODO: cleanup this "|| 3" crap
-    const limit = localstorage.read_int('initial_entry_load_limit') || 3;
+    const limit = localstorage.read_int('initial_entry_load_limit');
     const mode = 'viewable';
     entries = await db.get_entries(conn, mode, slide_unread_count, limit);
   }
