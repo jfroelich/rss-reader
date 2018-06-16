@@ -1,23 +1,23 @@
 import {show_next_slide} from '/src/slideshow-page/show-next-slide.js';
 import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
 
-const LEFT = 37;
-const RIGHT = 39;
-const N = 78;
-const P = 80;
-const SPACE = 32;
-const DOWN = 40;
-const UP = 38;
-
 let timer_id = null;
 
-function onkeydown(event) {
+export function onkeydown(event) {
   const code = event.keyCode;
 
   if (is_edit_intent(event)) {
     console.debug('Ignoring key down while in input', event.target.localName);
     return;
   }
+
+  const LEFT = 37;
+  const RIGHT = 39;
+  const N = 78;
+  const P = 80;
+  const SPACE = 32;
+  const DOWN = 40;
+  const UP = 38;
 
   switch (code) {
     case RIGHT:
@@ -93,5 +93,3 @@ function prev() {
   previous_slide.style.left = '0';
   slideshow_state.set_current_slide(previous_slide);
 }
-
-window.addEventListener('keydown', onkeydown);
