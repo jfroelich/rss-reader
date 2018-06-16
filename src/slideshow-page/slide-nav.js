@@ -66,7 +66,16 @@ export async function show_next_slide() {
     }
   }
 
-  transition_next_slide();
+  if (!slideshow_state.get_active_transition_count()) {
+    const next_slide = current_slide.nextElementSibling;
+    if (next_slide) {
+      slideshow_state.increment_active_transition_count();
+      current_slide.style.left = '-100%';  // hide old
+      slideshow_state.increment_active_transition_count();
+      next_slide.style.left = '0';  // show new
+      slideshow_state.set_current_slide(next_slide);
+    }
+  }
 
   if (entries.length) {
     compact_slides();
@@ -97,31 +106,6 @@ function compact_slides() {
     remove_slide(first_slide);
     first_slide = container.firstElementChild;
   }
-}
-
-function transition_next_slide() {
-  if (slideshow_state.get_active_transition_count()) {
-    return;
-  }
-
-  const current = slideshow_state.get_current_slide();
-  if (!current) {
-    return;
-  }
-
-  const next_slide = current.nextElementSibling;
-  if (!next_slide) {
-    return;
-  }
-
-  slideshow_state.increment_active_transition_count();
-  current.style.left = '-100%';  // hide old
-
-  // TEMP: testing correct transition count
-  slideshow_state.increment_active_transition_count();
-
-  next_slide.style.left = '0';  // show new
-  slideshow_state.set_current_slide(next_slide);
 }
 
 export function show_prev_slide() {
