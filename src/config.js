@@ -9,6 +9,7 @@ export const inaccessible_content_descriptors = [
   {pattern: /productforums\.google\.com/i, reason: 'script-generated'},
   {pattern: /groups\.google\.com/i, reason: 'script-generated'},
   {pattern: /nytimes\.com$/i, reason: 'paywall'},
+  {pattern: /wsj\.com$/i, reason: 'paywall'},
   {pattern: /heraldsun\.com\.au$/i, reason: 'requires-cookies'},
   {pattern: /ripe\.net$/i, reason: 'requires-cookies'},
   {pattern: /foxnews.com$/i, reason: 'fake'}
