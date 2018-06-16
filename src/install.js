@@ -92,6 +92,10 @@ function init_localstorage(previousVersion) {
   s('db_version', 24);
   s('db_open_timeout', 500);
 
+  // The maximum number of additional entries that can be dynamically loaded
+  // during slideshow navigation
+  s('initial_entry_load_limit', 3);
+
   // App broadcast channel settings
   s('channel_name', 'reader');
 
