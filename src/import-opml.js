@@ -5,41 +5,53 @@ import {subscribe} from '/src/subscribe.js';
 // subscribe promise results.
 export async function import_opml(
     rconn, iconn, channel, files, fetch_timeout, skip_icon_lookup) {
-  // Read in all the feed urls into an array of arrays
-  const read_promises = [];
+  const read_results = await read_files(files);
+  const urls = flatten_file_urls(read_results);
+  const unique_urls = dedup_urls(urls);
+  return subscribe_all(
+      rconn, iconn, channel, fetch_timeout, skip_icon_lookup, urls);
+}
+
+// Read in all the feed urls from all of the files into an array of arrays.
+// Files are read and processed concurrently.
+function read_files(files) {
+  const promises = [];
   for (const file of files) {
     const promise = read_file_feeds(file);
     const catch_promise = promise.catch(console.warn);
-    read_promises.push(catch_promise);
+    promises.push(catch_promise);
   }
-  const read_results = await Promise.all(read_promises);
+  return Promise.all(promises);
+}
 
-  // Flatten the results into a single array and filter missing values
+// Flatten the results into a single array and filter missing values
+function flatten_file_urls(all_files_urls) {
   const urls = [];
-  for (const file_urls of read_results) {
-    if (file_urls) {
-      for (const url of file_urls) {
+  for (const per_file_urls of all_files_urls) {
+    if (per_file_urls) {
+      for (const url of per_file_urls) {
         if (url) {
           urls.push(url);
         }
       }
     }
   }
+  return urls;
+}
 
-  const unique_urls = dedup_urls(urls);
-
-  // Subscribe to all urls concurrently
-  const subscribe_promises = [];
+function subscribe_all(
+    rconn, iconn, channel, fetch_timeout, skip_icon_lookup, urls) {
+  const promises = [];
   const notify_per_subscribe = false;
-  for (const url of unique_urls) {
+  for (const url of urls) {
     const promise = subscribe(
         rconn, iconn, channel, url, fetch_timeout, notify_per_subscribe,
         skip_icon_lookup);
     const catch_promise = promise.catch(console.warn);
-    subscribe_promises.push(catch_promise);
+    promises.push(catch_promise);
   }
 
-  return Promise.all(subscribe_promises);
+  return Promise.all(promises);
 }
 
 // Returns a promise that resolves to an array of feed urls in the opml file.
