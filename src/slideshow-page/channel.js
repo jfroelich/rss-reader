@@ -9,7 +9,7 @@ import {is_current_slide} from '/src/slideshow-page/slideshow-state.js';
 
 let channel;
 
-export function init_channel() {
+export function init() {
   if (channel) {
     throw new Error('channel already initialized');
   }
