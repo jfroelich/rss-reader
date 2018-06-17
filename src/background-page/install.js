@@ -1,10 +1,10 @@
+import * as app from '/src/app/app.js';
 import * as badge from '/src/badge/badge.js';
 import * as localstorage from '/src/browser/localstorage.js';
 import * as color from '/src/color/color.js';
 import * as cron from '/src/cron/cron.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
-import {open_view} from '/src/open-view.js';
 
 const background_images = [
   'bgfons-paper_texture318.jpg', 'CCXXXXXXI_by_aqueous.jpg',

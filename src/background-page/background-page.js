@@ -1,9 +1,9 @@
 import '/src/cli/cli.js';
 
+import * as app from '/src/app/app.js';
 import {oninstalled} from '/src/background-page/install.js';
 import * as badge from '/src/badge/badge.js';
 import * as cron from '/src/cron/cron.js';
-import {open_view} from '/src/open-view.js';
 
 // Persists for the lifetime of the page. Will not prevent the page from
 // unloading.
@@ -54,4 +54,4 @@ chrome.runtime.onInstalled.addListener(oninstalled);
 // This must occur in module load scope. This is the only way to get it to
 // also work on background page reload. It works when only in startup and
 // install, but it doesn't then also work on page reload.
-chrome.browserAction.onClicked.addListener(open_view);
+chrome.browserAction.onClicked.addListener(app.open_view);

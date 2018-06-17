@@ -1,10 +1,9 @@
+import * as app from '/src/app/app.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
 import * as array from '/src/lang/array.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {url_did_change} from '/src/net/url-did-change.js';
-import {notify} from '/src/notify/notify.js';
-
 
 // Subscribe to a feed
 // @param rconn {IDBDatabase} an open feed database connection
@@ -61,7 +60,6 @@ export async function subscribe(
   return feed;
 }
 
-
 async function set_feed_favicon(conn, feed) {
   const url = favicon.create_lookup_url(feed);
   let doc = undefined;
@@ -73,11 +71,9 @@ function show_success_notification(feed) {
   const title = 'Subscribed!';
   const feed_title = feed.title || array.peek(feed.urls);
   const message = 'Subscribed to ' + feed_title;
-  notify(title, message, feed.faviconURLString);
+  app.show_notification(title, message, feed.faviconURLString);
 }
 
-// Returns a promise that resolves to whether a feed with the given url exists
-// in the database
 function feed_exists(conn, url) {
   const query_mode = 'url';
   const load_key_only = true;
