@@ -122,6 +122,7 @@ class MonitoredBroadcastChannel {
   postMessage(message) {
     console.debug(message);
     this.channel.postMessage(message);
+    this.message_count++;
   }
 
   close() {
