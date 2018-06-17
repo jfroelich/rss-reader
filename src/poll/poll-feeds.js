@@ -1,5 +1,5 @@
-import {get_feeds} from '/src/db/db.js';
-import {notify} from '/src/notify/notify.js';
+import * as app from '/src/app/notify.js';
+import * as db from '/src/db/db.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 
 const chan_stub = {
@@ -22,7 +22,7 @@ const default_options = {
 // Checks for new content
 export async function poll_feeds(
     rconn, iconn, channel = chan_stub, options = {}) {
-  const feeds = await get_feeds(rconn, 'active', false);
+  const feeds = await db.get_feeds(rconn, 'active', false);
   console.debug('Loaded %d active feeds', feeds.length);
   const pfo = Object.assign({}, default_options, options);
   const pfp = poll_feed.bind(null, rconn, iconn, channel, pfo);
@@ -44,7 +44,7 @@ function show_poll_notification(num_entries_added) {
 
   const title = 'Added articles';
   const message = 'Added articles';
-  notify(title, message);
+  app.show_notification(title, message);
 }
 
 function noop() {}

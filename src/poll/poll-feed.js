@@ -1,8 +1,8 @@
+import * as app from '/src/app/notify.js';
 import * as db from '/src/db/db.js';
 import * as array from '/src/lang/array.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {OfflineError, TimeoutError} from '/src/net/fetch2.js';
-import {notify} from '/src/notify/notify.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
 
 // Check if a remote feed has new data and store it in the database
@@ -88,7 +88,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
     const title = 'Added articles';
     const message =
         'Added ' + count + ' articles for feed ' + merged_feed.title;
-    notify(title, message);
+    app.show_notification(title, message);
   }
 
   return count;
