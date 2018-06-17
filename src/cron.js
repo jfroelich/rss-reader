@@ -10,7 +10,7 @@ export function register_listener() {
 
 async function alarm_listener(alarm) {
   console.debug('Alarm wokeup:', alarm.name);
-  localStorage.LAST_ALARM = alarm.name;
+  localStorage.last_alarm = alarm.name;
 
   if (alarm.name === 'archive') {
     const conn = await db.open_db();
@@ -102,15 +102,14 @@ export function create_alarms() {
 export function remove_legacy_alarms(previous_version) {
   const legacy_alarm_names =
       ['test-install-binding-alarms', 'db-remove-orphaned-entries'];
-
   // See https://developer.chrome.com/extensions/alarms#method-clear
-  function onclear(alarm_name, was_cleared) {
-    if (was_cleared) {
-      console.debug('Removed alarm', alarm_name);
-    }
-  }
-
   for (const alarm_name of legacy_alarm_names) {
-    chrome.alarms.clear(alarm_name, onclear.bind(null, alarm_name));
+    chrome.alarms.clear(alarm_name, on_remove_alarm.bind(null, alarm_name));
+  }
+}
+
+function on_remove_alarm(alarm_name, was_cleared) {
+  if (was_cleared) {
+    console.log('Removed alarm', alarm_name);
   }
 }
