@@ -76,7 +76,7 @@ export async function remove_orphaned_entries(conn, channel) {
 // hidden magic property. Note this uses multiple write transactions. That means
 // that a later failure does not indicate an earlier step failed.
 // TODO: use a single transaction
-export function remove_untyped_objects(conn, channel) {
+export async function remove_untyped_objects(conn, channel) {
   const feeds = db.get_feeds(conn);
   const delete_feed_promises = [];
   for (const feed of feeds) {
