@@ -21,8 +21,8 @@ async function alarm_listener(alarm) {
   } else if (alarm.name === 'poll') {
     if (localStorage.ONLY_POLL_IF_IDLE) {
       // TODO: this value should come from local storage
-      const idle_period_secs = 30;
-      const state = await query_idle_state(idle_period_secs);
+      const idle_secs = 30;
+      const state = await query_idle_state(idle_secs);
       if (state !== 'locked' || state !== 'idle') {
         return;
       }
@@ -77,10 +77,8 @@ async function alarm_listener(alarm) {
   }
 }
 
-function query_idle_state(idle_period_secs) {
-  return new Promise(function executor(resolve, reject) {
-    chrome.idle.queryState(idle_period_secs, resolve);
-  });
+function query_idle_state(idle_secs) {
+  return new Promise(res => chrome.idle.queryState(idle_secs, res));
 }
 
 export function create_alarms() {
