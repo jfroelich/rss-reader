@@ -1,14 +1,14 @@
 import {inaccessible_content_descriptors} from '/src/config.js';
 import * as db from '/src/db/db.js';
-import * as favicon from '/src/favicon/favicon.js';
-import {fetch_html} from '/src/net/fetch-html.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
+import * as favicon from '/src/favicon/favicon.js';
 import {parse_html} from '/src/html/parse-html.js';
 import * as array from '/src/lang/array.js';
+import {fetch_html} from '/src/net/fetch-html.js';
 import * as sniff from '/src/net/sniff.js';
 import {url_did_change} from '/src/net/url-did-change.js';
-import {rewrite_url} from '/src/rewrite-url.js';
-import {sanitize_document} from '/src/sanitize-document.js';
+import {sanitize_document} from '/src/poll/sanitize-document.js';
+import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
 
 // Processes an entry and possibly adds it to the database. The full-text html
 // of the entry is fetched and stored as `entry.content`.

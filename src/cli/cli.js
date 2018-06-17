@@ -5,7 +5,7 @@ import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
-import {subscribe} from '/src/subscribe.js';
+import {subscribe} from '/src/subscribe/subscribe.js';
 
 // The command-line-interface (CLI) module creates a cli object within the
 // global window object in order to make certain app functionality accessible

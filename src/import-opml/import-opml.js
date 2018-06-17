@@ -1,4 +1,4 @@
-import {subscribe} from '/src/subscribe.js';
+import {subscribe} from '/src/subscribe/subscribe.js';
 
 // Concurrently reads in the files from the file list and subscribes to the
 // feeds in all of the files. Returns a promise that resolves to an array of

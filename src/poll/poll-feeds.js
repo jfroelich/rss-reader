@@ -1,5 +1,5 @@
 import {get_feeds} from '/src/db/db.js';
-import {notify} from '/src/notify.js';
+import {notify} from '/src/notify/notify.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 
 const chan_stub = {
