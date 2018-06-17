@@ -1,8 +1,8 @@
-import * as db from '/src/db.js';
-import * as favicon from '/src/favicon.js';
-import {import_opml} from '/src/import-opml.js';
+import * as db from '/src/db/db.js';
+import * as favicon from '/src/favicon/favicon.js';
+import {import_opml} from '/src/import-opml/import-opml.js';
 import * as array from '/src/lang/array.js';
-import * as localstorage from '/src/localstorage.js';
+import * as localstorage from '/src/browser/localstorage.js';
 import {create_opml_document} from '/src/opml-document.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 

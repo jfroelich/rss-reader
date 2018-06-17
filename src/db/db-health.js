@@ -1,4 +1,4 @@
-import * as db from '/src/db.js';
+import * as db from '/src/db/db.js';
 
 // Removes entries missing urls from the database
 // TODO: test

@@ -1,7 +1,7 @@
-import {fetch_html} from '/src/fetch-html.js';
+import {fetch_html} from '/src/net/fetch-html.js';
 import {parse_html} from '/src/html/parse-html.js';
 import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
-import * as mime from '/src/mime.js';
+import * as mime from '/src/net/mime.js';
 import {fetch2} from '/src/net/fetch2.js';
 import {url_did_change} from '/src/net/url-did-change.js';
 

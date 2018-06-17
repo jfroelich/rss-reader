@@ -1,4 +1,4 @@
-import * as db from '/src/db.js';
+import * as db from '/src/db/db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import {subscribe} from '/src/subscribe.js';
 import {assert} from '/src/tests/assert.js';

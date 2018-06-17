@@ -1,4 +1,4 @@
-import * as db from '/src/db.js';
+import * as db from '/src/db/db.js';
 import {sizeof} from '/src/lang/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;

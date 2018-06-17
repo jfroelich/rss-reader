@@ -1,7 +1,8 @@
-import '/src/cli.js';
-import * as badge from '/src/badge.js';
-import * as cron from '/src/cron.js';
-import {oninstalled} from '/src/install.js';
+import '/src/cli/cli.js';
+
+import {oninstalled} from '/src/background-page/install.js';
+import * as badge from '/src/badge/badge.js';
+import * as cron from '/src/cron/cron.js';
 import {open_view} from '/src/open-view.js';
 
 // Persists for the lifetime of the page. Will not prevent the page from

@@ -1,8 +1,8 @@
-import '/src/cli.js';
+import '/src/cli/cli.js';
 import '/src/slideshow-page/main-menu.js';
 import '/src/slideshow-page/left-panel.js';
 
-import * as db from '/src/db.js';
+import * as db from '/src/db/db.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import * as channel from '/src/slideshow-page/channel.js';
 import {feeds_container_append_feed} from '/src/slideshow-page/feeds-container.js';

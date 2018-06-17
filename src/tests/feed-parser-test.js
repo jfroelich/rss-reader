@@ -1,4 +1,4 @@
-import {parse_feed} from '/src/parse-feed.js';
+import {parse_feed} from '/src/parse-feed/parse-feed.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

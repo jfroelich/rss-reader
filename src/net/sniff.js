@@ -1,5 +1,5 @@
 import {is_alphanumeric} from '/src/lang/is-alphanumeric.js';
-import * as mime from '/src/mime.js';
+import * as mime from '/src/net/mime.js';
 
 // `classify` classifies a resource as binary, text, or unknown. The function
 // returns unknown when it is not confident in the results. The function guesses

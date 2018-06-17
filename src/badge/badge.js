@@ -1,4 +1,4 @@
-import * as db from '/src/db.js';
+import * as db from '/src/db/db.js';
 
 // Refreshes the unread count displayed in Chrome's toolbar
 //

@@ -1,12 +1,11 @@
-import * as badge from '/src/badge.js';
-import {create_alarms, remove_legacy_alarms} from '/src/cron.js';
-import * as db from '/src/db.js';
-import * as favicon from '/src/favicon.js';
-import * as color from '/src/color.js';
-import * as localstorage from '/src/localstorage.js';
+import * as badge from '/src/badge/badge.js';
+import * as localstorage from '/src/browser/localstorage.js';
+import * as color from '/src/color/color.js';
+import * as cron from '/src/cron/cron.js';
+import * as db from '/src/db/db.js';
+import * as favicon from '/src/favicon/favicon.js';
 import {open_view} from '/src/open-view.js';
 
-// The default set of background images for slides
 const background_images = [
   'bgfons-paper_texture318.jpg', 'CCXXXXXXI_by_aqueous.jpg',
   'paper-backgrounds-vintage-white.jpg', 'pickering-texturetastic-gray.png',
@@ -20,8 +19,6 @@ const background_images = [
   'thomas-zucx-noise-lines.png'
 ];
 
-// The default set of fonts the user can select from to customize the display of
-// text in slides
 const fonts = [
   'ArchivoNarrow-Regular', 'Arial', 'Calibri', 'Cambria', 'CartoGothicStd',
   'Edward Tufte Roman', 'Fanwood', 'Georgia', 'League Mono Regular',
@@ -29,7 +26,6 @@ const fonts = [
   'PathwayGothicOne', 'PlayfairDisplaySC', 'Roboto Regular'
 ];
 
-// Handle an install event
 export async function oninstalled(event) {
   console.debug('Received install event', JSON.stringify(event));
 
@@ -50,18 +46,17 @@ export async function oninstalled(event) {
   conn.close();
 
   console.debug('Removing legacy alarms from install listener');
-  remove_legacy_alarms(event.previousVersion);
+  cron.remove_legacy_alarms(event.previousVersion);
 
   // Bind alarms
   console.debug('Registering alarms from install listener');
-  create_alarms();
+  cron.create_alarms();
 }
 
 function init_localstorage(previousVersion) {
-  remove_legacy_localstorage_keys();
-
-  // shorthand
   const s = localstorage.set_if_undef;
+
+  remove_legacy_localstorage_keys();
 
   // The default background color used by the low-contrast pass
   s('sanitize_document_low_contrast_default_matte', color.WHITE);
@@ -121,7 +116,6 @@ function init_localstorage(previousVersion) {
   // localStorage.JUSTIFY_TEXT
   // localStorage.BODY_LINE_HEIGHT
   // localStorage.COLUMN_COUNT
-
 
   // Background images
   // NOTE: from now on, if images change, this has to also remove/update/etc

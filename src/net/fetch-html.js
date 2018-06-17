@@ -1,4 +1,4 @@
-import {is_allowed_request} from '/src/fetch-policy.js';
+import {is_allowed_request} from '/src/net/fetch-policy.js';
 import {fetch2} from '/src/net/fetch2.js';
 
 export function fetch_html(url, timeout) {

@@ -1,6 +1,6 @@
-import {archive_entries} from '/src/archive.js';
+import {archive_entries} from '/src/archive/archive.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
-import {open_db} from '/src/db.js';
+import {open_db} from '/src/db/db.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

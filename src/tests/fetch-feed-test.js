@@ -1,4 +1,4 @@
-import {fetch_feed} from '/src/fetch-feed.js';
+import {fetch_feed} from '/src/net/fetch-feed.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

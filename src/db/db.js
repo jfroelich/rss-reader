@@ -5,7 +5,7 @@ import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
 import {filter_unprintable_characters} from '/src/lang/filter-unprintable-characters.js';
-import * as localstorage from '/src/localstorage.js';
+import * as localstorage from '/src/browser/localstorage.js';
 
 // indexedDB does not support storing Function objects, because Function objects
 // are not serializable. Therefore instanceof and typeof are not usable for

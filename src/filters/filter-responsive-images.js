@@ -1,4 +1,4 @@
-import {parse_srcset} from '/src/dom/parse-srcset.js';
+import {parse_srcset} from '/src/dom/srcset/parse-srcset.js';
 
 // Transforms responsive images in document content. An image is 'responsive' if
 // it uses a srcset instead of a src, such that the actual image used is derived

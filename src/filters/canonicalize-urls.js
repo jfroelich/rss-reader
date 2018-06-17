@@ -1,5 +1,5 @@
-import {parse_srcset} from '/src/dom/parse-srcset.js';
-import {serialize_srcset} from '/src/dom/serialize-srcset.js';
+import {parse_srcset} from '/src/dom/srcset/parse-srcset.js';
+import {serialize_srcset} from '/src/dom/srcset/serialize-srcset.js';
 
 const element_url_attribute_map = {
   a: 'href',

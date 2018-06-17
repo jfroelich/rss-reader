@@ -1,7 +1,7 @@
-import * as color from '/src/color.js';
-import * as css_color from '/src/dom/css-color.js';
+import * as localstorage from '/src/browser/localstorage.js';
+import * as color from '/src/color/color.js';
+import * as css_color from '/src/dom/css-color/css-color.js';
 import * as ccf from '/src/filters/color-contrast-filter.js';
-import * as localstorage from '/src/localstorage.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

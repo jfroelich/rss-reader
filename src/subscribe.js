@@ -1,9 +1,10 @@
-import * as db from '/src/db.js';
-import * as favicon from '/src/favicon.js';
-import {fetch_feed} from '/src/fetch-feed.js';
+import * as db from '/src/db/db.js';
+import * as favicon from '/src/favicon/favicon.js';
 import * as array from '/src/lang/array.js';
+import {fetch_feed} from '/src/net/fetch-feed.js';
 import {url_did_change} from '/src/net/url-did-change.js';
 import {notify} from '/src/notify.js';
+
 
 // Subscribe to a feed
 // @param rconn {IDBDatabase} an open feed database connection

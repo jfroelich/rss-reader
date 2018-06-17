@@ -1,4 +1,4 @@
-import {is_allowed_request} from '/src/fetch-policy.js';
+import {is_allowed_request} from '/src/net/fetch-policy.js';
 import {filter_boilerplate} from '/src/filters/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/filters/canonicalize-urls.js';
 import {condense_tagnames} from '/src/filters/condense-tagnames.js';
@@ -38,7 +38,7 @@ import {filter_unknown_attrs} from '/src/filters/filter-unknown-attrs.js';
 import {lonestar_filter} from '/src/filters/lonestar-filter.js';
 import {set_image_sizes} from '/src/filters/set-image-sizes.js';
 import {trim_document} from '/src/filters/trim-document.js';
-import * as localstorage from '/src/localstorage.js';
+import * as localstorage from '/src/browser/localstorage.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense content

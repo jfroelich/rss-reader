@@ -1,7 +1,7 @@
-import {archive_entries} from '/src/archive.js';
-import * as dbhealth from '/src/db-health.js';
-import * as db from '/src/db.js';
-import * as favicon from '/src/favicon.js';
+import {archive_entries} from '/src/archive/archive.js';
+import * as db from '/src/db/db.js';
+import * as dbhealth from '/src/db/db-health.js';
+import * as favicon from '/src/favicon/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 
 export function register_listener() {

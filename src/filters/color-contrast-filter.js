@@ -1,5 +1,5 @@
-import * as color from '/src/color.js';
-import * as css_color from '/src/dom/css-color.js';
+import * as color from '/src/color/color.js';
+import * as css_color from '/src/dom/css-color/css-color.js';
 
 // Elements with contrast ratios below this threshold are not perceptible. I use
 // a default value that is lower than the recommendation of 4.5, but

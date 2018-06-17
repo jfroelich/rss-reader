@@ -1,4 +1,4 @@
-import {fetch_html} from '/src/fetch-html.js';
+import {fetch_html} from '/src/net/fetch-html.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

@@ -1,4 +1,4 @@
-import {parse_content_type} from '/src/mime.js';
+import * as mime from '/src/net/mime.js';
 
 const default_options = {
   credentials: 'omit',
@@ -71,7 +71,7 @@ export async function fetch2(url, options = {}, is_allowed_request) {
 
   if (types && types.length) {
     const content_type = response.headers.get('Content-Type');
-    const mime_type = parse_content_type(content_type);
+    const mime_type = mime.parse_content_type(content_type);
     if (!types.includes(mime_type)) {
       throw new AcceptError(
           'Unacceptable mime type ' + mime_type + ' for url ' + url.href);
