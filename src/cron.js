@@ -91,7 +91,7 @@ export function create_alarms() {
   chrome.alarms.create(
       'remove-entries-missing-urls', {periodInMinutes: 60 * 24 * 7});
   chrome.alarms.create(
-      'db-remove-orphaned-entries', {periodInMinutes: 60 * 24 * 7});
+      'remove-orphaned-entries', {periodInMinutes: 60 * 24 * 7});
   chrome.alarms.create(
       'remove-untyped-objects', {periodInMinutes: 60 * 24 * 7});
   chrome.alarms.create(
@@ -100,7 +100,8 @@ export function create_alarms() {
 }
 
 export function remove_legacy_alarms(previous_version) {
-  const legacy_alarm_names = ['test-install-binding-alarms'];
+  const legacy_alarm_names =
+      ['test-install-binding-alarms', 'db-remove-orphaned-entries'];
 
   // See https://developer.chrome.com/extensions/alarms#method-clear
   function onclear(alarm_name, was_cleared) {
