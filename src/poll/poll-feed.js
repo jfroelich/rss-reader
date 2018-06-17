@@ -5,7 +5,6 @@ import {fetch_feed} from '/src/net/fetch-feed.js';
 import {OfflineError, TimeoutError} from '/src/net/fetch2.js';
 import {poll_entry} from '/src/poll/poll-entry.js';
 
-
 // Check if a remote feed has new data and store it in the database
 export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   const ignore_recency_check = options.ignore_recency_check;

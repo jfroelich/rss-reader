@@ -2,7 +2,6 @@ import * as app from '/src/app/app.js';
 import * as db from '/src/db/db.js';
 import {poll_feed} from '/src/poll/poll-feed.js';
 
-
 const chan_stub = {
   name: 'channel-stub',
   postMessage: noop,
