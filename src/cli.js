@@ -112,7 +112,6 @@ async function cli_lookup_favicon(url_string, cached) {
 
 // A proxy for a BroadcastChannel that logs each message to the console and
 // keeps a count of sent messages.
-// TODO: is there where an ES6 Proxy would be appropriate? For better or worse?
 class MonitoredBroadcastChannel {
   constructor(name) {
     this.channel = new BroadcastChannel(name);
@@ -149,13 +148,21 @@ function cli_create_alarms() {
   console.debug('Created alarms');
 }
 
+function cli_clear_icons() {
+  return favicon.clear();
+}
+
+function cli_compact_icons() {
+  return favicon.compact();
+}
+
 const cli = {
   create_alarms: cli_create_alarms,
   clear_alarms: cli_clear_alarms,
   print_alarms: cli_print_alarms,
   archive: cli_archive_entries,
-  clear_icons: favicon.clear,
-  compact_icons: favicon.compact,
+  clear_icons: cli_clear_icons,
+  compact_icons: cli_compact_icons,
   remove_orphaned_entries: cli_remove_orphans,
   remove_lost_entries: cli_remove_lost_entries,
   lookup_favicon: cli_lookup_favicon,
