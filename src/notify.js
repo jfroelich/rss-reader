@@ -24,7 +24,7 @@ export function notify(
   notification.addEventListener('click', click_handler);
 }
 
-function click_handler(event) {
+async function click_handler(event) {
   try {
     const hwnd = window.open();
     hwnd.close();
@@ -33,5 +33,6 @@ function click_handler(event) {
     return;
   }
 
-  open_view().catch(console.error);
+  // await to expose errors to console (avoid promise-swallow)
+  await open_view();
 }
