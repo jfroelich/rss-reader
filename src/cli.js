@@ -67,16 +67,11 @@ async function cli_refresh_icons() {
 }
 
 async function cli_poll_feeds() {
-  // TODO: open both and await Promise.all
-  const rconn = await db.open_db();
-  const iconn = await favicon.open();
+  const proms = [db.open_db(), favicon.open()];
+  const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(localStorage.channel_name);
-
-  const options = {};
-  options.ignore_recency_check = true;
-
+  const options = {ignore_recency_check: true};
   await poll_feeds(rconn, iconn, channel, options);
-
   channel.close();
   rconn.close();
   iconn.close();
