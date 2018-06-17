@@ -1,6 +1,6 @@
 import '/src/cli.js';
 import * as badge from '/src/badge.js';
-import {cron_register_listener} from '/src/cron.js';
+import * as cron from '/src/cron.js';
 import {oninstalled} from '/src/install.js';
 import {open_view} from '/src/open-view.js';
 
@@ -37,7 +37,7 @@ function onstartup() {
 
 // Register alarms
 // TODO: actually this one I think can be done on install?
-cron_register_listener();
+cron.register_listener();
 
 // Fired when a profile that has this extension installed first starts up
 // NOTE: so basically when chrome starts, or on profile switch

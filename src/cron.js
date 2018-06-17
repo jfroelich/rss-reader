@@ -4,12 +4,12 @@ import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 
-export function cron_register_listener() {
-  chrome.alarms.onAlarm.addListener(cron_alarm_listener);
+export function register_listener() {
+  chrome.alarms.onAlarm.addListener(alarm_listener);
 }
 
-async function cron_alarm_listener(alarm) {
-  console.debug('Wakeup', alarm.name);
+async function alarm_listener(alarm) {
+  console.debug('Alarm wokeup:', alarm.name);
   localStorage.LAST_ALARM = alarm.name;
 
   if (alarm.name === 'archive') {
