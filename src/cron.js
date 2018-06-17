@@ -31,13 +31,10 @@ async function cron_alarm_listener(alarm) {
     const options = {};
     options.ignore_recency_check = false;
     options.notify = true;
-
     const rconn = await db.open_db();
     const iconn = await favicon.open();
     const channel = new BroadcastChannel(localStorage.channel_name);
-
     await poll_feeds(rconn, iconn, channel, options);
-
     channel.close();
     iconn.close();
     rconn.close();
@@ -51,6 +48,12 @@ async function cron_alarm_listener(alarm) {
     const conn = await db.open_db();
     const channel = new BroadcastChannel(localStorage.channel_name);
     await dbhealth.remove_orphaned_entries(conn, channel);
+    conn.close();
+    channel.close();
+  } else if (alarm.name === 'remove-untyped-objects') {
+    const conn = await db.open_db();
+    const channel = new BroadcastChannel(localStorage.channel_name);
+    await dbhealth.remove_untyped_objects(conn, channel);
     conn.close();
     channel.close();
   } else if (alarm.name === 'refresh-feed-icons') {
@@ -89,6 +92,8 @@ export function create_alarms() {
       'remove-entries-missing-urls', {periodInMinutes: 60 * 24 * 7});
   chrome.alarms.create(
       'db-remove-orphaned-entries', {periodInMinutes: 60 * 24 * 7});
+  chrome.alarms.create(
+      'remove-untyped-objects', {periodInMinutes: 60 * 24 * 7});
   chrome.alarms.create(
       'refresh-feed-icons', {periodInMinutes: 60 * 24 * 7 * 2});
   chrome.alarms.create('compact-favicon-db', {periodInMinutes: 60 * 24 * 7});
