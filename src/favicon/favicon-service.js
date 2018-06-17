@@ -1,8 +1,8 @@
-import {fetch_html} from '/src/net/fetch-html.js';
 import {parse_html} from '/src/html/parse-html.js';
 import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
-import * as mime from '/src/net/mime.js';
+import {fetch_html} from '/src/net/fetch-html.js';
 import {fetch2} from '/src/net/fetch2.js';
+import * as mime from '/src/net/mime.js';
 import {url_did_change} from '/src/net/url-did-change.js';
 
 export function FaviconService() {
@@ -159,8 +159,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   }
 };
 
-FaviconService.prototype.on_lookup_fail =
-    function(origin_url, origin_entry) {
+FaviconService.prototype.on_lookup_fail = function(origin_url, origin_entry) {
   if (origin_entry) {
     const new_entry = {};
     new_entry.pageURLString = origin_entry.pageURLString;
@@ -183,9 +182,9 @@ FaviconService.prototype.on_lookup_fail =
     new_entry.failureCount = 1;
     this.put_entry(new_entry);
   }
-}
+};
 
-    FaviconService.prototype.is_expired = function(entry) {
+FaviconService.prototype.is_expired = function(entry) {
   if (!entry.dateUpdated) {
     console.warn('Missing date updated', entry);
     return false;
