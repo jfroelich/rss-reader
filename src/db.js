@@ -65,7 +65,7 @@ export function delete_feed(conn, channel, feed_id, reason) {
       entry_msg.type = 'entry-deleted';
       entry_msg.id = 0;
       entry_msg.reason = reason;
-      entry_msg.feed_id = feed_id;  // retain correspondence
+      entry_msg.feed_id = feed_id;  // retain correspondence when possible
       for (const id of entry_ids) {
         entry_msg.id = id;
         channel.postMessage(entry_msg);
@@ -89,6 +89,22 @@ export function delete_feed(conn, channel, feed_id, reason) {
         entry_store.delete(id);
       }
     };
+  });
+}
+
+// Deletes an entry from the database. Unlike delete_feed this does not expose
+// feed id in its message because it would require an extra lookup.
+export function delete_entry(conn, channel, id, reason) {
+  return new Promise((resolve, reject) => {
+    assert(is_valid_entry_id(id));  // prevent fake noops
+    const txn = conn.transaction('entry', 'readwrite');
+    txn.oncomplete = _ => {
+      const msg = {type: 'entry-deleted', id: id, reason: reason};
+      channel.postMessage(msg);
+      resolve();
+    };
+    txn.onerror = _ => reject(txn.error);
+    txn.objectStore('entry').delete(id);
   });
 }
 
