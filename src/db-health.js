@@ -72,8 +72,48 @@ export async function remove_orphaned_entries(conn, channel) {
   }
 }
 
-// TODO: scan the feed store and the entry store and look for any objects
-// missing their hidden magic property and delete them.
+// Scan the feed store and the entry store and delete any objects missing their
+// hidden magic property. Note this uses multiple write transactions. That means
+// that a later failure does not indicate an earlier step failed.
+// TODO: use a single transaction
 export function remove_untyped_objects(conn, channel) {
-  throw new Error('Not yet implemented');
+  const feeds = db.get_feeds(conn);
+  const delete_feed_promises = [];
+  for (const feed of feeds) {
+    if (!db.is_feed(feed)) {
+      console.debug('Deleting untyped feed', feed);
+      const promise = db.delete_feed(conn, channel, feed.id, 'untyped');
+      delete_feed_promises.push(promise);
+    }
+  }
+
+  // Wait for all deletes to resolve. Deleting feeds could delete entries, so
+  // by waiting we avoid redundancy with the next step
+  await Promise.all(delete_feed_promises);
+
+  // Delete entries. Rather than use delete_entry explicitly, this deletes
+  // several entries in a single transaction.
+  const deleted_entries = [];
+  const txn_writable = true;
+  await db.iterate_entries(conn, 'all', txn_writable, cursor => {
+    const entry = cursor.value;
+    if (!db.is_entry(entry)) {
+      // Collect only necessary properties for the channel post rather than
+      // keeping the full objects around in memory
+      deleted_entries.push({id: entry.id, feed: entry.feed});
+      cursor.delete();
+    }
+  });
+
+  // Once the delete-entries transaction settles, it is now safe to notify
+  // observers in a consistent manner.
+  for (const entry of deleted_entries) {
+    channel.postMessage({
+      type: 'entry-deleted',
+      id: entry.id,
+      // Use feed_id to remain consistent with db.delete_feed's channel protocol
+      feed_id: entry.feed,
+      reason: 'orphan'
+    });
+  }
 }
