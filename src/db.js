@@ -1,11 +1,11 @@
-import {replace_tags} from '/src/lib/html/replace-tags.js';
-import {truncate_html} from '/src/lib/html/truncate-html.js';
-import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
-import {condense_whitespace} from '/src/lib/lang/condense-whitespace.js';
-import {filter_control_characters} from '/src/lib/lang/filter-control-characters.js';
-import {filter_empty_properties} from '/src/lib/lang/filter-empty-properties.js';
-import {filter_unprintable_characters} from '/src/lib/lang/filter-unprintable-characters.js';
-import * as localstorage from '/src/lib/localstorage.js';
+import {replace_tags} from '/src/html/replace-tags.js';
+import {truncate_html} from '/src/html/truncate-html.js';
+import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
+import {condense_whitespace} from '/src/lang/condense-whitespace.js';
+import {filter_control_characters} from '/src/lang/filter-control-characters.js';
+import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
+import {filter_unprintable_characters} from '/src/lang/filter-unprintable-characters.js';
+import * as localstorage from '/src/localstorage.js';
 
 // indexedDB does not support storing Function objects, because Function objects
 // are not serializable. Therefore instanceof and typeof are not usable for

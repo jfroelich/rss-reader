@@ -1,4 +1,4 @@
-import {filter_unprintable_characters as f} from '/src/lib/lang/filter-unprintable-characters.js';
+import {filter_unprintable_characters as f} from '/src/lang/filter-unprintable-characters.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

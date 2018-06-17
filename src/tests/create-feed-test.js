@@ -1,6 +1,6 @@
 import * as db from '/src/db.js';
-import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
-import * as array from '/src/lib/lang/array.js';
+import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
+import * as array from '/src/lang/array.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

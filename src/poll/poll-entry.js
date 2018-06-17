@@ -2,12 +2,12 @@ import {inaccessible_content_descriptors} from '/src/config.js';
 import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
 import {fetch_html} from '/src/fetch-html.js';
-import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
-import {parse_html} from '/src/lib/html/parse-html.js';
-import * as array from '/src/lib/lang/array.js';
-import * as sniff from '/src/lib/net/sniff.js';
-import {url_did_change} from '/src/lib/net/url-did-change.js';
-import {rewrite_url} from '/src/lib/rewrite-url.js';
+import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
+import {parse_html} from '/src/html/parse-html.js';
+import * as array from '/src/lang/array.js';
+import * as sniff from '/src/net/sniff.js';
+import {url_did_change} from '/src/net/url-did-change.js';
+import {rewrite_url} from '/src/rewrite-url.js';
 import {sanitize_document} from '/src/sanitize-document.js';
 
 // Processes an entry and possibly adds it to the database. The full-text html

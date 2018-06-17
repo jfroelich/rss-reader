@@ -1,9 +1,9 @@
 import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
 import {import_opml} from '/src/import-opml.js';
-import * as array from '/src/lib/lang/array.js';
-import * as localstorage from '/src/lib/localstorage.js';
-import {create_opml_document} from '/src/lib/opml-document.js';
+import * as array from '/src/lang/array.js';
+import * as localstorage from '/src/localstorage.js';
+import {create_opml_document} from '/src/opml-document.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 
 function import_opml_button_onclick(event) {

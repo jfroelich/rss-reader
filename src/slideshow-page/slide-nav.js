@@ -1,5 +1,5 @@
 import * as db from '/src/db.js';
-import * as localstorage from '/src/lib/localstorage.js';
+import * as localstorage from '/src/localstorage.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';

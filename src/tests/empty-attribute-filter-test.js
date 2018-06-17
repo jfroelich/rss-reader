@@ -1,5 +1,5 @@
-import {filter_empty_attrs} from '/src/lib/filters/filter-empty-attrs.js';
-import {parse_html} from '/src/lib/html/parse-html.js';
+import {filter_empty_attrs} from '/src/filters/filter-empty-attrs.js';
+import {parse_html} from '/src/html/parse-html.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

@@ -1,4 +1,4 @@
-import * as sniff from '/src/lib/net/sniff.js';
+import * as sniff from '/src/net/sniff.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

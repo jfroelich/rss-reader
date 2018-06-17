@@ -1,14 +1,14 @@
 import {fetch_html} from '/src/fetch-html.js';
 import {is_allowed_request} from '/src/fetch-policy.js';
-import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
-import * as boilerplate from '/src/lib/filters/boilerplate.js';
-import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';
-import {deframe} from '/src/lib/filters/deframe.js';
-import {filter_blacklisted_elements} from '/src/lib/filters/filter-blacklisted-elements.js';
-import {filter_iframes} from '/src/lib/filters/filter-iframes.js';
-import {filter_script_elements} from '/src/lib/filters/filter-script-elements.js';
-import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
-import {parse_html} from '/src/lib/html/parse-html.js';
+import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
+import * as boilerplate from '/src/filters/boilerplate.js';
+import {canonicalize_urls} from '/src/filters/canonicalize-urls.js';
+import {deframe} from '/src/filters/deframe.js';
+import {filter_blacklisted_elements} from '/src/filters/filter-blacklisted-elements.js';
+import {filter_iframes} from '/src/filters/filter-iframes.js';
+import {filter_script_elements} from '/src/filters/filter-script-elements.js';
+import {set_image_sizes} from '/src/filters/set-image-sizes.js';
+import {parse_html} from '/src/html/parse-html.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

@@ -2,8 +2,8 @@ import * as badge from '/src/badge.js';
 import {create_alarms, remove_legacy_alarms} from '/src/cron.js';
 import * as db from '/src/db.js';
 import * as favicon from '/src/favicon.js';
-import * as color from '/src/lib/color.js';
-import * as localstorage from '/src/lib/localstorage.js';
+import * as color from '/src/color.js';
+import * as localstorage from '/src/localstorage.js';
 import {open_view} from '/src/open-view.js';
 
 // The default set of background images for slides

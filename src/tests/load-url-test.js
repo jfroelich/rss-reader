@@ -1,4 +1,4 @@
-import {fetch2} from '/src/lib/net/fetch2.js';
+import {fetch2} from '/src/net/fetch2.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

@@ -1,6 +1,6 @@
 import {open_db} from '/src/db.js';
 import {import_opml} from '/src/import-opml.js';
-import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
+import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

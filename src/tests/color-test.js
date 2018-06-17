@@ -1,4 +1,4 @@
-import * as color from '/src/lib/color.js';
+import * as color from '/src/color.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

@@ -1,7 +1,7 @@
 import {fetch_html} from '/src/fetch-html.js';
-import {filter_dead_images} from '/src/lib/filters/filter-dead-images.js';
-import {filter_lazy_images} from '/src/lib/filters/filter-lazy-images.js';
-import {parse_html} from '/src/lib/html/parse-html.js';
+import {filter_dead_images} from '/src/filters/filter-dead-images.js';
+import {filter_lazy_images} from '/src/filters/filter-lazy-images.js';
+import {parse_html} from '/src/html/parse-html.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

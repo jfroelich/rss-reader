@@ -1,4 +1,4 @@
-import {rewrite_url} from '/src/lib/rewrite-url.js';
+import {rewrite_url} from '/src/rewrite-url.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

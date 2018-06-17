@@ -1,5 +1,5 @@
-import {indexeddb_open} from '/src/lib/indexeddb/indexeddb-open.js';
-import {indexeddb_remove} from '/src/lib/indexeddb/indexeddb-remove.js';
+import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
+import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

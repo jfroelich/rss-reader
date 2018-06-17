@@ -1,6 +1,6 @@
 import * as db from '/src/db.js';
-import {FaviconService} from '/src/lib/favicon-service.js';
-import * as array from '/src/lib/lang/array.js';
+import {FaviconService} from '/src/favicon-service.js';
+import * as array from '/src/lang/array.js';
 
 // Return a promise that resolves to a new connection to the favicon cache
 // database

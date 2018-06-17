@@ -1,8 +1,8 @@
 import {fetch_html} from '/src/fetch-html.js';
 import {is_allowed_request} from '/src/fetch-policy.js';
-import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
-import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
-import {parse_html} from '/src/lib/html/parse-html.js';
+import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
+import {set_image_sizes} from '/src/filters/set-image-sizes.js';
+import {parse_html} from '/src/html/parse-html.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 

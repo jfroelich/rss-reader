@@ -1,4 +1,4 @@
-import {truncate_html as truncate} from '/src/lib/html/truncate-html.js';
+import {truncate_html as truncate} from '/src/html/truncate-html.js';
 import {assert} from '/src/tests/assert.js';
 import {register_test} from '/src/tests/test-registry.js';
 
