@@ -1,5 +1,5 @@
 import '/src/archive/archive-test.js';
-import '/src/color/color-test.js';
+import '/src/argb8888/argb8888-test.js';
 import '/src/db/create-feed-test.js';
 import '/src/dom/coerce-element-test.js';
 import '/src/dom/set-document-base-uri-test.js';

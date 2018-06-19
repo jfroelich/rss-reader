@@ -1,6 +1,6 @@
 import {assert} from '/src/assert/assert.js';
 import * as localstorage from '/src/browser/localstorage.js';
-import * as color from '/src/color/color.js';
+import * as color from '/src/argb8888/argb8888.js';
 import * as css_color from '/src/dom/css-color/css-color.js';
 import * as ccf from '/src/filters/color-contrast-filter.js';
 import {register_test} from '/src/test/test-registry.js';

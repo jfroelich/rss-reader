@@ -1,4 +1,4 @@
-import * as color from '/src/color/color.js';
+import * as color from '/src/argb8888/argb8888.js';
 import * as css_color from '/src/dom/css-color/css-color.js';
 
 // Elements with contrast ratios below this threshold are not perceptible. I use

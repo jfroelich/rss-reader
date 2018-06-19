@@ -1,7 +1,7 @@
 import * as app from '/src/app/app.js';
 import * as badge from '/src/badge/badge.js';
 import * as localstorage from '/src/browser/localstorage.js';
-import * as color from '/src/color/color.js';
+import * as color from '/src/argb8888/argb8888.js';
 import * as cron from '/src/cron/cron.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
