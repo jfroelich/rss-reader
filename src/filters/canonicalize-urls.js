@@ -1,3 +1,4 @@
+import {assert} from '/src/assert/assert.js';
 import {parse_srcset} from '/src/dom/srcset/parse-srcset.js';
 import {serialize_srcset} from '/src/dom/srcset/serialize-srcset.js';
 
@@ -50,7 +51,7 @@ export function canonicalize_urls(document) {
 
   const base_url = new URL(document.baseURI);
 
-  // TODO: deprecase use of assert, also this assert is now pointless
+  // TODO: this assert is now pointless?
   assert(base_url instanceof URL);
 
   const src_elements = document.querySelectorAll(element_url_attr_selector);
@@ -121,8 +122,4 @@ function resolve_url_string(url_string, base_url) {
     } catch (error) {
     }
   }
-}
-
-function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
 }

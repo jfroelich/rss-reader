@@ -1,5 +1,5 @@
+import {assert} from '/src/assert/assert.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
-import {assert} from '/src/test/assert.js';
 import {register_test} from '/src/test/test-registry.js';
 
 async function set_document_base_uri_test() {

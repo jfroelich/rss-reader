@@ -1,6 +1,6 @@
+import {assert} from '/src/assert/assert.js';
 import {FaviconService} from '/src/favicon/favicon-service.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
-import {assert} from '/src/test/assert.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: this needs to be implemented using local files

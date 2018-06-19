@@ -1,3 +1,5 @@
+import {assert} from '/src/assert/assert.js';
+import * as localstorage from '/src/browser/localstorage.js';
 import {replace_tags} from '/src/html/replace-tags.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
@@ -5,7 +7,6 @@ import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
 import {filter_unprintable_characters} from '/src/lang/filter-unprintable-characters.js';
-import * as localstorage from '/src/browser/localstorage.js';
 
 // indexedDB does not support storing Function objects, because Function objects
 // are not serializable. Therefore instanceof and typeof are not usable for
@@ -845,8 +846,4 @@ export function set_feed_type(feed, feed_type_string) {
 
 export function is_valid_feed_id(id) {
   return Number.isInteger(id) && id > 0;
-}
-
-function assert(condition, message) {
-  if (!condition) throw new Error(message || 'Assertion error');
 }

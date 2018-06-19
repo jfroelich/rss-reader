@@ -1,6 +1,7 @@
+import {assert} from '/src/assert/assert.js';
+
 // Removes certain attributes from all elements in a document.
 // This applies to the whole document, not just body.
-
 // @param whitelist {Object} each property is element name, each value is array
 // of retainable attribute names
 export function filter_unknown_attrs(document, whitelist) {
@@ -21,8 +22,4 @@ function filter_element_attrs(element, whitelist) {
       }
     }
   }
-}
-
-function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
 }

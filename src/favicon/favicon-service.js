@@ -1,3 +1,4 @@
+import {assert} from '/src/assert/assert.js';
 import {parse_html} from '/src/html/parse-html.js';
 import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
 import {fetch_html} from '/src/net/fetch-html.js';
@@ -397,10 +398,4 @@ function fetch_image(url, options) {
   // Defer to the load's default policy by using an undefined parameter
   let undefined_policy;
   return fetch2(url, options_clone, undefined_policy);
-}
-
-function assert(value, message) {
-  if (!value) {
-    throw new Error(message || 'Assertion error');
-  }
 }

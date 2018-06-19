@@ -1,8 +1,8 @@
+import {assert} from '/src/assert/assert.js';
 import * as localstorage from '/src/browser/localstorage.js';
 import * as color from '/src/color/color.js';
 import * as css_color from '/src/dom/css-color/css-color.js';
 import * as ccf from '/src/filters/color-contrast-filter.js';
-import {assert} from '/src/test/assert.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: these tests were written to work off a live document. Instead, create

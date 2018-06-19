@@ -1,3 +1,4 @@
+import {assert} from '/src/assert/assert.js';
 import {unwrap_element} from '/src/dom/unwrap-element.js';
 
 export function filter_emphasis(document, text_length_max) {
@@ -18,8 +19,4 @@ function get_emphasis_length(element) {
 
 function string_filter_whitespace(value) {
   return value.replace(/\s+/, '');
-}
-
-function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
 }

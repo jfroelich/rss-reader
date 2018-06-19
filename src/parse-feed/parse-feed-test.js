@@ -1,5 +1,5 @@
+import {assert} from '/src/assert/assert.js';
 import {parse_feed} from '/src/parse-feed/parse-feed.js';
-import {assert} from '/src/test/assert.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: implement. note that this should run by loading a local resource, or

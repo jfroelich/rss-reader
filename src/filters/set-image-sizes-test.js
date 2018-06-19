@@ -1,9 +1,9 @@
-import {fetch_html} from '/src/net/fetch-html.js';
-import {is_allowed_request} from '/src/net/fetch-policy.js';
+import {assert} from '/src/assert/assert.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import {set_image_sizes} from '/src/filters/set-image-sizes.js';
 import {parse_html} from '/src/html/parse-html.js';
-import {assert} from '/src/test/assert.js';
+import {fetch_html} from '/src/net/fetch-html.js';
+import {is_allowed_request} from '/src/net/fetch-policy.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: these tests must be rewritten using new approach

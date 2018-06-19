@@ -1,6 +1,6 @@
+import {assert} from '/src/assert/assert.js';
 import {filter_empty_attrs} from '/src/filters/filter-empty-attrs.js';
 import {parse_html} from '/src/html/parse-html.js';
-import {assert} from '/src/test/assert.js';
 import {register_test} from '/src/test/test-registry.js';
 
 async function empty_attribute_filter_test() {

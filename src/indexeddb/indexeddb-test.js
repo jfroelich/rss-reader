@@ -1,6 +1,6 @@
+import {assert} from '/src/assert/assert.js';
 import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
-import {assert} from '/src/test/assert.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: rename to indexeddb-test.js to match with library file name

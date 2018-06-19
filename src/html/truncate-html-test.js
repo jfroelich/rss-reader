@@ -1,5 +1,5 @@
+import {assert} from '/src/assert/assert.js';
 import {truncate_html as truncate} from '/src/html/truncate-html.js';
-import {assert} from '/src/test/assert.js';
 import {register_test} from '/src/test/test-registry.js';
 
 async function html_truncate_test() {

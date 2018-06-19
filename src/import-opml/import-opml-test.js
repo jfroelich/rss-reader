@@ -1,7 +1,7 @@
+import {assert} from '/src/assert/assert.js';
 import {open_db} from '/src/db/db.js';
 import {import_opml} from '/src/import-opml/import-opml.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
-import {assert} from '/src/test/assert.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: finish implementation. at the moment this basically just tests if this

@@ -1,3 +1,4 @@
+import {assert} from '/src/assert/assert.js';
 import {inaccessible_content_descriptors} from '/src/config.js';
 import * as db from '/src/db/db.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
@@ -125,8 +126,4 @@ async function update_entry_icon(iconn, entry, document) {
   if (icon_url_string) {
     entry.faviconURLString = icon_url_string;
   }
-}
-
-function assert(condition, message) {
-  if (!condition) throw new Error(message || 'Assertion error');
 }

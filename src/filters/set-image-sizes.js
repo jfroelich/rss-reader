@@ -1,3 +1,5 @@
+import {assert} from '/src/assert/assert.js';
+
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this fetches the dimensions
 // and modifies each image element's attributes.
@@ -187,8 +189,4 @@ function fetch_exec(url, is_allowed_request) {
 // for imposing a timeout on the other operation.
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
 }

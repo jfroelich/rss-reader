@@ -1,3 +1,5 @@
+import {assert} from '/src/assert/assert.js';
+
 // Returns true if an element is hidden according to its inline style
 export function element_is_hidden_inline(element) {
   // It is an error to call this on something other than an element
@@ -34,8 +36,4 @@ function element_is_offscreen(style) {
   }
 
   return false;
-}
-
-function assert(value, message) {
-  if (!value) throw new Error(message || 'Assertion error');
 }

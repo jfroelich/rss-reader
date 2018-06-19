@@ -1,5 +1,5 @@
+import {assert as a} from '/src/assert/assert.js';
 import * as mime from '/src/net/mime.js';
-import {assert as a} from '/src/test/assert.js';
 import {register_test} from '/src/test/test-registry.js';
 
 async function mime_test() {

@@ -1,7 +1,7 @@
+import {assert} from '/src/assert/assert.js';
 import * as db from '/src/db/db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import * as array from '/src/lang/array.js';
-import {assert} from '/src/test/assert.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // Exercises the db-write-feed function in the case of adding a new feed object

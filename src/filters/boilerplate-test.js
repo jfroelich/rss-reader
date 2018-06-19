@@ -1,5 +1,4 @@
-import {fetch_html} from '/src/net/fetch-html.js';
-import {is_allowed_request} from '/src/net/fetch-policy.js';
+import {assert} from '/src/assert/assert.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import * as boilerplate from '/src/filters/boilerplate.js';
 import {canonicalize_urls} from '/src/filters/canonicalize-urls.js';
@@ -9,7 +8,8 @@ import {filter_iframes} from '/src/filters/filter-iframes.js';
 import {filter_script_elements} from '/src/filters/filter-script-elements.js';
 import {set_image_sizes} from '/src/filters/set-image-sizes.js';
 import {parse_html} from '/src/html/parse-html.js';
-import {assert} from '/src/test/assert.js';
+import {fetch_html} from '/src/net/fetch-html.js';
+import {is_allowed_request} from '/src/net/fetch-policy.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: assert stuff, use a known test url

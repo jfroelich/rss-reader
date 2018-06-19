@@ -1,8 +1,8 @@
-import {fetch_html} from '/src/net/fetch-html.js';
+import {assert} from '/src/assert/assert.js';
 import {filter_dead_images} from '/src/filters/filter-dead-images.js';
 import {filter_lazy_images} from '/src/filters/filter-lazy-images.js';
 import {parse_html} from '/src/html/parse-html.js';
-import {assert} from '/src/test/assert.js';
+import {fetch_html} from '/src/net/fetch-html.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: rewrite in new test format

@@ -1,5 +1,5 @@
+import {assert} from '/src/assert/assert.js';
 import * as sniff from '/src/net/sniff.js';
-import {assert} from '/src/test/assert.js';
 import {register_test} from '/src/test/test-registry.js';
 
 async function sniff_test() {

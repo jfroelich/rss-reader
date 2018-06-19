@@ -1,5 +1,5 @@
+import {assert} from '/src/assert/assert.js';
 import {filter_publisher as f} from '/src/nlp/nlp.js';
-import {assert} from '/src/test/assert.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: test using additional parameters where other parameters are not the
