@@ -1,10 +1,9 @@
 import * as db from '/src/db/db.js';
 
 // Refreshes the unread count displayed in Chrome's toolbar
-//
-// @param locker_name {String} optional, for debugging who obtained an internal
+// @param lock_value {String} optional, for debugging who obtained an internal
 // cross-page lock
-export async function refresh_badge(locker_name = 'unknown') {
+export async function refresh_badge(lock_value = 'unknown') {
   // Check if locked by looking for the lock and then cancel if locked. A key's
   // presence in storage is enough, do not care about its value.
   const existing_lock = localStorage.refresh_badge_cross_page_lock;
@@ -13,12 +12,12 @@ export async function refresh_badge(locker_name = 'unknown') {
   }
 
   // Obtain a lock
-  localStorage.refresh_badge_cross_page_lock = locker_name;
+  localStorage.refresh_badge_cross_page_lock = lock_value;
 
   // Extra paranoid, schedule an unlock immediately
   let did_auto_unlock = false;
   const auto_unlock_timer = setTimeout(_ => {
-    console.warn('Releasing lock abnormally, locker was %s', locker_name);
+    console.warn('Releasing lock abnormally, locker was %s', lock_value);
     did_auto_unlock = true;
     delete localStorage.refresh_badge_cross_page_lock;
   }, 5000);
