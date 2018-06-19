@@ -1,14 +1,14 @@
 import '/src/cli/cli.js';
 
 import {refresh_badge} from '/src/badge/badge.js';
+import * as localstorage from '/src/browser/localstorage.js';
+import * as perm from '/src/browser/permissions.js';
 import * as db from '/src/db/db.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import * as array from '/src/lang/array.js';
-import * as localstorage from '/src/browser/localstorage.js';
-import * as perm from '/src/browser/permissions.js';
-import {poll_feed} from '/src/poll/poll-feed.js';
+import {poll_feed} from '/src/poll/poll-feeds.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
 import {subscribe} from '/src/subscribe/subscribe.js';

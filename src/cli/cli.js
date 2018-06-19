@@ -3,8 +3,7 @@ import {create_alarms} from '/src/cron/cron.js';
 import * as dbhealth from '/src/db/db-health.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
-import {poll_feed} from '/src/poll/poll-feed.js';
-import {poll_feeds} from '/src/poll/poll-feeds.js';
+import {poll_feed, poll_feeds} from '/src/poll/poll-feeds.js';
 import {subscribe} from '/src/subscribe/subscribe.js';
 
 // The command-line-interface (CLI) module creates a cli object within the
