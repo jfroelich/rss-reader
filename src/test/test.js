@@ -1,33 +1,40 @@
-import '/src/test/test-loader.js';
+import '/src/archive/archive-test.js';
+import '/src/argb8888/argb8888-test.js';
+import '/src/db/create-feed-test.js';
+import '/src/dom/coerce-element-test.js';
+import '/src/dom/set-document-base-uri-test.js';
+import '/src/favicon/favicon-service-test.js';
+import '/src/filters/boilerplate-test.js';
+import '/src/filters/color-contrast-filter-test.js';
+import '/src/filters/empty-attribute-filter-test.js';
+import '/src/html/truncate-html-test.js';
+import '/src/indexeddb/indexeddb-test.js';
+import '/src/lang/filter-unprintable-characters-test.js';
+import '/src/net/fetch-feed-test.js';
+import '/src/net/fetch-html-test.js';
+import '/src/net/load-url-test.js';
+import '/src/net/mime-test.js';
+import '/src/net/sniff-test.js';
+import '/src/nlp/filter-publisher-test.js';
+import '/src/opml/import-opml-test.js';
+import '/src/parse-feed/parse-feed-test.js';
+import '/src/rewrite-url/rewrite-url-test.js';
+import '/src/subscribe/subscribe-test.js';
 import {get_registry} from '/src/test/test-registry.js';
 
-// Tests must be promise returning functions
-
-// TODO: all tests should more carefully test error paths. That is where the
-// greatest number of bugs tends to occur. See, e.g.,
-// https://www.usenix.org/system/files/login/articles/03_lu_010-017_final.pdf
-// TODO: many of the tests are logging things that they are not testing, I
-// should silence those messages for those tests. For example most of the tests
-// are logging opening and creating a test database but those tests are not
-// testing the creation of a database so that aspect should be muted
-// TODO: note the horrible requirement of requiring a unique database. Maybe to
-// coordinate, if I want to continue async, is that each test's first parameter
-// is a test database name. Then I can simply do things like use test0, test1,
-// etc, and the counter guarantees each db name is unique. On the other hand, I
-// could run tests serially.
-// TODO: each test could take a custom console parameter, then i could do things
-// like implement a bufferedlogger, then queue messages per logger (per test),
-// then flush on test complete together with using console.group and groupEnd,
-// to get a cleaner console when running tests in parallel. Alternatively I
-// could use an html-based logger that appends log messages to the test view so
-// that there is no need to even open the console area and instead just view the
-// page to run tests
-// TODO: maybe enable tests to declare their own custom timeout
-
-// Wrap the call to a test function with some extra log messages
-// Timeout the test if a timeout is specified
+// Wrap a call to a test function with some extra log messages. Impose an
+// optional deadline for the test to complete by specifying a timeout.
 async function run_timed_test(test_function, timeout = 0) {
   console.log('%s: started', test_function.name);
+
+  // The test will fail either immediately when creating the promise, or later
+  // when awaiting the promise when the test has rejected, or after the timeout
+  // occurred. We throw an error in all 3 cases. Note that in the timeout case
+  // we ignore the test result (pass or error) and throw a timeout error
+  // instead.
+
+  // In the case of a timeout, we do not abort the test, because promises are
+  // not cancelable.
 
   if (timeout) {
     const test_promise = test_function();
@@ -42,9 +49,7 @@ async function run_timed_test(test_function, timeout = 0) {
 
 function deferred_rejection(test_function, time_ms) {
   const error = new Error('Test ' + test_function.name + ' timed out');
-  return new Promise((resolve, reject) => {
-    setTimeout(reject, time_ms, error);
-  });
+  return new Promise((_, reject) => setTimeout(reject, time_ms, error));
 }
 
 // Lookup a test function by the function's name
@@ -52,21 +57,22 @@ function find_test_by_name(name) {
   // Allow for either - or _ as separator and mixed case
   let normal_test_name = name.replace(/-/g, '_').toLowerCase();
 
-  const test_registry = get_registry();
-  for (const test_function of test_registry) {
+  const tests = get_registry();
+  for (const test_function of tests) {
     if (test_function.name === normal_test_name) {
       return test_function;
     }
   }
 }
 
-// Run one or more tests
-//
-// @param name {String} optional, name of test to run, if not specified all
+// Run one or more tests either all at once or one after the other. In either
+// case, if any test fails, the function exits (but tests may still run
+// indefinitely).
+// @param name {String} optional, name of test to run, if not specified then all
 // tests run
 // @param timeout {Number} optional, ms, per-test timeout value
 // @param parallel {Boolean} optional, whether to run tests in parallel or
-// serial, defaults to false
+// serial, defaults to false (serial)
 async function cli_run(name, timeout = 10000, parallel) {
   if (!['undefined', 'string'].includes(typeof name)) {
     throw new TypeError('Invalid name parameter ' + name);
@@ -77,7 +83,7 @@ async function cli_run(name, timeout = 10000, parallel) {
   if (name) {
     const test = find_test_by_name(name);
     if (!test) {
-      console.warn('%s: test not found', cli_run.name, name);
+      console.warn('Test not found', name);
       return;
     }
     tests = [test];
@@ -85,11 +91,10 @@ async function cli_run(name, timeout = 10000, parallel) {
     tests = get_registry();
   }
 
-  console.log('%s: spawning %d tests', cli_run.name, tests.length);
-
+  console.log('Spawning %d tests', tests.length);
   const start_time = new Date();
 
-  if (parallel && tests.length > 1) {
+  if (parallel) {
     const promises = [];
     for (const test of tests) {
       promises.push(run_timed_test(test, timeout));
@@ -102,25 +107,22 @@ async function cli_run(name, timeout = 10000, parallel) {
   }
 
   const end_time = new Date();
-
-  console.log('%s: completed in %d ms', cli_run.name, end_time - start_time);
+  console.log('Completed in %d ms', end_time - start_time);
 }
 
 function cli_print_tests() {
-  const test_registry = get_registry();
-  test_registry.forEach(test => console.log(test.name));
+  const tests = get_registry();
+  tests.forEach(test => console.log(test.name));
 }
 
 function populate_test_menu() {
-  const test_registry = get_registry();
-  const test_select = document.getElementById('tests');
-  for (const test of test_registry) {
+  const tests = get_registry();
+  const menu = document.getElementById('tests');
+  for (const test of tests) {
     const option = document.createElement('option');
     option.value = test.name;
-
-    const display_name = test.name.replace(/_/g, '-').toLowerCase();
-    option.textContent = display_name;
-    test_select.appendChild(option);
+    option.textContent = test.name.replace(/_/g, '-').toLowerCase();
+    menu.appendChild(option);
   }
 }
 
