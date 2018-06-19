@@ -1,4 +1,5 @@
 import * as app from '/src/app/app.js';
+import {assert} from '/src/assert/assert.js';
 import * as db from '/src/db/db.js';
 import * as array from '/src/lang/array.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
@@ -15,40 +16,19 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   const deactivation_threshold = options.deactivation_threshold;
   const fetch_feed_timeout = options.fetch_feed_timeout;
 
-  if (!db.is_feed(feed)) {
-    throw new TypeError('feed is not a feed type ' + feed);
-  }
-
-  // Although this is borderline a programmer error, tolerate location-less
-  // feed objects and simply ignore them
-  if (array.is_empty(feed.urls)) {
-    console.warn('Attempted to poll feed missing url', feed);
-    return 0;
-  }
+  assert(db.is_feed(feed));
+  assert(!array.is_empty(feed.urls));
+  assert(feed.active);
 
   const tail_url = new URL(array.peek(feed.urls));
-
-  if (!feed.active) {
-    console.debug('Ignoring inactive feed', tail_url.href);
-    return 0;
-  }
-
   console.debug('Polling feed %s', tail_url.href);
 
   // Exit if the feed was checked too recently
   if (!ignore_recency_check && feed.dateFetched) {
     const current_date = new Date();
     const elapsed_ms = current_date - feed.dateFetched;
-
-    if (elapsed_ms < 0) {
-      console.warn('Feed somehow polled in future?', tail_url.href);
-      return 0;
-    }
-
-    if (elapsed_ms < recency_period) {
-      console.debug('Feed polled too recently', tail_url.href);
-      return 0;
-    }
+    assert(elapsed_ms >= 0);  // feed polled in future?
+    assert(elapsed_ms >= recency_period);
   }
 
   // Fetch the feed. Trap non-programmer errors.
@@ -73,12 +53,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   // counters that would lead to eventual deactivation
   handle_fetch_success(merged_feed);
 
-  // Do not throw if invalid, just exit
-  if (!db.is_valid_feed(merged_feed)) {
-    console.warn('Invalid feed', merged_feed);
-    return 0;
-  }
-
+  assert(db.is_valid_feed(merged_feed));
   db.sanitize_feed(merged_feed);
   await db.update_feed(rconn, channel, merged_feed);
 

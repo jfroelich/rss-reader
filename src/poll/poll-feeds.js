@@ -26,8 +26,15 @@ export async function poll_feeds(
   console.debug('Loaded %d active feeds', feeds.length);
   const pfo = Object.assign({}, default_options, options);
   const pfp = poll_feed.bind(null, rconn, iconn, channel, pfo);
-  const proms = feeds.map(pfp);
-  const results = await Promise.all(proms);
+
+  const promises = [];
+  for (const feed of feeds) {
+    const promise = pfp(feed);
+    const catch_promise = promise.catch(console.warn);
+    promises.push(promise);
+  }
+
+  const results = await Promise.all(promises);
   const count = results.reduce(acc_if_def, 0);
   show_poll_notification(count);
   console.debug('Added %d entries', count);
