@@ -308,6 +308,15 @@ export function mark_entry_read(conn, channel, entry_id) {
         return;
       }
 
+      // Once an entry enters the archive state, it should require direct
+      // property access to manipulate read state, so prevent access here. This
+      // helper is only intended for use on unarchived entries
+      if (entry.archiveState === ENTRY_STATE_ARCHIVED) {
+        reject(
+            new Error('Cannot mark archived entry as read for id ' + entry_id));
+        return;
+      }
+
       if (entry.readState === ENTRY_STATE_READ) {
         reject(new Error('Entry is already in read state for id ' + entry_id));
         return;
