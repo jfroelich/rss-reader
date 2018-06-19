@@ -10,102 +10,102 @@ import {url_did_change} from '/src/net/url-did-change.js';
 import {sanitize_document} from '/src/poll/sanitize-document.js';
 import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
 
-// Processes an entry and possibly adds it to the database. The full-text html
-// of the entry is fetched and stored as `entry.content`.
-
-// ### Context properties
-// * **rconn** {IDBDatabase} required
-// * **iconn** {IDBDatabase} required
-// * **channel** {BroadcastChannel} required
-// * **fetch_html_timeout** {Number} optional
-// * **fetch_image_timeout** {Number} optional
-
-// ### Params
-// * **entry** {object}
-
-// ### Misc implementation notes
-// * url rewriting always occurs before checking whether a url exists. The
-// original url is not checked. This reduces the number of checks that must
-// occur.
-
-const rewrite_rules = build_rewrite_rules();
-
-export async function poll_entry(entry) {
-  if (array.is_empty(entry.urls)) {
-    return;
+export class EntryExistsError extends Error {
+  constructor(message = 'Entry already exists') {
+    super(message);
   }
-
-  entry_rewrite_tail_url(entry, rewrite_rules);
-  if (await entry_exists(this.rconn, entry)) {
-    return;
-  }
-
-  const response = await fetch_entry(entry, this.fetch_html_timeout);
-  if (await handle_entry_redirect(this.rconn, entry, response, rewrite_rules)) {
-    return;
-  }
-
-  const document = await parse_response(response);
-  update_entry_title(entry, document);
-  await update_entry_icon(this.iconn, entry, document);
-  await update_entry_content(entry, document, this.fetch_image_timeout);
-
-  if (!db.is_valid_entry(entry)) {
-    throw new Error('Invalid entry ' + entry);
-  }
-
-  entry = db.sanitize_entry(entry);
-  return await db.update_entry(this.rconn, this.channel, entry);
 }
 
-async function handle_entry_redirect(rconn, entry, response, rewrite_rules) {
-  if (!response) {
-    return false;
+// Processes an entry and possibly adds it to the database. Attempts to fetch
+// the full text of the entry. Either returns the added entry id, or throws an
+// error.
+export async function poll_entry(
+    rconn, iconn, channel, entry, fetch_html_timeout, fetch_image_timeout,
+    rewrite_rules) {
+  assert(db.is_entry(entry));
+
+  // Rewrite the entry's last url and append its new url if different.
+  let url = new URL(array.peek(entry.urls));
+  db.append_entry_url(entry, rewrite_url(url, rewrite_rules));
+
+  // Check whether the entry exists. Note we skip over checking the original
+  // url and only check the rewritten url, because we always rewrite before
+  // storage, and that is sufficient to detect a duplicate. We get the
+  // tail url a second time because it may have changed in rewriting.
+  url = new URL(array.peek(entry.urls));
+  const get_entry_mode = 'url', get_entry_key_only = true;
+  let existing_entry =
+      await db.get_entry(rconn, get_entry_mode, url, get_entry_key_only);
+  if (existing_entry) {
+    throw new EntryExistsError('Entry already exists for url ' + url.href);
   }
 
-  const request_url = new URL(array.peek(entry.urls));
-  const response_url = new URL(response.url);
-  if (!url_did_change(request_url, response_url)) {
-    return false;
-  }
-
-  db.append_entry_url(entry, response_url);
-  entry_rewrite_tail_url(entry, rewrite_rules);
-  return await entry_exists(rconn, entry);
-}
-
-function entry_rewrite_tail_url(entry, rewrite_rules) {
-  const tail_url = new URL(array.peek(entry.urls));
-  const new_url = rewrite_url(tail_url, rewrite_rules);
-  if (!new_url) {
-    return false;
-  }
-  return db.append_entry_url(entry, new_url);
-}
-
-async function entry_exists(rconn, entry) {
-  const url = new URL(array.peek(entry.urls));
-  const mode_url = 'url', key_only = true;
-  const existing_entry = await db.get_entry(rconn, mode_url, url, key_only);
-  return existing_entry ? true : false;
-}
-
-// TODO: this should just bubble up the error
-// TODO: undecided, but maybe augmentability is not this function's concern?
-async function fetch_entry(entry, fetch_html_timeout) {
-  const url = new URL(array.peek(entry.urls));
-  if (url_is_augmentable(url)) {
+  // Fetch the entry full text. Reuse the url from above since it has not
+  // changed. Trap fetch errors so that we can fall back to using feed content
+  let response;
+  if ((url.protocol === 'http:' || url.protocol === 'https:') &&
+      sniff.classify(url) !== sniff.BINARY_CLASS &&
+      !url_is_inaccessible_content(url)) {
     try {
-      return await fetch_html(url, fetch_html_timeout);
+      response = await fetch_html(url, fetch_html_timeout);
     } catch (error) {
-      return undefined;
     }
   }
-}
 
-function url_is_augmentable(url) {
-  return url_is_http(url) && sniff.classify(url) !== sniff.BINARY_CLASS &&
-      !url_is_inaccessible_content(url);
+  // If we fetched and redirected, append the post-redirect response url, and
+  // reapply url rewriting.
+  let document;
+  if (response) {
+    let url_changed = false;
+    const response_url = new URL(response.url);
+    if (url_did_change(url, response_url)) {
+      url_changed = true;
+      db.append_entry_url(entry, response_url);
+      db.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
+      url = new URL(array.peek(entry.urls));
+
+      existing_entry =
+          await db.get_entry(rconn, get_entry_mode, url, get_entry_key_only);
+      if (existing_entry) {
+        throw new EntryExistsError(
+            'Entry exists for redirected url ' + url.href);
+      }
+    }
+
+    let response_text;
+    try {
+      response_text = await response.text();
+      document = parse_html(response_text);
+    } catch (error) {
+    }
+
+    if (document && !entry.title) {
+      const title_element = document.querySelector('html > head > title');
+      if (title_element) {
+        entry.title = title_element.textContent;
+      }
+    }
+
+  } else {
+    try {
+      document = parse_html(entry.content);
+    } catch (error) {
+      document = window.document.implementation.createHTMLDocument();
+      document.documentElement.innerHTML = 'Invalid html content';
+    }
+  }
+
+
+  assert(document);
+
+  await update_entry_icon(iconn, entry, document);
+  set_document_base_uri(document, url);
+  await sanitize_document(document);
+  entry.content = document.documentElement.outerHTML;
+
+  assert(db.is_valid_entry(entry));
+  entry = db.sanitize_entry(entry);
+  return await db.update_entry(rconn, channel, entry);
 }
 
 function url_is_inaccessible_content(url) {
@@ -115,32 +115,6 @@ function url_is_inaccessible_content(url) {
     }
   }
   return false;
-}
-
-function url_is_http(url) {
-  return url.protocol === 'http:' || url.protocol === 'https:';
-}
-
-async function parse_response(response) {
-  if (!response) {
-    return;
-  }
-
-  const response_text = await response.text();
-
-  try {
-    return parse_html(response_text);
-  } catch (error) {
-  }
-}
-
-function update_entry_title(entry, document) {
-  if (document && !entry.title) {
-    const title_element = document.querySelector('html > head > title');
-    if (title_element) {
-      entry.title = title_element.textContent;
-    }
-  }
 }
 
 async function update_entry_icon(iconn, entry, document) {
@@ -153,56 +127,6 @@ async function update_entry_icon(iconn, entry, document) {
   }
 }
 
-async function update_entry_content(entry, document, fetch_image_timeout) {
-  if (!document) {
-    try {
-      document = parse_html(entry.content);
-    } catch (error) {
-      entry.content = 'Bad formatting (unsafe HTML redacted)';
-      return;
-    }
-  }
-
-  // sanitize_document requires the document have document.baseURI set.
-  const document_url = new URL(array.peek(entry.urls));
-  set_document_base_uri(document, document_url);
-
-  await sanitize_document(document);
-  entry.content = document.documentElement.outerHTML;
-}
-
-function build_rewrite_rules() {
-  const rules = [];
-  rules.push(google_news_rule);
-  rules.push(techcrunch_rule);
-  rules.push(facebook_exit_rule);
-  return rules;
-}
-
-function google_news_rule(url) {
-  if (url.hostname === 'news.google.com' && url.pathname === '/news/url') {
-    const param = url.searchParams.get('url');
-    try {
-      return new URL(param);
-    } catch (error) {
-    }
-  }
-}
-
-function techcrunch_rule(url) {
-  if (url.hostname === 'techcrunch.com' && url.searchParams.has('ncid')) {
-    const output = new URL(url.href);
-    output.searchParams.delete('ncid');
-    return output;
-  }
-}
-
-function facebook_exit_rule(url) {
-  if (url.hostname === 'l.facebook.com' && url.pathname === '/l.php') {
-    const param = url.searchParams.get('u');
-    try {
-      return new URL(param);
-    } catch (error) {
-    }
-  }
+function assert(condition, message) {
+  if (!condition) throw new Error(message || 'Assertion error');
 }

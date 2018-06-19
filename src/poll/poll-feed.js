@@ -3,7 +3,8 @@ import * as db from '/src/db/db.js';
 import * as array from '/src/lang/array.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {OfflineError, TimeoutError} from '/src/net/fetch2.js';
-import {poll_entry} from '/src/poll/poll-entry.js';
+import {EntryExistsError, poll_entry} from '/src/poll/poll-entry.js';
+import {build_rewrite_rules} from '/src/poll/rewrite-rules.js';
 
 // Check if a remote feed has new data and store it in the database
 export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
@@ -114,17 +115,31 @@ async function poll_entries(rconn, iconn, channel, options, entries, feed) {
     }
   }
 
-  const pec = {};
-  pec.rconn = rconn;
-  pec.iconn = iconn;
-  pec.channel = channel;
-  pec.fetch_html_timeout = options.fetch_html_timeout;
-  pec.fetch_image_timeout = options.fetch_image_timeout;
+  const rewrite_rules = build_rewrite_rules();
 
-  const proms = entries.map(poll_entry, pec);
-  const entry_ids = await Promise.all(proms);
-  const count = entry_ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
+  const poll_entry_promises = [];
+  for (const entry of entries) {
+    const promise = poll_entry(
+        rconn, iconn, channel, entry, options.fetch_html_timeout,
+        options.fetch_image_timeout, rewrite_rules);
+    // Avoid Promise.all short-circuiting
+    const catch_promise = promise.catch(poll_entry_onerror);
+    poll_entry_promises.push(catch_promise);
+  }
+  const new_entry_ids = await Promise.all(poll_entry_promises);
+  const count = new_entry_ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
   return count;
+}
+
+function poll_entry_onerror(error) {
+  if (error instanceof EntryExistsError) {
+    // ignore it, this is a routine exit condition
+  } else {
+    // Use warn because errors are not critical and not handled, just logged
+    // Note no difference here between programming error and typical errors
+    // like fetch error, parse error
+    console.warn(error);
+  }
 }
 
 // Returns a new object that results from merging the old feed with the new
@@ -182,13 +197,7 @@ async function handle_fetch_error(
     feed.deactivationDate = new Date();
   }
 
-  // NOTE: there is no need to validate or sanitize before update in this
-  // particular case. In this case we are udpating the feed that was loaded from
-  // the database, not the fetched feed. We have had control of the in memory
-  // object for its lifetime, and only our code is modifying it, and our
-  // modifications are well-known. If a feed is invalid or needs sanitization
-  // as this point, that is a serious programming error (perhaps worthy of an
-  // pre-condition assert here but it borders on paranoia)
+  // No need to validate/sanitize, we've had control for the entire lifetime
   await db.update_feed(rconn, channel, feed);
 }
 
