@@ -1,12 +1,7 @@
 import * as app from '/src/app/app.js';
 import * as badge from '/src/badge/badge.js';
+import * as cron_control from '/src/control/cron-control.js';
 import * as install_update_control from '/src/control/install-update-control.js';
-import * as cron from '/src/cron/cron.js';
-
-// Persists for the lifetime of the page. Will not prevent the page from
-// unloading.
-const channel = new BroadcastChannel(localStorage.channel_name);
-channel.onmessage = background_page_channel_onmessage;
 
 async function background_page_channel_onmessage(event) {
   if (!event.isTrusted) {
@@ -34,9 +29,14 @@ function onstartup() {
   badge.refresh_badge(location.pathname);
 }
 
+// Persists for the lifetime of the page. Will not prevent the page from
+// unloading.
+const channel = new BroadcastChannel(localStorage.channel_name);
+channel.onmessage = background_page_channel_onmessage;
+
 // Register alarms
 // TODO: actually this one I think can be done on install?
-cron.register_listener();
+cron_control.register_listener();
 
 // Fired when a profile that has this extension installed first starts up
 // NOTE: so basically when chrome starts, or on profile switch

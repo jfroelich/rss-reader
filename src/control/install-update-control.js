@@ -1,7 +1,7 @@
 import * as color from '/src/argb8888/argb8888.js';
 import * as badge from '/src/badge/badge.js';
 import * as config_control from '/src/control/config-control.js';
-import * as cron from '/src/cron/cron.js';
+import * as cron_control from '/src/control/cron-control.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
 
@@ -29,10 +29,10 @@ export async function oninstalled(event) {
     // Initialize the badge text (to 0)
     badge.refresh_badge(location.pathname);
 
-    cron.create_alarms();
+    cron_control.create_alarms();
   } else if (reason === 'update') {
     config_onupdate(prev_version);
-    cron.update_alarms(prev_version);
+    cron_control.update_alarms(prev_version);
 
     // Without this call, the badge loses its text on extension reload
     badge.refresh_badge(location.pathname);
