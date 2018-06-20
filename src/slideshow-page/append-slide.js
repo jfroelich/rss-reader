@@ -1,8 +1,8 @@
-import {is_entry} from '/src/db/db.js';
+import * as localstorage from '/src/browser/localstorage.js';
 import {escape_html} from '/src/html/escape-html.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import * as array from '/src/lang/array.js';
-import * as localstorage from '/src/browser/localstorage.js';
+import * as Entry from '/src/model/entry.js';
 import {filter_publisher} from '/src/nlp/nlp.js';
 import {hide_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
 import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
@@ -11,7 +11,7 @@ import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
 let duration = 0.35;
 
 export function append_slide(entry) {
-  if (!is_entry(entry)) {
+  if (!Entry.is_entry(entry)) {
     console.warn('%s: invalid entry parameter', append_slide.name, entry);
     return;
   }

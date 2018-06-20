@@ -7,37 +7,15 @@ import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
 import {filter_unprintable_characters} from '/src/lang/filter-unprintable-characters.js';
-
-// indexedDB does not support storing Function objects, because Function objects
-// are not serializable. Therefore instanceof and typeof are not usable for
-// making assertions about type. Therefore, use a hidden "magic" property to
-// enable some minimal form of type checking.
-const FEED_MAGIC = 0xfeedfeed;
-const ENTRY_MAGIC = 0xdeadbeef;
-
-export const ENTRY_STATE_UNREAD = 0;
-export const ENTRY_STATE_READ = 1;
-export const ENTRY_STATE_UNARCHIVED = 0;
-export const ENTRY_STATE_ARCHIVED = 1;
-
-// This does not involve the database, but it does involve deep knowledge of the
-// storage format. This creates an in memory object. Entry objects cannot be
-// function objects, so set a magic property to fake a degree of type safety.
-export function create_entry() {
-  return {magic: ENTRY_MAGIC};
-}
-
-// Does not involve the database
-export function create_feed() {
-  return {magic: FEED_MAGIC};
-}
+import * as Entry from '/src/model/entry.js';
+import * as Feed from '/src/model/feed.js';
 
 export function count_unread_entries(conn) {
   return new Promise((resolve, reject) => {
     const txn = conn.transaction('entry');
     const store = txn.objectStore('entry');
     const index = store.index('readState');
-    const request = index.count(ENTRY_STATE_UNREAD);
+    const request = index.count(Entry.ENTRY_STATE_UNREAD);
     request.onsuccess = _ => resolve(request.result);
     request.onerror = _ => reject(request.error);
   });
@@ -49,7 +27,7 @@ export function count_unread_entries(conn) {
 export function delete_feed(conn, channel, feed_id, reason) {
   return new Promise((resolve, reject) => {
     // If not checked this would be a noop which is misleading
-    if (!is_valid_feed_id(feed_id)) {
+    if (!Feed.is_valid_id(feed_id)) {
       throw new TypeError('Invalid feed id ' + feed_id);
     }
 
@@ -97,7 +75,7 @@ export function delete_feed(conn, channel, feed_id, reason) {
 // feed id in its message because it would require an extra lookup.
 export function delete_entry(conn, channel, id, reason) {
   return new Promise((resolve, reject) => {
-    assert(is_valid_entry_id(id));  // prevent fake noops
+    assert(Entry.is_valid_entry_id(id));  // prevent fake noops
     const txn = conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
       const msg = {type: 'entry-deleted', id: id, reason: reason};
@@ -130,7 +108,7 @@ export function get_entries(conn, mode = 'all', offset = 0, limit = 0) {
     let request;
     if (mode === 'viewable') {
       const index = store.index('archiveState-readState');
-      const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_UNREAD];
+      const key_path = [Entry.ENTRY_STATE_UNARCHIVED, Entry.ENTRY_STATE_UNREAD];
       request = index.openCursor(key_path);
     } else if (mode === 'all') {
       request = store.openCursor();
@@ -168,7 +146,7 @@ export function get_entries(conn, mode = 'all', offset = 0, limit = 0) {
 // only basic entry loaded.
 export function get_entry(conn, mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
-    assert(mode !== 'id' || is_valid_entry_id(value));
+    assert(mode !== 'id' || Entry.is_valid_entry_id(value));
     assert(mode !== 'id' || !key_only);
 
     const txn = conn.transaction('entry');
@@ -190,8 +168,8 @@ export function get_entry(conn, mode = 'id', value, key_only) {
       let entry;
       if (key_only) {
         const entry_id = request.result;
-        if (is_valid_entry_id(entry_id)) {
-          entry = create_entry();
+        if (Entry.is_valid_entry_id(entry_id)) {
+          entry = Entry.create_entry();
           entry.id = entry_id;
         }
       } else {
@@ -207,7 +185,7 @@ export function get_entry(conn, mode = 'id', value, key_only) {
 export function get_feed(conn, mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
     assert(mode !== 'url' || (value && typeof value.href === 'string'));
-    assert(mode !== 'id' || is_valid_feed_id(value));
+    assert(mode !== 'id' || Feed.is_valid_id(value));
     assert(mode !== 'id' || !key_only);
 
     const txn = conn.transaction('feed');
@@ -229,8 +207,8 @@ export function get_feed(conn, mode = 'id', value, key_only) {
       let feed;
       if (key_only) {
         const feed_id = request.result;
-        if (is_valid_feed_id(feed_id)) {
-          feed = create_feed();
+        if (Feed.is_valid_id(feed_id)) {
+          feed = Feed.create();
           feed.id = feed_id;
         }
       } else {
@@ -282,7 +260,7 @@ function feed_compare(a, b) {
 
 export function mark_entry_read(conn, channel, entry_id) {
   return new Promise((resolve, reject) => {
-    if (!is_valid_entry_id(entry_id)) {
+    if (!Entry.is_valid_entry_id(entry_id)) {
       throw new TypeError('Invalid entry id ' + entry_id);
     }
 
@@ -303,7 +281,7 @@ export function mark_entry_read(conn, channel, entry_id) {
         return;
       }
 
-      if (!is_entry(entry)) {
+      if (!Entry.is_entry(entry)) {
         reject(new Error('Not an entry object for entry id ' + entry_id));
         return;
       }
@@ -311,18 +289,18 @@ export function mark_entry_read(conn, channel, entry_id) {
       // Once an entry enters the archive state, it should require direct
       // property access to manipulate read state, so prevent access here. This
       // helper is only intended for use on unarchived entries
-      if (entry.archiveState === ENTRY_STATE_ARCHIVED) {
+      if (entry.archiveState === Entry.ENTRY_STATE_ARCHIVED) {
         reject(
             new Error('Cannot mark archived entry as read for id ' + entry_id));
         return;
       }
 
-      if (entry.readState === ENTRY_STATE_READ) {
+      if (entry.readState === Entry.ENTRY_STATE_READ) {
         reject(new Error('Entry is already in read state for id ' + entry_id));
         return;
       }
 
-      entry.readState = ENTRY_STATE_READ;
+      entry.readState = Entry.ENTRY_STATE_READ;
       const currentDate = new Date();
       entry.dateUpdated = currentDate;
       entry.dateRead = currentDate;
@@ -343,7 +321,7 @@ export function iterate_entries(conn, mode = 'all', writable, handle_entry) {
     let request;
     if (mode === 'archive') {
       const index = store.index('archiveState-readState');
-      const key_path = [ENTRY_STATE_UNARCHIVED, ENTRY_STATE_READ];
+      const key_path = [Entry.ENTRY_STATE_UNARCHIVED, Entry.ENTRY_STATE_READ];
       request = index.openCursor(key_path);
     } else if (mode === 'all') {
       request = store.openCursor();
@@ -442,7 +420,7 @@ function add_magic_to_entries(txn) {
     if (cursor) {
       const entry = cursor.value;
       if (!('magic' in entry)) {
-        entry.magic = ENTRY_MAGIC;
+        entry.magic = Entry.ENTRY_MAGIC;
         entry.dateUpdated = new Date();
         cursor.update(entry);
       }
@@ -460,7 +438,7 @@ function add_magic_to_feeds(txn) {
   request.onsuccess = function(event) {
     const feeds = event.target.result;
     for (const feed of feeds) {
-      feed.magic = FEED_MAGIC;
+      feed.magic = Feed.MAGIC;
       feed.dateUpdated = new Date();
       store.put(feed);
     }
@@ -495,7 +473,7 @@ export function sanitize_entry(
     entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {
   // Create a shallow clone for purity
-  const blank_entry = create_entry();
+  const blank_entry = Entry.create_entry();
   const output_entry = Object.assign(blank_entry, entry);
 
   if (output_entry.author) {
@@ -561,14 +539,14 @@ export function sanitize_feed(feed, options) {
 // modified even when a post message error occurs.
 export function update_entry(conn, channel, entry) {
   return new Promise((resolve, reject) => {
-    if (!is_entry(entry)) {
+    if (!Entry.is_entry(entry)) {
       throw new TypeError('Invalid entry argument ' + entry);
     }
 
     const creating = !entry.id;
     if (creating) {
-      entry.readState = ENTRY_STATE_UNREAD;
-      entry.archiveState = ENTRY_STATE_UNARCHIVED;
+      entry.readState = Entry.ENTRY_STATE_UNREAD;
+      entry.archiveState = Entry.ENTRY_STATE_UNARCHIVED;
       entry.dateCreated = new Date();
       delete entry.dateUpdated;
     } else {
@@ -600,7 +578,7 @@ export function update_entry(conn, channel, entry) {
 export function update_feed_properties(
     conn, channel, feed_id, name, value, extra_props = {}) {
   return new Promise((resolve, reject) => {
-    assert(is_valid_feed_id(feed_id));
+    assert(Feed.is_valid_id(feed_id));
     assert(typeof name === 'string' && name);
     assert(name !== 'id');  // refuse setting this particular prop
 
@@ -615,8 +593,8 @@ export function update_feed_properties(
     const request = store.get(feed_id);
     request.onsuccess = _ => {
       const feed = request.result;
-      assert(feed);           // indicates bad id or unexpected state
-      assert(is_feed(feed));  // corrupted state
+      assert(feed);                // indicates bad id or unexpected state
+      assert(Feed.is_feed(feed));  // corrupted state
 
       const run_date = new Date();
 
@@ -673,7 +651,7 @@ export function update_feed_properties(
 // Creates or updates a feed in the database
 export function update_feed(conn, channel, feed) {
   return new Promise((resolve, reject) => {
-    assert(is_feed(feed));
+    assert(Feed.is_feed(feed));
     assert(feed.urls && feed.urls.length);
 
     filter_empty_properties(feed);
@@ -703,156 +681,4 @@ export function update_feed(conn, channel, feed) {
       request.onsuccess = _ => feed.id = request.result;
     }
   });
-}
-
-// Returns whether an entry is valid. Only partially implemented
-export function is_valid_entry(entry) {
-  if (!is_entry(entry)) {
-    return false;
-  }
-
-  // This could be called on a new entry that does not have an id, so only
-  // check id validity when the property exists
-  if ('id' in entry) {
-    if (!is_valid_entry_id(entry.id)) {
-      console.warn('Invalid id', entry.id);
-      return false;
-    }
-  }
-
-  return true;
-}
-
-// Returns whether the feed is valid
-export function is_valid_feed(feed) {
-  if (!is_feed(feed)) {
-    return false;
-  }
-
-  if ('id' in feed && !is_valid_feed_id(feed.id)) {
-    return false;
-  }
-
-  if (!['undefined', 'string'].includes(typeof feed.title)) {
-    return false;
-  }
-
-  if ('urls' in feed && !Array.isArray(feed.urls)) {
-    return false;
-  }
-
-  return true;
-}
-
-// Return true if the first parameter looks like an entry object
-export function is_entry(value) {
-  // Function objects are not allowed, hence the pedantic tests and the duck
-  // typing
-  // NOTE: typeof null === 'object', hence the preceding truthy test
-  // NOTE: uses extended check in order to exclude function objects
-  return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
-}
-
-// Return true if the first parameter looks like an entry id
-export function is_valid_entry_id(value) {
-  return Number.isInteger(value) && value > 0;
-}
-
-// Append a url to an entry's url list. Lazily creates the urls property if
-// needed. Normalizes the url. The normalized url is compared against existing
-// urls to ensure the new url is unique. Returns true if entry was added, or
-// false if the url already exists and was therefore not added.
-export function append_entry_url(entry, url) {
-  if (!is_entry(entry)) {
-    throw new TypeError('Invalid entry parameter ' + entry);
-  }
-
-  // Prefer duck typing over instanceof, assume string
-  if (!url.href) {
-    throw new TypeError('Invalid url parameter ' + url);
-  }
-
-  const normal_url_string = url.href;
-  if (entry.urls) {
-    if (entry.urls.includes(normal_url_string)) {
-      return false;
-    }
-
-    entry.urls.push(normal_url_string);
-  } else {
-    entry.urls = [normal_url_string];
-  }
-
-  return true;
-}
-
-// Return true if the value looks like a feed object. While it perenially
-// appears like the value condition is implied in the typeof condition, this is
-// not true. The value condition is short for `value !== null`, because `typeof
-// null === 'object'`, and not checking value defined-ness would cause
-// value.magic to throw. The value condition is checked first, because
-// presumably it is cheaper than the typeof check.
-export function is_feed(value) {
-  return value && typeof value === 'object' && value.magic === FEED_MAGIC;
-}
-
-// Appends a url to the feed's internal list. Lazily creates the list if needed
-// * @param feed {Object} a feed object
-// * @param url {URL}
-export function append_feed_url(feed, url) {
-  if (!is_feed(feed)) {
-    throw new TypeError('Invalid feed argument ' + feed);
-    return false;
-  }
-
-  // Duck-typed sanity check
-  const href = url.href;
-  if (typeof href !== 'string') {
-    throw new TypeError('Invalid url argument ' + url);
-    return false;
-  }
-
-  // Lazy init
-  if (!feed.urls) {
-    feed.urls = [];
-  }
-
-  if (feed.urls.includes(href)) {
-    return false;
-  }
-  feed.urls.push(href);
-  return true;
-}
-
-export function set_feed_date_fetched(feed, date) {
-  feed.dateFetched = date;
-}
-
-export function set_feed_date_last_modified(feed, date) {
-  feed.dateLastModifed = date;
-}
-
-export function set_feed_date_published(feed, date) {
-  feed.datePublished = date;
-}
-
-export function set_feed_description(feed, description) {
-  feed.description = description;
-}
-
-export function set_feed_link(feed, url_string) {
-  feed.link = url_string;
-}
-
-export function set_feed_title(feed, title) {
-  feed.title = title;
-}
-
-// Set the type property, which indicates whether the feed is rss/atom/etc
-export function set_feed_type(feed, feed_type_string) {
-  feed.type = feed_type_string;
-}
-
-export function is_valid_feed_id(id) {
-  return Number.isInteger(id) && id > 0;
 }

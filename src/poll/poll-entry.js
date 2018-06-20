@@ -5,6 +5,7 @@ import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {parse_html} from '/src/html/parse-html.js';
 import * as array from '/src/lang/array.js';
+import * as Entry from '/src/model/entry.js';
 import {fetch_html} from '/src/net/fetch-html.js';
 import * as sniff from '/src/net/sniff.js';
 import {url_did_change} from '/src/net/url-did-change.js';
@@ -23,11 +24,11 @@ export class EntryExistsError extends Error {
 export async function poll_entry(
     rconn, iconn, channel, entry, fetch_html_timeout, fetch_image_timeout,
     rewrite_rules) {
-  assert(db.is_entry(entry));
+  assert(Entry.is_entry(entry));
 
   // Rewrite the entry's last url and append its new url if different.
   let url = new URL(array.peek(entry.urls));
-  db.append_entry_url(entry, rewrite_url(url, rewrite_rules));
+  Entry.append_entry_url(entry, rewrite_url(url, rewrite_rules));
 
   // Check whether the entry exists. Note we skip over checking the original
   // url and only check the rewritten url, because we always rewrite before
@@ -61,8 +62,9 @@ export async function poll_entry(
     const response_url = new URL(response.url);
     if (url_did_change(url, response_url)) {
       url_changed = true;
-      db.append_entry_url(entry, response_url);
-      db.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
+      Entry.append_entry_url(entry, response_url);
+      Entry.append_entry_url(
+          entry, rewrite_url(response_url, rewrite_rules));
       url = new URL(array.peek(entry.urls));
 
       existing_entry =
@@ -104,7 +106,7 @@ export async function poll_entry(
   await sanitize_document(document);
   entry.content = document.documentElement.outerHTML;
 
-  assert(db.is_valid_entry(entry));
+  assert(Entry.is_valid_entry(entry));
   entry = db.sanitize_entry(entry);
   return await db.update_entry(rconn, channel, entry);
 }

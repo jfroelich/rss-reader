@@ -1,5 +1,6 @@
 import * as db from '/src/db/db.js';
 import {sizeof} from '/src/lang/sizeof.js';
+import * as Entry from '/src/model/entry.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
@@ -12,7 +13,7 @@ export async function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
 
   await db.iterate_entries(conn, 'archive', txn_writable, cursor => {
     const entry = cursor.value;
-    if (!db.is_entry(entry)) {
+    if (!Entry.is_entry(entry)) {
       console.warn('Bad entry read from db', entry);
       return;
     }
@@ -51,7 +52,7 @@ function archive_entry(entry) {
     console.warn('Entry increased size', entry);
   }
 
-  ce.archiveState = db.ENTRY_STATE_ARCHIVED;
+  ce.archiveState = Entry.ENTRY_STATE_ARCHIVED;
   const current_date = new Date();
   ce.dateArchived = current_date;
   ce.dateUpdated = current_date;
@@ -59,7 +60,7 @@ function archive_entry(entry) {
 }
 
 function compact_entry(entry) {
-  const ce = db.create_entry();
+  const ce = Entry.create_entry();
   ce.dateCreated = entry.dateCreated;
 
   if (entry.dateRead) {

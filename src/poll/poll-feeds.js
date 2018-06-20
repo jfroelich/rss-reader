@@ -2,6 +2,8 @@ import * as app from '/src/app/app.js';
 import {assert} from '/src/assert/assert.js';
 import * as db from '/src/db/db.js';
 import * as array from '/src/lang/array.js';
+import * as Entry from '/src/model/entry.js';
+import * as Feed from '/src/model/feed.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {OfflineError, TimeoutError} from '/src/net/fetch2.js';
 import {EntryExistsError, poll_entry} from '/src/poll/poll-entry.js';
@@ -68,7 +70,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   const deactivation_threshold = options.deactivation_threshold;
   const fetch_feed_timeout = options.fetch_feed_timeout;
 
-  assert(db.is_feed(feed));
+  assert(Feed.is_feed(feed));
   assert(!array.is_empty(feed.urls));
   assert(feed.active);
 
@@ -105,7 +107,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   // counters that would lead to eventual deactivation
   handle_fetch_success(merged_feed);
 
-  assert(db.is_valid_feed(merged_feed));
+  assert(Feed.is_valid(merged_feed));
   db.sanitize_feed(merged_feed);
   await db.update_feed(rconn, channel, merged_feed);
 
@@ -177,11 +179,12 @@ function poll_entry_onerror(error) {
 // needs to be fixed. First copy over the old feed's urls, then try and append
 // each new feed url.
 function merge_feed(old_feed, new_feed) {
-  const merged_feed = Object.assign(db.create_feed(), old_feed, new_feed);
+  const merged_feed =
+      Object.assign(Feed.create(), old_feed, new_feed);
   merged_feed.urls = [...old_feed.urls];
   if (new_feed.urls) {
     for (const url_string of new_feed.urls) {
-      db.append_feed_url(merged_feed, new URL(url_string));
+      Feed.append_url(merged_feed, new URL(url_string));
     }
   }
 
@@ -262,7 +265,7 @@ function dedup_entries(entries) {
 // format. This is a cross-cutting concern so it belongs in the place where the
 // concerns meet.
 function coerce_entry(parsed_entry) {
-  const blank_entry = db.create_entry();
+  const blank_entry = Entry.create_entry();
 
   // Copy over everything
   const clone = Object.assign(blank_entry, parsed_entry);
@@ -271,7 +274,7 @@ function coerce_entry(parsed_entry) {
   delete clone.link;
   if (parsed_entry.link) {
     try {
-      db.append_entry_url(clone, new URL(parsed_entry.link));
+      Entry.append_entry_url(clone, new URL(parsed_entry.link));
     } catch (error) {
     }
   }

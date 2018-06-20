@@ -1,4 +1,5 @@
 import * as db from '/src/db/db.js';
+import * as Feed from '/src/model/feed.js';
 import {is_allowed_request} from '/src/net/fetch-policy.js';
 import {fetch2} from '/src/net/fetch2.js';
 import {parse_feed} from '/src/parse-feed/parse-feed.js';
@@ -29,10 +30,10 @@ export async function fetch_feed(
   const parsed_feed = parse_feed(res_text, skip_entries, resolve_entry_urls);
 
   // Convert the feed from the parse format to the storage format
-  const feed = db.create_feed();
+  const feed = Feed.create();
 
   if (parsed_feed.type) {
-    db.set_feed_type(feed, parsed_feed.type);
+    Feed.set_type(feed, parsed_feed.type);
   }
 
   if (parsed_feed.link) {
@@ -43,41 +44,41 @@ export async function fetch_feed(
     }
 
     if (link_url) {
-      db.set_feed_link(feed, link_url.href);
+      Feed.set_link(feed, link_url.href);
     }
   }
 
   if (parsed_feed.title) {
-    db.set_feed_title(feed, parsed_feed.title);
+    Feed.set_title(feed, parsed_feed.title);
   }
 
   if (parsed_feed.description) {
-    db.set_feed_description(feed, parsed_feed.description);
+    Feed.set_description(feed, parsed_feed.description);
   }
 
   if (parsed_feed.date_published) {
-    db.set_feed_date_published(feed, parsed_feed.date_published);
+    Feed.set_date_published(feed, parsed_feed.date_published);
   } else {
-    db.set_feed_date_published(feed, new Date());
+    Feed.set_date_published(feed, new Date());
   }
 
   // Set the request url
-  db.append_feed_url(feed, url);
+  Feed.append_url(feed, url);
 
   // Set the response url
-  db.append_feed_url(feed, new URL(response.url));
+  Feed.append_url(feed, new URL(response.url));
 
   // Set the last modified date based on the response
   const last_modified_string = response.headers.get('Last-Modified');
   if (last_modified_string) {
     const last_modified_date = new Date(last_modified_string);
     if (!isNaN(last_modified_date.getTime())) {
-      db.set_feed_date_last_modified(feed, last_modified_date);
+      Feed.set_date_last_modified(feed, last_modified_date);
     }
   }
 
   // Set the date the feed was fetched to now
-  db.set_feed_date_fetched(feed, new Date());
+  Feed.set_date_fetched(feed, new Date());
 
   const output_response = {};
   output_response.feed = feed;

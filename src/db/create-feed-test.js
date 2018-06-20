@@ -2,6 +2,7 @@ import {assert} from '/src/assert/assert.js';
 import * as db from '/src/db/db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import * as array from '/src/lang/array.js';
+import * as Feed from '/src/model/feed.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // Exercises the db-write-feed function in the case of adding a new feed object
@@ -10,16 +11,16 @@ import {register_test} from '/src/test/test-registry.js';
 // output.
 async function create_feed_test() {
   // Create a dummy feed with minimal properties
-  const feed = db.create_feed();
+  const feed = Feed.create();
   const feed_url = new URL('http://www.example.com/example.rss');
-  db.append_feed_url(feed, feed_url);
+  Feed.append_url(feed, feed_url);
 
   // Pre-process the feed using the typical sequence of operations
   // TODO: should do tests that both involve and not involve validation and
   // sanitization. For now do a test where both are done.
   // TODO: or maybe this is dumb, and I shouldn't test this here at all
   // actually? I am starting to think this should not be here.
-  assert(db.is_valid_feed(feed));
+  assert(Feed.is_valid(feed));
   db.sanitize_feed(feed);
 
   // Intentionally do not set dateUpdated. The property should not exist when
@@ -46,7 +47,7 @@ async function create_feed_test() {
 
   // Given that now we know there the same, validate one of them to validate
   // both as valid
-  assert(db.is_valid_feed_id(feed.id));
+  assert(Feed.is_valid_id(feed.id));
 
   // Make assertions about channel communications
 
@@ -69,7 +70,7 @@ async function create_feed_test() {
 
   // Read the feed from the database and assert against read properties
   const match = await db.get_feed(conn, 'id', feed.id, false);
-  assert(db.is_feed(match));
+  assert(Feed.is_feed(match));
   assert(match.active === true);
   assert('dateCreated' in match);
 

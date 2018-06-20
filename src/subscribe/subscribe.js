@@ -2,8 +2,10 @@ import * as app from '/src/app/app.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
 import * as array from '/src/lang/array.js';
+import * as Feed from '/src/model/feed.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {url_did_change} from '/src/net/url-did-change.js';
+
 
 // Subscribe to a feed
 // @param rconn {IDBDatabase} an open feed database connection
@@ -46,7 +48,7 @@ export async function subscribe(
   }
 
   // Validate and sanitize the feed's properties prior to storage
-  if (!db.is_valid_feed(feed)) {
+  if (!Feed.is_valid(feed)) {
     throw new Error('Invalid feed ' + JSON.stringify(feed));
   }
 

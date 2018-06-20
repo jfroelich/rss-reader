@@ -1,6 +1,7 @@
 import {assert} from '/src/assert/assert.js';
 import * as db from '/src/db/db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
+import * as Feed from '/src/model/feed.js';
 import {subscribe} from '/src/subscribe/subscribe.js';
 import {register_test} from '/src/test/test-registry.js';
 
@@ -34,8 +35,8 @@ async function subscribe_test() {
 
   // Test the subscription produced the desired result
   assert(typeof feed === 'object');
-  assert(db.is_feed(feed));
-  assert(db.is_valid_feed_id(feed.id));
+  assert(Feed.is_feed(feed));
+  assert(Feed.is_valid_id(feed.id));
   assert(feed.urls.length);
   assert(feed.urls.includes(url.href));
   assert(feed.active);
@@ -48,8 +49,8 @@ async function subscribe_test() {
 
   // Assert that the new feed is findable by id
   const match = await db.get_feed(rconn, 'id', feed.id);
-  assert(db.is_feed(match));
-  assert(db.is_valid_feed_id(match.id));
+  assert(Feed.is_feed(match));
+  assert(Feed.is_valid_id(match.id));
   assert(match.id === feed.id);
 
   // Cleanup
