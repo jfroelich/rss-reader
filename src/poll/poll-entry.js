@@ -1,5 +1,5 @@
 import {assert} from '/src/assert/assert.js';
-import {inaccessible_content_descriptors} from '/src/config.js';
+import * as config_control from '/src/control/config-control.js';
 import * as db from '/src/db/db.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -63,8 +63,7 @@ export async function poll_entry(
     if (url_did_change(url, response_url)) {
       url_changed = true;
       Entry.append_entry_url(entry, response_url);
-      Entry.append_entry_url(
-          entry, rewrite_url(response_url, rewrite_rules));
+      Entry.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
       url = new URL(array.peek(entry.urls));
 
       existing_entry =
@@ -112,7 +111,8 @@ export async function poll_entry(
 }
 
 function url_is_inaccessible_content(url) {
-  for (const desc of inaccessible_content_descriptors) {
+  const descriptors = config_control.get_inaccessible_content_descriptors();
+  for (const desc of descriptors) {
     if (desc.pattern && desc.pattern.test(url.hostname)) {
       return true;
     }

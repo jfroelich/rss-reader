@@ -80,10 +80,6 @@ export function filter_hidden_elements(document, matte, mcr) {
   // the perf cost of that decision is too harmful. I might want to revisit
   // this and rewrite the code as if I had originally written both together.
 
-  // NOTE: reminding myself. i am tempted to directly access config here
-  // instead of having values get piped in via params. but that would be wrong.
-  // this is a lib. config.js is not supposed to be available to libs.
-
   // TODO: I could consider inlining the function here now? Or at least moving
   // the function's definition here, because it does not need to standalone. I
   // think this is the sole caller? other than some tests? I could make it a

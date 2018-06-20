@@ -5,6 +5,8 @@
 // modifications to individual settings without the need to update all settings
 // per settings change.
 
+
+
 export function remove(key) {
   delete localStorage[key];
 }
@@ -70,4 +72,25 @@ export function write_string(key, value) {
 
 export function read_string(key) {
   return localStorage[key];
+}
+
+// These descriptors represent hosts that should be excluded when fetching new
+// articles. This is a hackish solution that serves to provide the feature for
+// now until I think more about how to serialize this.
+// TODO: should be storing descriptions in localStorage, need to look into using
+// Regex constructor and learn how to use it
+
+const inaccessible_content_descriptors = [
+  {pattern: /forbes\.com$/i, reason: 'interstitial-advert'},
+  {pattern: /productforums\.google\.com$/i, reason: 'script-generated'},
+  {pattern: /groups\.google\.com$/i, reason: 'script-generated'},
+  {pattern: /nytimes\.com$/i, reason: 'paywall'},
+  {pattern: /wsj\.com$/i, reason: 'paywall'},
+  {pattern: /heraldsun\.com\.au$/i, reason: 'requires-cookies'},
+  {pattern: /ripe\.net$/i, reason: 'requires-cookies'},
+  {pattern: /foxnews.com$/i, reason: 'fake'}
+];
+
+export function get_inaccessible_content_descriptors() {
+  return inaccessible_content_descriptors;
 }
