@@ -1,8 +1,8 @@
+import * as config_control from '/src/control/config-control.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {import_opml} from '/src/import-opml/import-opml.js';
 import * as array from '/src/lang/array.js';
-import * as localstorage from '/src/browser/localstorage.js';
 import {create_opml_document} from '/src/opml/opml-document.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 
@@ -232,7 +232,7 @@ function leftpanel_init() {
   menu_options.onclick = options_menu_onclick;
 
   // Load fonts from local storage once for both init helpers
-  const fonts = localstorage.read_array('fonts');
+  const fonts = config_control.read_array('fonts');
   header_font_menu_init(fonts);
   body_font_menu_init(fonts);
 

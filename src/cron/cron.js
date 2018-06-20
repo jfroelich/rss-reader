@@ -1,6 +1,6 @@
 import {archive_entries} from '/src/archive/archive.js';
-import * as db from '/src/db/db.js';
 import * as dbhealth from '/src/db/db-health.js';
+import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 
@@ -79,6 +79,12 @@ async function alarm_listener(alarm) {
 
 function query_idle_state(idle_secs) {
   return new Promise(res => chrome.idle.queryState(idle_secs, res));
+}
+
+export function update_alarms(prev_version_string) {
+  remove_legacy_alarms(prev_version_string);
+
+  // currently does not do much else, but probably will in the future
 }
 
 export function create_alarms() {

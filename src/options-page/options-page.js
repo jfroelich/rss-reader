@@ -1,6 +1,6 @@
 import {refresh_badge} from '/src/badge/badge.js';
-import * as localstorage from '/src/browser/localstorage.js';
 import * as perm from '/src/browser/permissions.js';
+import * as config_control from '/src/control/config-control.js';
 import * as db from '/src/db/db.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -611,7 +611,7 @@ function options_page_init() {
       current_path = current_path.substring('/images/'.length);
     }
 
-    const background_images = localstorage.read_array('background_images');
+    const background_images = config_control.read_array('background_images');
 
     for (const path of background_images) {
       let option = document.createElement('option');

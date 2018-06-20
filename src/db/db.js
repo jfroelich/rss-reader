@@ -1,5 +1,5 @@
 import {assert} from '/src/assert/assert.js';
-import * as localstorage from '/src/browser/localstorage.js';
+import * as config_control from '/src/control/config-control.js';
 import {replace_tags} from '/src/html/replace-tags.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
@@ -346,9 +346,9 @@ export function open_db(name, version, timeout) {
   // function can still be easily overloaded in order to reuse the
   // on_upgrade_needed handler with a different database name and version.
   name = typeof name === 'string' ? name : localStorage.db_name;
-  version = isNaN(version) ? localstorage.read_int('db_version') : version;
-  timeout = isNaN(timeout) ? localstorage.read_int('db_open_timeout') : timeout;
-
+  version = isNaN(version) ? config_control.read_int('db_version') : version;
+  timeout =
+      isNaN(timeout) ? config_control.read_int('db_open_timeout') : timeout;
   return indexeddb_open(name, version, on_upgrade_needed, timeout);
 }
 

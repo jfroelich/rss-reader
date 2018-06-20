@@ -1,5 +1,5 @@
+import * as config_control from '/src/control/config-control.js';
 import * as db from '/src/db/db.js';
-import * as localstorage from '/src/browser/localstorage.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';
@@ -22,7 +22,7 @@ export async function show_next_slide() {
   const slide_unread_count = count_unread_slides();
   let entries = [];
   if (slide_unread_count < 3) {
-    const limit = localstorage.read_int('initial_entry_load_limit');
+    const limit = config_control.read_int('initial_entry_load_limit');
     const mode = 'viewable';
     entries = await db.get_entries(conn, mode, slide_unread_count, limit);
   }

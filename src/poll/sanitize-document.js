@@ -1,4 +1,4 @@
-import {is_allowed_request} from '/src/net/fetch-policy.js';
+import * as config_control from '/src/control/config-control.js';
 import {filter_boilerplate} from '/src/filters/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/filters/canonicalize-urls.js';
 import {condense_tagnames} from '/src/filters/condense-tagnames.js';
@@ -38,7 +38,7 @@ import {filter_unknown_attrs} from '/src/filters/filter-unknown-attrs.js';
 import {lonestar_filter} from '/src/filters/lonestar-filter.js';
 import {set_image_sizes} from '/src/filters/set-image-sizes.js';
 import {trim_document} from '/src/filters/trim-document.js';
-import * as localstorage from '/src/browser/localstorage.js';
+import {is_allowed_request} from '/src/net/fetch-policy.js';
 
 // Transforms a document by removing or changing nodes for various reasons:
 // * to condense content
@@ -67,10 +67,10 @@ export async function sanitize_document(document) {
 
   // TODO: shorten name, drop sandoc prefix
   const matte =
-      localstorage.read_int('sanitize_document_low_contrast_default_matte');
+      config_control.read_int('sanitize_document_low_contrast_default_matte');
 
   // TODO: lowercase
-  const mcr = localstorage.read_float('MIN_CONTRAST_RATIO');
+  const mcr = config_control.read_float('MIN_CONTRAST_RATIO');
   filter_hidden_elements(document, matte, mcr);
 
   const general_blacklist = [
@@ -111,7 +111,7 @@ export async function sanitize_document(document) {
   filter_dead_images(document);
 
   const image_size_fetch_timeout =
-      localstorage.read_int('set_image_sizes_timeout');
+      config_control.read_int('set_image_sizes_timeout');
   await set_image_sizes(document, image_size_fetch_timeout, is_allowed_request);
 
 
@@ -134,11 +134,11 @@ export async function sanitize_document(document) {
   filter_lists(document);
 
   const table_scan_max_rows =
-      localstorage.read_int('sanitize_document_table_scan_max_rows');
+      config_control.read_int('sanitize_document_table_scan_max_rows');
   filter_tables(document, table_scan_max_rows);
 
   const emphasis_max_length =
-      localstorage.read_int('sanitize_document_emphasis_max_length');
+      config_control.read_int('sanitize_document_emphasis_max_length');
   filter_emphasis(document, emphasis_max_length);
   filter_node_whitespace(document);
 

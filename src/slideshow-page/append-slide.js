@@ -1,4 +1,4 @@
-import * as localstorage from '/src/browser/localstorage.js';
+import * as config_control from '/src/control/config-control.js';
 import {escape_html} from '/src/html/escape-html.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import * as array from '/src/lang/array.js';
@@ -61,7 +61,7 @@ function create_article_title_element(entry) {
     title = filter_publisher(title);
 
     const max_length =
-        localstorage.read_int(localStorage.article_title_display_max_length);
+        config_control.read_int('article_title_display_max_length');
     if (!isNaN(max_length)) {
       title = truncate_html(title, max_length);
     }

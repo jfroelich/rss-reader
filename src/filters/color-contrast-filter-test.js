@@ -1,6 +1,6 @@
-import {assert} from '/src/assert/assert.js';
-import * as localstorage from '/src/browser/localstorage.js';
 import * as color from '/src/argb8888/argb8888.js';
+import {assert} from '/src/assert/assert.js';
+import * as config_control from '/src/control/config-control.js';
 import * as css_color from '/src/dom/css-color/css-color.js';
 import * as ccf from '/src/filters/color-contrast-filter.js';
 import {register_test} from '/src/test/test-registry.js';
@@ -13,7 +13,7 @@ async function color_contrast_filter_test1() {
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
 
   const matte = color.WHITE;
-  const threshold = localstorage.read_float('MIN_CONTRAST_RATIO');
+  const threshold = config_control.read_float('MIN_CONTRAST_RATIO');
 
   let node = it.nextNode();
   while (node) {

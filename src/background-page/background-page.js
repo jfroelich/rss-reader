@@ -1,6 +1,6 @@
 import * as app from '/src/app/app.js';
-import {oninstalled} from '/src/background-page/install.js';
 import * as badge from '/src/badge/badge.js';
+import * as install_update_control from '/src/control/install-update-control.js';
 import * as cron from '/src/cron/cron.js';
 
 // Persists for the lifetime of the page. Will not prevent the page from
@@ -47,7 +47,7 @@ chrome.runtime.onStartup.addListener(onstartup);
 // NOTE: this cannot occur from within startup. For example from a simple
 // reload from extensions page, there is no startup, and somehow this binding
 // gets lost.
-chrome.runtime.onInstalled.addListener(oninstalled);
+chrome.runtime.onInstalled.addListener(install_update_control.oninstalled);
 
 // This must occur in module load scope. This is the only way to get it to
 // also work on background page reload. It works when only in startup and
