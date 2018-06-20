@@ -1,5 +1,3 @@
-import '/src/cli/cli.js';
-
 import * as app from '/src/app/app.js';
 import {oninstalled} from '/src/background-page/install.js';
 import * as badge from '/src/badge/badge.js';

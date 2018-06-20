@@ -1,5 +1,3 @@
-import '/src/cli/cli.js';
-
 import {refresh_badge} from '/src/badge/badge.js';
 import * as localstorage from '/src/browser/localstorage.js';
 import * as perm from '/src/browser/permissions.js';

@@ -1,4 +1,3 @@
-import '/src/cli/cli.js';
 import '/src/slideshow-page/main-menu.js';
 import '/src/slideshow-page/left-panel.js';
 
