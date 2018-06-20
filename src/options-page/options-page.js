@@ -1,5 +1,5 @@
-import {refresh_badge} from '/src/badge/badge.js';
 import * as perm from '/src/browser/permissions.js';
+import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
 import * as db from '/src/db/db.js';
 import {fade_element} from '/src/dom/fade-element.js';
@@ -32,7 +32,7 @@ channel.onmessage = function options_page_onmessage(event) {
   // loaded.
   const badge_types = ['entry-write', 'entry-deleted', 'entry-read'];
   if (badge_types.includes(message.type)) {
-    refresh_badge(window.location.pathname);
+    badge.refresh(window.location.pathname);
   }
 
   switch (message.type) {

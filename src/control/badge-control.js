@@ -1,10 +1,10 @@
 import * as db from '/src/db/db.js';
 import ExtensionLock from '/src/extension-lock/extension-lock.js';
 
-// Refreshes the unread count displayed in Chrome's toolbar
+// Refreshes the unread count displayed the badge in Chrome's toolbar
 // @param lock_value {String} optional, for debugging who obtained an internal
 // extension lock
-export async function refresh_badge(lock_value) {
+export async function refresh(lock_value) {
   const lock_name = 'refresh_badge_cross_page_lock';
   const lock = new ExtensionLock(lock_name, lock_value);
   if (!lock.isLocked()) {

@@ -1,5 +1,5 @@
 import * as app from '/src/app/app.js';
-import * as badge from '/src/badge/badge.js';
+import * as badge from '/src/control/badge-control.js';
 import * as cron_control from '/src/control/cron-control.js';
 import * as install_update_control from '/src/control/install-update-control.js';
 
@@ -19,14 +19,14 @@ async function background_page_channel_onmessage(event) {
   // otherwise cause messages to go unheard.
   const badge_types = ['entry-write', 'entry-deleted', 'entry-read'];
   if (badge_types.includes(message.type)) {
-    badge.refresh_badge(location.pathname);
+    badge.refresh(location.pathname);
   }
 }
 
 function onstartup() {
   console.debug('Received startup event');
   console.debug('Initializing badge text in startup listener');
-  badge.refresh_badge(location.pathname);
+  badge.refresh(location.pathname);
 }
 
 // Persists for the lifetime of the page. Will not prevent the page from

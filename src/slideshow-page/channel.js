@@ -1,4 +1,4 @@
-import {refresh_badge} from '/src/badge/badge.js';
+import * as badge from '/src/control/badge-control.js';
 import * as db from '/src/db/db.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
@@ -34,7 +34,7 @@ async function onmessage(event) {
   const badge_types = ['entry-write', 'entry-deleted', 'entry-read'];
   if (badge_types.includes(message.type)) {
     const locker_name = location.pathname;
-    refresh_badge(locker_name);  // non-blocking
+    badge.refresh(locker_name);  // non-blocking
   }
 
   // Type handlers are ordered by estimated frequency. Using if-blocks because I

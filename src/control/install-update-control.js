@@ -1,5 +1,5 @@
 import * as color from '/src/argb8888/argb8888.js';
-import * as badge from '/src/badge/badge.js';
+import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
 import * as cron_control from '/src/control/cron-control.js';
 import * as db from '/src/db/db.js';
@@ -27,7 +27,7 @@ export async function oninstalled(event) {
     conn.close();
 
     // Initialize the badge text (to 0)
-    badge.refresh_badge(location.pathname);
+    badge.refresh(location.pathname);
 
     cron_control.create_alarms();
   } else if (reason === 'update') {
@@ -35,7 +35,7 @@ export async function oninstalled(event) {
     cron_control.update_alarms(prev_version);
 
     // Without this call, the badge loses its text on extension reload
-    badge.refresh_badge(location.pathname);
+    badge.refresh(location.pathname);
   } else {
     console.warn('Unhandled oninstalled event', event);
   }
