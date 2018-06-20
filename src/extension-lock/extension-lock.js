@@ -25,7 +25,8 @@ export default class ExtensionLock {
     localStorage[this.name] = this.value;
 
     if (unlock_deadline) {
-      this.release_timer = setTimeout(this._timedRelease, unlock_deadline);
+      this.release_timer =
+          setTimeout(this._timedRelease.bind(this), unlock_deadline);
     }
   }
 
