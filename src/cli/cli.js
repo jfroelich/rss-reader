@@ -1,4 +1,4 @@
-import {archive_entries} from '/src/archive/archive.js';
+import {archive_entries} from '/src/control/archive-control.js';
 import {create_alarms} from '/src/cron/cron.js';
 import * as dbhealth from '/src/db/db-health.js';
 import * as db from '/src/db/db.js';

@@ -1,5 +1,5 @@
-import {archive_entries} from '/src/archive/archive.js';
 import {assert} from '/src/assert/assert.js';
+import {archive_entries} from '/src/control/archive-control.js';
 import {open_db} from '/src/db/db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import {register_test} from '/src/test/test-registry.js';
