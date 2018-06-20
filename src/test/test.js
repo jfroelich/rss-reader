@@ -19,7 +19,7 @@ import '/src/nlp/filter-publisher-test.js';
 import '/src/opml/import-opml-test.js';
 import '/src/parse-feed/parse-feed-test.js';
 import '/src/rewrite-url/rewrite-url-test.js';
-import '/src/subscribe/subscribe-test.js';
+import '/src/control/subscribe-control-test.js';
 import {get_registry} from '/src/test/test-registry.js';
 
 // Wrap a call to a test function with some extra log messages. Impose an

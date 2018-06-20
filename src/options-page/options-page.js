@@ -1,6 +1,7 @@
 import * as perm from '/src/browser/permissions.js';
 import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
+import {subscribe} from '/src/control/subscribe-control.js';
 import * as db from '/src/db/db.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -9,7 +10,6 @@ import * as array from '/src/lang/array.js';
 import {poll_feed} from '/src/poll/poll-feeds.js';
 import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
 import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
-import {subscribe} from '/src/subscribe/subscribe.js';
 
 // View state
 let current_menu_item;

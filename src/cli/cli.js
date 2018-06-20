@@ -1,10 +1,10 @@
 import {archive_entries} from '/src/control/archive-control.js';
 import {create_alarms} from '/src/control/cron-control.js';
+import {subscribe} from '/src/control/subscribe-control.js';
 import * as dbhealth from '/src/db/db-health.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {poll_feed, poll_feeds} from '/src/poll/poll-feeds.js';
-import {subscribe} from '/src/subscribe/subscribe.js';
 
 // The command-line-interface (CLI) module creates a cli object within the
 // global window object in order to make certain app functionality accessible
