@@ -1,6 +1,6 @@
 import {archive_entries} from '/src/control/archive-control.js';
 import * as entry_control from '/src/control/entry-control.js';
-import * as dbhealth from '/src/db/db-health.js';
+import * as feed_entry_control from '/src/control/feed-entry-control.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
@@ -48,13 +48,13 @@ async function alarm_listener(alarm) {
   } else if (alarm.name === 'remove-orphaned-entries') {
     const conn = await db.open_db();
     const channel = new BroadcastChannel(localStorage.channel_name);
-    await dbhealth.remove_orphaned_entries(conn, channel);
+    await feed_entry_control.remove_orphaned_entries(conn, channel);
     conn.close();
     channel.close();
   } else if (alarm.name === 'remove-untyped-objects') {
     const conn = await db.open_db();
     const channel = new BroadcastChannel(localStorage.channel_name);
-    await dbhealth.remove_untyped_objects(conn, channel);
+    await feed_entry_control.remove_untyped_objects(conn, channel);
     conn.close();
     channel.close();
   } else if (alarm.name === 'refresh-feed-icons') {

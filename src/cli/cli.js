@@ -2,7 +2,7 @@ import {archive_entries} from '/src/control/archive-control.js';
 import * as cron_control from '/src/control/cron-control.js';
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
-import * as dbhealth from '/src/db/db-health.js';
+import * as feed_entry_control from '/src/control/feed-entry-control.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {poll_feed, poll_feeds} from '/src/poll/poll-feeds.js';
@@ -89,7 +89,7 @@ async function cli_remove_lost_entries() {
 async function cli_remove_orphans() {
   const conn = await db.open_db();
   const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
-  await dbhealth.remove_orphaned_entries(conn, channel);
+  await feed_entry_control.remove_orphaned_entries(conn, channel);
   console.debug('Deleted %d entries', channel.message_count);
   conn.close();
   channel.close();
