@@ -202,3 +202,22 @@ export function delete_entry(conn, channel, id, reason) {
     txn.objectStore('entry').delete(id);
   });
 }
+
+// Removes entries missing urls from the database
+// TODO: test
+export async function remove_lost_entries(conn, channel) {
+  const deleted_entry_ids = [];
+  const txn_writable = true;
+  await iterate_entries(conn, 'all', txn_writable, cursor => {
+    const entry = cursor.value;
+    if (!entry.urls || !entry.urls.length) {
+      cursor.delete();
+      deleted_entry_ids.push(entry.id);
+    }
+  });
+
+  // Wait till txn commits before dispatch
+  for (const id of deleted_entry_ids) {
+    channel.postMessage({type: 'entry-deleted', id: id, reason: 'lost'});
+  }
+}

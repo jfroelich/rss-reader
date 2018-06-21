@@ -1,4 +1,5 @@
 import {archive_entries} from '/src/control/archive-control.js';
+import * as entry_control from '/src/control/entry-control.js';
 import * as dbhealth from '/src/db/db-health.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -41,7 +42,7 @@ async function alarm_listener(alarm) {
   } else if (alarm.name === 'remove-entries-missing-urls') {
     const conn = await db.open_db();
     const channel = new BroadcastChannel(localStorage.channel_name);
-    await dbhealth.remove_lost_entries(conn, channel);
+    await entry_control.remove_lost_entries(conn, channel);
     conn.close();
     channel.close();
   } else if (alarm.name === 'remove-orphaned-entries') {

@@ -1,5 +1,6 @@
 import {archive_entries} from '/src/control/archive-control.js';
 import * as cron_control from '/src/control/cron-control.js';
+import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
 import * as dbhealth from '/src/db/db-health.js';
 import * as db from '/src/db/db.js';
@@ -79,7 +80,7 @@ async function cli_poll_feeds() {
 async function cli_remove_lost_entries() {
   const conn = await db.open_db();
   const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
-  await dbhealth.remove_lost_entries(conn, channel);
+  await entry_control.remove_lost_entries(conn, channel);
   console.debug('Removed %d entries', channel.message_count);
   conn.close();
   channel.close();
