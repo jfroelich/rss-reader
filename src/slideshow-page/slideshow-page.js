@@ -1,6 +1,7 @@
 import '/src/slideshow-page/main-menu.js';
 import '/src/slideshow-page/left-panel.js';
 
+import * as entry_control from '/src/control/entry-control.js';
 import * as db from '/src/db/db.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import * as channel from '/src/slideshow-page/channel.js';
@@ -20,7 +21,8 @@ async function load_view() {
 
   const offset = 0, limit = 6;
   const conn = await db.open_db();
-  const get_entries_promise = db.get_entries(conn, 'viewable', offset, limit);
+  const get_entries_promise =
+      entry_control.get_entries(conn, 'viewable', offset, limit);
   const get_feeds_promise = db.get_feeds(conn, 'all', true);
   conn.close();
 

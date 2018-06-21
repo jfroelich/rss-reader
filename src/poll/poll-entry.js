@@ -1,5 +1,6 @@
 import {assert} from '/src/assert/assert.js';
 import * as config_control from '/src/control/config-control.js';
+import * as entry_control from '/src/control/entry-control.js';
 import * as db from '/src/db/db.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -36,8 +37,8 @@ export async function poll_entry(
   // tail url a second time because it may have changed in rewriting.
   url = new URL(array.peek(entry.urls));
   const get_entry_mode = 'url', get_entry_key_only = true;
-  let existing_entry =
-      await db.get_entry(rconn, get_entry_mode, url, get_entry_key_only);
+  let existing_entry = await entry_control.get_entry(
+      rconn, get_entry_mode, url, get_entry_key_only);
   if (existing_entry) {
     throw new EntryExistsError('Entry already exists for url ' + url.href);
   }
@@ -66,8 +67,8 @@ export async function poll_entry(
       Entry.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
       url = new URL(array.peek(entry.urls));
 
-      existing_entry =
-          await db.get_entry(rconn, get_entry_mode, url, get_entry_key_only);
+      existing_entry = await entry_control.get_entry(
+          rconn, get_entry_mode, url, get_entry_key_only);
       if (existing_entry) {
         throw new EntryExistsError(
             'Entry exists for redirected url ' + url.href);

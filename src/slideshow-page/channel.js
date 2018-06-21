@@ -1,4 +1,5 @@
 import * as badge from '/src/control/badge-control.js';
+import * as entry_control from '/src/control/entry-control.js';
 import * as db from '/src/db/db.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
@@ -92,7 +93,8 @@ async function onmessage(event) {
 
     let limit = undefined;
     const conn = await db.open_db();
-    const entries = await db.get_entries(conn, 'viewable', unread_count, limit);
+    const entries =
+        await entry_control.get_entries(conn, 'viewable', unread_count, limit);
     conn.close();
     for (const entry of entries) {
       append_slide(entry);
