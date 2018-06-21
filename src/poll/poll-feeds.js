@@ -110,7 +110,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   handle_fetch_success(merged_feed);
 
   assert(Feed.is_valid(merged_feed));
-  db.sanitize_feed(merged_feed);
+  feed_control.sanitize_feed(merged_feed);
   await feed_control.update_feed(rconn, channel, merged_feed);
 
   const count = await poll_entries(

@@ -22,7 +22,7 @@ async function create_feed_test() {
   // TODO: or maybe this is dumb, and I shouldn't test this here at all
   // actually? I am starting to think this should not be here.
   assert(Feed.is_valid(feed));
-  db.sanitize_feed(feed);
+  feed_control.sanitize_feed(feed);
 
   // Intentionally do not set dateUpdated. The property should not exist when
   // storing a new feed. It is allowed to exist, though. It will get deleted.
