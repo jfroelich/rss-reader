@@ -1,3 +1,4 @@
+import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
 import * as db from '/src/db/db.js';
 import * as Entry from '/src/model/entry.js';
@@ -9,7 +10,7 @@ export async function remove_lost_entries(conn, channel) {
   // Track ids so they are available after txn commits
   const deleted_entry_ids = [];
   const txn_writable = true;
-  await db.iterate_entries(conn, 'all', txn_writable, cursor => {
+  await entry_control.iterate_entries(conn, 'all', txn_writable, cursor => {
     const entry = cursor.value;
     // TODO: accessing entry.urls still means too much knowledge of feed
     // structure
@@ -30,7 +31,7 @@ export async function remove_lost_entries(conn, channel) {
 export async function remove_orphaned_entries(conn, channel) {
   // Query for all feed ids. We load just the ids so that it is faster and more
   // scalable than actually loading all feed info.
-  const feed_ids = await db.get_feed_ids(conn);
+  const feed_ids = await feed_control.get_feed_ids(conn);
 
   // Technically we could continue and let the next transaction do nothing, but
   // it is better for performance to preemptively exit.
@@ -45,7 +46,7 @@ export async function remove_orphaned_entries(conn, channel) {
 
   // Walk the entry store in write mode
   const txn_writable = true;
-  await db.iterate_entries(conn, 'all', txn_writable, cursor => {
+  await entry_control.iterate_entries(conn, 'all', txn_writable, cursor => {
     const entry = cursor.value;
 
     // If the entry object type is invalid, ignore it
@@ -80,7 +81,7 @@ export async function remove_orphaned_entries(conn, channel) {
 // that a later failure does not indicate an earlier step failed.
 // TODO: use a single transaction
 export async function remove_untyped_objects(conn, channel) {
-  const feeds = db.get_feeds(conn);
+  const feeds = feed_control.get_feeds(conn);
   const delete_feed_promises = [];
   for (const feed of feeds) {
     if (!Feed.is_feed(feed)) {
@@ -99,7 +100,7 @@ export async function remove_untyped_objects(conn, channel) {
   // several entries in a single transaction.
   const deleted_entries = [];
   const txn_writable = true;
-  await db.iterate_entries(conn, 'all', txn_writable, cursor => {
+  await entry_control.iterate_entries(conn, 'all', txn_writable, cursor => {
     const entry = cursor.value;
     if (!Entry.is_entry(entry)) {
       // Collect only necessary properties for the channel post rather than

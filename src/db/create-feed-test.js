@@ -1,4 +1,5 @@
 import {assert} from '/src/assert/assert.js';
+import * as feed_control from '/src/control/feed-control.js';
 import * as db from '/src/db/db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import * as array from '/src/lang/array.js';
@@ -37,11 +38,11 @@ async function create_feed_test() {
   channel.postMessage = message => messages.push(message);
   channel.close = function() {};
 
-  const stored_feed_id = await db.update_feed(conn, channel, feed);
+  const stored_feed_id = await feed_control.update_feed(conn, channel, feed);
 
   // Make assertions about the function output
 
-  // db.update_feed both returns the new id, and sets the id of the input. They
+  // update_feed both returns the new id, and sets the id of the input. They
   // should be the same value
   assert(feed.id === stored_feed_id);
 

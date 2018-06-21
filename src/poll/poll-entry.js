@@ -108,7 +108,7 @@ export async function poll_entry(
 
   assert(Entry.is_valid_entry(entry));
   entry = db.sanitize_entry(entry);
-  return await db.update_entry(rconn, channel, entry);
+  return await entry_control.update_entry(rconn, channel, entry);
 }
 
 function url_is_inaccessible_content(url) {

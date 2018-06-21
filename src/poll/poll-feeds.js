@@ -1,5 +1,6 @@
 import * as app from '/src/app/app.js';
 import {assert} from '/src/assert/assert.js';
+import * as feed_control from '/src/control/feed-control.js';
 import * as db from '/src/db/db.js';
 import * as array from '/src/lang/array.js';
 import * as Entry from '/src/model/entry.js';
@@ -31,7 +32,8 @@ export async function poll_feeds(
     rconn, iconn, channel = chan_stub, options = {}) {
   const get_feeds_mode = 'active';
   const get_feeds_sort = false;
-  const feeds = await db.get_feeds(rconn, get_feeds_mode, get_feeds_sort);
+  const feeds =
+      await feed_control.get_feeds(rconn, get_feeds_mode, get_feeds_sort);
 
   options = Object.assign({}, default_options, options);
 
@@ -109,7 +111,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
 
   assert(Feed.is_valid(merged_feed));
   db.sanitize_feed(merged_feed);
-  await db.update_feed(rconn, channel, merged_feed);
+  await feed_control.update_feed(rconn, channel, merged_feed);
 
   const count = await poll_entries(
       rconn, iconn, channel, options, response.entries, merged_feed);
@@ -179,8 +181,7 @@ function poll_entry_onerror(error) {
 // needs to be fixed. First copy over the old feed's urls, then try and append
 // each new feed url.
 function merge_feed(old_feed, new_feed) {
-  const merged_feed =
-      Object.assign(Feed.create(), old_feed, new_feed);
+  const merged_feed = Object.assign(Feed.create(), old_feed, new_feed);
   merged_feed.urls = [...old_feed.urls];
   if (new_feed.urls) {
     for (const url_string of new_feed.urls) {
@@ -228,7 +229,7 @@ async function handle_fetch_error(
   }
 
   // No need to validate/sanitize, we've had control for the entire lifetime
-  await db.update_feed(rconn, channel, feed);
+  await feed_control.update_feed(rconn, channel, feed);
 }
 
 function dedup_entries(entries) {

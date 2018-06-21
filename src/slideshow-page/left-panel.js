@@ -1,4 +1,5 @@
 import * as config_control from '/src/control/config-control.js';
+import * as feed_control from '/src/control/feed-control.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {import_opml} from '/src/import-opml/import-opml.js';
@@ -40,7 +41,7 @@ async function export_button_onclick(event) {
   const filename = 'subscriptions.xml';
 
   const conn = await db.open_db();
-  const feeds = await db.get_feeds(conn, 'all', false);
+  const feeds = await feed_control.get_feeds(conn, 'all', false);
   conn.close();
   console.debug('Loaded %d feeds', feeds.length);
 

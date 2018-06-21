@@ -335,7 +335,7 @@ async function after_subscribe_poll_feed_async(feed) {
 async function feed_list_init() {
   const title_sort_flag = true;
   const conn = await db.open_db();
-  const feeds = await db.get_feeds(conn, 'all', true);
+  const feeds = await feed_control.get_feeds(conn, 'all', true);
   conn.close();
 
   for (const feed of feeds) {
@@ -395,7 +395,8 @@ async function activate_feed_button_onclick(event) {
 
   const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await db.update_feed_properties(conn, channel, feed_id, 'active', true);
+  await feed_control.update_feed_properties(
+      conn, channel, feed_id, 'active', true);
   channel.close();
   conn.close();
 
@@ -413,7 +414,7 @@ async function deactivate_feed_button_onclick(event) {
 
   const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await db.update_feed_properties(
+  await feed_control.update_feed_properties(
       conn, channel, feed_id, 'active', false, {reason: 'manual'});
   channel.close();
   conn.close();
