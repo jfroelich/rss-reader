@@ -1,7 +1,7 @@
 import * as perm from '/src/browser/permissions.js';
 import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
-import {subscribe} from '/src/control/subscribe-control.js';
+import * as feed_control from '/src/control/feed-control.js';
 import * as db from '/src/db/db.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -302,7 +302,7 @@ async function subscribe_form_onsubmit(event) {
   const channel = new BroadcastChannel(localStorage.channel_name);
   let subscribe_fetch_timeout;
   const subscribe_notify = true;
-  const feed = await subscribe(
+  const feed = await feed_control.subscribe(
       rconn, iconn, channel, subscribe_url, subscribe_fetch_timeout,
       subscribe_notify);
   rconn.close();

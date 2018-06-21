@@ -1,4 +1,4 @@
-import {subscribe} from '/src/control/subscribe-control.js';
+import * as feed_control from '/src/control/feed-control.js';
 
 // Concurrently reads in the files from the file list and subscribes to the
 // feeds in all of the files. Returns a promise that resolves to an array of
@@ -44,7 +44,7 @@ function subscribe_all(
   const promises = [];
   const notify_per_subscribe = false;
   for (const url of urls) {
-    const promise = subscribe(
+    const promise = feed_control.subscribe(
         rconn, iconn, channel, url, fetch_timeout, notify_per_subscribe,
         skip_icon_lookup);
     const catch_promise = promise.catch(console.warn);

@@ -1,14 +1,13 @@
 import {assert} from '/src/assert/assert.js';
-import {subscribe} from '/src/control/subscribe-control.js';
+import * as feed_control from '/src/control/feed-control.js';
 import * as db from '/src/db/db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import * as Feed from '/src/model/feed.js';
 import {register_test} from '/src/test/test-registry.js';
 
-// TODO: it is wrong to ping google, implement something that tests a local
-// file somehow (e.g. a feed that exists within the extension folder)
-
 async function subscribe_test() {
+  // TODO: it is wrong to ping google, implement something that tests a local
+  // file somehow (e.g. a feed that exists within the extension folder)
   const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
 
   const rdb_name = 'subscribe-test';
@@ -29,7 +28,7 @@ async function subscribe_test() {
 
   // Rethrow subscribe exceptions just like assertion failures by omitting
   // try/catch here.
-  const feed = await subscribe(
+  const feed = await feed_control.subscribe(
       rconn, undefined, chan_stub, url, fetch_timeout, notify,
       skip_icon_lookup);
 

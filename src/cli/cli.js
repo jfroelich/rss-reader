@@ -1,6 +1,6 @@
 import {archive_entries} from '/src/control/archive-control.js';
-import {create_alarms} from '/src/control/cron-control.js';
-import {subscribe} from '/src/control/subscribe-control.js';
+import * as cron_control from '/src/control/cron-control.js';
+import * as feed_control from '/src/control/feed-control.js';
 import * as dbhealth from '/src/db/db-health.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -33,7 +33,7 @@ async function cli_subscribe(url_string, poll = true) {
   const notify = true;
 
   // Bubble up errors to console
-  const feed = await subscribe(
+  const feed = await feed_control.subscribe(
       rconn, iconn, channel, url, options, fetch_timeout, notify);
 
   // Do a sequential poll of the created feed
@@ -143,7 +143,7 @@ function cli_clear_alarms() {
 }
 
 function cli_create_alarms() {
-  create_alarms();
+  cron_control.create_alarms();
   console.debug('Created alarms');
 }
 
