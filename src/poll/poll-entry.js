@@ -107,7 +107,7 @@ export async function poll_entry(
   entry.content = document.documentElement.outerHTML;
 
   assert(Entry.is_valid_entry(entry));
-  entry = db.sanitize_entry(entry);
+  entry = entry_control.sanitize_entry(entry);
   return await entry_control.update_entry(rconn, channel, entry);
 }
 
