@@ -10,17 +10,6 @@ import {filter_unprintable_characters} from '/src/lang/filter-unprintable-charac
 import * as Entry from '/src/model/entry.js';
 import * as Feed from '/src/model/feed.js';
 
-export function count_unread_entries(conn) {
-  return new Promise((resolve, reject) => {
-    const txn = conn.transaction('entry');
-    const store = txn.objectStore('entry');
-    const index = store.index('readState');
-    const request = index.count(Entry.ENTRY_STATE_UNREAD);
-    request.onsuccess = _ => resolve(request.result);
-    request.onerror = _ => reject(request.error);
-  });
-}
-
 // Remove a feed and its entries, send a message to channel for each removal.
 // If feed id does not exist then no error is thrown this is just a noop. reason
 // is an optional, intended as categorical string.
