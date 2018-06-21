@@ -1,4 +1,3 @@
-import * as db from '/src/db/db.js';
 import {sizeof} from '/src/lang/sizeof.js';
 import * as Entry from '/src/model/entry.js';
 import * as entry_control from '/src/control/entry-control.js';
