@@ -1,3 +1,4 @@
+import * as feed_control from '/src/control/feed-control.js';
 import * as db from '/src/db/db.js';
 import * as Entry from '/src/model/entry.js';
 import * as Feed from '/src/model/feed.js';
@@ -84,7 +85,8 @@ export async function remove_untyped_objects(conn, channel) {
   for (const feed of feeds) {
     if (!Feed.is_feed(feed)) {
       console.debug('Deleting untyped feed', feed);
-      const promise = db.delete_feed(conn, channel, feed.id, 'untyped');
+      const promise =
+          feed_control.delete_feed(conn, channel, feed.id, 'untyped');
       delete_feed_promises.push(promise);
     }
   }
@@ -113,7 +115,7 @@ export async function remove_untyped_objects(conn, channel) {
     channel.postMessage({
       type: 'entry-deleted',
       id: entry.id,
-      // Use feed_id to remain consistent with db.delete_feed's channel protocol
+      // Use feed_id to remain consistent with delete_feed's channel protocol
       feed_id: entry.feed,
       reason: 'orphan'
     });

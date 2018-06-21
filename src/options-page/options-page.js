@@ -383,7 +383,7 @@ async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await db.delete_feed(conn, channel, feed_id, 'unsubscribe');
+  await feed_control.delete_feed(conn, channel, feed_id, 'unsubscribe');
   conn.close();
   channel.close();
   feed_list_remove_feed_by_id(feed_id);

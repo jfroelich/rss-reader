@@ -10,56 +10,6 @@ import {filter_unprintable_characters} from '/src/lang/filter-unprintable-charac
 import * as Entry from '/src/model/entry.js';
 import * as Feed from '/src/model/feed.js';
 
-// Remove a feed and its entries, send a message to channel for each removal.
-// If feed id does not exist then no error is thrown this is just a noop. reason
-// is an optional, intended as categorical string.
-export function delete_feed(conn, channel, feed_id, reason) {
-  return new Promise((resolve, reject) => {
-    // If not checked this would be a noop which is misleading
-    if (!Feed.is_valid_id(feed_id)) {
-      throw new TypeError('Invalid feed id ' + feed_id);
-    }
-
-    const entry_ids = [];
-    const txn = conn.transaction(['feed', 'entry'], 'readwrite');
-    txn.oncomplete = _ => {
-      const feed_msg = {};
-      feed_msg.type = 'feed-deleted';
-      feed_msg.id = feed_id;
-      feed_msg.reason = reason;
-      channel.postMessage(feed_msg);
-
-      const entry_msg = {};
-      entry_msg.type = 'entry-deleted';
-      entry_msg.id = 0;
-      entry_msg.reason = reason;
-      entry_msg.feed_id = feed_id;  // retain correspondence when possible
-      for (const id of entry_ids) {
-        entry_msg.id = id;
-        channel.postMessage(entry_msg);
-      }
-
-      resolve();
-    };
-
-    txn.onerror = _ => reject(txn.error);
-
-    const feed_store = txn.objectStore('feed');
-    feed_store.delete(feed_id);
-
-    const entry_store = txn.objectStore('entry');
-    const feed_index = entry_store.index('feed');
-    const request = feed_index.getAllKeys(feed_id);
-    request.onsuccess = _ => {
-      const keys = request.result;
-      for (const id of keys) {
-        entry_ids.push(id);
-        entry_store.delete(id);
-      }
-    };
-  });
-}
-
 // Deletes an entry from the database. Unlike delete_feed this does not expose
 // feed id in its message because it would require an extra lookup.
 export function delete_entry(conn, channel, id, reason) {
