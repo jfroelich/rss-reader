@@ -1,6 +1,7 @@
 import {assert} from '/src/assert/assert.js';
 import * as feed_control from '/src/control/feed-control.js';
 import {get_feed} from '/src/dal/get-feed.js';
+import {update_feed} from '/src/dal/update-feed.js';
 import * as Feed from '/src/data-layer/feed.js';
 import * as db from '/src/db/db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
@@ -97,7 +98,7 @@ async function create_feed_test() {
   channel.postMessage = message => messages.push(message);
   channel.close = function() {};
 
-  const stored_feed_id = await feed_control.update_feed(conn, channel, feed);
+  const stored_feed_id = await update_feed(conn, channel, feed);
 
   // Make assertions about the function output
 

@@ -1,6 +1,7 @@
 import * as app from '/src/app/app.js';
 import {assert} from '/src/assert/assert.js';
 import {get_feed} from '/src/dal/get-feed.js';
+import {update_feed} from '/src/dal/update-feed.js';
 import * as Feed from '/src/data-layer/feed.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -9,7 +10,6 @@ import {truncate_html} from '/src/html/truncate-html.js';
 import * as array from '/src/lang/array.js';
 import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
-import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {url_did_change} from '/src/net/url-did-change.js';
 
@@ -73,40 +73,6 @@ export async function subscribe(
 }
 
 
-// Creates or updates a feed in the database
-export function update_feed(conn, channel, feed) {
-  return new Promise((resolve, reject) => {
-    assert(Feed.is_feed(feed));
-    assert(feed.urls && feed.urls.length);
-
-    filter_empty_properties(feed);
-
-    const is_create = !feed.id;
-    if (is_create) {
-      feed.active = true;
-      feed.dateCreated = new Date();
-      delete feed.dateUpdated;
-    } else {
-      feed.dateUpdated = new Date();
-    }
-
-    const txn = conn.transaction('feed', 'readwrite');
-    txn.oncomplete = _ => {
-      const message = {type: 'feed-written', id: feed.id, create: is_create};
-      channel.postMessage(message);
-      resolve(feed.id);
-    };
-    txn.onerror = _ => reject(txn.error);
-
-    const store = txn.objectStore('feed');
-    const request = store.put(feed);
-
-    // result is id in both cases, but only care about create
-    if (is_create) {
-      request.onsuccess = _ => feed.id = request.result;
-    }
-  });
-}
 
 // Remove a feed and its entries, send a message to channel for each removal.
 // If feed id does not exist then no error is thrown this is just a noop. reason
