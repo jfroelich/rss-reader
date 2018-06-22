@@ -1,10 +1,11 @@
 import * as app from '/src/app/app.js';
 import {assert} from '/src/assert/assert.js';
 import * as feed_control from '/src/control/feed-control.js';
-import * as db from '/src/db/db.js';
-import * as array from '/src/lang/array.js';
+import {get_feeds} from '/src/data-access-layer/get-feeds.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as Feed from '/src/data-layer/feed.js';
+import * as db from '/src/db/db.js';
+import * as array from '/src/lang/array.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {OfflineError, TimeoutError} from '/src/net/fetch2.js';
 import {EntryExistsError, poll_entry} from '/src/poll/poll-entry.js';
@@ -32,8 +33,7 @@ export async function poll_feeds(
     rconn, iconn, channel = chan_stub, options = {}) {
   const get_feeds_mode = 'active';
   const get_feeds_sort = false;
-  const feeds =
-      await feed_control.get_feeds(rconn, get_feeds_mode, get_feeds_sort);
+  const feeds = await get_feeds(rconn, get_feeds_mode, get_feeds_sort);
 
   options = Object.assign({}, default_options, options);
 

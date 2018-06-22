@@ -3,6 +3,7 @@ import '/src/view/slideshow-page/left-panel.js';
 
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
+import {get_feeds} from '/src/data-access-layer/get-feeds.js';
 import * as db from '/src/db/db.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import * as channel from '/src/view/slideshow-page/channel.js';
@@ -24,7 +25,7 @@ async function load_view() {
   const conn = await db.open_db();
   const get_entries_promise =
       entry_control.get_entries(conn, 'viewable', offset, limit);
-  const get_feeds_promise = feed_control.get_feeds(conn, 'all', true);
+  const get_feeds_promise = get_feeds(conn, 'all', true);
   conn.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)

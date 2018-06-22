@@ -1,6 +1,7 @@
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
 import {get_feed_ids} from '/src/data-access-layer/get-feed-ids.js';
+import {get_feeds} from '/src/data-access-layer/get-feeds.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as Feed from '/src/data-layer/feed.js';
 import * as db from '/src/db/db.js';
@@ -60,7 +61,7 @@ export async function remove_orphaned_entries(conn, channel) {
 // that a later failure does not indicate an earlier step failed.
 // TODO: use a single transaction
 export async function remove_untyped_objects(conn, channel) {
-  const feeds = feed_control.get_feeds(conn);
+  const feeds = get_feeds(conn);
   const delete_feed_promises = [];
   for (const feed of feeds) {
     if (!Feed.is_feed(feed)) {

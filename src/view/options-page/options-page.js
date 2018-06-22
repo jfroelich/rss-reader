@@ -3,6 +3,7 @@ import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
 import * as feed_control from '/src/control/feed-control.js';
 import {get_feed} from '/src/data-access-layer/get-feed.js';
+import {get_feeds} from '/src/data-access-layer/get-feeds.js';
 import * as db from '/src/db/db.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -337,7 +338,7 @@ async function after_subscribe_poll_feed_async(feed) {
 async function feed_list_init() {
   const title_sort_flag = true;
   const conn = await db.open_db();
-  const feeds = await feed_control.get_feeds(conn, 'all', true);
+  const feeds = await get_feeds(conn, 'all', true);
   conn.close();
 
   for (const feed of feeds) {

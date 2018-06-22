@@ -1,4 +1,5 @@
 import * as feed_control from '/src/control/feed-control.js';
+import {get_feeds} from '/src/data-access-layer/get-feeds.js';
 import * as db from '/src/db/db.js';
 import {FaviconService} from '/src/favicon/favicon-service.js';
 import * as array from '/src/lang/array.js';
@@ -53,7 +54,7 @@ export function create_lookup_url(feed) {
 
 // Update the favicon of each of the feeds in the database
 export async function refresh_feeds(rconn, iconn, channel) {
-  const feeds = await feed_control.get_feeds(rconn, 'active');
+  const feeds = await get_feeds(rconn, 'active');
   const promises = [];
   for (const feed of feeds) {
     promises.push(refresh_feed(rconn, iconn, channel, feed));
