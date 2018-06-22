@@ -3,7 +3,7 @@ import * as feed_control from '/src/control/feed-control.js';
 import {get_feed} from '/src/dal/get-feed.js';
 import {update_feed} from '/src/dal/update-feed.js';
 import * as Feed from '/src/data-layer/feed.js';
-import * as db from '/src/db/db.js';
+import * as db from '/src/dal/open-db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import * as array from '/src/lang/array.js';
 import {register_test} from '/src/test/test-registry.js';

@@ -5,7 +5,7 @@ import {get_feed_ids} from '/src/dal/get-feed-ids.js';
 import {get_feeds} from '/src/dal/get-feeds.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as Feed from '/src/data-layer/feed.js';
-import * as db from '/src/db/db.js';
+import * as db from '/src/dal/open-db.js';
 
 // Scans the database for entries not linked to a feed and deletes them
 // TODO: test

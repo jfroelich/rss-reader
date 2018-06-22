@@ -2,7 +2,7 @@ import * as config_control from '/src/control/config-control.js';
 import * as feed_control from '/src/control/feed-control.js';
 import {import_opml} from '/src/control/import-opml-control.js';
 import {get_feeds} from '/src/dal/get-feeds.js';
-import * as db from '/src/db/db.js';
+import * as db from '/src/dal/open-db.js';
 import * as favicon from '/src/favicon/favicon.js';
 import * as array from '/src/lang/array.js';
 import {create_opml_document} from '/src/opml/opml-document.js';

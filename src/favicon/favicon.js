@@ -1,7 +1,7 @@
 import * as feed_control from '/src/control/feed-control.js';
 import {get_feeds} from '/src/dal/get-feeds.js';
 import {update_feed} from '/src/dal/update-feed.js';
-import * as db from '/src/db/db.js';
+import * as db from '/src/dal/open-db.js';
 import {FaviconService} from '/src/favicon/favicon-service.js';
 import * as array from '/src/lang/array.js';
 

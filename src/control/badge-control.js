@@ -1,5 +1,5 @@
 import {count_unread_entries} from '/src/dal/count-unread-entries.js';
-import * as db from '/src/db/db.js';
+import * as db from '/src/dal/open-db.js';
 import ExtensionLock from '/src/extension-lock/extension-lock.js';
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar

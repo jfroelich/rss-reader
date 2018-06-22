@@ -1,4 +1,4 @@
-import * as db from '/src/db/db.js';
+import * as db from '/src/dal/open-db.js';
 import {mark_slide_read_start} from '/src/view/slideshow-page/mark-slide-read.js';
 import {get_current_slide} from '/src/view/slideshow-page/slideshow-state.js';
 

@@ -6,7 +6,7 @@ import {delete_feed} from '/src/dal/delete-feed.js';
 import {get_feed} from '/src/dal/get-feed.js';
 import {get_feeds} from '/src/dal/get-feeds.js';
 import {update_feed_properties} from '/src/dal/update-feed-properties.js';
-import * as db from '/src/db/db.js';
+import * as db from '/src/dal/open-db.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {truncate_html} from '/src/html/truncate-html.js';

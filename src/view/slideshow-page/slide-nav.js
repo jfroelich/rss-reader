@@ -1,6 +1,6 @@
 import * as config_control from '/src/control/config-control.js';
 import * as entry_control from '/src/control/entry-control.js';
-import * as db from '/src/db/db.js';
+import * as db from '/src/dal/open-db.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/view/slideshow-page/count-unread-slides.js';
 import {mark_slide_read_start} from '/src/view/slideshow-page/mark-slide-read.js';
