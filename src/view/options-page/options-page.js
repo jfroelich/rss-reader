@@ -4,6 +4,7 @@ import * as config_control from '/src/control/config-control.js';
 import * as feed_control from '/src/control/feed-control.js';
 import {get_feed} from '/src/data-access-layer/get-feed.js';
 import {get_feeds} from '/src/data-access-layer/get-feeds.js';
+import {update_feed_properties} from '/src/data-access-layer/update-feed-properties.js';
 import * as db from '/src/db/db.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -398,8 +399,7 @@ async function activate_feed_button_onclick(event) {
 
   const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await feed_control.update_feed_properties(
-      conn, channel, feed_id, 'active', true);
+  await update_feed_properties(conn, channel, feed_id, 'active', true);
   channel.close();
   conn.close();
 
@@ -417,7 +417,7 @@ async function deactivate_feed_button_onclick(event) {
 
   const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await feed_control.update_feed_properties(
+  await update_feed_properties(
       conn, channel, feed_id, 'active', false, {reason: 'manual'});
   channel.close();
   conn.close();
