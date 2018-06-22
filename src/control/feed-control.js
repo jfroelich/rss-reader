@@ -1,9 +1,9 @@
 import * as app from '/src/app/app.js';
 import {assert} from '/src/assert/assert.js';
 import {get_feed} from '/src/dal/get-feed.js';
+import * as db from '/src/dal/open-db.js';
 import {update_feed} from '/src/dal/update-feed.js';
 import * as Feed from '/src/data-layer/feed.js';
-import * as db from '/src/dal/open-db.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {replace_tags} from '/src/html/replace-tags.js';
 import {truncate_html} from '/src/html/truncate-html.js';
@@ -12,6 +12,7 @@ import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {url_did_change} from '/src/net/url-did-change.js';
+
 
 // Subscribe to a feed. This creates a new feed in the database
 // @param rconn {IDBDatabase} an open feed database connection
@@ -58,7 +59,7 @@ export async function subscribe(
   }
 
   sanitize_feed(feed);
-  await update_feed(rconn, channel, feed);
+  await update_feed(rconn, channel.postMessage, feed);
 
   if (should_notify) {
     const title = 'Subscribed!';

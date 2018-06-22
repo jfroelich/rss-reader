@@ -2,10 +2,10 @@ import * as app from '/src/app/app.js';
 import {assert} from '/src/assert/assert.js';
 import * as feed_control from '/src/control/feed-control.js';
 import {get_feeds} from '/src/dal/get-feeds.js';
+import * as db from '/src/dal/open-db.js';
 import {update_feed} from '/src/dal/update-feed.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as Feed from '/src/data-layer/feed.js';
-import * as db from '/src/dal/open-db.js';
 import * as array from '/src/lang/array.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {OfflineError, TimeoutError} from '/src/net/fetch2.js';
@@ -112,7 +112,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
 
   assert(Feed.is_valid(merged_feed));
   feed_control.sanitize_feed(merged_feed);
-  await update_feed(rconn, channel, merged_feed);
+  await update_feed(rconn, channel.postMessage, merged_feed);
 
   const count = await poll_entries(
       rconn, iconn, channel, options, response.entries, merged_feed);
@@ -230,7 +230,7 @@ async function handle_fetch_error(
   }
 
   // No need to validate/sanitize, we've had control for the entire lifetime
-  await update_feed(rconn, channel, feed);
+  await update_feed(rconn, channel.postMessage, feed);
 }
 
 function dedup_entries(entries) {

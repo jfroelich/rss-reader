@@ -68,7 +68,8 @@ export async function remove_untyped_objects(conn, channel) {
   for (const feed of feeds) {
     if (!Feed.is_feed(feed)) {
       console.debug('Deleting untyped feed', feed);
-      const promise = delete_feed(conn, channel, feed.id, 'untyped');
+      const promise =
+          delete_feed(conn, channel.postMessage, feed.id, 'untyped');
       delete_feed_promises.push(promise);
     }
   }

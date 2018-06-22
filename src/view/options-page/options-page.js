@@ -5,8 +5,8 @@ import * as feed_control from '/src/control/feed-control.js';
 import {delete_feed} from '/src/dal/delete-feed.js';
 import {get_feed} from '/src/dal/get-feed.js';
 import {get_feeds} from '/src/dal/get-feeds.js';
-import {update_feed_properties} from '/src/dal/update-feed-properties.js';
 import * as db from '/src/dal/open-db.js';
+import {update_feed_properties} from '/src/dal/update-feed-properties.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {truncate_html} from '/src/html/truncate-html.js';
@@ -388,7 +388,7 @@ async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await delete_feed(conn, channel, feed_id, 'unsubscribe');
+  await delete_feed(conn, channel.postMessage, feed_id, 'unsubscribe');
   conn.close();
   channel.close();
   feed_list_remove_feed_by_id(feed_id);
@@ -400,7 +400,8 @@ async function activate_feed_button_onclick(event) {
 
   const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await update_feed_properties(conn, channel, feed_id, 'active', true);
+  await update_feed_properties(
+      conn, channel.postMessage, feed_id, 'active', true);
   channel.close();
   conn.close();
 
@@ -419,7 +420,7 @@ async function deactivate_feed_button_onclick(event) {
   const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
   await update_feed_properties(
-      conn, channel, feed_id, 'active', false, {reason: 'manual'});
+      conn, channel.postMessage, feed_id, 'active', false, {reason: 'manual'});
   channel.close();
   conn.close();
 

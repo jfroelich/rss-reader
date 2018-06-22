@@ -2,7 +2,7 @@ import {assert} from '/src/assert/assert.js';
 import * as Entry from '/src/data-layer/entry.js';
 import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
 
-export function update_entry(conn, channel, entry) {
+export function update_entry(conn, post_message = noop, entry) {
   return new Promise((resolve, reject) => {
     assert(Entry.is_entry(entry));
 
@@ -22,7 +22,7 @@ export function update_entry(conn, channel, entry) {
     txn.oncomplete = _ => {
       const message = {type: 'entry-write', id: entry.id, 'create': creating};
       console.debug(message);
-      channel.postMessage(message);
+      post_message(message);
       resolve(entry.id);
     };
     txn.onerror = _ => reject(txn.error);
@@ -33,3 +33,5 @@ export function update_entry(conn, channel, entry) {
     }
   });
 }
+
+function noop() {}

@@ -110,7 +110,7 @@ export async function poll_entry(
 
   assert(Entry.is_valid_entry(entry));
   entry = entry_control.sanitize_entry(entry);
-  return await update_entry(rconn, channel, entry);
+  return await update_entry(rconn, channel.postMessage, entry);
 }
 
 function url_is_inaccessible_content(url) {
