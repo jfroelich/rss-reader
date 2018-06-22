@@ -1,4 +1,4 @@
-import {show_next_slide, show_prev_slide} from '/src/slideshow-page/slide-nav.js';
+import {show_next_slide, show_prev_slide} from '/src/view/slideshow-page/slide-nav.js';
 
 export function onkeydown(event) {
   // Ignore edit intent

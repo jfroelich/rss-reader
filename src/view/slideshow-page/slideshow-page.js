@@ -1,16 +1,16 @@
-import '/src/slideshow-page/main-menu.js';
-import '/src/slideshow-page/left-panel.js';
+import '/src/view/slideshow-page/main-menu.js';
+import '/src/view/slideshow-page/left-panel.js';
 
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
 import * as db from '/src/db/db.js';
-import {append_slide} from '/src/slideshow-page/append-slide.js';
-import * as channel from '/src/slideshow-page/channel.js';
-import {feeds_container_append_feed} from '/src/slideshow-page/feeds-container.js';
-import {show_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
-import {onkeydown} from '/src/slideshow-page/onkeydown.js';
-import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
-import {hide_splash, show_splash} from '/src/slideshow-page/splash.js';
+import {append_slide} from '/src/view/slideshow-page/append-slide.js';
+import * as channel from '/src/view/slideshow-page/channel.js';
+import {feeds_container_append_feed} from '/src/view/slideshow-page/feeds-container.js';
+import {show_no_articles_message} from '/src/view/slideshow-page/no-articles-message.js';
+import {onkeydown} from '/src/view/slideshow-page/onkeydown.js';
+import {page_style_onload} from '/src/view/slideshow-page/page-style-onload.js';
+import {hide_splash, show_splash} from '/src/view/slideshow-page/splash.js';
 
 async function load_view() {
   channel.init();

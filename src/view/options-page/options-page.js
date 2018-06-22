@@ -8,8 +8,8 @@ import * as favicon from '/src/favicon/favicon.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import * as array from '/src/lang/array.js';
 import {poll_feed} from '/src/poll/poll-feeds.js';
-import {page_style_onchange} from '/src/slideshow-page/page-style-onchange.js';
-import {page_style_onload} from '/src/slideshow-page/page-style-onload.js';
+import {page_style_onchange} from '/src/view/slideshow-page/page-style-onchange.js';
+import {page_style_onload} from '/src/view/slideshow-page/page-style-onload.js';
 
 // View state
 let current_menu_item;

@@ -1,11 +1,11 @@
 import * as config_control from '/src/control/config-control.js';
 import * as entry_control from '/src/control/entry-control.js';
 import * as db from '/src/db/db.js';
-import {append_slide} from '/src/slideshow-page/append-slide.js';
-import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
-import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';
-import {remove_slide} from '/src/slideshow-page/remove-slide.js';
-import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
+import {append_slide} from '/src/view/slideshow-page/append-slide.js';
+import {count_unread_slides} from '/src/view/slideshow-page/count-unread-slides.js';
+import {mark_slide_read_start} from '/src/view/slideshow-page/mark-slide-read.js';
+import {remove_slide} from '/src/view/slideshow-page/remove-slide.js';
+import * as slideshow_state from '/src/view/slideshow-page/slideshow-state.js';
 
 export async function show_next_slide() {
   if (slideshow_state.get_active_transition_count()) {

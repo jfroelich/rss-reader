@@ -1,4 +1,4 @@
-import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
+import {slide_onclick} from '/src/view/slideshow-page/slide-onclick.js';
 
 export function remove_slide(slide) {
   slide.remove();
