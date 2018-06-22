@@ -1,15 +1,16 @@
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
-import * as db from '/src/db/db.js';
+import {get_feed_ids} from '/src/data-access-layer/get-feed-ids.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as Feed from '/src/data-layer/feed.js';
+import * as db from '/src/db/db.js';
 
 // Scans the database for entries not linked to a feed and deletes them
 // TODO: test
 export async function remove_orphaned_entries(conn, channel) {
   // Query for all feed ids. We load just the ids so that it is faster and more
   // scalable than actually loading all feed info.
-  const feed_ids = await feed_control.get_feed_ids(conn);
+  const feed_ids = await get_feed_ids(conn);
 
   // Technically we could continue and let the next transaction do nothing, but
   // it is better for performance to preemptively exit.
