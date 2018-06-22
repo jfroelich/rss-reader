@@ -2,6 +2,7 @@ import * as perm from '/src/browser/permissions.js';
 import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
 import * as feed_control from '/src/control/feed-control.js';
+import {get_feed} from '/src/data-access-layer/get-feed.js';
 import * as db from '/src/db/db.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -214,7 +215,8 @@ async function feed_list_item_onclick(event) {
   const feed_id = parseInt(feed_id_string, 10);
 
   const conn = await db.open_db();
-  const feed = await db.get_feed(conn, 'id', feed_id);
+  const get_feed_mode = 'id';
+  const feed = await get_feed(conn, get_feed_mode, feed_id);
   conn.close();
 
   const title_element = document.getElementById('details-title');

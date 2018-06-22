@@ -1,11 +1,11 @@
 import {assert} from '/src/assert/assert.js';
 import * as feed_control from '/src/control/feed-control.js';
+import {get_feed} from '/src/data-access-layer/get-feed.js';
+import * as Feed from '/src/data-layer/feed.js';
 import * as db from '/src/db/db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import * as array from '/src/lang/array.js';
-import * as Feed from '/src/data-layer/feed.js';
 import {register_test} from '/src/test/test-registry.js';
-
 
 async function subscribe_test() {
   // TODO: it is wrong to ping google, implement something that tests a local
@@ -46,10 +46,10 @@ async function subscribe_test() {
   assert(message_post_count > 0);
 
   // Assert that the new feed is findable by url
-  assert(await db.get_feed(rconn, 'url', url, true));
+  assert(await get_feed(rconn, 'url', url, true));
 
   // Assert that the new feed is findable by id
-  const match = await db.get_feed(rconn, 'id', feed.id);
+  const match = await get_feed(rconn, 'id', feed.id);
   assert(Feed.is_feed(match));
   assert(Feed.is_valid_id(match.id));
   assert(match.id === feed.id);
@@ -123,13 +123,13 @@ async function create_feed_test() {
   assert(messages[0].type === 'feed-written');
 
   // Assert the feed exists in the database with the given url
-  assert(await db.get_feed(conn, 'url', feed_url, true));
+  assert(await get_feed(conn, 'url', feed_url, true));
 
   // TODO: could just store above result (not keyonly), and assert against it.
   // We know it will be findable by id, i think?
 
   // Read the feed from the database and assert against read properties
-  const match = await db.get_feed(conn, 'id', feed.id, false);
+  const match = await get_feed(conn, 'id', feed.id, false);
   assert(Feed.is_feed(match));
   assert(match.active === true);
   assert('dateCreated' in match);

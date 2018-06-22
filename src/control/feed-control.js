@@ -1,5 +1,7 @@
 import * as app from '/src/app/app.js';
 import {assert} from '/src/assert/assert.js';
+import {get_feed} from '/src/data-access-layer/get-feed.js';
+import * as Feed from '/src/data-layer/feed.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {replace_tags} from '/src/html/replace-tags.js';
@@ -8,7 +10,6 @@ import * as array from '/src/lang/array.js';
 import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
-import * as Feed from '/src/data-layer/feed.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {url_did_change} from '/src/net/url-did-change.js';
 
@@ -29,7 +30,7 @@ export async function subscribe(
     skip_icon_lookup) {
   const query_mode = 'url';
   const load_key_only = true;
-  let existing_feed = await db.get_feed(rconn, query_mode, url, load_key_only);
+  let existing_feed = await get_feed(rconn, query_mode, url, load_key_only);
   if (existing_feed) {
     throw new Error('Already subscribed ' + url.href);
   }
@@ -41,8 +42,7 @@ export async function subscribe(
   const res_url = new URL(array.peek(feed.urls));
 
   if (url_did_change(url, res_url)) {
-    existing_feed =
-        await db.get_feed(rconn, query_mode, res_url, load_key_only);
+    existing_feed = await get_feed(rconn, query_mode, res_url, load_key_only);
     if (existing_feed) {
       throw new Error('Already subscribed ' + res_url.href);
     }
@@ -73,44 +73,6 @@ export async function subscribe(
 }
 
 
-// Find a feed in the database by id or by url
-export function get_feed(conn, mode = 'id', value, key_only) {
-  return new Promise((resolve, reject) => {
-    assert(mode !== 'url' || (value && typeof value.href === 'string'));
-    assert(mode !== 'id' || Feed.is_valid_id(value));
-    assert(mode !== 'id' || !key_only);
-
-    const txn = conn.transaction('feed');
-    txn.onerror = _ => reject(txn.error);
-    const store = txn.objectStore('feed');
-
-    let request;
-    if (mode === 'url') {
-      const index = store.index('urls');
-      const href = value.href;
-      request = key_only ? index.getKey(href) : index.get(href);
-    } else if (mode === 'id') {
-      request = store.get(value);
-    } else {
-      throw new TypeError('Invalid mode ' + mode);
-    }
-
-    request.onsuccess = _ => {
-      let feed;
-      if (key_only) {
-        const feed_id = request.result;
-        if (Feed.is_valid_id(feed_id)) {
-          feed = Feed.create();
-          feed.id = feed_id;
-        }
-      } else {
-        feed = request.result;
-      }
-
-      resolve(feed);
-    };
-  });
-}
 
 export function get_feed_ids(conn) {
   return new Promise((resolve, reject) => {
