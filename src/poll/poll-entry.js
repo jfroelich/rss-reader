@@ -6,7 +6,7 @@ import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {parse_html} from '/src/html/parse-html.js';
 import * as array from '/src/lang/array.js';
-import * as Entry from '/src/model/entry.js';
+import * as Entry from '/src/data-layer/entry.js';
 import {fetch_html} from '/src/net/fetch-html.js';
 import * as sniff from '/src/net/sniff.js';
 import {url_did_change} from '/src/net/url-did-change.js';

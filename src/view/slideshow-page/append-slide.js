@@ -2,7 +2,7 @@ import * as config_control from '/src/control/config-control.js';
 import {escape_html} from '/src/html/escape-html.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import * as array from '/src/lang/array.js';
-import * as Entry from '/src/model/entry.js';
+import * as Entry from '/src/data-layer/entry.js';
 import {filter_publisher} from '/src/nlp/nlp.js';
 import {hide_no_articles_message} from '/src/view/slideshow-page/no-articles-message.js';
 import {slide_onclick} from '/src/view/slideshow-page/slide-onclick.js';

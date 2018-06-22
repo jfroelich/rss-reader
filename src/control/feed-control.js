@@ -8,7 +8,7 @@ import * as array from '/src/lang/array.js';
 import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
-import * as Feed from '/src/model/feed.js';
+import * as Feed from '/src/data-layer/feed.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {url_did_change} from '/src/net/url-did-change.js';
 

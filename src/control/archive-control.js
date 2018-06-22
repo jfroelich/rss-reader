@@ -1,5 +1,5 @@
 import {sizeof} from '/src/lang/sizeof.js';
-import * as Entry from '/src/model/entry.js';
+import * as Entry from '/src/data-layer/entry.js';
 import * as entry_control from '/src/control/entry-control.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;

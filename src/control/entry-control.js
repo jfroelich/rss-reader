@@ -5,7 +5,7 @@ import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
 import {filter_unprintable_characters} from '/src/lang/filter-unprintable-characters.js';
-import * as Entry from '/src/model/entry.js';
+import * as Entry from '/src/data-layer/entry.js';
 
 export function get_entry(conn, mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {

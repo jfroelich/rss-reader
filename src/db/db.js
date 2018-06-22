@@ -1,7 +1,7 @@
 import * as config_control from '/src/control/config-control.js';
 import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
-import * as Entry from '/src/model/entry.js';
-import * as Feed from '/src/model/feed.js';
+import * as Entry from '/src/data-layer/entry.js';
+import * as Feed from '/src/data-layer/feed.js';
 
 export function open_db(name, version, timeout) {
   // Default to config values. These are not fully hardcoded so that the

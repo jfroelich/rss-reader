@@ -1,6 +1,6 @@
 import * as db from '/src/db/db.js';
 import ExtensionLock from '/src/extension-lock/extension-lock.js';
-import * as Entry from '/src/model/entry.js';
+import * as Entry from '/src/data-layer/entry.js';
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar
 // @param lock_value {String} optional, for debugging who obtained an internal

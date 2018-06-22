@@ -3,7 +3,7 @@ import * as feed_control from '/src/control/feed-control.js';
 import * as db from '/src/db/db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import * as array from '/src/lang/array.js';
-import * as Feed from '/src/model/feed.js';
+import * as Feed from '/src/data-layer/feed.js';
 import {register_test} from '/src/test/test-registry.js';
 
 
