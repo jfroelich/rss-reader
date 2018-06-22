@@ -1,48 +1,12 @@
 import {assert} from '/src/assert/assert.js';
+import * as Entry from '/src/data-layer/entry.js';
 import {replace_tags} from '/src/html/replace-tags.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
 import {filter_unprintable_characters} from '/src/lang/filter-unprintable-characters.js';
-import * as Entry from '/src/data-layer/entry.js';
 
-export function get_entry(conn, mode = 'id', value, key_only) {
-  return new Promise((resolve, reject) => {
-    assert(mode !== 'id' || Entry.is_valid_entry_id(value));
-    assert(mode !== 'id' || !key_only);
-
-    const txn = conn.transaction('entry');
-    txn.onerror = _ => reject(txn.error);
-    const store = txn.objectStore('entry');
-
-    let request;
-    if (mode === 'url') {
-      const index = store.index('urls');
-      const href = value.href;
-      request = key_only ? index.getKey(href) : index.get(href);
-    } else if (mode === 'id') {
-      request = store.get(value);
-    } else {
-      throw new TypeError('Invalid mode ' + mode);
-    }
-
-    request.onsuccess = _ => {
-      let entry;
-      if (key_only) {
-        const entry_id = request.result;
-        if (Entry.is_valid_entry_id(entry_id)) {
-          entry = Entry.create_entry();
-          entry.id = entry_id;
-        }
-      } else {
-        entry = request.result;
-      }
-
-      resolve(entry);
-    };
-  });
-}
 
 export function get_entries(conn, mode = 'all', offset = 0, limit = 0) {
   return new Promise((resolve, reject) => {
