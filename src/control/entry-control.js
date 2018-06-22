@@ -5,7 +5,6 @@ import {replace_tags} from '/src/html/replace-tags.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
-import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
 import {filter_unprintable_characters} from '/src/lang/filter-unprintable-characters.js';
 
 export function mark_entry_read(conn, channel, entry_id) {
@@ -39,21 +38,6 @@ export function mark_entry_read(conn, channel, entry_id) {
   });
 }
 
-export function delete_entry(conn, channel, id, reason) {
-  return new Promise((resolve, reject) => {
-    assert(Entry.is_valid_entry_id(id));  // prevent fake noops
-    const txn = conn.transaction('entry', 'readwrite');
-    txn.oncomplete = _ => {
-      // Unlike delete_feed this does not expose feed id because it would
-      // require an extra lookup.
-      const msg = {type: 'entry-deleted', id: id, reason: reason};
-      channel.postMessage(msg);
-      resolve();
-    };
-    txn.onerror = _ => reject(txn.error);
-    txn.objectStore('entry').delete(id);
-  });
-}
 
 // Removes entries missing urls from the database
 // TODO: test
