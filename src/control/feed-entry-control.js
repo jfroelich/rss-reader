@@ -1,7 +1,7 @@
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
-import {get_feed_ids} from '/src/data-access-layer/get-feed-ids.js';
-import {get_feeds} from '/src/data-access-layer/get-feeds.js';
+import {get_feed_ids} from '/src/dal/get-feed-ids.js';
+import {get_feeds} from '/src/dal/get-feeds.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as Feed from '/src/data-layer/feed.js';
 import * as db from '/src/db/db.js';

@@ -3,7 +3,7 @@ import '/src/view/slideshow-page/left-panel.js';
 
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
-import {get_feeds} from '/src/data-access-layer/get-feeds.js';
+import {get_feeds} from '/src/dal/get-feeds.js';
 import * as db from '/src/db/db.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import * as channel from '/src/view/slideshow-page/channel.js';

@@ -1,4 +1,4 @@
-import {count_unread_entries} from '/src/data-access-layer/count-unread-entries.js';
+import {count_unread_entries} from '/src/dal/count-unread-entries.js';
 import * as db from '/src/db/db.js';
 import ExtensionLock from '/src/extension-lock/extension-lock.js';
 

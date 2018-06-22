@@ -1,7 +1,7 @@
 import * as app from '/src/app/app.js';
 import {assert} from '/src/assert/assert.js';
 import * as feed_control from '/src/control/feed-control.js';
-import {get_feeds} from '/src/data-access-layer/get-feeds.js';
+import {get_feeds} from '/src/dal/get-feeds.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as Feed from '/src/data-layer/feed.js';
 import * as db from '/src/db/db.js';

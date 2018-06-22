@@ -1,5 +1,5 @@
 import * as feed_control from '/src/control/feed-control.js';
-import {get_feeds} from '/src/data-access-layer/get-feeds.js';
+import {get_feeds} from '/src/dal/get-feeds.js';
 import * as db from '/src/db/db.js';
 import {FaviconService} from '/src/favicon/favicon-service.js';
 import * as array from '/src/lang/array.js';

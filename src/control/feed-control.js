@@ -1,6 +1,6 @@
 import * as app from '/src/app/app.js';
 import {assert} from '/src/assert/assert.js';
-import {get_feed} from '/src/data-access-layer/get-feed.js';
+import {get_feed} from '/src/dal/get-feed.js';
 import * as Feed from '/src/data-layer/feed.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon.js';
