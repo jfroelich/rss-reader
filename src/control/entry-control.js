@@ -39,38 +39,6 @@ export function mark_entry_read(conn, channel, entry_id) {
   });
 }
 
-export function update_entry(conn, channel, entry) {
-  return new Promise((resolve, reject) => {
-    assert(Entry.is_entry(entry));
-
-    const creating = !entry.id;
-    if (creating) {
-      entry.readState = Entry.ENTRY_STATE_UNREAD;
-      entry.archiveState = Entry.ENTRY_STATE_UNARCHIVED;
-      entry.dateCreated = new Date();
-      delete entry.dateUpdated;
-    } else {
-      entry.dateUpdated = new Date();
-    }
-
-    filter_empty_properties(entry);
-
-    const txn = conn.transaction('entry', 'readwrite');
-    txn.oncomplete = _ => {
-      const message = {type: 'entry-write', id: entry.id, 'create': creating};
-      console.debug(message);
-      channel.postMessage(message);
-      resolve(entry.id);
-    };
-    txn.onerror = _ => reject(txn.error);
-    const store = txn.objectStore('entry');
-    const request = store.put(entry);
-    if (creating) {
-      request.onsuccess = _ => entry.id = request.result;
-    }
-  });
-}
-
 export function delete_entry(conn, channel, id, reason) {
   return new Promise((resolve, reject) => {
     assert(Entry.is_valid_entry_id(id));  // prevent fake noops

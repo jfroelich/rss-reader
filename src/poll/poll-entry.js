@@ -3,6 +3,7 @@ import * as config_control from '/src/control/config-control.js';
 import * as entry_control from '/src/control/entry-control.js';
 import {get_entry} from '/src/dal/get-entry.js';
 import * as db from '/src/dal/open-db.js';
+import {update_entry} from '/src/dal/update-entry.js';
 import * as Entry from '/src/data-layer/entry.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -109,7 +110,7 @@ export async function poll_entry(
 
   assert(Entry.is_valid_entry(entry));
   entry = entry_control.sanitize_entry(entry);
-  return await entry_control.update_entry(rconn, channel, entry);
+  return await update_entry(rconn, channel, entry);
 }
 
 function url_is_inaccessible_content(url) {
