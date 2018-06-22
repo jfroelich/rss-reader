@@ -1,4 +1,5 @@
 import {assert} from '/src/assert/assert.js';
+import {iterate_entries} from '/src/dal/iterate-entries.js';
 import * as Entry from '/src/data-layer/entry.js';
 import {replace_tags} from '/src/html/replace-tags.js';
 import {truncate_html} from '/src/html/truncate-html.js';
@@ -6,37 +7,6 @@ import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
 import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
 import {filter_unprintable_characters} from '/src/lang/filter-unprintable-characters.js';
-
-export function iterate_entries(conn, mode = 'all', writable, handle_entry) {
-  return new Promise((resolve, reject) => {
-    const txn_mode = writable ? 'readwrite' : 'readonly';
-    const txn = conn.transaction('entry', txn_mode);
-    txn.oncomplete = resolve;
-    txn.onerror = _ => reject(txn.error);
-    const store = txn.objectStore('entry');
-
-    let request;
-    if (mode === 'archive') {
-      const index = store.index('archiveState-readState');
-      const key_path = [Entry.ENTRY_STATE_UNARCHIVED, Entry.ENTRY_STATE_READ];
-      request = index.openCursor(key_path);
-    } else if (mode === 'all') {
-      request = store.openCursor();
-    } else {
-      throw new Error('Invalid mode ' + mode);
-    }
-
-    request.onsuccess = _ => {
-      const cursor = request.result;
-      if (!cursor) {
-        return;
-      }
-
-      handle_entry(cursor);
-      cursor.continue();
-    };
-  });
-}
 
 export function mark_entry_read(conn, channel, entry_id) {
   return new Promise((resolve, reject) => {

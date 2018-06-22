@@ -3,9 +3,10 @@ import * as feed_control from '/src/control/feed-control.js';
 import {delete_feed} from '/src/dal/delete-feed.js';
 import {get_feed_ids} from '/src/dal/get-feed-ids.js';
 import {get_feeds} from '/src/dal/get-feeds.js';
+import {iterate_entries} from '/src/dal/iterate-entries.js';
+import * as db from '/src/dal/open-db.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as Feed from '/src/data-layer/feed.js';
-import * as db from '/src/dal/open-db.js';
 
 // Scans the database for entries not linked to a feed and deletes them
 // TODO: test
@@ -27,7 +28,7 @@ export async function remove_orphaned_entries(conn, channel) {
 
   // Walk the entry store in write mode
   const txn_writable = true;
-  await entry_control.iterate_entries(conn, 'all', txn_writable, cursor => {
+  await iterate_entries(conn, 'all', txn_writable, cursor => {
     const entry = cursor.value;
 
     // If the entry object type is invalid, ignore it
@@ -80,7 +81,7 @@ export async function remove_untyped_objects(conn, channel) {
   // several entries in a single transaction.
   const deleted_entries = [];
   const txn_writable = true;
-  await entry_control.iterate_entries(conn, 'all', txn_writable, cursor => {
+  await iterate_entries(conn, 'all', txn_writable, cursor => {
     const entry = cursor.value;
     if (!Entry.is_entry(entry)) {
       // Collect only necessary properties for the channel post rather than
