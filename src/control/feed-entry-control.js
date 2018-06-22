@@ -1,5 +1,6 @@
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
+import {delete_feed} from '/src/dal/delete-feed.js';
 import {get_feed_ids} from '/src/dal/get-feed-ids.js';
 import {get_feeds} from '/src/dal/get-feeds.js';
 import * as Entry from '/src/data-layer/entry.js';
@@ -66,8 +67,7 @@ export async function remove_untyped_objects(conn, channel) {
   for (const feed of feeds) {
     if (!Feed.is_feed(feed)) {
       console.debug('Deleting untyped feed', feed);
-      const promise =
-          feed_control.delete_feed(conn, channel, feed.id, 'untyped');
+      const promise = delete_feed(conn, channel, feed.id, 'untyped');
       delete_feed_promises.push(promise);
     }
   }
