@@ -1,5 +1,6 @@
 import * as config_control from '/src/control/config-control.js';
 import * as entry_control from '/src/control/entry-control.js';
+import {get_entries} from '/src/dal/get-entries.js';
 import * as db from '/src/dal/open-db.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/view/slideshow-page/count-unread-slides.js';
@@ -25,8 +26,7 @@ export async function show_next_slide() {
   if (slide_unread_count < 3) {
     const limit = config_control.read_int('initial_entry_load_limit');
     const mode = 'viewable';
-    entries =
-        await entry_control.get_entries(conn, mode, slide_unread_count, limit);
+    entries = await get_entries(conn, mode, slide_unread_count, limit);
   }
   conn.close();
 
