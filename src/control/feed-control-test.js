@@ -98,7 +98,7 @@ async function create_feed_test() {
   channel.postMessage = message => messages.push(message);
   channel.close = function() {};
 
-  const stored_feed_id = await update_feed(conn, channel.postMessage, feed);
+  const stored_feed_id = await update_feed(conn, channel, feed);
 
   // Make assertions about the function output
 

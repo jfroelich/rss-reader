@@ -59,7 +59,7 @@ export async function subscribe(
   }
 
   sanitize_feed(feed);
-  await update_feed(rconn, channel.postMessage, feed);
+  await update_feed(rconn, channel, feed);
 
   if (should_notify) {
     const title = 'Subscribed!';

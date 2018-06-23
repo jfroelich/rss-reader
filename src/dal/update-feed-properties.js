@@ -2,7 +2,7 @@ import {assert} from '/src/assert/assert.js';
 import * as Feed from '/src/data-layer/feed.js';
 
 export function update_feed_properties(
-    conn, post_message = noop, feed_id, name, value, extra_props = {}) {
+    conn, channel, feed_id, name, value, extra_props = {}) {
   return new Promise((resolve, reject) => {
     assert(Feed.is_valid_id(feed_id));
     assert(typeof name === 'string' && name);
@@ -10,7 +10,7 @@ export function update_feed_properties(
 
     const txn = conn.transaction('feed', 'readwrite');
     txn.oncomplete = _ => {
-      post_message({type: 'feed-written', id: feed_id, property: name});
+      channel.postMessage({type: 'feed-written', id: feed_id, property: name});
       resolve();
     };
     txn.onerror = _ => reject(txn.error);
@@ -73,5 +73,3 @@ export function update_feed_properties(
     };
   });
 }
-
-function noop() {}

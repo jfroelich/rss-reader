@@ -112,7 +112,8 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
 
   assert(Feed.is_valid(merged_feed));
   feed_control.sanitize_feed(merged_feed);
-  await update_feed(rconn, channel.postMessage, merged_feed);
+
+  await update_feed(rconn, channel, merged_feed);
 
   const count = await poll_entries(
       rconn, iconn, channel, options, response.entries, merged_feed);
@@ -230,7 +231,7 @@ async function handle_fetch_error(
   }
 
   // No need to validate/sanitize, we've had control for the entire lifetime
-  await update_feed(rconn, channel.postMessage, feed);
+  await update_feed(rconn, channel, feed);
 }
 
 function dedup_entries(entries) {

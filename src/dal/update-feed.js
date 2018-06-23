@@ -3,7 +3,7 @@ import * as Feed from '/src/data-layer/feed.js';
 import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
 
 // Creates or updates a feed in the database
-export function update_feed(conn, post_message = noop, feed) {
+export function update_feed(conn, channel, feed) {
   return new Promise((resolve, reject) => {
     assert(Feed.is_feed(feed));
     assert(feed.urls && feed.urls.length);
@@ -22,7 +22,7 @@ export function update_feed(conn, post_message = noop, feed) {
     const txn = conn.transaction('feed', 'readwrite');
     txn.oncomplete = _ => {
       const message = {type: 'feed-written', id: feed.id, create: is_create};
-      post_message(message);
+      channel.postMessage(message);
       resolve(feed.id);
     };
     txn.onerror = _ => reject(txn.error);
@@ -35,5 +35,3 @@ export function update_feed(conn, post_message = noop, feed) {
     }
   });
 }
-
-function noop() {}

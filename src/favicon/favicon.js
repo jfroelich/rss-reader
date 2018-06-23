@@ -84,6 +84,6 @@ async function refresh_feed(rconn, iconn, channel, feed) {
       delete feed.faviconURLString;
     }
 
-    await update_feed(rconn, channel.postMessage, feed);
+    await update_feed(rconn, channel, feed);
   }
 }

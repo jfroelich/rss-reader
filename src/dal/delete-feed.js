@@ -3,7 +3,7 @@ import * as Feed from '/src/data-layer/feed.js';
 
 // Remove a feed and its entries, posts a message for each removal.
 // If feed id does not exist then no error is thrown this is just a noop.
-export function delete_feed(conn, post_message = noop, feed_id, reason) {
+export function delete_feed(conn, channel, feed_id, reason) {
   return new Promise((resolve, reject) => {
     // If not checked this would be a noop which is misleading
     assert(Feed.is_valid_id(feed_id));
@@ -16,7 +16,7 @@ export function delete_feed(conn, post_message = noop, feed_id, reason) {
       msg = {type: 'entry-deleted', id: 0, reason: reason, feed_id: feed_id};
       for (const id of entry_ids) {
         msg.id = id;
-        post_message(msg);
+        channel.postMessage(msg);
       }
       resolve();
     };
@@ -38,5 +38,3 @@ export function delete_feed(conn, post_message = noop, feed_id, reason) {
     };
   });
 }
-
-function noop() {}
