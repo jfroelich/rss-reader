@@ -1,6 +1,6 @@
 import * as badge from '/src/control/badge-control.js';
 import * as entry_control from '/src/control/entry-control.js';
-import {get_entries, open_db} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/view/slideshow-page/count-unread-slides.js';
 import {mark_slide_read_end} from '/src/view/slideshow-page/mark-slide-read.js';
@@ -92,9 +92,11 @@ async function onmessage(event) {
     // logic.
 
     let limit = undefined;
-    const conn = await open_db();
-    const entries = await get_entries(conn, 'viewable', unread_count, limit);
-    conn.close();
+    const dal = new ReaderDAL();
+    await dal.connect();
+    const entries = await dal.getEntries('viewable', unread_count, limit);
+    dal.close();
+
     for (const entry of entries) {
       append_slide(entry);
     }

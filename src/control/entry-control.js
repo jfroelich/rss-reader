@@ -1,5 +1,5 @@
 import {assert} from '/src/assert/assert.js';
-import {iterate_entries} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import * as Entry from '/src/data-layer/entry.js';
 import {replace_tags} from '/src/html/replace-tags.js';
 import {truncate_html} from '/src/html/truncate-html.js';
@@ -42,9 +42,13 @@ export function mark_entry_read(conn, channel, entry_id) {
 // Removes entries missing urls from the database
 // TODO: test
 export async function remove_lost_entries(conn, channel) {
+  const dal = new ReaderDAL();
+  dal.conn = conn;
+  dal.channel = channel;
+
   const deleted_entry_ids = [];
   const txn_writable = true;
-  await iterate_entries(conn, 'all', txn_writable, cursor => {
+  await dal.iterateEntries('all', txn_writable, cursor => {
     const entry = cursor.value;
     if (!entry.urls || !entry.urls.length) {
       cursor.delete();
@@ -52,7 +56,6 @@ export async function remove_lost_entries(conn, channel) {
     }
   });
 
-  // Wait till txn commits before dispatch
   for (const id of deleted_entry_ids) {
     channel.postMessage({type: 'entry-deleted', id: id, reason: 'lost'});
   }

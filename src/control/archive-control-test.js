@@ -1,6 +1,6 @@
 import {assert} from '/src/assert/assert.js';
 import {archive_entries} from '/src/control/archive-control.js';
-import {open_db} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import {register_test} from '/src/test/test-registry.js';
 
@@ -10,14 +10,13 @@ import {register_test} from '/src/test/test-registry.js';
 // archived
 
 async function archive_entries_test() {
-  const dbname = 'archive-entries-test';
-  let dbversion, dbtimeout;
-  const conn = await open_db(dbname, dbversion, dbtimeout);
+  const dal = new ReaderDAL();
+  await dal.connect('archive-entries-test');
   const channel = {name: 'stub', postMessage: noop, close: noop};
-  await archive_entries(conn, channel);
-  conn.close();
+  await archive_entries(dal.conn, channel);
+  dal.close();
   channel.close();
-  await indexeddb_remove(conn.name);
+  await indexeddb_remove(dal.conn.name);
 }
 
 function noop() {}

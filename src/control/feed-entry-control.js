@@ -1,15 +1,19 @@
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
-import {delete_feed, get_feed_ids, get_feeds, iterate_entries, open_db} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as Feed from '/src/data-layer/feed.js';
 
 // Scans the database for entries not linked to a feed and deletes them
 // TODO: test
 export async function remove_orphaned_entries(conn, channel) {
+  const dal = new ReaderDAL();
+  dal.conn = conn;
+  dal.channel = channel;
+
   // Query for all feed ids. We load just the ids so that it is faster and more
   // scalable than actually loading all feed info.
-  const feed_ids = await get_feed_ids(conn);
+  const feed_ids = await dal.getFeedIds(conn);
 
   // Technically we could continue and let the next transaction do nothing, but
   // it is better for performance to preemptively exit.
@@ -24,7 +28,7 @@ export async function remove_orphaned_entries(conn, channel) {
 
   // Walk the entry store in write mode
   const txn_writable = true;
-  await iterate_entries(conn, 'all', txn_writable, cursor => {
+  await dal.iterateEntries('all', txn_writable, cursor => {
     const entry = cursor.value;
 
     // If the entry object type is invalid, ignore it
@@ -59,12 +63,16 @@ export async function remove_orphaned_entries(conn, channel) {
 // that a later failure does not indicate an earlier step failed.
 // TODO: use a single transaction
 export async function remove_untyped_objects(conn, channel) {
-  const feeds = get_feeds(conn);
+  const dal = new ReaderDAL();
+  dal.conn = conn;
+  dal.channel = channel;
+
+  const feeds = dal.getFeeds();
   const delete_feed_promises = [];
   for (const feed of feeds) {
     if (!Feed.is_feed(feed)) {
-      console.debug('Deleting untyped feed', feed);
-      const promise = delete_feed(conn, channel, feed.id, 'untyped');
+      const reason = 'untyped';
+      const promise = dal.deleteFeed(feed.id, reason);
       delete_feed_promises.push(promise);
     }
   }
@@ -77,7 +85,7 @@ export async function remove_untyped_objects(conn, channel) {
   // several entries in a single transaction.
   const deleted_entries = [];
   const txn_writable = true;
-  await iterate_entries(conn, 'all', txn_writable, cursor => {
+  await dal.iterateEntries('all', txn_writable, cursor => {
     const entry = cursor.value;
     if (!Entry.is_entry(entry)) {
       // Collect only necessary properties for the channel post rather than
@@ -87,13 +95,10 @@ export async function remove_untyped_objects(conn, channel) {
     }
   });
 
-  // Once the delete-entries transaction settles, it is now safe to notify
-  // observers in a consistent manner.
   for (const entry of deleted_entries) {
     channel.postMessage({
       type: 'entry-deleted',
       id: entry.id,
-      // Use feed_id to remain consistent with delete_feed's channel protocol
       feed_id: entry.feed,
       reason: 'orphan'
     });

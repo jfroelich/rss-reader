@@ -2,14 +2,20 @@ import {assert} from '/src/assert/assert.js';
 import * as config_control from '/src/control/config-control.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as Feed from '/src/data-layer/feed.js';
+import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
 import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
 
-export function activate_feed(conn, channel, feed_id) {
+export function ReaderDAL() {
+  this.conn = undefined;
+  this.channel = undefined;
+}
+
+ReaderDAL.prototype.activateFeed = function(feed_id) {
   return new Promise((resolve, reject) => {
     assert(Feed.is_valid_id(feed_id));
-    const txn = conn.transaction('feed', 'readwrite');
+    const txn = this.conn.transaction('feed', 'readwrite');
     txn.oncomplete = _ => {
-      channel.postMessage({type: 'feed-activated', id: feed_id});
+      this.channel.postMessage({type: 'feed-activated', id: feed_id});
       resolve();
     };
     txn.onerror = _ => reject(txn.error);
@@ -27,25 +33,30 @@ export function activate_feed(conn, channel, feed_id) {
       request.source.put(feed);
     };
   });
-}
+};
 
-export function count_unread_entries(conn) {
+// NOTE: only closes database, not channel
+ReaderDAL.prototype.close = function() {
+  this.conn.close();
+};
+
+ReaderDAL.prototype.countUnreadEntries = function() {
   return new Promise((resolve, reject) => {
-    const txn = conn.transaction('entry');
+    const txn = this.conn.transaction('entry');
     const store = txn.objectStore('entry');
     const index = store.index('readState');
     const request = index.count(Entry.ENTRY_STATE_UNREAD);
     request.onsuccess = _ => resolve(request.result);
     request.onerror = _ => reject(request.error);
   });
-}
+};
 
-export function deactivate_feed(conn, channel, feed_id, reason) {
+ReaderDAL.prototype.deactivateFeed = function(feed_id, reason) {
   return new Promise((resolve, reject) => {
     assert(Feed.is_valid_id(feed_id));
-    const txn = conn.transaction('feed', 'readwrite');
+    const txn = this.conn.transaction('feed', 'readwrite');
     txn.oncomplete = _ => {
-      channel.postMessage({type: 'feed-deactivated', id: feed_id});
+      this.channel.postMessage({type: 'feed-deactivated', id: feed_id});
       resolve();
     };
     txn.onerror = _ => reject(txn.error);
@@ -64,45 +75,39 @@ export function deactivate_feed(conn, channel, feed_id, reason) {
       request.source.put(feed);
     };
   });
-}
+};
 
-export function delete_entry(conn, channel, id, reason) {
+ReaderDAL.prototype.deleteEntry = function(entry_id, reason) {
   return new Promise((resolve, reject) => {
-    assert(Entry.is_valid_entry_id(id));  // prevent fake noops
-    const txn = conn.transaction('entry', 'readwrite');
+    assert(Entry.is_valid_entry_id(entry_id));
+    const txn = this.conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
-      // Unlike delete_feed this does not expose feed id because it would
-      // require an extra lookup.
-      const msg = {type: 'entry-deleted', id: id, reason: reason};
-      channel.postMessage(msg);
+      const msg = {type: 'entry-deleted', id: entry_id, reason: reason};
+      this.channel.postMessage(msg);
       resolve();
     };
     txn.onerror = _ => reject(txn.error);
-    txn.objectStore('entry').delete(id);
+    txn.objectStore('entry').delete(entry_id);
   });
-}
+};
 
-// Remove a feed and its entries, posts a message for each removal.
-// If feed id does not exist then no error is thrown this is just a noop.
-export function delete_feed(conn, channel, feed_id, reason) {
+ReaderDAL.prototype.deleteFeed = function(feed_id, reason) {
   return new Promise((resolve, reject) => {
-    // If not checked this would be a noop which is misleading
     assert(Feed.is_valid_id(feed_id));
 
     const entry_ids = [];
-    const txn = conn.transaction(['feed', 'entry'], 'readwrite');
+    const txn = this.conn.transaction(['feed', 'entry'], 'readwrite');
+    txn.onerror = _ => reject(txn.error);
     txn.oncomplete = _ => {
       let msg = {type: 'feed-deleted', id: feed_id, reason: reason};
-      post_message(msg);
+      this.channel.postMessage(msg);
       msg = {type: 'entry-deleted', id: 0, reason: reason, feed_id: feed_id};
       for (const id of entry_ids) {
         msg.id = id;
-        channel.postMessage(msg);
+        this.channel.postMessage(msg);
       }
       resolve();
     };
-
-    txn.onerror = _ => reject(txn.error);
 
     const feed_store = txn.objectStore('feed');
     feed_store.delete(feed_id);
@@ -114,26 +119,25 @@ export function delete_feed(conn, channel, feed_id, reason) {
       const keys = request.result;
       for (const id of keys) {
         entry_ids.push(id);
-        entry_store.delete(id);
+        request.source.delete(id);
       }
     };
   });
-}
+};
 
-
-export function get_entries(conn, mode = 'all', offset = 0, limit = 0) {
+ReaderDAL.prototype.getEntries = function(mode = 'all', offset = 0, limit = 0) {
   return new Promise((resolve, reject) => {
     assert(
-        offset === null || typeof offset === 'undefined' || offset === NaN ||
+        offset === null || offset === undefined || offset === NaN ||
         (Number.isInteger(offset) && offset >= 0));
     assert(
-        limit === null || typeof limit === 'undefined' || limit === NaN ||
+        limit === null || limit === undefined || limit === NaN ||
         (Number.isInteger(limit) && limit >= 0));
 
     const entries = [];
     let advanced = false;
 
-    const txn = conn.transaction('entry');
+    const txn = this.conn.transaction('entry');
     txn.oncomplete = _ => resolve(entries);
     txn.onerror = _ => reject(txn.error);
     const store = txn.objectStore('entry');
@@ -173,14 +177,14 @@ export function get_entries(conn, mode = 'all', offset = 0, limit = 0) {
       cursor.continue();
     };
   });
-}
+};
 
-export function get_entry(conn, mode = 'id', value, key_only) {
+ReaderDAL.prototype.getEntry = function(mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
     assert(mode !== 'id' || Entry.is_valid_entry_id(value));
     assert(mode !== 'id' || !key_only);
 
-    const txn = conn.transaction('entry');
+    const txn = this.conn.transaction('entry');
     txn.onerror = _ => reject(txn.error);
     const store = txn.objectStore('entry');
 
@@ -210,27 +214,25 @@ export function get_entry(conn, mode = 'id', value, key_only) {
       resolve(entry);
     };
   });
-}
+};
 
-export function get_feed_ids(conn) {
+ReaderDAL.prototype.getFeedIds = function() {
   return new Promise((resolve, reject) => {
-    const txn = conn.transaction('feed');
+    const txn = this.conn.transaction('feed');
     txn.onerror = _ => reject(txn.error);
     const store = txn.objectStore('feed');
     const request = store.getAllKeys();
     request.onsuccess = _ => resolve(request.result);
   });
-}
+};
 
-
-// Find a feed in the database by id or by url
-export function get_feed(conn, mode = 'id', value, key_only) {
+ReaderDAL.prototype.getFeed = function(mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
     assert(mode !== 'url' || (value && typeof value.href === 'string'));
     assert(mode !== 'id' || Feed.is_valid_id(value));
     assert(mode !== 'id' || !key_only);
 
-    const txn = conn.transaction('feed');
+    const txn = this.conn.transaction('feed');
     txn.onerror = _ => reject(txn.error);
     const store = txn.objectStore('feed');
 
@@ -260,11 +262,11 @@ export function get_feed(conn, mode = 'id', value, key_only) {
       resolve(feed);
     };
   });
-}
+};
 
-export function get_feeds(conn, mode = 'all', sort = false) {
+ReaderDAL.prototype.getFeeds = function(mode = 'all', sort = false) {
   return new Promise((resolve, reject) => {
-    const txn = conn.transaction('feed');
+    const txn = this.conn.transaction('feed');
     const store = txn.objectStore('feed');
     const request = store.getAll();
     request.onerror = _ => reject(request.error);
@@ -281,7 +283,7 @@ export function get_feeds(conn, mode = 'all', sort = false) {
       }
     };
   });
-}
+};
 
 function compare_feeds(a, b) {
   const s1 = a.title ? a.title.toLowerCase() : '';
@@ -289,12 +291,13 @@ function compare_feeds(a, b) {
   return indexedDB.cmp(s1, s2);
 }
 
-export function iterate_entries(conn, mode = 'all', writable, handle_entry) {
+ReaderDAL.prototype.iterateEntries = function(
+    mode = 'all', writable, handle_entry) {
   return new Promise((resolve, reject) => {
     assert(typeof handle_entry === 'function');
 
     const txn_mode = writable ? 'readwrite' : 'readonly';
-    const txn = conn.transaction('entry', txn_mode);
+    const txn = this.conn.transaction('entry', txn_mode);
     txn.oncomplete = resolve;
     txn.onerror = _ => reject(txn.error);
     const store = txn.objectStore('entry');
@@ -320,10 +323,14 @@ export function iterate_entries(conn, mode = 'all', writable, handle_entry) {
       cursor.continue();
     };
   });
-}
+};
 
+ReaderDAL.prototype.connect = async function(name, version, timeout) {
+  this.conn = await this.openDB(name, version, timeout);
+};
 
-export function open_db(name, version, timeout) {
+// TODO: cannot rely on config-control, that is wrong direction of layer dep
+ReaderDAL.prototype.openDB = function(name, version, timeout) {
   // Default to config values. These are not fully hardcoded so that the
   // function can still be easily overloaded in order to reuse the
   // on_upgrade_needed handler with a different database name and version.
@@ -332,7 +339,7 @@ export function open_db(name, version, timeout) {
   timeout =
       isNaN(timeout) ? config_control.read_int('db_open_timeout') : timeout;
   return indexeddb_open(name, version, on_upgrade_needed, timeout);
-}
+};
 
 function on_upgrade_needed(event) {
   const conn = event.target.result;
@@ -437,7 +444,7 @@ function add_active_field_to_feeds(store) {
   };
 }
 
-export function update_entry(conn, channel, entry) {
+ReaderDAL.prototype.updateEntry = function(entry) {
   return new Promise((resolve, reject) => {
     assert(Entry.is_entry(entry));
 
@@ -453,11 +460,11 @@ export function update_entry(conn, channel, entry) {
 
     filter_empty_properties(entry);
 
-    const txn = conn.transaction('entry', 'readwrite');
+    const txn = this.conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
       const message = {type: 'entry-write', id: entry.id, 'create': creating};
       console.debug(message);
-      channel.postMessage(message);
+      this.channel.postMessage(message);
       resolve(entry.id);
     };
     txn.onerror = _ => reject(txn.error);
@@ -467,9 +474,9 @@ export function update_entry(conn, channel, entry) {
       request.onsuccess = _ => entry.id = request.result;
     }
   });
-}
+};
 
-export function update_feed(conn, channel, feed) {
+ReaderDAL.prototype.updateFeed = function(feed) {
   return new Promise((resolve, reject) => {
     assert(Feed.is_feed(feed));
     assert(feed.urls && feed.urls.length);
@@ -485,19 +492,18 @@ export function update_feed(conn, channel, feed) {
       feed.dateUpdated = new Date();
     }
 
-    const txn = conn.transaction('feed', 'readwrite');
+    const txn = this.conn.transaction('feed', 'readwrite');
+    txn.onerror = _ => reject(txn.error);
     txn.oncomplete = _ => {
       const message = {type: 'feed-written', id: feed.id, create: is_create};
-      channel.postMessage(message);
+      this.channel.postMessage(message);
       resolve(feed.id);
     };
-    txn.onerror = _ => reject(txn.error);
 
     const store = txn.objectStore('feed');
     const request = store.put(feed);
-
     if (is_create) {
       request.onsuccess = _ => feed.id = request.result;
     }
   });
-}
+};

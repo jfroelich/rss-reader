@@ -1,7 +1,7 @@
 import * as app from '/src/app/app.js';
 import {assert} from '/src/assert/assert.js';
 import * as feed_control from '/src/control/feed-control.js';
-import {get_feeds, update_feed} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as Feed from '/src/data-layer/feed.js';
 import * as array from '/src/lang/array.js';
@@ -30,9 +30,12 @@ const default_options = {
 // Checks for new content
 export async function poll_feeds(
     rconn, iconn, channel = chan_stub, options = {}) {
-  const get_feeds_mode = 'active';
-  const get_feeds_sort = false;
-  const feeds = await get_feeds(rconn, get_feeds_mode, get_feeds_sort);
+  const dal = new ReaderDAL();
+  dal.conn = rconn;
+  dal.channel = channel;
+
+  const get_feeds_mode = 'active', get_feeds_sort = false;
+  const feeds = await dal.getFeeds(get_feeds_mode, get_feeds_sort);
 
   options = Object.assign({}, default_options, options);
 
@@ -111,7 +114,10 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   assert(Feed.is_valid(merged_feed));
   feed_control.sanitize_feed(merged_feed);
 
-  await update_feed(rconn, channel, merged_feed);
+  const dal = new ReaderDAL();
+  dal.conn = rconn;
+  dal.channel = channel;
+  await dal.updateFeed(merged_feed);
 
   const count = await poll_entries(
       rconn, iconn, channel, options, response.entries, merged_feed);
@@ -228,8 +234,11 @@ async function handle_fetch_error(
     feed.deactivationDate = new Date();
   }
 
+  const dal = new ReaderDAL();
+  dal.conn = rconn;
+  dal.channel = channel;
   // No need to validate/sanitize, we've had control for the entire lifetime
-  await update_feed(rconn, channel, feed);
+  await dal.updateFeed(feed);
 }
 
 function dedup_entries(entries) {

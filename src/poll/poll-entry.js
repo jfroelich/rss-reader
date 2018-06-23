@@ -1,7 +1,7 @@
 import {assert} from '/src/assert/assert.js';
 import * as config_control from '/src/control/config-control.js';
 import * as entry_control from '/src/control/entry-control.js';
-import {get_entry, update_entry} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import * as Entry from '/src/data-layer/entry.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -27,6 +27,10 @@ export async function poll_entry(
     rewrite_rules) {
   assert(Entry.is_entry(entry));
 
+  const dal = new ReaderDAL();
+  dal.conn = rconn;
+  dal.channel = channel;
+
   // Rewrite the entry's last url and append its new url if different.
   let url = new URL(array.peek(entry.urls));
   Entry.append_entry_url(entry, rewrite_url(url, rewrite_rules));
@@ -36,9 +40,8 @@ export async function poll_entry(
   // storage, and that is sufficient to detect a duplicate. We get the
   // tail url a second time because it may have changed in rewriting.
   url = new URL(array.peek(entry.urls));
-  const get_entry_mode = 'url', get_entry_key_only = true;
-  let existing_entry =
-      await get_entry(rconn, get_entry_mode, url, get_entry_key_only);
+  const get_mode = 'url', key_only = true;
+  let existing_entry = await dal.getEntry(get_mode, url, key_only);
   if (existing_entry) {
     throw new EntryExistsError('Entry already exists for url ' + url.href);
   }
@@ -66,9 +69,7 @@ export async function poll_entry(
       Entry.append_entry_url(entry, response_url);
       Entry.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
       url = new URL(array.peek(entry.urls));
-
-      existing_entry =
-          await get_entry(rconn, get_entry_mode, url, get_entry_key_only);
+      existing_entry = await dal.getEntry(get_mode, url, key_only);
       if (existing_entry) {
         throw new EntryExistsError(
             'Entry exists for redirected url ' + url.href);
@@ -108,7 +109,7 @@ export async function poll_entry(
 
   assert(Entry.is_valid_entry(entry));
   entry = entry_control.sanitize_entry(entry);
-  return await update_entry(rconn, channel, entry);
+  return await dal.updateEntry(entry);
 }
 
 function url_is_inaccessible_content(url) {

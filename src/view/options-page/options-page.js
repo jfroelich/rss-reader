@@ -2,7 +2,7 @@ import * as perm from '/src/browser/permissions.js';
 import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
 import * as feed_control from '/src/control/feed-control.js';
-import {activate_feed, deactivate_feed, delete_feed, get_feed, get_feeds, open_db} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {truncate_html} from '/src/html/truncate-html.js';
@@ -216,10 +216,10 @@ async function feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-  const conn = await open_db();
-  const get_feed_mode = 'id';
-  const feed = await get_feed(conn, get_feed_mode, feed_id);
-  conn.close();
+  const dal = new ReaderDAL();
+  await dal.connect();
+  const feed = await dal.getFeed('id', feed_id);
+  dal.close();
 
   const title_element = document.getElementById('details-title');
   title_element.textContent = feed.title || feed.link || 'Untitled';
@@ -301,15 +301,16 @@ async function subscribe_form_onsubmit(event) {
   // TODO: subscribe can now throw an error, this should catch the error and
   // show a nice error message or something instead of panic
   // TODO: move this to a helper
-  const conn_promises = Promise.all([open_db(), favicon.open()]);
-  const [rconn, iconn] = await conn_promises;
+  const dal = new ReaderDAL();
+  const conn_promises = Promise.all([dal.connect(), favicon.open()]);
+  const [_, iconn] = await conn_promises;
   const channel = new BroadcastChannel(localStorage.channel_name);
   let subscribe_fetch_timeout;
   const subscribe_notify = true;
   const feed = await feed_control.subscribe(
-      rconn, iconn, channel, subscribe_url, subscribe_fetch_timeout,
+      dal.conn, iconn, channel, subscribe_url, subscribe_fetch_timeout,
       subscribe_notify);
-  rconn.close();
+  dal.close();
   iconn.close();
   channel.close();
 
@@ -324,23 +325,25 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const conn_promises = Promise.all([open_db(), favicon.open()]);
-  const [rconn, iconn] = await conn_promises;
+  const dal = new ReaderDAL();
+  const conn_promises = Promise.all([dal.connect(), favicon.open()]);
+  const [_, iconn] = await conn_promises;
   const channel = new BroadcastChannel(localStorage.channel_name);
 
   const options = {ignore_recency_check: true, notify: true};
-  await poll_feed(rconn, iconn, channel, console_stub, options, feed);
+  await poll_feed(dal.conn, iconn, channel, console_stub, options, feed);
 
-  rconn.close();
+  dal.close();
   iconn.close();
   channel.close();
 }
 
 async function feed_list_init() {
-  const title_sort_flag = true;
-  const conn = await open_db();
-  const feeds = await get_feeds(conn, 'all', true);
-  conn.close();
+  const dal = new ReaderDAL();
+  await dal.connect();
+  const get_mode = 'all', get_sorted = true;
+  const feeds = await dal.getFeeds(get_mode, get_sorted);
+  dal.close();
 
   for (const feed of feeds) {
     // TODO: I think this is actually a concern of feed_list_append_feed? I do
@@ -385,23 +388,24 @@ function feed_list_remove_feed_by_id(feed_id) {
 
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const conn = await open_db();
-  const channel = new BroadcastChannel(localStorage.channel_name);
-  await delete_feed(conn, channel, feed_id, 'unsubscribe');
-  conn.close();
-  channel.close();
+  const dal = new ReaderDAL();
+  dal.channel = new BroadcastChannel(localStorage.channel_name);
+  await dal.connect();
+  await dal.deleteFeed(feed_id, 'unsubscribe');
+  dal.close();
+  dal.channel.close();
   feed_list_remove_feed_by_id(feed_id);
   section_show_by_id('subs-list-section');
 }
 
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-
-  const conn = await open_db();
-  const channel = new BroadcastChannel(localStorage.channel_name);
-  await activate_feed(conn, channel, feed_id);
-  channel.close();
-  conn.close();
+  const dal = new ReaderDAL();
+  dal.channel = new BroadcastChannel(localStorage.channel_name);
+  await dal.connect();
+  await dal.activateFeed(feed_id);
+  dal.channel.close();
+  dal.close();
 
   // TODO: handling the event here may be wrong, it should be done in the
   // message handler. However, I am not sure how much longer the options page
@@ -418,13 +422,13 @@ async function activate_feed_button_onclick(event) {
 
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-
-  const conn = await open_db();
-  const channel = new BroadcastChannel(localStorage.channel_name);
+  const dal = new ReaderDAL();
+  dal.channel = new BroadcastChannel(localStorage.channel_name);
+  await dal.connect();
   const reason = 'manual';
-  await deactivate_feed(conn, channel, feed_id, reason);
-  channel.close();
-  conn.close();
+  await dal.deactivateFeed(feed_id, reason);
+  dal.channel.close();
+  dal.close();
 
   // Deactivate the corresponding element in the view
   const item_selector = 'li[feed="' + feed_id + '"]';

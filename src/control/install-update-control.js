@@ -2,7 +2,7 @@ import * as color from '/src/argb8888/argb8888.js';
 import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
 import * as cron_control from '/src/control/cron-control.js';
-import {open_db} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
 
 export async function oninstalled(event) {
@@ -15,18 +15,19 @@ export async function oninstalled(event) {
   const reason = event.reason;
 
   if (reason === 'install') {
-    // This must occur first, because the later calls rely on it
+    // This must occur first, because the later calls rely on configuration
+    // settings being setup
     config_oninstall();
 
-    // Setup the reader database explicitly
-    let conn = await open_db();
-    conn.close();
+    // Explicitly create the reader database
+    const dal = new ReaderDAL();
+    await dal.connect();
+    dal.close();
 
     // Setup the favicon database explicitly
     conn = await favicon.open();
     conn.close();
 
-    // Initialize the badge text (to 0)
     badge.refresh(location.pathname);
 
     cron_control.create_alarms();
@@ -34,7 +35,7 @@ export async function oninstalled(event) {
     config_onupdate(prev_version);
     cron_control.update_alarms(prev_version);
 
-    // Without this call, the badge loses its text on extension reload
+    // Without this call the badge loses its text on extension reload
     badge.refresh(location.pathname);
   } else {
     console.warn('Unhandled oninstalled event', event);

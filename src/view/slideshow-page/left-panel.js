@@ -1,7 +1,7 @@
 import * as config_control from '/src/control/config-control.js';
 import * as feed_control from '/src/control/feed-control.js';
 import {import_opml} from '/src/control/import-opml-control.js';
-import {get_feeds, open_db} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
 import * as array from '/src/lang/array.js';
 import {create_opml_document} from '/src/opml/opml-document.js';
@@ -19,16 +19,16 @@ function import_opml_button_onclick(event) {
 async function uploader_input_onchange(event) {
   // TEMP: monitoring recent changes
   console.debug('Received input change event');
-
-  const promises = [open_db(), favicon.open()];
-  const [rconn, iconn] = await Promise.all(promises);
+  const dal = new ReaderDAL();
+  const promises = [dal.connect(), favicon.open()];
+  const [_, iconn] = await Promise.all(promises);
   const channel = new BroadcastChannel(localStorage.channel_name);
   const fetch_timeout = 5000;
   const skip_icon_lookup = false;
   const files = event.target.files;
   await import_opml(
-      rconn, iconn, channel, files, fetch_timeout, skip_icon_lookup);
-  rconn.close();
+      dal.conn, iconn, channel, files, fetch_timeout, skip_icon_lookup);
+  dal.close();
   iconn.close();
   channel.close();
 
@@ -37,21 +37,22 @@ async function uploader_input_onchange(event) {
 }
 
 async function export_button_onclick(event) {
+  const dal = new ReaderDAL();
+  await dal.connect();
+  const get_mode = 'all';
+  const sort_feeds = false;
+  const feeds = await dal.getFeeds(get_mode, sort_feeds);
+  dal.close();
+
   const title = 'Subscriptions';
   const filename = 'subscriptions.xml';
-
-  const conn = await open_db();
-  const feeds = await get_feeds(conn, 'all', false);
-  conn.close();
-  console.debug('Loaded %d feeds', feeds.length);
 
   const outlines = feeds.map(create_outline).filter(outline_has_xml_url);
   const opml_document = create_opml_document(outlines, title);
 
-  console.debug('Downloading file', filename);
+  // TODO: revert to anchor strategy now that it looks like chrome fixed
   download_blob_using_chrome_api(
       opml_document_to_blob(opml_document), filename);
-  console.debug('Export completed');
 }
 
 function outline_has_xml_url(outline) {

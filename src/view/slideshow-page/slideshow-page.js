@@ -3,7 +3,7 @@ import '/src/view/slideshow-page/left-panel.js';
 
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
-import {get_entries, get_feeds, open_db} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import * as channel from '/src/view/slideshow-page/channel.js';
 import {feeds_container_append_feed} from '/src/view/slideshow-page/feeds-container.js';
@@ -20,11 +20,13 @@ async function load_view() {
   show_splash();
   page_style_onload();
 
+  const dal = new ReaderDAL();
+
   const offset = 0, limit = 6;
-  const conn = await open_db();
-  const get_entries_promise = get_entries(conn, 'viewable', offset, limit);
-  const get_feeds_promise = get_feeds(conn, 'all', true);
-  conn.close();
+  const conn = await dal.connect();
+  const get_entries_promise = dal.getEntries('viewable', offset, limit);
+  const get_feeds_promise = dal.getFeeds('all', true);
+  dal.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)
   const entries = await get_entries_promise;

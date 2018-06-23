@@ -1,6 +1,6 @@
 import * as config_control from '/src/control/config-control.js';
 import * as entry_control from '/src/control/entry-control.js';
-import {get_entries, open_db} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/view/slideshow-page/count-unread-slides.js';
 import {mark_slide_read_start} from '/src/view/slideshow-page/mark-slide-read.js';
@@ -17,17 +17,18 @@ export async function show_next_slide() {
     return;
   }
 
-  const conn = await open_db();
-  await mark_slide_read_start(conn, current_slide);
+  const dal = new ReaderDAL();
+  await dal.connect();
+  await mark_slide_read_start(dal.conn, current_slide);
 
   const slide_unread_count = count_unread_slides();
   let entries = [];
   if (slide_unread_count < 3) {
     const limit = config_control.read_int('initial_entry_load_limit');
     const mode = 'viewable';
-    entries = await get_entries(conn, mode, slide_unread_count, limit);
+    entries = await dal.getEntries(mode, slide_unread_count, limit);
   }
-  conn.close();
+  dal.close();
 
   for (const entry of entries) {
     if (!document.querySelector('slide[entry="' + entry.id + '"]')) {

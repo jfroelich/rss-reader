@@ -1,4 +1,4 @@
-import {count_unread_entries, open_db} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import ExtensionLock from '/src/extension-lock/extension-lock.js';
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar
@@ -9,11 +9,15 @@ export async function refresh(lock_value) {
   const lock = new ExtensionLock(lock_name, lock_value);
   if (!lock.isLocked()) {
     lock.acquire(/* unlock_deadline */ 5000);
-    const conn = await open_db();
-    const count = await count_unread_entries(conn);
-    conn.close();
+
+    const dal = new ReaderDAL();
+    await dal.connect();
+    const count = await dal.countUnreadEntries();
+    dal.close();
+
     const text = count > 999 ? '1k+' : '' + count;
     chrome.browserAction.setBadgeText({text: text});
+
     lock.release();
   }
 }

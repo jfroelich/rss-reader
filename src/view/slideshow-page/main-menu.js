@@ -1,4 +1,4 @@
-import {open_db} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {options_menu_hide, options_menu_show} from '/src/view/slideshow-page/left-panel.js';
@@ -15,21 +15,19 @@ async function refresh_button_onclick(event) {
 
   refresh_in_progress = true;
 
-  // Create a local channel object because apparently a channel cannot notify
-  // itself (at least in Chrome 66) despite what spec states
-  const onclick_channel = new BroadcastChannel(localStorage.channel_name);
+  const dal = new ReaderDAL();
+  dal.channel = new BroadcastChannel(localStorage.channel_name);
 
-  const rconn = await open_db();
+  await dal.connect();
   const iconn = await favicon.open();
 
   const options = {};
   options.ignore_recency_check = true;
-  await poll_feeds(rconn, iconn, onclick_channel, options);
+  await poll_feeds(dal.conn, iconn, dal.channel, options);
 
-  // Dispose of resources
-  rconn.close();
+  dal.close();
+  dal.channel.close();
   iconn.close();
-  onclick_channel.close();
 
   refresh_in_progress = false;
 }

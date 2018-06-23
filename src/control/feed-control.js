@@ -1,6 +1,6 @@
 import * as app from '/src/app/app.js';
 import {assert} from '/src/assert/assert.js';
-import {get_feed, open_db, update_feed} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import * as Feed from '/src/data-layer/feed.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {replace_tags} from '/src/html/replace-tags.js';
@@ -25,9 +25,12 @@ import {url_did_change} from '/src/net/url-did-change.js';
 export async function subscribe(
     rconn, iconn, channel, url, fetch_timeout, should_notify = true,
     skip_icon_lookup) {
+  const dal = new ReaderDAL();
+  dal.conn = rconn;
+  dal.channel = channel;
   const query_mode = 'url';
   const load_key_only = true;
-  let existing_feed = await get_feed(rconn, query_mode, url, load_key_only);
+  let existing_feed = await dal.getFeed(query_mode, url, load_key_only);
   if (existing_feed) {
     throw new Error('Already subscribed ' + url.href);
   }
@@ -39,7 +42,7 @@ export async function subscribe(
   const res_url = new URL(array.peek(feed.urls));
 
   if (url_did_change(url, res_url)) {
-    existing_feed = await get_feed(rconn, query_mode, res_url, load_key_only);
+    existing_feed = await dal.getFeed(query_mode, res_url, load_key_only);
     if (existing_feed) {
       throw new Error('Already subscribed ' + res_url.href);
     }
@@ -57,7 +60,7 @@ export async function subscribe(
   }
 
   sanitize_feed(feed);
-  await update_feed(rconn, channel, feed);
+  await dal.updateFeed(feed);
 
   if (should_notify) {
     const title = 'Subscribed!';

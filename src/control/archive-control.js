@@ -1,7 +1,7 @@
 import {sizeof} from '/src/lang/sizeof.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as entry_control from '/src/control/entry-control.js';
-import {iterate_entries} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
@@ -12,7 +12,10 @@ export async function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
   const entry_ids = [];
   const txn_writable = true;
 
-  await iterate_entries(conn, 'archive', txn_writable, cursor => {
+  const dal = new ReaderDAL();
+  dal.conn = conn;
+
+  await dal.iterateEntries('archive', txn_writable, cursor => {
     const entry = cursor.value;
     if (!Entry.is_entry(entry)) {
       console.warn('Bad entry read from db', entry);

@@ -1,6 +1,6 @@
 import {assert} from '/src/assert/assert.js';
 import {import_opml} from '/src/control/import-opml-control.js';
-import {open_db} from '/src/dal/open-db.js';
+import {ReaderDAL} from '/src/dal/open-db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import {register_test} from '/src/test/test-registry.js';
 
@@ -38,13 +38,11 @@ async function import_opml_test() {
 
   const files = [file0];
 
-  const db_name = 'import-opml-test-db';
-  let db_version;
-  const db_timeout = 3000;
-
-  const rconn = await open_db(db_name, db_version, db_timeout);
+  const dal = new ReaderDAL();
+  await dal.connect('import-opml-test-db', undefined, 3000);
   let iconn = undefined;  // test without favicon caching support
-  const channel = new BroadcastChannel('import-opml-test');
+  dal.channel = new BroadcastChannel('import-opml-test');
+
   // It's possible this should be relaxed, undecided. In some sense it impacts
   // the overall test, and it may be even longer than the test timeout
   const fetch_timeout = 5000;
@@ -53,17 +51,17 @@ async function import_opml_test() {
   const skip_icon_lookup = true;
 
   const results = await import_opml(
-      rconn, iconn, channel, files, fetch_timeout, skip_icon_lookup);
+      dal.conn, iconn, dal.channel, files, fetch_timeout, skip_icon_lookup);
 
   // TODO: make assertions about the result
   // is the new database state correct
   // is the results value correct
   console.log(results);
 
-  rconn.close();
-  channel.close();
+  dal.close();
+  dal.channel.close();
 
-  await indexeddb_remove(rconn.name);
+  await indexeddb_remove(dal.conn.name);
 }
 
 register_test(import_opml_test);

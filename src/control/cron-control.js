@@ -1,7 +1,7 @@
 import {archive_entries} from '/src/control/archive-control.js';
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_entry_control from '/src/control/feed-entry-control.js';
-import {open_db} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 
@@ -14,11 +14,13 @@ async function alarm_listener(alarm) {
   localStorage.last_alarm = alarm.name;
 
   if (alarm.name === 'archive') {
-    const conn = await open_db();
+    const dal = new ReaderDAL();
+    const conn = await dal.connect();
     const channel = new BroadcastChannel(localStorage.channel_name);
-    await archive_entries(conn, channel);
+    dal.channel = channel;
+    await archive_entries(dal.conn, channel);
     channel.close();
-    conn.close();
+    dal.close();
   } else if (alarm.name === 'poll') {
     if (localStorage.ONLY_POLL_IF_IDLE) {
       // TODO: this value should come from local storage
@@ -32,37 +34,42 @@ async function alarm_listener(alarm) {
     const options = {};
     options.ignore_recency_check = false;
     options.notify = true;
-    const rconn = await open_db();
+    const dal = new ReaderDAL();
+    await dal.connect();
     const iconn = await favicon.open();
     const channel = new BroadcastChannel(localStorage.channel_name);
-    await poll_feeds(rconn, iconn, channel, options);
+    await poll_feeds(dal.conn, iconn, channel, options);
     channel.close();
     iconn.close();
-    rconn.close();
+    dal.close();
   } else if (alarm.name === 'remove-entries-missing-urls') {
-    const conn = await open_db();
+    const dal = new ReaderDAL();
+    await dal.connect();
     const channel = new BroadcastChannel(localStorage.channel_name);
-    await entry_control.remove_lost_entries(conn, channel);
-    conn.close();
+    await entry_control.remove_lost_entries(dal.conn, channel);
+    dal.close();
     channel.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
-    const conn = await open_db();
+    const dal = new ReaderDAL();
+    await dal.connect();
     const channel = new BroadcastChannel(localStorage.channel_name);
-    await feed_entry_control.remove_orphaned_entries(conn, channel);
-    conn.close();
+    await feed_entry_control.remove_orphaned_entries(dal.conn, channel);
+    dal.close();
     channel.close();
   } else if (alarm.name === 'remove-untyped-objects') {
-    const conn = await open_db();
+    const dal = new ReaderDAL();
+    await dal.connect();
     const channel = new BroadcastChannel(localStorage.channel_name);
-    await feed_entry_control.remove_untyped_objects(conn, channel);
-    conn.close();
+    await feed_entry_control.remove_untyped_objects(dal.conn, channel);
+    dal.close();
     channel.close();
   } else if (alarm.name === 'refresh-feed-icons') {
-    const proms = [open_db(), favicon.open()];
-    const [rconn, iconn] = await Promise.all(proms);
+    const dal = new ReaderDAL();
+    const proms = [dal.connect(), favicon.open()];
+    const [_, iconn] = await Promise.all(proms);
     const channel = new BroadcastChannel(localStorage.channel_name);
-    await favicon.refresh_feeds(rconn, iconn, channel);
-    rconn.close();
+    await favicon.refresh_feeds(dal.conn, iconn, channel);
+    dal.close();
     iconn.close();
     channel.close();
   } else if (alarm.name === 'compact-favicon-db') {

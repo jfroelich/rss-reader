@@ -1,5 +1,5 @@
 import * as feed_control from '/src/control/feed-control.js';
-import {get_feeds, update_feed} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal/dal.js';
 import {FaviconService} from '/src/favicon/favicon-service.js';
 import * as array from '/src/lang/array.js';
 
@@ -53,7 +53,14 @@ export function create_lookup_url(feed) {
 
 // Update the favicon of each of the feeds in the database
 export async function refresh_feeds(rconn, iconn, channel) {
-  const feeds = await get_feeds(rconn, 'active');
+  const dal = new ReaderDAL();
+  dal.conn = rconn;
+  dal.channel = channel;
+
+  const mode = 'active';
+  const sorted = false;
+
+  const feeds = await dal.getFeeds(mode, sorted);
   const promises = [];
   for (const feed of feeds) {
     promises.push(refresh_feed(rconn, iconn, channel, feed));
@@ -82,6 +89,9 @@ async function refresh_feed(rconn, iconn, channel, feed) {
       delete feed.faviconURLString;
     }
 
-    await update_feed(rconn, channel, feed);
+    const dal = new ReaderDAL();
+    dal.conn = rconn;
+    dal.channel = channel;
+    await dal.updateFeed(feed);
   }
 }
