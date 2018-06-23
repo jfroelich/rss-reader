@@ -4,7 +4,7 @@ import {ReaderDAL} from '/src/dal.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import * as array from '/src/lang/array.js';
 import * as Feed from '/src/model/feed.js';
-import {sanitize_feed} from '/src/model/sanitize-feed.js';
+import {sanitize_feed} from '/src/model/sanity.js';
 import {register_test} from '/src/test/test-registry.js';
 
 async function subscribe_test() {

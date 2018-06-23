@@ -1,12 +1,12 @@
 import {assert} from '/src/assert.js';
 import * as config_control from '/src/control/config-control.js';
 import {ReaderDAL} from '/src/dal.js';
-import * as Entry from '/src/model/entry.js';
-import {sanitize_entry} from '/src/model/sanitize-entry.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {parse_html} from '/src/html/parse-html.js';
 import * as array from '/src/lang/array.js';
+import * as Entry from '/src/model/entry.js';
+import {sanitize_entry} from '/src/model/sanity.js';
 import {fetch_html} from '/src/net/fetch-html.js';
 import * as sniff from '/src/net/sniff.js';
 import {url_did_change} from '/src/net/url-did-change.js';

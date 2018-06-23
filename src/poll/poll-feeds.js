@@ -4,7 +4,7 @@ import {ReaderDAL} from '/src/dal.js';
 import * as array from '/src/lang/array.js';
 import * as Entry from '/src/model/entry.js';
 import * as Feed from '/src/model/feed.js';
-import {sanitize_feed} from '/src/model/sanitize-feed.js';
+import {sanitize_feed} from '/src/model/sanity.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {OfflineError, TimeoutError} from '/src/net/fetch2.js';
 import {EntryExistsError, poll_entry} from '/src/poll/poll-entry.js';
