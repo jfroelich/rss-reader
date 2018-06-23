@@ -325,6 +325,35 @@ ReaderDAL.prototype.iterateEntries = function(
   });
 };
 
+ReaderDAL.prototype.markEntryRead = function(entry_id) {
+  return new Promise((resolve, reject) => {
+    assert(Entry.is_valid_entry_id(entry_id));
+
+    const txn = this.conn.transaction('entry', 'readwrite');
+    txn.onerror = _ => reject(txn.error);
+    txn.oncomplete = _ => {
+      this.channel.postMessage({type: 'entry-read', id: entry_id});
+      resolve();
+    };
+
+    const store = txn.objectStore('entry');
+    const request = store.get(entry_id);
+    request.onsuccess = _ => {
+      const entry = request.result;
+      assert(Entry.is_entry(entry));
+      assert(entry.archiveState !== Entry.ENTRY_STATE_ARCHIVED);
+      assert(entry.readState !== Entry.ENTRY_STATE_READ);
+
+      entry.readState = Entry.ENTRY_STATE_READ;
+      const currentDate = new Date();
+      entry.dateUpdated = currentDate;
+      entry.dateRead = currentDate;
+
+      request.source.put(entry);
+    };
+  });
+};
+
 ReaderDAL.prototype.connect = async function(name, version, timeout) {
   this.conn = await this.openDB(name, version, timeout);
 };

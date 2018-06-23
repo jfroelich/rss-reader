@@ -1,4 +1,4 @@
-import * as entry_control from '/src/control/entry-control.js';
+import {ReaderDAL} from '/src/dal.js';
 
 // Starts transitioning a slide into the read state. Updates both the view and
 // the database. This resolves before the view is fully updated. This only sets
@@ -32,11 +32,11 @@ export async function mark_slide_read_start(conn, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  // Use a short-lived local channel instead of the global page-lifetime channel
-  // because BroadcastChannel instances cannot hear their own messages.
-  const channel = new BroadcastChannel(localStorage.channel_name);
-  await entry_control.mark_entry_read(conn, channel, entry_id);
-  channel.close();
+  const dal = new ReaderDAL();
+  dal.conn = conn;
+  dal.channel = new BroadcastChannel(localStorage.channel_name);
+  await dal.markEntryRead(entry_id);
+  dal.channel.close();
 }
 
 // This should be called once the view acknowledges it has received the message
