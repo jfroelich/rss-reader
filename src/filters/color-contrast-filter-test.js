@@ -1,5 +1,5 @@
-import * as color from '/src/argb8888/argb8888.js';
-import {assert} from '/src/assert/assert.js';
+import * as color from '/src/argb8888.js';
+import {assert} from '/src/assert.js';
 import * as config_control from '/src/control/config-control.js';
 import * as css_color from '/src/dom/css-color/css-color.js';
 import * as ccf from '/src/filters/color-contrast-filter.js';

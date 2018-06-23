@@ -1,7 +1,7 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import * as config_control from '/src/control/config-control.js';
 import * as entry_control from '/src/control/entry-control.js';
-import {ReaderDAL} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal.js';
 import * as Entry from '/src/data-layer/entry.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -11,7 +11,7 @@ import {fetch_html} from '/src/net/fetch-html.js';
 import * as sniff from '/src/net/sniff.js';
 import {url_did_change} from '/src/net/url-did-change.js';
 import {sanitize_document} from '/src/poll/sanitize-document.js';
-import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
+import {rewrite_url} from '/src/rewrite-url.js';
 
 export class EntryExistsError extends Error {
   constructor(message = 'Entry already exists') {

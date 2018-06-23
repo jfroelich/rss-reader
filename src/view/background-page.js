@@ -1,4 +1,4 @@
-import * as app from '/src/app/app.js';
+import * as app from '/src/app.js';
 import * as badge from '/src/control/badge-control.js';
 import * as cron_control from '/src/control/cron-control.js';
 import * as install_update_control from '/src/control/install-update-control.js';

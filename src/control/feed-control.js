@@ -1,6 +1,6 @@
-import * as app from '/src/app/app.js';
-import {assert} from '/src/assert/assert.js';
-import {ReaderDAL} from '/src/dal/dal.js';
+import * as app from '/src/app.js';
+import {assert} from '/src/assert.js';
+import {ReaderDAL} from '/src/dal.js';
 import * as Feed from '/src/data-layer/feed.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {replace_tags} from '/src/html/replace-tags.js';

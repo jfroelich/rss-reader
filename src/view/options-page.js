@@ -1,8 +1,8 @@
-import * as perm from '/src/browser/permissions.js';
+import * as perm from '/src/permissions.js';
 import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
 import * as feed_control from '/src/control/feed-control.js';
-import {ReaderDAL} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {truncate_html} from '/src/html/truncate-html.js';

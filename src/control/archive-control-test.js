@@ -1,6 +1,6 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {archive_entries} from '/src/control/archive-control.js';
-import {ReaderDAL} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import {register_test} from '/src/test/test-registry.js';
 

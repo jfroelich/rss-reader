@@ -1,6 +1,6 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {import_opml} from '/src/control/import-opml-control.js';
-import {ReaderDAL} from '/src/dal/open-db.js';
+import {ReaderDAL} from '/src/open-db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import {register_test} from '/src/test/test-registry.js';
 

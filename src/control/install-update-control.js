@@ -1,8 +1,8 @@
-import * as color from '/src/argb8888/argb8888.js';
+import * as color from '/src/argb8888.js';
 import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
 import * as cron_control from '/src/control/cron-control.js';
-import {ReaderDAL} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
 
 export async function oninstalled(event) {

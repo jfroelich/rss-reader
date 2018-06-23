@@ -1,5 +1,5 @@
-import {ReaderDAL} from '/src/dal/dal.js';
-import ExtensionLock from '/src/extension-lock/extension-lock.js';
+import {ReaderDAL} from '/src/dal.js';
+import ExtensionLock from '/src/extension-lock.js';
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar
 // @param lock_value {String} optional, for debugging who obtained an internal

@@ -1,7 +1,7 @@
 import {sizeof} from '/src/lang/sizeof.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as entry_control from '/src/control/entry-control.js';
-import {ReaderDAL} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 

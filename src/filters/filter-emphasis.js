@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {unwrap_element} from '/src/dom/unwrap-element.js';
 
 export function filter_emphasis(document, text_length_max) {

@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import * as boilerplate from '/src/filters/boilerplate.js';
 import {canonicalize_urls} from '/src/filters/canonicalize-urls.js';

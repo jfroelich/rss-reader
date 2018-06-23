@@ -1,5 +1,5 @@
 import '/src/dom/css-color/third-party/tinycolor-min.js';
-import * as color from '/src/argb8888/argb8888.js';
+import * as color from '/src/argb8888.js';
 
 // Parses a css color value into a color.js color
 export function parse(value) {

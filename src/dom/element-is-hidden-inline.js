@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 
 // Returns true if an element is hidden according to its inline style
 export function element_is_hidden_inline(element) {

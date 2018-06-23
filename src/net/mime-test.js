@@ -1,4 +1,4 @@
-import {assert as a} from '/src/assert/assert.js';
+import {assert as a} from '/src/assert.js';
 import * as mime from '/src/net/mime.js';
 import {register_test} from '/src/test/test-registry.js';
 

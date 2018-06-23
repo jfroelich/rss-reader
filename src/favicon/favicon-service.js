@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {parse_html} from '/src/html/parse-html.js';
 import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
 import {fetch_html} from '/src/net/fetch-html.js';

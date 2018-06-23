@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import {set_image_sizes} from '/src/filters/set-image-sizes.js';
 import {parse_html} from '/src/html/parse-html.js';

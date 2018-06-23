@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import * as sniff from '/src/net/sniff.js';
 import {register_test} from '/src/test/test-registry.js';
 

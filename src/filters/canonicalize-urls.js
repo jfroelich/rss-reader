@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {parse_srcset} from '/src/dom/srcset/parse-srcset.js';
 import {serialize_srcset} from '/src/dom/srcset/serialize-srcset.js';
 

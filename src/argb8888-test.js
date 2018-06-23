@@ -1,5 +1,5 @@
-import {assert} from '/src/assert/assert.js';
-import * as color from '/src/argb8888/argb8888.js';
+import {assert} from '/src/assert.js';
+import * as color from '/src/argb8888.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: implement

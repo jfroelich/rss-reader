@@ -1,6 +1,6 @@
 import '/src/control/archive-control-test.js';
 import '/src/control/feed-control-test.js';
-import '/src/argb8888/argb8888-test.js';
+import '/src/argb8888-test.js';
 import '/src/dom/coerce-element-test.js';
 import '/src/dom/set-document-base-uri-test.js';
 import '/src/favicon/favicon-service-test.js';
@@ -18,7 +18,7 @@ import '/src/net/sniff-test.js';
 import '/src/nlp/filter-publisher-test.js';
 import '/src/control/import-opml-control-test.js';
 import '/src/parse-feed/parse-feed-test.js';
-import '/src/rewrite-url/rewrite-url-test.js';
+import '/src/rewrite-url-test.js';
 import {get_registry} from '/src/test/test-registry.js';
 
 // Wrap a call to a test function with some extra log messages. Impose an

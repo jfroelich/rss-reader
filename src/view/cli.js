@@ -3,7 +3,7 @@ import * as cron_control from '/src/control/cron-control.js';
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
 import * as feed_entry_control from '/src/control/feed-entry-control.js';
-import {ReaderDAL} from '/src/dal/dal.js';
+import {ReaderDAL} from '/src/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {poll_feed, poll_feeds} from '/src/poll/poll-feeds.js';
 
