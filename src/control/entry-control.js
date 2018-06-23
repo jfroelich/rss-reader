@@ -41,11 +41,7 @@ export function mark_entry_read(conn, channel, entry_id) {
 
 // Removes entries missing urls from the database
 // TODO: test
-export async function remove_lost_entries(conn, channel) {
-  const dal = new ReaderDAL();
-  dal.conn = conn;
-  dal.channel = channel;
-
+export async function remove_lost_entries(dal) {
   const deleted_entry_ids = [];
   const txn_writable = true;
   await dal.iterateEntries('all', txn_writable, cursor => {

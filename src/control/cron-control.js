@@ -44,10 +44,10 @@ async function alarm_listener(alarm) {
   } else if (alarm.name === 'remove-entries-missing-urls') {
     const dal = new ReaderDAL();
     await dal.connect();
-    const channel = new BroadcastChannel(localStorage.channel_name);
-    await entry_control.remove_lost_entries(dal.conn, channel);
+    dal.channel = new BroadcastChannel(localStorage.channel_name);
+    await entry_control.remove_lost_entries(dal);
     dal.close();
-    channel.close();
+    dal.channel.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
     const dal = new ReaderDAL();
     await dal.connect();

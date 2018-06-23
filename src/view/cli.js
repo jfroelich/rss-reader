@@ -85,11 +85,11 @@ async function cli_poll_feeds() {
 async function cli_remove_lost_entries() {
   const dal = new ReaderDAL();
   await dal.connect();
-  const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
-  await entry_control.remove_lost_entries(dal.conn, channel);
-  console.debug('Removed %d entries', channel.message_count);
+  dal.channel = new MonitoredBroadcastChannel(localStorage.channel_name);
+  await entry_control.remove_lost_entries(dal);
+  console.log('Removed %d lost entries', channel.message_count);
   dal.close();
-  channel.close();
+  dal.channel.close();
 }
 
 async function cli_remove_orphans() {
@@ -97,7 +97,7 @@ async function cli_remove_orphans() {
   await dal.connect();
   const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
   await feed_entry_control.remove_orphaned_entries(dal.conn, channel);
-  console.debug('Deleted %d entries', channel.message_count);
+  console.log('Deleted %d entries', channel.message_count);
   dal.close();
   channel.close();
 }
