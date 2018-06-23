@@ -1,8 +1,8 @@
-import * as entry_control from '/src/data-layer/sanitize-entry.js';
+import * as entry_control from '/src/model/sanitize-entry.js';
 import * as feed_control from '/src/control/feed-control.js';
 import {ReaderDAL} from '/src/dal.js';
-import * as Entry from '/src/data-layer/entry.js';
-import * as Feed from '/src/data-layer/feed.js';
+import * as Entry from '/src/model/entry.js';
+import * as Feed from '/src/model/feed.js';
 
 // Removes entries missing urls from the database
 // TODO: test

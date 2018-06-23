@@ -1,4 +1,4 @@
-import * as Entry from '/src/data-layer/entry.js';
+import * as Entry from '/src/model/entry.js';
 import {replace_tags} from '/src/html/replace-tags.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import {condense_whitespace} from '/src/lang/condense-whitespace.js';

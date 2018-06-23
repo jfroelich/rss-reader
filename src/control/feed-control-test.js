@@ -1,7 +1,7 @@
 import {assert} from '/src/assert.js';
 import * as feed_control from '/src/control/feed-control.js';
 import {ReaderDAL} from '/src/dal.js';
-import * as Feed from '/src/data-layer/feed.js';
+import * as Feed from '/src/model/feed.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import * as array from '/src/lang/array.js';
 import {register_test} from '/src/test/test-registry.js';

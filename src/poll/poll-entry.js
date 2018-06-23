@@ -1,8 +1,8 @@
 import {assert} from '/src/assert.js';
 import * as config_control from '/src/control/config-control.js';
 import {ReaderDAL} from '/src/dal.js';
-import * as Entry from '/src/data-layer/entry.js';
-import {sanitize_entry} from '/src/data-layer/sanitize-entry.js';
+import * as Entry from '/src/model/entry.js';
+import {sanitize_entry} from '/src/model/sanitize-entry.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {parse_html} from '/src/html/parse-html.js';

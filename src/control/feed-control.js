@@ -1,15 +1,16 @@
 import * as app from '/src/app.js';
 import {assert} from '/src/assert.js';
 import {ReaderDAL} from '/src/dal.js';
-import * as Feed from '/src/data-layer/feed.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {replace_tags} from '/src/html/replace-tags.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import * as array from '/src/lang/array.js';
 import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
+import * as Feed from '/src/model/feed.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {url_did_change} from '/src/net/url-did-change.js';
+
 
 // Subscribe to a feed. This creates a new feed in the database
 // @param dal {ReaderDAL} an open ReaderDAL instance
