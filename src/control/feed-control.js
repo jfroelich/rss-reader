@@ -1,13 +1,9 @@
 import * as app from '/src/app.js';
 import {assert} from '/src/assert.js';
-import {ReaderDAL} from '/src/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
-import {replace_tags} from '/src/html/replace-tags.js';
-import {truncate_html} from '/src/html/truncate-html.js';
 import * as array from '/src/lang/array.js';
-import {condense_whitespace} from '/src/lang/condense-whitespace.js';
-import {filter_control_characters} from '/src/lang/filter-control-characters.js';
 import * as Feed from '/src/model/feed.js';
+import {sanitize_feed} from '/src/model/sanitize-feed.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {url_did_change} from '/src/net/url-did-change.js';
 
@@ -65,32 +61,4 @@ export async function subscribe(
   }
 
   return feed;
-}
-
-// Cleans/normalizes certain properties of the feed
-export function sanitize_feed(feed, options) {
-  options = options || {};
-  const title_max_len = options.title_max_len || 1024;
-  const desc_max_len = options.desc_max_len || 1024 * 10;
-
-  const html_tag_replacement = '';
-  const repl_suffix = '';
-
-  if (feed.title) {
-    let title = feed.title;
-    title = filter_control_characters(title);
-    title = replace_tags(title, html_tag_replacement);
-    title = condense_whitespace(title);
-    title = truncate_html(title, title_max_len, repl_suffix);
-    feed.title = title;
-  }
-
-  if (feed.description) {
-    let desc = feed.description;
-    desc = filter_control_characters(desc);
-    desc = replace_tags(desc, html_tag_replacement);
-    desc = condense_whitespace(desc);
-    desc = truncate_html(desc, desc_max_len, repl_suffix);
-    feed.description = desc;
-  }
 }
