@@ -12,10 +12,10 @@ import {register_test} from '/src/test/test-registry.js';
 async function archive_entries_test() {
   const dal = new ReaderDAL();
   await dal.connect('archive-entries-test');
-  const channel = {name: 'stub', postMessage: noop, close: noop};
-  await archive_entries(dal.conn, channel);
+  dal.channel = {name: 'stub', postMessage: noop, close: noop};
+  await archive_entries(dal);
   dal.close();
-  channel.close();
+  dal.channel.close();
   await indexeddb_remove(dal.conn.name);
 }
 

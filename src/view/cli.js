@@ -52,10 +52,10 @@ async function cli_subscribe(url_string, poll = true) {
 
 async function cli_archive_entries() {
   const dal = new ReaderDAL();
+  dal.channel = new BroadcastChannel(localStorage.channel_name);
   await dal.connect();
-  const channel = new BroadcastChannel(localStorage.channel_name);
-  await archive_entries(dal.conn, channel);
-  channel.close();
+  await archive_entries(dal);
+  dal.channel.close();
   dal.close();
 }
 

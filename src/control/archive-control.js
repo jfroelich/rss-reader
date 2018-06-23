@@ -1,39 +1,25 @@
 import {sizeof} from '/src/lang/sizeof.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as entry_control from '/src/control/entry-control.js';
-import {ReaderDAL} from '/src/dal.js';
+import {assert} from '/src/assert.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
 // Compacts older read entries in the database. Dispatches entry-archived
 // messages once the internal transaction completes. max_age is in ms, optional,
 // defaults to two days, how old an entry must be in order to archive it.
-export async function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
+export async function archive_entries(dal, max_age = TWO_DAYS_MS) {
   const entry_ids = [];
   const txn_writable = true;
 
-  const dal = new ReaderDAL();
-  dal.conn = conn;
-
   await dal.iterateEntries('archive', txn_writable, cursor => {
     const entry = cursor.value;
-    if (!Entry.is_entry(entry)) {
-      console.warn('Bad entry read from db', entry);
-      return;
-    }
-
-    if (!entry.dateCreated) {
-      console.warn('Entry missing date created', entry);
-      return;
-    }
+    assert(Entry.is_entry(entry));
+    assert(entry.dateCreated);
 
     const current_date = new Date();
     const age = current_date - entry.dateCreated;
-
-    if (age < 0) {
-      console.warn('Entry created in future', entry);
-      return;
-    }
+    assert(age >= 0);
 
     if (age > max_age) {
       const ae = archive_entry(entry);
@@ -43,7 +29,7 @@ export async function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
   });
 
   for (const id of entry_ids) {
-    channel.postMessage({type: 'entry-archived', id: id});
+    dal.channel.postMessage({type: 'entry-archived', id: id});
   }
 }
 

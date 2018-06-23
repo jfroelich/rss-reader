@@ -15,11 +15,10 @@ async function alarm_listener(alarm) {
 
   if (alarm.name === 'archive') {
     const dal = new ReaderDAL();
-    const conn = await dal.connect();
-    const channel = new BroadcastChannel(localStorage.channel_name);
-    dal.channel = channel;
-    await archive_entries(dal.conn, channel);
-    channel.close();
+    dal.channel = new BroadcastChannel(localStorage.channel_name);
+    await dal.connect();
+    await archive_entries(dal);
+    dal.channel.close();
     dal.close();
   } else if (alarm.name === 'poll') {
     if (localStorage.ONLY_POLL_IF_IDLE) {
