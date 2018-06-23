@@ -2,6 +2,7 @@ import * as perm from '/src/browser/permissions.js';
 import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
 import * as feed_control from '/src/control/feed-control.js';
+import {activate_feed} from '/src/dal/activate-feed.js';
 import {delete_feed} from '/src/dal/delete-feed.js';
 import {get_feed} from '/src/dal/get-feed.js';
 import {get_feeds} from '/src/dal/get-feeds.js';
@@ -400,7 +401,7 @@ async function activate_feed_button_onclick(event) {
 
   const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await update_feed_properties(conn, channel, feed_id, 'active', true);
+  await activate_feed(conn, channel, feed_id);
   channel.close();
   conn.close();
 
