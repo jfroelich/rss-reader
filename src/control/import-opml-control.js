@@ -1,4 +1,5 @@
 import * as feed_control from '/src/control/feed-control.js';
+import {ReaderDAL} from '/src/dal.js';
 
 // Concurrently reads in the files from the file list and subscribes to the
 // feeds in all of the files. Returns a promise that resolves to an array of
@@ -8,8 +9,12 @@ export async function import_opml(
   const read_results = await read_files(files);
   let urls = flatten_file_urls(read_results);
   urls = dedup_urls(urls);
-  return subscribe_all(
-      rconn, iconn, channel, fetch_timeout, skip_icon_lookup, urls);
+
+  const dal = new ReaderDAL();
+  dal.conn = rconn;
+  dal.channel = channel;
+
+  return subscribe_all(dal, iconn, fetch_timeout, skip_icon_lookup, urls);
 }
 
 // Read in all the feed urls from all of the files into an array of arrays.
@@ -39,14 +44,12 @@ function flatten_file_urls(all_files_urls) {
   return urls;
 }
 
-function subscribe_all(
-    rconn, iconn, channel, fetch_timeout, skip_icon_lookup, urls) {
+function subscribe_all(dal, iconn, fetch_timeout, skip_icon_lookup, urls) {
   const promises = [];
   const notify_per_subscribe = false;
   for (const url of urls) {
     const promise = feed_control.subscribe(
-        rconn, iconn, channel, url, fetch_timeout, notify_per_subscribe,
-        skip_icon_lookup);
+        dal, iconn, url, fetch_timeout, notify_per_subscribe, skip_icon_lookup);
     const catch_promise = promise.catch(console.warn);
     promises.push(catch_promise);
   }

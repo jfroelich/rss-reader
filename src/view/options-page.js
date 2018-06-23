@@ -1,4 +1,3 @@
-import * as perm from '/src/permissions.js';
 import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
 import * as feed_control from '/src/control/feed-control.js';
@@ -7,6 +6,7 @@ import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import * as array from '/src/lang/array.js';
+import * as perm from '/src/permissions.js';
 import {poll_feed} from '/src/poll/poll-feeds.js';
 import {page_style_onchange} from '/src/view/slideshow-page/page-style-onchange.js';
 import {page_style_onload} from '/src/view/slideshow-page/page-style-onload.js';
@@ -304,15 +304,14 @@ async function subscribe_form_onsubmit(event) {
   const dal = new ReaderDAL();
   const conn_promises = Promise.all([dal.connect(), favicon.open()]);
   const [_, iconn] = await conn_promises;
-  const channel = new BroadcastChannel(localStorage.channel_name);
+  dal.channel = new BroadcastChannel(localStorage.channel_name);
   let subscribe_fetch_timeout;
   const subscribe_notify = true;
   const feed = await feed_control.subscribe(
-      dal.conn, iconn, channel, subscribe_url, subscribe_fetch_timeout,
-      subscribe_notify);
+      dal, iconn, subscribe_url, subscribe_fetch_timeout, subscribe_notify);
   dal.close();
+  dal.channel.close();
   iconn.close();
-  channel.close();
 
   feed_list_append_feed(feed);
   subscription_monitor_append_message('Subscribed to ' + array.peek(feed.urls));

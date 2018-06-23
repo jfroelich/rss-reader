@@ -37,7 +37,7 @@ async function cli_subscribe(url_string, poll = true) {
   const fetch_timeout = 3000;
   const notify = true;
   const feed = await feed_control.subscribe(
-      dal.conn, iconn, dal.channel, url, options, fetch_timeout, notify);
+      dal, iconn, url, options, fetch_timeout, notify);
 
   // Do a sequential poll of the created feed
   if (poll) {

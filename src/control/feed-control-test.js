@@ -31,8 +31,7 @@ async function subscribe_test() {
   // Rethrow subscribe exceptions just like assertion failures by omitting
   // try/catch here.
   const feed = await feed_control.subscribe(
-      dal.conn, undefined, dal.channel, url, fetch_timeout, notify,
-      skip_icon_lookup);
+      dal, undefined, dal, url, fetch_timeout, notify, skip_icon_lookup);
 
   // Test the subscription produced the desired result
   assert(typeof feed === 'object');
