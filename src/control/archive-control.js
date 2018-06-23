@@ -1,6 +1,5 @@
 import {sizeof} from '/src/lang/sizeof.js';
 import * as Entry from '/src/model/entry.js';
-import * as entry_control from '/src/model/sanitize-entry.js';
 import {assert} from '/src/assert.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;

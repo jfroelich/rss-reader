@@ -1,4 +1,3 @@
-import * as entry_control from '/src/model/sanitize-entry.js';
 import * as feed_control from '/src/control/feed-control.js';
 import {ReaderDAL} from '/src/dal.js';
 import * as Entry from '/src/model/entry.js';

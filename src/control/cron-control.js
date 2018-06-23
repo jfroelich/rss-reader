@@ -1,5 +1,5 @@
 import {archive_entries} from '/src/control/archive-control.js';
-import * as feed_entry_control from '/src/control/feed-sanitize-entry.js';
+import * as feed_entry_control from '/src/control/feed-entry-control.js';
 import {ReaderDAL} from '/src/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
