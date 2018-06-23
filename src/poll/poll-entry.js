@@ -1,8 +1,8 @@
 import {assert} from '/src/assert.js';
 import * as config_control from '/src/control/config-control.js';
-import * as entry_control from '/src/control/entry-control.js';
 import {ReaderDAL} from '/src/dal.js';
 import * as Entry from '/src/data-layer/entry.js';
+import {sanitize_entry} from '/src/data-layer/sanitize-entry.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {parse_html} from '/src/html/parse-html.js';
@@ -108,7 +108,7 @@ export async function poll_entry(
   entry.content = document.documentElement.outerHTML;
 
   assert(Entry.is_valid_entry(entry));
-  entry = entry_control.sanitize_entry(entry);
+  entry = sanitize_entry(entry);
   return await dal.updateEntry(entry);
 }
 

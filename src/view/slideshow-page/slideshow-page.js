@@ -1,7 +1,7 @@
 import '/src/view/slideshow-page/main-menu.js';
 import '/src/view/slideshow-page/left-panel.js';
 
-import * as entry_control from '/src/control/entry-control.js';
+import * as entry_control from '/src/data-layer/sanitize-entry.js';
 import * as feed_control from '/src/control/feed-control.js';
 import {ReaderDAL} from '/src/dal.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
