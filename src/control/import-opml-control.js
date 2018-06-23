@@ -1,19 +1,11 @@
 import * as feed_control from '/src/control/feed-control.js';
-import {ReaderDAL} from '/src/dal.js';
 
-// Concurrently reads in the files from the file list and subscribes to the
-// feeds in all of the files. Returns a promise that resolves to an array of
-// subscribe promise results.
+// Concurrently reads in the opml files and subscribes to contained feeds.
+// Returns a promise that resolves to an array of subscribe promise results.
 export async function import_opml(
-    rconn, iconn, channel, files, fetch_timeout, skip_icon_lookup) {
+    dal, iconn, files, fetch_timeout, skip_icon_lookup) {
   const read_results = await read_files(files);
-  let urls = flatten_file_urls(read_results);
-  urls = dedup_urls(urls);
-
-  const dal = new ReaderDAL();
-  dal.conn = rconn;
-  dal.channel = channel;
-
+  const urls = dedup_urls(flatten_file_urls(read_results));
   return subscribe_all(dal, iconn, fetch_timeout, skip_icon_lookup, urls);
 }
 

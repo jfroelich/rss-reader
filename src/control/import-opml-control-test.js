@@ -1,7 +1,7 @@
 import {assert} from '/src/assert.js';
 import {import_opml} from '/src/control/import-opml-control.js';
-import {ReaderDAL} from '/src/open-db.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
+import {ReaderDAL} from '/src/open-db.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: finish implementation. at the moment this basically just tests if this
@@ -50,8 +50,8 @@ async function import_opml_test() {
   // adding.
   const skip_icon_lookup = true;
 
-  const results = await import_opml(
-      dal.conn, iconn, dal.channel, files, fetch_timeout, skip_icon_lookup);
+  const results =
+      await import_opml(dal, iconn, files, fetch_timeout, skip_icon_lookup);
 
   // TODO: make assertions about the result
   // is the new database state correct
