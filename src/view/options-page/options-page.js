@@ -425,7 +425,8 @@ async function deactivate_feed_button_onclick(event) {
 
   const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await deactivate_feed(conn, channel, feed_id, 'manual');
+  const reason = 'manual';
+  await deactivate_feed(conn, channel, feed_id, reason);
   channel.close();
   conn.close();
 
