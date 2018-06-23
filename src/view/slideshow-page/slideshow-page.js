@@ -3,9 +3,7 @@ import '/src/view/slideshow-page/left-panel.js';
 
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
-import {get_entries} from '/src/dal/get-entries.js';
-import {get_feeds} from '/src/dal/get-feeds.js';
-import * as db from '/src/dal/open-db.js';
+import {get_entries, get_feeds, open_db} from '/src/dal/dal.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import * as channel from '/src/view/slideshow-page/channel.js';
 import {feeds_container_append_feed} from '/src/view/slideshow-page/feeds-container.js';
@@ -23,7 +21,7 @@ async function load_view() {
   page_style_onload();
 
   const offset = 0, limit = 6;
-  const conn = await db.open_db();
+  const conn = await open_db();
   const get_entries_promise = get_entries(conn, 'viewable', offset, limit);
   const get_feeds_promise = get_feeds(conn, 'all', true);
   conn.close();

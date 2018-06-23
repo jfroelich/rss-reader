@@ -1,4 +1,3 @@
-import * as db from '/src/dal/open-db.js';
 import * as Feed from '/src/data-layer/feed.js';
 import {is_allowed_request} from '/src/net/fetch-policy.js';
 import {fetch2} from '/src/net/fetch2.js';

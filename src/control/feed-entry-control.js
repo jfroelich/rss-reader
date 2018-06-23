@@ -1,10 +1,6 @@
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
-import {delete_feed} from '/src/dal/delete-feed.js';
-import {get_feed_ids} from '/src/dal/get-feed-ids.js';
-import {get_feeds} from '/src/dal/get-feeds.js';
-import {iterate_entries} from '/src/dal/iterate-entries.js';
-import * as db from '/src/dal/open-db.js';
+import {delete_feed, get_feed_ids, get_feeds, iterate_entries, open_db} from '/src/dal/dal.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as Feed from '/src/data-layer/feed.js';
 

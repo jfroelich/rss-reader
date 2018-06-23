@@ -1,8 +1,6 @@
 import {assert} from '/src/assert/assert.js';
 import * as feed_control from '/src/control/feed-control.js';
-import {get_feed} from '/src/dal/get-feed.js';
-import * as db from '/src/dal/open-db.js';
-import {update_feed} from '/src/dal/update-feed.js';
+import {get_feed, open_db, update_feed} from '/src/dal/dal.js';
 import * as Feed from '/src/data-layer/feed.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import * as array from '/src/lang/array.js';
@@ -15,7 +13,7 @@ async function subscribe_test() {
 
   const rdb_name = 'subscribe-test';
   let version, timeout;
-  const rconn = await db.open_db(rdb_name, version, timeout, console_stub);
+  const rconn = await open_db(rdb_name, version, timeout, console_stub);
 
   const url = new URL(test_url);
 
@@ -89,7 +87,7 @@ async function create_feed_test() {
 
   // Create a dummy db
   const test_db = 'write-new-feed-test';
-  const conn = await db.open_db(test_db);
+  const conn = await open_db(test_db);
 
   // Mock a broadcast channel along with a way to monitor messages
   const messages = [];

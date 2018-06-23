@@ -2,7 +2,7 @@ import * as color from '/src/argb8888/argb8888.js';
 import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
 import * as cron_control from '/src/control/cron-control.js';
-import * as db from '/src/dal/open-db.js';
+import {open_db} from '/src/dal/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
 
 export async function oninstalled(event) {
@@ -19,7 +19,7 @@ export async function oninstalled(event) {
     config_oninstall();
 
     // Setup the reader database explicitly
-    let conn = await db.open_db();
+    let conn = await open_db();
     conn.close();
 
     // Setup the favicon database explicitly

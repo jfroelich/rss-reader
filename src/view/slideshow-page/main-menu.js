@@ -1,4 +1,4 @@
-import * as db from '/src/dal/open-db.js';
+import {open_db} from '/src/dal/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {options_menu_hide, options_menu_show} from '/src/view/slideshow-page/left-panel.js';
@@ -19,7 +19,7 @@ async function refresh_button_onclick(event) {
   // itself (at least in Chrome 66) despite what spec states
   const onclick_channel = new BroadcastChannel(localStorage.channel_name);
 
-  const rconn = await db.open_db();
+  const rconn = await open_db();
   const iconn = await favicon.open();
 
   const options = {};

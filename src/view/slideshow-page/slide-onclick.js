@@ -1,4 +1,4 @@
-import * as db from '/src/dal/open-db.js';
+import {open_db} from '/src/dal/dal.js';
 import {mark_slide_read_start} from '/src/view/slideshow-page/mark-slide-read.js';
 import {get_current_slide} from '/src/view/slideshow-page/slideshow-state.js';
 
@@ -35,7 +35,7 @@ export async function slide_onclick(event) {
   // the checks within mark_slide_read_start, it avoids opening the connection.
   if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
       !slide.hasAttribute('read-pending')) {
-    const conn = await db.open_db();
+    const conn = await open_db();
     await mark_slide_read_start(conn, slide);
     conn.close();
   }

@@ -1,5 +1,5 @@
 import {assert} from '/src/assert/assert.js';
-import {iterate_entries} from '/src/dal/iterate-entries.js';
+import {iterate_entries} from '/src/dal/dal.js';
 import * as Entry from '/src/data-layer/entry.js';
 import {replace_tags} from '/src/html/replace-tags.js';
 import {truncate_html} from '/src/html/truncate-html.js';

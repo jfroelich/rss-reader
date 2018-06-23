@@ -1,7 +1,7 @@
 import {archive_entries} from '/src/control/archive-control.js';
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_entry_control from '/src/control/feed-entry-control.js';
-import * as db from '/src/dal/open-db.js';
+import {open_db} from '/src/dal/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 
@@ -14,7 +14,7 @@ async function alarm_listener(alarm) {
   localStorage.last_alarm = alarm.name;
 
   if (alarm.name === 'archive') {
-    const conn = await db.open_db();
+    const conn = await open_db();
     const channel = new BroadcastChannel(localStorage.channel_name);
     await archive_entries(conn, channel);
     channel.close();
@@ -32,7 +32,7 @@ async function alarm_listener(alarm) {
     const options = {};
     options.ignore_recency_check = false;
     options.notify = true;
-    const rconn = await db.open_db();
+    const rconn = await open_db();
     const iconn = await favicon.open();
     const channel = new BroadcastChannel(localStorage.channel_name);
     await poll_feeds(rconn, iconn, channel, options);
@@ -40,25 +40,25 @@ async function alarm_listener(alarm) {
     iconn.close();
     rconn.close();
   } else if (alarm.name === 'remove-entries-missing-urls') {
-    const conn = await db.open_db();
+    const conn = await open_db();
     const channel = new BroadcastChannel(localStorage.channel_name);
     await entry_control.remove_lost_entries(conn, channel);
     conn.close();
     channel.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
-    const conn = await db.open_db();
+    const conn = await open_db();
     const channel = new BroadcastChannel(localStorage.channel_name);
     await feed_entry_control.remove_orphaned_entries(conn, channel);
     conn.close();
     channel.close();
   } else if (alarm.name === 'remove-untyped-objects') {
-    const conn = await db.open_db();
+    const conn = await open_db();
     const channel = new BroadcastChannel(localStorage.channel_name);
     await feed_entry_control.remove_untyped_objects(conn, channel);
     conn.close();
     channel.close();
   } else if (alarm.name === 'refresh-feed-icons') {
-    const proms = [db.open_db(), favicon.open()];
+    const proms = [open_db(), favicon.open()];
     const [rconn, iconn] = await Promise.all(proms);
     const channel = new BroadcastChannel(localStorage.channel_name);
     await favicon.refresh_feeds(rconn, iconn, channel);

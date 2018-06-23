@@ -1,8 +1,7 @@
 import * as config_control from '/src/control/config-control.js';
 import * as feed_control from '/src/control/feed-control.js';
 import {import_opml} from '/src/control/import-opml-control.js';
-import {get_feeds} from '/src/dal/get-feeds.js';
-import * as db from '/src/dal/open-db.js';
+import {get_feeds, open_db} from '/src/dal/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
 import * as array from '/src/lang/array.js';
 import {create_opml_document} from '/src/opml/opml-document.js';
@@ -21,7 +20,7 @@ async function uploader_input_onchange(event) {
   // TEMP: monitoring recent changes
   console.debug('Received input change event');
 
-  const promises = [db.open_db(), favicon.open()];
+  const promises = [open_db(), favicon.open()];
   const [rconn, iconn] = await Promise.all(promises);
   const channel = new BroadcastChannel(localStorage.channel_name);
   const fetch_timeout = 5000;
@@ -41,7 +40,7 @@ async function export_button_onclick(event) {
   const title = 'Subscriptions';
   const filename = 'subscriptions.xml';
 
-  const conn = await db.open_db();
+  const conn = await open_db();
   const feeds = await get_feeds(conn, 'all', false);
   conn.close();
   console.debug('Loaded %d feeds', feeds.length);

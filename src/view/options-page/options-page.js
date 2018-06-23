@@ -2,11 +2,7 @@ import * as perm from '/src/browser/permissions.js';
 import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
 import * as feed_control from '/src/control/feed-control.js';
-import {activate_feed} from '/src/dal/activate-feed.js';
-import {delete_feed} from '/src/dal/delete-feed.js';
-import {get_feed} from '/src/dal/get-feed.js';
-import {get_feeds} from '/src/dal/get-feeds.js';
-import * as db from '/src/dal/open-db.js';
+import {activate_feed, deactivate_feed, delete_feed, get_feed, get_feeds, open_db} from '/src/dal/dal.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {truncate_html} from '/src/html/truncate-html.js';
@@ -220,7 +216,7 @@ async function feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-  const conn = await db.open_db();
+  const conn = await open_db();
   const get_feed_mode = 'id';
   const feed = await get_feed(conn, get_feed_mode, feed_id);
   conn.close();
@@ -305,7 +301,7 @@ async function subscribe_form_onsubmit(event) {
   // TODO: subscribe can now throw an error, this should catch the error and
   // show a nice error message or something instead of panic
   // TODO: move this to a helper
-  const conn_promises = Promise.all([db.open_db(), favicon.open()]);
+  const conn_promises = Promise.all([open_db(), favicon.open()]);
   const [rconn, iconn] = await conn_promises;
   const channel = new BroadcastChannel(localStorage.channel_name);
   let subscribe_fetch_timeout;
@@ -328,7 +324,7 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const conn_promises = Promise.all([db.open_db(), favicon.open()]);
+  const conn_promises = Promise.all([open_db(), favicon.open()]);
   const [rconn, iconn] = await conn_promises;
   const channel = new BroadcastChannel(localStorage.channel_name);
 
@@ -342,7 +338,7 @@ async function after_subscribe_poll_feed_async(feed) {
 
 async function feed_list_init() {
   const title_sort_flag = true;
-  const conn = await db.open_db();
+  const conn = await open_db();
   const feeds = await get_feeds(conn, 'all', true);
   conn.close();
 
@@ -389,7 +385,7 @@ function feed_list_remove_feed_by_id(feed_id) {
 
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const conn = await db.open_db();
+  const conn = await open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
   await delete_feed(conn, channel, feed_id, 'unsubscribe');
   conn.close();
@@ -401,7 +397,7 @@ async function unsubscribe_button_onclick(event) {
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const conn = await db.open_db();
+  const conn = await open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
   await activate_feed(conn, channel, feed_id);
   channel.close();
@@ -423,7 +419,7 @@ async function activate_feed_button_onclick(event) {
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const conn = await db.open_db();
+  const conn = await open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
   const reason = 'manual';
   await deactivate_feed(conn, channel, feed_id, reason);

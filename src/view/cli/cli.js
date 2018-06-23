@@ -3,7 +3,7 @@ import * as cron_control from '/src/control/cron-control.js';
 import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
 import * as feed_entry_control from '/src/control/feed-entry-control.js';
-import * as db from '/src/dal/open-db.js';
+import {open_db} from '/src/dal/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {poll_feed, poll_feeds} from '/src/poll/poll-feeds.js';
 
@@ -27,7 +27,7 @@ import {poll_feed, poll_feeds} from '/src/poll/poll-feeds.js';
 
 async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);
-  const proms = [db.open_db(), favicon.open()];
+  const proms = [open_db(), favicon.open()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(localStorage.channel_name);
   const fetch_timeout = 3000;
@@ -49,7 +49,7 @@ async function cli_subscribe(url_string, poll = true) {
 }
 
 async function cli_archive_entries() {
-  const conn = await db.open_db();
+  const conn = await open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
   await archive_entries(conn, channel);
   channel.close();
@@ -57,7 +57,7 @@ async function cli_archive_entries() {
 }
 
 async function cli_refresh_icons() {
-  const proms = [db.open_db(), favicon.open()];
+  const proms = [open_db(), favicon.open()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(localStorage.channel_name);
   await favicon.refresh_feeds(rconn, iconn, channel);
@@ -67,7 +67,7 @@ async function cli_refresh_icons() {
 }
 
 async function cli_poll_feeds() {
-  const proms = [db.open_db(), favicon.open()];
+  const proms = [open_db(), favicon.open()];
   const [rconn, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel(localStorage.channel_name);
   const options = {ignore_recency_check: true};
@@ -78,7 +78,7 @@ async function cli_poll_feeds() {
 }
 
 async function cli_remove_lost_entries() {
-  const conn = await db.open_db();
+  const conn = await open_db();
   const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
   await entry_control.remove_lost_entries(conn, channel);
   console.debug('Removed %d entries', channel.message_count);
@@ -87,7 +87,7 @@ async function cli_remove_lost_entries() {
 }
 
 async function cli_remove_orphans() {
-  const conn = await db.open_db();
+  const conn = await open_db();
   const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
   await feed_entry_control.remove_orphaned_entries(conn, channel);
   console.debug('Deleted %d entries', channel.message_count);
