@@ -1,5 +1,4 @@
 import {archive_entries} from '/src/control/archive-control.js';
-import * as entry_control from '/src/control/entry-control.js';
 import * as feed_entry_control from '/src/control/feed-entry-control.js';
 import {ReaderDAL} from '/src/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -45,7 +44,7 @@ async function alarm_listener(alarm) {
     const dal = new ReaderDAL();
     await dal.connect();
     dal.channel = new BroadcastChannel(localStorage.channel_name);
-    await entry_control.remove_lost_entries(dal);
+    await feed_entry_control.remove_lost_entries(dal);
     dal.close();
     dal.channel.close();
   } else if (alarm.name === 'remove-orphaned-entries') {

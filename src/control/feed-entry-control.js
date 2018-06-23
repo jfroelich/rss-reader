@@ -4,6 +4,24 @@ import {ReaderDAL} from '/src/dal.js';
 import * as Entry from '/src/data-layer/entry.js';
 import * as Feed from '/src/data-layer/feed.js';
 
+// Removes entries missing urls from the database
+// TODO: test
+export async function remove_lost_entries(dal) {
+  const deleted_entry_ids = [];
+  const txn_writable = true;
+  await dal.iterateEntries('all', txn_writable, cursor => {
+    const entry = cursor.value;
+    if (!entry.urls || !entry.urls.length) {
+      cursor.delete();
+      deleted_entry_ids.push(entry.id);
+    }
+  });
+
+  for (const id of deleted_entry_ids) {
+    channel.postMessage({type: 'entry-deleted', id: id, reason: 'lost'});
+  }
+}
+
 // Scans the database for entries not linked to a feed and deletes them
 // TODO: test
 export async function remove_orphaned_entries(conn, channel) {

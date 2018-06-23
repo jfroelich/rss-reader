@@ -1,28 +1,9 @@
-import {assert} from '/src/assert.js';
 import * as Entry from '/src/data-layer/entry.js';
 import {replace_tags} from '/src/html/replace-tags.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
 import {filter_unprintable_characters} from '/src/lang/filter-unprintable-characters.js';
-
-// Removes entries missing urls from the database
-// TODO: test
-export async function remove_lost_entries(dal) {
-  const deleted_entry_ids = [];
-  const txn_writable = true;
-  await dal.iterateEntries('all', txn_writable, cursor => {
-    const entry = cursor.value;
-    if (!entry.urls || !entry.urls.length) {
-      cursor.delete();
-      deleted_entry_ids.push(entry.id);
-    }
-  });
-
-  for (const id of deleted_entry_ids) {
-    channel.postMessage({type: 'entry-deleted', id: id, reason: 'lost'});
-  }
-}
 
 export function sanitize_entry(
     entry, author_max_length = 200, title_max_length = 1000,

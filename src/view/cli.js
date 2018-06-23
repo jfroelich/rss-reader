@@ -1,6 +1,5 @@
 import {archive_entries} from '/src/control/archive-control.js';
 import * as cron_control from '/src/control/cron-control.js';
-import * as entry_control from '/src/control/entry-control.js';
 import * as feed_control from '/src/control/feed-control.js';
 import * as feed_entry_control from '/src/control/feed-entry-control.js';
 import {ReaderDAL} from '/src/dal.js';
@@ -86,7 +85,7 @@ async function cli_remove_lost_entries() {
   const dal = new ReaderDAL();
   await dal.connect();
   dal.channel = new MonitoredBroadcastChannel(localStorage.channel_name);
-  await entry_control.remove_lost_entries(dal);
+  await feed_entry_control.remove_lost_entries(dal);
   console.log('Removed %d lost entries', channel.message_count);
   dal.close();
   dal.channel.close();
