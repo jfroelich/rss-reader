@@ -7,7 +7,6 @@ import {delete_feed} from '/src/dal/delete-feed.js';
 import {get_feed} from '/src/dal/get-feed.js';
 import {get_feeds} from '/src/dal/get-feeds.js';
 import * as db from '/src/dal/open-db.js';
-import {update_feed_properties} from '/src/dal/update-feed-properties.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {truncate_html} from '/src/html/truncate-html.js';
@@ -31,24 +30,27 @@ channel.onmessage = function options_page_onmessage(event) {
     return;
   }
 
+  const type = message.type;
+
   // We also listen here for now, because we can do things like unsubscribe
   // from here, and that could affect unread count. If unsubscribing from here
   // then slideshow may not be loaded, and also background page may not be
   // loaded.
   const badge_types = ['entry-write', 'entry-deleted', 'entry-read'];
-  if (badge_types.includes(message.type)) {
-    badge.refresh(window.location.pathname);
+  if (badge_types.includes(type)) {
+    badge.refresh(location.pathname);
   }
 
-  switch (message.type) {
-    case 'display-settings-changed':
-      page_style_onchange(event);
-      break;
-    case 'feed-written':
-      console.warn('message handler not yet implemented', message);
-      break;
-    default:
-      break;
+  if (type === 'display-settings-changed') {
+    page_style_onchange(event);
+  } else if (type === 'feed-activated') {
+    // not implemented
+  } else if (type === 'feed-deactivated') {
+    // not implemented
+  } else if (type === 'feed-written') {
+    // not implemented
+  } else {
+    console.warn('Unknown message type', type);
   }
 };
 
@@ -405,6 +407,10 @@ async function activate_feed_button_onclick(event) {
   channel.close();
   conn.close();
 
+  // TODO: handling the event here may be wrong, it should be done in the
+  // message handler. However, I am not sure how much longer the options page
+  // is sticking around
+
   // Mark the corresponding feed element displayed in the view as active
   const item_element = document.querySelector('li[feed="' + feed_id + '"]');
   if (item_element) {
@@ -419,8 +425,7 @@ async function deactivate_feed_button_onclick(event) {
 
   const conn = await db.open_db();
   const channel = new BroadcastChannel(localStorage.channel_name);
-  await update_feed_properties(
-      conn, channel, feed_id, 'active', false, {reason: 'manual'});
+  await deactivate_feed(conn, channel, feed_id, 'manual');
   channel.close();
   conn.close();
 

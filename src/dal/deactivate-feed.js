@@ -1,12 +1,12 @@
 import {assert} from '/src/assert/assert.js';
 import * as Feed from '/src/data-layer/feed.js';
 
-export function activate_feed(conn, channel, feed_id) {
+export function deactivate_feed(conn, channel, feed_id, reason) {
   return new Promise((resolve, reject) => {
     assert(Feed.is_valid_id(feed_id));
     const txn = conn.transaction('feed', 'readwrite');
     txn.oncomplete = _ => {
-      channel.postMessage({type: 'feed-activated', id: feed_id});
+      channel.postMessage({type: 'feed-deactivated', id: feed_id});
       resolve();
     };
     txn.onerror = _ => reject(txn.error);
@@ -16,11 +16,12 @@ export function activate_feed(conn, channel, feed_id) {
     request.onsuccess = _ => {
       const feed = request.result;
       assert(Feed.is_feed(feed));
-      assert(feed.active !== true);
-      delete feed.deactivationReasonText;
-      delete feed.deactivateDate;
-      feed.active = true;
-      feed.dateUpdated = new Date();
+      assert(feed.active !== false);
+      const current_date = new Date();
+      feed.deactivationReasonText = reason;
+      feed.deactivateDate = current_date;
+      feed.active = false;
+      feed.dateUpdated = current_date;
       request.source.put(feed);
     };
   });

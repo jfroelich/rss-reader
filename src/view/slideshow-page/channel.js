@@ -126,6 +126,16 @@ async function onmessage(event) {
     return;
   }
 
+  if (type === 'feed-activated') {
+    // TODO: implement
+    return;
+  }
+
+  if (type === 'feed-deactivated') {
+    // TODO: implement
+    return;
+  }
+
   if (type === 'feed-written') {
     // TODO: implement
     return;
