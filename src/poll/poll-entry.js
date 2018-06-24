@@ -33,7 +33,7 @@ export async function poll_entry(
 
   // Rewrite the entry's last url and append its new url if different.
   let url = new URL(array.peek(entry.urls));
-  Entry.append_entry_url(entry, rewrite_url(url, rewrite_rules));
+  Entry.append_url(entry, rewrite_url(url, rewrite_rules));
 
   // Check whether the entry exists. Note we skip over checking the original
   // url and only check the rewritten url, because we always rewrite before
@@ -66,8 +66,8 @@ export async function poll_entry(
     const response_url = new URL(response.url);
     if (url_did_change(url, response_url)) {
       url_changed = true;
-      Entry.append_entry_url(entry, response_url);
-      Entry.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
+      Entry.append_url(entry, response_url);
+      Entry.append_url(entry, rewrite_url(response_url, rewrite_rules));
       url = new URL(array.peek(entry.urls));
       existing_entry = await dal.getEntry(get_mode, url, key_only);
       if (existing_entry) {
@@ -98,7 +98,6 @@ export async function poll_entry(
       document.documentElement.innerHTML = 'Invalid html content';
     }
   }
-
 
   assert(document);
 

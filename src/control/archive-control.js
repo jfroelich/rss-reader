@@ -41,7 +41,7 @@ function archive_entry(entry) {
     console.warn('Entry increased size', entry);
   }
 
-  ce.archiveState = Entry.ENTRY_STATE_ARCHIVED;
+  ce.archiveState = Entry.STATE_ARCHIVED;
   const current_date = new Date();
   ce.dateArchived = current_date;
   ce.dateUpdated = current_date;
@@ -49,7 +49,7 @@ function archive_entry(entry) {
 }
 
 function compact_entry(entry) {
-  const ce = Entry.create_entry();
+  const ce = Entry.create();
   ce.dateCreated = entry.dateCreated;
 
   if (entry.dateRead) {

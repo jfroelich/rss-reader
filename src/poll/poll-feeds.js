@@ -275,7 +275,7 @@ function dedup_entries(entries) {
 // format. This is a cross-cutting concern so it belongs in the place where the
 // concerns meet.
 function coerce_entry(parsed_entry) {
-  const blank_entry = Entry.create_entry();
+  const blank_entry = Entry.create();
 
   // Copy over everything
   const clone = Object.assign(blank_entry, parsed_entry);
@@ -284,7 +284,7 @@ function coerce_entry(parsed_entry) {
   delete clone.link;
   if (parsed_entry.link) {
     try {
-      Entry.append_entry_url(clone, new URL(parsed_entry.link));
+      Entry.append_url(clone, new URL(parsed_entry.link));
     } catch (error) {
     }
   }

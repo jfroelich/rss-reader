@@ -1,9 +1,9 @@
 import {assert} from '/src/assert.js';
 import * as config_control from '/src/control/config-control.js';
-import * as Entry from '/src/model/entry.js';
-import * as Feed from '/src/model/feed.js';
 import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
 import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
+import * as Entry from '/src/model/entry.js';
+import * as Feed from '/src/model/feed.js';
 
 export function ReaderDAL() {
   this.conn = undefined;
@@ -45,7 +45,7 @@ ReaderDAL.prototype.countUnreadEntries = function() {
     const txn = this.conn.transaction('entry');
     const store = txn.objectStore('entry');
     const index = store.index('readState');
-    const request = index.count(Entry.ENTRY_STATE_UNREAD);
+    const request = index.count(Entry.STATE_UNREAD);
     request.onsuccess = _ => resolve(request.result);
     request.onerror = _ => reject(request.error);
   });
@@ -79,7 +79,7 @@ ReaderDAL.prototype.deactivateFeed = function(feed_id, reason) {
 
 ReaderDAL.prototype.deleteEntry = function(entry_id, reason) {
   return new Promise((resolve, reject) => {
-    assert(Entry.is_valid_entry_id(entry_id));
+    assert(Entry.is_valid_id(entry_id));
     const txn = this.conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
       const msg = {type: 'entry-deleted', id: entry_id, reason: reason};
@@ -145,7 +145,7 @@ ReaderDAL.prototype.getEntries = function(mode = 'all', offset = 0, limit = 0) {
     let request;
     if (mode === 'viewable') {
       const index = store.index('archiveState-readState');
-      const path = [Entry.ENTRY_STATE_UNARCHIVED, Entry.ENTRY_STATE_UNREAD];
+      const path = [Entry.STATE_UNARCHIVED, Entry.STATE_UNREAD];
       request = index.openCursor(path);
     } else if (mode === 'all') {
       request = store.openCursor();
@@ -181,7 +181,7 @@ ReaderDAL.prototype.getEntries = function(mode = 'all', offset = 0, limit = 0) {
 
 ReaderDAL.prototype.getEntry = function(mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
-    assert(mode !== 'id' || Entry.is_valid_entry_id(value));
+    assert(mode !== 'id' || Entry.is_valid_id(value));
     assert(mode !== 'id' || !key_only);
 
     const txn = this.conn.transaction('entry');
@@ -203,8 +203,8 @@ ReaderDAL.prototype.getEntry = function(mode = 'id', value, key_only) {
       let entry;
       if (key_only) {
         const entry_id = request.result;
-        if (Entry.is_valid_entry_id(entry_id)) {
-          entry = Entry.create_entry();
+        if (Entry.is_valid_id(entry_id)) {
+          entry = Entry.create();
           entry.id = entry_id;
         }
       } else {
@@ -305,7 +305,7 @@ ReaderDAL.prototype.iterateEntries = function(
     let request;
     if (mode === 'archive') {
       const index = store.index('archiveState-readState');
-      const key_path = [Entry.ENTRY_STATE_UNARCHIVED, Entry.ENTRY_STATE_READ];
+      const key_path = [Entry.STATE_UNARCHIVED, Entry.STATE_READ];
       request = index.openCursor(key_path);
     } else if (mode === 'all') {
       request = store.openCursor();
@@ -327,7 +327,7 @@ ReaderDAL.prototype.iterateEntries = function(
 
 ReaderDAL.prototype.markEntryRead = function(entry_id) {
   return new Promise((resolve, reject) => {
-    assert(Entry.is_valid_entry_id(entry_id));
+    assert(Entry.is_valid_id(entry_id));
 
     const txn = this.conn.transaction('entry', 'readwrite');
     txn.onerror = _ => reject(txn.error);
@@ -341,10 +341,10 @@ ReaderDAL.prototype.markEntryRead = function(entry_id) {
     request.onsuccess = _ => {
       const entry = request.result;
       assert(Entry.is_entry(entry));
-      assert(entry.archiveState !== Entry.ENTRY_STATE_ARCHIVED);
-      assert(entry.readState !== Entry.ENTRY_STATE_READ);
+      assert(entry.archiveState !== Entry.STATE_ARCHIVED);
+      assert(entry.readState !== Entry.STATE_READ);
 
-      entry.readState = Entry.ENTRY_STATE_READ;
+      entry.readState = Entry.STATE_READ;
       const currentDate = new Date();
       entry.dateUpdated = currentDate;
       entry.dateRead = currentDate;
@@ -434,7 +434,7 @@ function add_magic_to_entries(txn) {
     if (cursor) {
       const entry = cursor.value;
       if (!('magic' in entry)) {
-        entry.magic = Entry.ENTRY_MAGIC;
+        entry.magic = Entry.MAGIC;
         entry.dateUpdated = new Date();
         cursor.update(entry);
       }
@@ -479,8 +479,8 @@ ReaderDAL.prototype.updateEntry = function(entry) {
 
     const creating = !entry.id;
     if (creating) {
-      entry.readState = Entry.ENTRY_STATE_UNREAD;
-      entry.archiveState = Entry.ENTRY_STATE_UNARCHIVED;
+      entry.readState = Entry.STATE_UNREAD;
+      entry.archiveState = Entry.STATE_UNARCHIVED;
       entry.dateCreated = new Date();
       delete entry.dateUpdated;
     } else {

@@ -15,7 +15,7 @@ export function is_valid_entry(entry) {
   // This could be called on a new entry that does not have an id, so only
   // check id validity when the property exists
   if ('id' in entry) {
-    if (!Entry.is_valid_entry_id(entry.id)) {
+    if (!Entry.is_valid_id(entry.id)) {
       return false;
     }
   }
@@ -49,7 +49,7 @@ export function is_valid_feed(feed) {
 export function sanitize_entry(
     entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {
-  const blank_entry = Entry.create_entry();
+  const blank_entry = Entry.create();
   const output_entry = Object.assign(blank_entry, entry);
 
   if (output_entry.author) {
