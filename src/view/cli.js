@@ -33,9 +33,7 @@ async function cli_subscribe(url_string, poll = true) {
 
   // Bubble up errors to console
   const url = new URL(url_string);
-  const fetch_timeout = 3000;
-  const notify = true;
-  const feed = await subscribe(dal, iconn, url, options, fetch_timeout, notify);
+  const feed = await subscribe(dal, iconn, url, options, 3000, true);
 
   // Do a sequential poll of the created feed
   if (poll) {

@@ -7,8 +7,6 @@ import {is_valid_feed, sanitize_feed} from '/src/model/sanity.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {url_did_change} from '/src/net/url-did-change.js';
 
-// TODO: skip_icon_lookup is superfluous, iconn can be optional and that is
-// enough to discern intent
 // TODO: look into using a single transaction
 // TODO: implement unsubscribe wrapper and avoid view directly calling
 // delete-feed
@@ -19,11 +17,9 @@ import {url_did_change} from '/src/net/url-did-change.js';
 // @param url {URL} the url to subscribe
 // @param should_notify {Boolean} whether to send a notification
 // @param fetch_timeout {Number} fetch timeout
-// @param skip_icon_lookup {Boolean}
 // @error database errors, type errors, fetch errors, etc
 // @return {Promise} resolves to the feed object stored in the database
-export async function subscribe(
-    dal, iconn, url, fetch_timeout, should_notify = true, skip_icon_lookup) {
+export async function subscribe(dal, iconn, url, fetch_timeout, should_notify) {
   let existing_feed = await dal.getFeed('url', url, true);
   if (existing_feed) {
     throw new Error('Already subscribed ' + url.href);
@@ -46,7 +42,7 @@ export async function subscribe(
     throw new Error('Invalid feed ' + JSON.stringify(feed));
   }
 
-  if (!skip_icon_lookup) {
+  if (iconn) {
     const url = favicon.create_lookup_url(feed);
     let doc = undefined;
     const fetch = false;

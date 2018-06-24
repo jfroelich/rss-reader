@@ -22,10 +22,7 @@ async function uploader_input_onchange(event) {
   const promises = [dal.connect(), favicon.open()];
   const [_, iconn] = await Promise.all(promises);
   dal.channel = new BroadcastChannel(localStorage.channel_name);
-  const fetch_timeout = 5000;
-  const skip_icon_lookup = false;
-  const files = event.target.files;
-  await import_opml(dal, iconn, files, fetch_timeout, skip_icon_lookup);
+  await import_opml(dal, iconn, event.target.files, 5000);
   dal.close();
   dal.channel.close();
   iconn.close();

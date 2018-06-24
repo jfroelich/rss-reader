@@ -305,10 +305,7 @@ async function subscribe_form_onsubmit(event) {
   const conn_promises = Promise.all([dal.connect(), favicon.open()]);
   const [_, iconn] = await conn_promises;
   dal.channel = new BroadcastChannel(localStorage.channel_name);
-  let subscribe_fetch_timeout;
-  const subscribe_notify = true;
-  const feed = await subscribe(
-      dal, iconn, subscribe_url, subscribe_fetch_timeout, subscribe_notify);
+  const feed = await subscribe(dal, iconn, subscribe_url, undefined, true);
   dal.close();
   dal.channel.close();
   iconn.close();

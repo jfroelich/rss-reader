@@ -2,11 +2,10 @@ import {subscribe} from '/src/control/subscribe.js';
 
 // Concurrently reads in the opml files and subscribes to contained feeds.
 // Returns a promise that resolves to an array of subscribe promise results.
-export async function import_opml(
-    dal, iconn, files, fetch_timeout, skip_icon_lookup) {
+export async function import_opml(dal, iconn, files, fetch_timeout) {
   const read_results = await read_files(files);
   const urls = dedup_urls(flatten_file_urls(read_results));
-  return subscribe_all(dal, iconn, fetch_timeout, skip_icon_lookup, urls);
+  return subscribe_all(dal, iconn, fetch_timeout, urls);
 }
 
 // Read in all the feed urls from all of the files into an array of arrays.
@@ -36,12 +35,10 @@ function flatten_file_urls(all_files_urls) {
   return urls;
 }
 
-function subscribe_all(dal, iconn, fetch_timeout, skip_icon_lookup, urls) {
+function subscribe_all(dal, iconn, fetch_timeout, urls) {
   const promises = [];
-  const notify_per_subscribe = false;
   for (const url of urls) {
-    const promise = subscribe(
-        dal, iconn, url, fetch_timeout, notify_per_subscribe, skip_icon_lookup);
+    const promise = subscribe(dal, iconn, url, fetch_timeout, false);
     const catch_promise = promise.catch(console.warn);
     promises.push(catch_promise);
   }

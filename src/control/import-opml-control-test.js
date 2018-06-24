@@ -45,13 +45,7 @@ async function import_opml_test() {
 
   // It's possible this should be relaxed, undecided. In some sense it impacts
   // the overall test, and it may be even longer than the test timeout
-  const fetch_timeout = 5000;
-  // We are not testing this, and this is resource-intensive and not value
-  // adding.
-  const skip_icon_lookup = true;
-
-  const results =
-      await import_opml(dal, iconn, files, fetch_timeout, skip_icon_lookup);
+  const results = await import_opml(dal, undefined, files, 5000);
 
   // TODO: make assertions about the result
   // is the new database state correct

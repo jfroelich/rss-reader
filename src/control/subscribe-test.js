@@ -24,14 +24,9 @@ async function subscribe_test() {
     close: noop
   };
 
-  const fetch_timeout = 7000;
-  const notify = false;
-  const skip_icon_lookup = true;
-
   // Rethrow subscribe exceptions just like assertion failures by omitting
   // try/catch here.
-  const feed = await subscribe(
-      dal, undefined, dal, url, fetch_timeout, notify, skip_icon_lookup);
+  const feed = await subscribe(dal, undefined, url, 7000, false);
 
   // Test the subscription produced the desired result
   assert(typeof feed === 'object');
