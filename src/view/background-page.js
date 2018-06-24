@@ -1,5 +1,6 @@
 import * as app from '/src/app.js';
 import * as badge from '/src/control/badge-control.js';
+import * as config_control from '/src/control/config-control.js';
 import * as cron_control from '/src/control/cron-control.js';
 import * as install_update_control from '/src/control/install-update-control.js';
 
@@ -41,6 +42,9 @@ cron_control.register_listener();
 // Fired when a profile that has this extension installed first starts up
 // NOTE: so basically when chrome starts, or on profile switch
 chrome.runtime.onStartup.addListener(onstartup);
+
+// Set the config control to listen for install or update events
+chrome.runtime.onInstalled.addListener(config_control.install_listener);
 
 // Fired when the extension is first installed, when the extension is updated
 // to a new version, and when Chrome is updated to a new version.
