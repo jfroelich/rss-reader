@@ -4,7 +4,7 @@ import {ReaderDAL} from '/src/dal.js';
 import * as array from '/src/lang/array.js';
 import * as Entry from '/src/model/entry.js';
 import * as Feed from '/src/model/feed.js';
-import {sanitize_feed} from '/src/model/sanity.js';
+import {is_valid_feed, sanitize_feed} from '/src/model/sanity.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {OfflineError, TimeoutError} from '/src/net/fetch2.js';
 import {EntryExistsError, poll_entry} from '/src/poll/poll-entry.js';
@@ -111,7 +111,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   // counters that would lead to eventual deactivation
   handle_fetch_success(merged_feed);
 
-  assert(Feed.is_valid(merged_feed));
+  assert(is_valid_feed(merged_feed));
   sanitize_feed(merged_feed);
 
   const dal = new ReaderDAL();

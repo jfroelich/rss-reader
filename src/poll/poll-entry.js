@@ -6,7 +6,7 @@ import * as favicon from '/src/favicon/favicon.js';
 import {parse_html} from '/src/html/parse-html.js';
 import * as array from '/src/lang/array.js';
 import * as Entry from '/src/model/entry.js';
-import {sanitize_entry} from '/src/model/sanity.js';
+import {is_valid_entry, sanitize_entry} from '/src/model/sanity.js';
 import {fetch_html} from '/src/net/fetch-html.js';
 import * as sniff from '/src/net/sniff.js';
 import {url_did_change} from '/src/net/url-did-change.js';
@@ -107,7 +107,7 @@ export async function poll_entry(
   await sanitize_document(document);
   entry.content = document.documentElement.outerHTML;
 
-  assert(Entry.is_valid_entry(entry));
+  assert(is_valid_entry(entry));
   entry = sanitize_entry(entry);
   return await dal.updateEntry(entry);
 }

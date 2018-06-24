@@ -4,6 +4,46 @@ import {condense_whitespace} from '/src/lang/condense-whitespace.js';
 import {filter_control_characters} from '/src/lang/filter-control-characters.js';
 import {filter_unprintable_characters} from '/src/lang/filter-unprintable-characters.js';
 import * as Entry from '/src/model/entry.js';
+import * as Feed from '/src/model/feed.js';
+
+// TODO: finish implementation
+export function is_valid_entry(entry) {
+  if (!Entry.is_entry(entry)) {
+    return false;
+  }
+
+  // This could be called on a new entry that does not have an id, so only
+  // check id validity when the property exists
+  if ('id' in entry) {
+    if (!Entry.is_valid_entry_id(entry.id)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// TODO: finish implementation
+export function is_valid_feed(feed) {
+  if (!Feed.is_feed(feed)) {
+    return false;
+  }
+
+  if ('id' in feed && !Feed.is_valid_id(feed.id)) {
+    return false;
+  }
+
+  if (!['undefined', 'string'].includes(typeof feed.title)) {
+    return false;
+  }
+
+  const urls = feed.urls;
+  if (urls && !Array.isArray(urls)) {
+    return false;
+  }
+
+  return true;
+}
 
 // TODO: revert to impure version that mutates input
 export function sanitize_entry(

@@ -4,7 +4,7 @@ import {ReaderDAL} from '/src/dal.js';
 import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
 import * as array from '/src/lang/array.js';
 import * as Feed from '/src/model/feed.js';
-import {sanitize_feed} from '/src/model/sanity.js';
+import {sanitize_feed, is_valid_feed} from '/src/model/sanity.js';
 import {register_test} from '/src/test/test-registry.js';
 
 async function subscribe_test() {
@@ -80,7 +80,7 @@ async function create_feed_test() {
   // sanitization. For now do a test where both are done.
   // TODO: or maybe this is dumb, and I shouldn't test this here at all
   // actually? I am starting to think this should not be here.
-  assert(Feed.is_valid(feed));
+  assert(is_valid_feed(feed));
   sanitize_feed(feed);
 
   const dal = new ReaderDAL();

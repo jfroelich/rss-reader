@@ -30,25 +30,6 @@ export function is_valid_entry_id(value) {
   return Number.isInteger(value) && value > 0;
 }
 
-// TODO: rename to is-valid
-// Returns whether an entry is valid. Only partially implemented
-export function is_valid_entry(entry) {
-  if (!is_entry(entry)) {
-    return false;
-  }
-
-  // This could be called on a new entry that does not have an id, so only
-  // check id validity when the property exists
-  if ('id' in entry) {
-    if (!is_valid_entry_id(entry.id)) {
-      console.warn('Invalid id', entry.id);
-      return false;
-    }
-  }
-
-  return true;
-}
-
 // TODO: rename to append-url
 // Append a url to an entry's url list. Lazily creates the urls property if
 // needed. Normalizes the url. The normalized url is compared against existing

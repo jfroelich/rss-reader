@@ -17,28 +17,6 @@ export function is_valid_id(id) {
   return Number.isInteger(id) && id > 0;
 }
 
-// Returns whether the feed has correct properties and property values
-export function is_valid(feed) {
-  if (!is_feed(feed)) {
-    return false;
-  }
-
-  if ('id' in feed && !is_valid_id(feed.id)) {
-    return false;
-  }
-
-  if (!['undefined', 'string'].includes(typeof feed.title)) {
-    return false;
-  }
-
-  const urls = feed.urls;
-  if (urls && !Array.isArray(urls)) {
-    return false;
-  }
-
-  return true;
-}
-
 // Appends a url to the feed's internal list. Lazily creates the list if needed
 // * @param feed {Object} a feed object
 // * @param url {URL}
