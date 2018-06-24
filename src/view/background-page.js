@@ -1,5 +1,5 @@
 import * as app from '/src/app.js';
-import * as badge from '/src/control/badge-control.js';
+import * as badge_control from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
 import * as cron_control from '/src/control/cron-control.js';
 import * as install_update_control from '/src/control/install-update-control.js';
@@ -20,14 +20,8 @@ async function background_page_channel_onmessage(event) {
   // otherwise cause messages to go unheard.
   const badge_types = ['entry-write', 'entry-deleted', 'entry-read'];
   if (badge_types.includes(message.type)) {
-    badge.refresh(location.pathname);
+    badge_control.refresh(location.pathname);
   }
-}
-
-function onstartup() {
-  console.debug('Received startup event');
-  console.debug('Initializing badge text in startup listener');
-  badge.refresh(location.pathname);
 }
 
 // Persists for the lifetime of the page. Will not prevent the page from
@@ -40,7 +34,7 @@ channel.onmessage = background_page_channel_onmessage;
 chrome.alarms.onAlarm.addListener(cron_control.alarm_listener);
 
 // Fired when when chrome starts or on chrome user profile switch
-chrome.runtime.onStartup.addListener(onstartup);
+chrome.runtime.onStartup.addListener(badge_control.startup_listener);
 
 // Set the config control to listen for install or update events
 chrome.runtime.onInstalled.addListener(config_control.install_listener);
@@ -50,6 +44,8 @@ chrome.runtime.onInstalled.addListener(config_control.install_listener);
 // NOTE: this cannot occur from within startup because the binding somehow
 // gets lost on reload
 chrome.runtime.onInstalled.addListener(install_update_control.oninstalled);
+
+chrome.runtime.onInstalled.addListener(badge_control.install_listener);
 
 // This must occur in module load scope. This is the only way to get it to
 // also work on background page reload. It works when only in startup and
