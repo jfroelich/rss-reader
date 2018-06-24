@@ -35,12 +35,11 @@ function onstartup() {
 const channel = new BroadcastChannel(localStorage.channel_name);
 channel.onmessage = background_page_channel_onmessage;
 
-// Register alarms
-// TODO: actually this one I think can be done on install?
-cron_control.register_listener();
+// Bind alarm listener
+// TODO: move to something like cron_control.install_listener
+chrome.alarms.onAlarm.addListener(cron_control.alarm_listener);
 
-// Fired when a profile that has this extension installed first starts up
-// NOTE: so basically when chrome starts, or on profile switch
+// Fired when when chrome starts or on chrome user profile switch
 chrome.runtime.onStartup.addListener(onstartup);
 
 // Set the config control to listen for install or update events
@@ -48,9 +47,8 @@ chrome.runtime.onInstalled.addListener(config_control.install_listener);
 
 // Fired when the extension is first installed, when the extension is updated
 // to a new version, and when Chrome is updated to a new version.
-// NOTE: this cannot occur from within startup. For example from a simple
-// reload from extensions page, there is no startup, and somehow this binding
-// gets lost.
+// NOTE: this cannot occur from within startup because the binding somehow
+// gets lost on reload
 chrome.runtime.onInstalled.addListener(install_update_control.oninstalled);
 
 // This must occur in module load scope. This is the only way to get it to

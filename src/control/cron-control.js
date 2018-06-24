@@ -4,11 +4,7 @@ import {ReaderDAL} from '/src/dal.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 
-export function register_listener() {
-  chrome.alarms.onAlarm.addListener(alarm_listener);
-}
-
-async function alarm_listener(alarm) {
+export async function alarm_listener(alarm) {
   console.debug('Alarm wokeup:', alarm.name);
   localStorage.last_alarm = alarm.name;
 
