@@ -1,4 +1,4 @@
-import * as config_control from '/src/control/config-control.js';
+import * as config_control from '/src/config.js';
 import {escape_html} from '/src/html/escape-html.js';
 import {truncate_html} from '/src/html/truncate-html.js';
 import * as array from '/src/lang/array.js';

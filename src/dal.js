@@ -1,5 +1,5 @@
 import {assert} from '/src/assert.js';
-import * as config_control from '/src/control/config-control.js';
+import * as config_control from '/src/config.js';
 import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
 import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
 import * as Entry from '/src/model/entry.js';

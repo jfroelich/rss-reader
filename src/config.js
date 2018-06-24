@@ -1,11 +1,4 @@
-// Controller for reading and writing app settings to and from the app
-// configuration model. Internally, app settings are stored in localStorage so
-// that they are easily and quickly available to all app pages. App settings
-// are stored as separate keys and not in a single giant object for fast
-// modifications to individual settings without the need to update all settings
-// per settings change.
-
-
+// App settings access layer
 
 export function remove(key) {
   delete localStorage[key];

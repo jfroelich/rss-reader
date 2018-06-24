@@ -1,5 +1,5 @@
 import * as badge from '/src/control/badge-control.js';
-import * as config_control from '/src/control/config-control.js';
+import * as config_control from '/src/config.js';
 import {subscribe} from '/src/control/subscribe.js';
 import {ReaderDAL} from '/src/dal.js';
 import {fade_element} from '/src/dom/fade-element.js';

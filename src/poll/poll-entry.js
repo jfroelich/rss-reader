@@ -1,5 +1,5 @@
 import {assert} from '/src/assert.js';
-import * as config_control from '/src/control/config-control.js';
+import * as config_control from '/src/config.js';
 import {ReaderDAL} from '/src/dal.js';
 import {set_document_base_uri} from '/src/dom/set-document-base-uri.js';
 import * as favicon from '/src/favicon/favicon.js';

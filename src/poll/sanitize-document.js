@@ -1,4 +1,4 @@
-import * as config_control from '/src/control/config-control.js';
+import * as config_control from '/src/config.js';
 import {filter_boilerplate} from '/src/filters/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/filters/canonicalize-urls.js';
 import {condense_tagnames} from '/src/filters/condense-tagnames.js';

@@ -1,4 +1,4 @@
-import * as config_control from '/src/control/config-control.js';
+import * as config_control from '/src/config.js';
 import {ReaderDAL} from '/src/dal.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/view/slideshow-page/count-unread-slides.js';
