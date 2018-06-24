@@ -1,6 +1,7 @@
 import '/src/control/archive-control-test.js';
 import '/src/control/feed-control-test.js';
 import '/src/argb8888-test.js';
+import '/src/dal-test.js';
 import '/src/dom/coerce-element-test.js';
 import '/src/dom/set-document-base-uri-test.js';
 import '/src/favicon/favicon-service-test.js';
