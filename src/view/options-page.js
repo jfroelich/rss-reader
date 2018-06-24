@@ -1,6 +1,6 @@
 import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/control/config-control.js';
-import * as feed_control from '/src/control/feed-control.js';
+import {subscribe} from '/src/control/subscribe.js';
 import {ReaderDAL} from '/src/dal.js';
 import {fade_element} from '/src/dom/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
@@ -307,7 +307,7 @@ async function subscribe_form_onsubmit(event) {
   dal.channel = new BroadcastChannel(localStorage.channel_name);
   let subscribe_fetch_timeout;
   const subscribe_notify = true;
-  const feed = await feed_control.subscribe(
+  const feed = await subscribe(
       dal, iconn, subscribe_url, subscribe_fetch_timeout, subscribe_notify);
   dal.close();
   dal.channel.close();

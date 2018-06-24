@@ -1,7 +1,6 @@
 import '/src/view/slideshow-page/main-menu.js';
 import '/src/view/slideshow-page/left-panel.js';
 
-import * as feed_control from '/src/control/feed-control.js';
 import {ReaderDAL} from '/src/dal.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import * as channel from '/src/view/slideshow-page/channel.js';
@@ -10,6 +9,9 @@ import {show_no_articles_message} from '/src/view/slideshow-page/no-articles-mes
 import {onkeydown} from '/src/view/slideshow-page/onkeydown.js';
 import {page_style_onload} from '/src/view/slideshow-page/page-style-onload.js';
 import {hide_splash, show_splash} from '/src/view/slideshow-page/splash.js';
+
+// TODO: if main menu and left panel are separate from slideshow-page, then
+// it would be better to separately load them as modules in the html
 
 async function load_view() {
   channel.init();

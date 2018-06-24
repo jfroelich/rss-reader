@@ -1,4 +1,3 @@
-import * as feed_control from '/src/control/feed-control.js';
 import {ReaderDAL} from '/src/dal.js';
 import {FaviconService} from '/src/favicon/favicon-service.js';
 import * as array from '/src/lang/array.js';

@@ -1,4 +1,4 @@
-import * as feed_control from '/src/control/feed-control.js';
+import {subscribe} from '/src/control/subscribe.js';
 
 // Concurrently reads in the opml files and subscribes to contained feeds.
 // Returns a promise that resolves to an array of subscribe promise results.
@@ -40,7 +40,7 @@ function subscribe_all(dal, iconn, fetch_timeout, skip_icon_lookup, urls) {
   const promises = [];
   const notify_per_subscribe = false;
   for (const url of urls) {
-    const promise = feed_control.subscribe(
+    const promise = subscribe(
         dal, iconn, url, fetch_timeout, notify_per_subscribe, skip_icon_lookup);
     const catch_promise = promise.catch(console.warn);
     promises.push(catch_promise);

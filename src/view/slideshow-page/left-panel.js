@@ -1,5 +1,4 @@
 import * as config_control from '/src/control/config-control.js';
-import * as feed_control from '/src/control/feed-control.js';
 import {import_opml} from '/src/control/import-opml-control.js';
 import {ReaderDAL} from '/src/dal.js';
 import * as favicon from '/src/favicon/favicon.js';

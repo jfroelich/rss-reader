@@ -7,22 +7,24 @@ import {is_valid_feed, sanitize_feed} from '/src/model/sanity.js';
 import {fetch_feed} from '/src/net/fetch-feed.js';
 import {url_did_change} from '/src/net/url-did-change.js';
 
+// TODO: skip_icon_lookup is superfluous, iconn can be optional and that is
+// enough to discern intent
+// TODO: look into using a single transaction
+// TODO: implement unsubscribe wrapper and avoid view directly calling
+// delete-feed
 
-
-// Subscribe to a feed. This creates a new feed in the database
+// Subscribe to a feed
 // @param dal {ReaderDAL} an open ReaderDAL instance
 // @param iconn {IDBDatabase} an open icon database connection
 // @param url {URL} the url to subscribe
-// @param notify {Boolean} whether to send a notification
+// @param should_notify {Boolean} whether to send a notification
 // @param fetch_timeout {Number} fetch timeout
 // @param skip_icon_lookup {Boolean}
 // @error database errors, type errors, fetch errors, etc
 // @return {Promise} resolves to the feed object stored in the database
 export async function subscribe(
     dal, iconn, url, fetch_timeout, should_notify = true, skip_icon_lookup) {
-  const query_mode = 'url';
-  const load_key_only = true;
-  let existing_feed = await dal.getFeed(query_mode, url, load_key_only);
+  let existing_feed = await dal.getFeed('url', url, true);
   if (existing_feed) {
     throw new Error('Already subscribed ' + url.href);
   }
@@ -34,7 +36,7 @@ export async function subscribe(
   const res_url = new URL(array.peek(feed.urls));
 
   if (url_did_change(url, res_url)) {
-    existing_feed = await dal.getFeed(query_mode, res_url, load_key_only);
+    existing_feed = await dal.getFeed('url', res_url, true);
     if (existing_feed) {
       throw new Error('Already subscribed ' + res_url.href);
     }
