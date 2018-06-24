@@ -1,3 +1,5 @@
+import {assert} from '/src/assert.js';
+
 // TODO: for model modules, these are meant to be object-like APIs, so consider
 // camel case
 
@@ -31,14 +33,8 @@ export function is_valid_id(value) {
 // urls to ensure the new url is unique. Returns true if entry was added, or
 // false if the url already exists and was therefore not added.
 export function append_url(entry, url) {
-  if (!is_entry(entry)) {
-    throw new TypeError('Invalid entry parameter ' + entry);
-  }
-
-  // Prefer duck typing over instanceof, assume string
-  if (!url.href) {
-    throw new TypeError('Invalid url parameter ' + url);
-  }
+  assert(is_entry(entry));
+  assert(typeof url.href === 'string');
 
   const normal_url_string = url.href;
   if (entry.urls) {
