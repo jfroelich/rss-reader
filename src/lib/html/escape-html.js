@@ -5,7 +5,7 @@
 // See https://stackoverflow.com/questions/784586
 export function escape_html(html_string) {
   // TEMP: not replacing & due to common double encoding issue
-  const escape_html_pattern = /[<>"']/g;
+  const escape_html_pattern = /[<>"'`]/g;
   if (typeof html_string === 'string') {
     return html_string.replace(escape_html_pattern, html_encode_first_char);
   }
