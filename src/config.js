@@ -59,6 +59,18 @@ export function read_float(key) {
   return NaN;
 }
 
+export function write_boolean(key, value) {
+  if (value) {
+    write_int(key, 1);
+  } else {
+    remove(key);
+  }
+}
+
+export function read_boolean(key) {
+  return has_key(key);
+}
+
 export function write_string(key, value) {
   localStorage[key] = value;
 }

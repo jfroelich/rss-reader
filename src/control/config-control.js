@@ -1,72 +1,60 @@
 import * as config from '/src/config.js';
 import * as color from '/src/lib/color.js';
 
-// TODO: init SHOW_NOTIFICATIONS
-// TODO: init ONLY_POLL_IF_IDLE
-
 // React to the extension being installed or updated, or when chrome is updated,
 // to do config related things. Note that this listener should be bound before
 // other listeners that depend on configuration setup.
 export function install_listener(event) {
   if (event.reason === 'install') {
-    apply_defaults(event);
+    init_config(event);
   } else {
-    remove_legacy_keys(event);
+    update_config(event);
   }
 }
 
-function remove_legacy_keys(event) {
-  // TODO: updates get fired for many reasons, such as when reloading the
-  // extension from the extensions page. This does not indicate a version
-  // change. Removing legacy keys should be based on extension version change.
-  // I always forget what this is, and might use it in the future
-  // const previous_version_string = event.previousVersion;
-
-  // no longer in use
+// TODO: updates get fired for many reasons, such as when reloading the
+// extension from the extensions page. This does not indicate a version
+// change. Removing legacy keys should be based on extension version change.
+// I always forget what this is, and might use it in the future
+// const previous_version_string = event.previousVersion;
+function update_config(event) {
   config.remove('debug');
-
-  // no longer in use
   config.remove('refresh_badge_delay');
-
-  // db info should not be configurable
   config.remove('db_name');
   config.remove('db_version');
   config.remove('db_open_timeout');
-
-  // channel name should be hardcoded
   config.remove('channel_name');
 
-  // use shorter names
-  config.remove('sanitize_document_image_size_fetch_timeout');
-  config.remove('sanitize_document_low_contrast_default_matte');
-  config.remove('sanitize_document_emphasis_max_length');
-  config.remove('sanitize_document_table_scan_max_rows');
-
-  // TODO: instead of just remove in this case, do I want to transfer old
-  // settings to new keys?
-  // yes, create a function rename that reads in old value, copies it to new
-  // value, then deletes old value (treat everything as string), and avoid
-  // creating new key if value is undefined or empty string
-
-  // use lowercase
-  config.remove('MIN_CONTRAST_RATIO');
-  config.remove('PADDING');
-  config.remove('BG_IMAGE');
-  config.remove('BG_COLOR');
-  config.remove('HEADER_FONT_FAMILY');
-  config.remove('HEADER_FONT_SIZE');
-  config.remove('BODY_FONT_FAMILY');
-  config.remove('BODY_FONT_SIZE');
-  config.remove('BODY_LINE_HEIGHT');
-  config.remove('JUSTIFY_TEXT');
-  config.remove('COLUMN_COUNT');
-
-  // use a clearer name
-  config.remove('article_title_display_max_length');
+  rename(
+      'sanitize_document_image_size_fetch_timeout', 'set_image_sizes_timeout');
+  rename(
+      'sanitize_document_low_contrast_default_matte', 'contrast_default_matte');
+  rename('sanitize_document_emphasis_max_length', 'emphasis_max_length');
+  rename('sanitize_document_table_scan_max_rows', 'table_scan_max_rows');
+  rename('article_title_display_max_length', 'entry_title_max_length');
+  rename('MIN_CONTRAST_RATIO', 'min_contrast_ratio');
+  rename('PADDING', 'padding');
+  rename('BG_IMAGE', 'bg_image');
+  rename('BG_COLOR', 'bg_color');
+  rename('HEADER_FONT_FAMILY', 'header_font_family');
+  rename('HEADER_FONT_SIZE', 'header_font_size');
+  rename('BODY_FONT_FAMILY', 'body_font_family');
+  rename('BODY_FONT_SIZE', 'body_font_size');
+  rename('BODY_LINE_HEIGHT', 'body_line_height');
+  rename('JUSTIFY_TEXT', 'justify_text');
+  rename('COLUMN_COUNT', 'column_count');
+  rename('SHOW_NOTIFICATIONS', 'show_notifications');
+  rename('ONLY_POLL_IF_IDLE', 'only_poll_if_idle');
 }
 
-export function apply_defaults(event) {
-  // Settings for content filters
+export function init_config(event) {
+  // General settings
+  config.write_boolean('show_notifications', true);
+
+  // Poll settings
+  config.write_boolean('only_poll_if_idle', true);
+
+  // Content filter settings
   config.write_int('contrast_default_matte', color.WHITE);
   config.write_int('emphasis_max_length', 200);
   config.write_int('table_scan_max_rows', 20);
@@ -74,10 +62,8 @@ export function apply_defaults(event) {
   config.write_int('set_image_sizes_timeout', 300);
   config.write_int('initial_entry_load_limit', 3);
 
-  // Settings for render
+  // View settings
   config.write_int('entry_title_max_length', 300);
-
-  // Initial display settings
   config.write_int('padding', 150);
   config.write_string('bg_color', '#fefdfd');
   config.write_string('header_font_family', 'Open Sans Regular');
@@ -86,6 +72,7 @@ export function apply_defaults(event) {
   config.write_int('body_font_size', 28);
   config.write_int('body_line_height', 16);
   config.write_int('column_count', 1);
+  config.write_boolean('justify_text', false);
 
   // Install default background images
   // clang-format off
@@ -135,4 +122,22 @@ export function apply_defaults(event) {
   ];
   // clang-format on
   config.write_array('fonts', fonts);
+}
+
+// Rename a configuration key.
+function rename(from, to) {
+  // There is no need to do any type coercion. Maintain fidelity by using the
+  // string type, because everything in and out of config is derivative of
+  // of the string type.
+  const value = config.read_string(from);
+
+  // Avoid creating the new key if the value is undefined. If the value is
+  // undefined then rename devolves into a remove decorator. Note that due to
+  // the strictness of this check, empty strings are retained, even though they
+  // are not visibly different from undefined in devtools
+  if (typeof value !== 'undefined') {
+    config.write_string(to, value);
+  }
+
+  config.remove(from);
 }

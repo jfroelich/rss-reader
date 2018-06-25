@@ -54,7 +54,7 @@ function page_style_content_rule_create(sheet) {
     buffer.push(`font-size: ${font_size}px;`);
   }
 
-  if (config.has_key('justify_text')) {
+  if (config.read_boolean('justify_text')) {
     buffer.push('text-align: justify;');
   }
 

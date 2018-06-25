@@ -83,11 +83,7 @@ function page_style_content_update() {
     style.fontSize = font_size + 'px';
   }
 
-  if (config.has_key('justify_text')) {
-    style.textAlign = 'justify';
-  } else {
-    style.textAlign = 'left';
-  }
+  style.textAlign = config.read_boolean('justify_text') ? 'justify' : 'left';
 
   const line_height = config.read_int('body_line_height');
   if (!isNaN(line_height)) {

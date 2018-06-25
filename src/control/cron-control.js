@@ -1,9 +1,12 @@
+import * as config from '/src/config.js';
 import {archive_entries} from '/src/control/archive-control.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import * as model_health from '/src/control/model-health.js';
 import {poll_feeds} from '/src/control/poll/poll-feeds.js';
 import ReaderDAL from '/src/dal.js';
 
+// Appropriately modify alarm settings when the extension is installed or
+// updated
 export function install_listener(event) {
   // Of the reasons, if we are not installing, we are doing some kind of update
   // and do not care which subtype, and all reasons other than install are
@@ -18,7 +21,7 @@ export function install_listener(event) {
 
 export async function alarm_listener(alarm) {
   console.debug('Alarm wokeup:', alarm.name);
-  localStorage.last_alarm = alarm.name;
+  config.write_string('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
     const dal = new ReaderDAL();
@@ -28,7 +31,7 @@ export async function alarm_listener(alarm) {
     dal.channel.close();
     dal.close();
   } else if (alarm.name === 'poll') {
-    if (localStorage.ONLY_POLL_IF_IDLE) {
+    if (config.read_boolean('only_poll_if_idle')) {
       // TODO: this value should come from local storage
       const idle_secs = 30;
       const state = await query_idle_state(idle_secs);

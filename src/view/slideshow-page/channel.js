@@ -61,7 +61,7 @@ async function onmessage(event) {
     // articles that have since become available after the time the view was
     // already loaded. To do this, the current criteria uses the number of
     // unread articles in the view as an indicator.
-    // TODO: should this come from localStorage?
+    // TODO: should this come from config?
     const max_unread_before_suppress_load = 3;
     const unread_count = count_unread_slides();
 

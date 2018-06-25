@@ -1,3 +1,5 @@
+import * as config from '/src/config.js';
+
 const default_icon = chrome.extension.getURL('/images/rss_icon_trans.gif');
 
 export async function open_view() {
@@ -24,7 +26,7 @@ export async function open_view() {
 // supported. There is also an app setting to enable or disable notifications.
 export function show_notification(
     title, message, icon_url_string = default_icon) {
-  if (!('SHOW_NOTIFICATIONS' in localStorage)) {
+  if (!config.read_boolean('show_notifications')) {
     return;
   }
 

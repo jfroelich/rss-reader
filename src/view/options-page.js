@@ -270,19 +270,12 @@ async function subscribe_form_onsubmit(event) {
   subscription_monitor_show();
   monitor_element = document.getElementById('submon');
 
-  // fail horribly. this should never happen and is a serious error
-  // if (!monitor_element) {
-  //  console.error('failed to find subscription monitor element');
-  //  return;
-  //}
-
   const subscribe_url_input_element = document.getElementById('subscribe-url');
   let subscribe_url_string = subscribe_url_input_element.value;
   subscribe_url_string = subscribe_url_string || '';
   subscribe_url_string = subscribe_url_string.trim();
 
   if (!subscribe_url_string) {
-    console.debug('canceling submit, empty input');
     return false;
   }
 
@@ -441,11 +434,7 @@ function menu_item_onclick(event) {
 }
 
 function enable_notifications_checkbox_onclick(event) {
-  if (event.target.checked) {
-    localStorage.SHOW_NOTIFICATIONS = '1';
-  } else {
-    delete localStorage.SHOW_NOTIFICATIONS;
-  }
+  config.write_boolean('show_notifications', event.target.checked);
 }
 
 function enable_bg_processing_checkbox_onclick(event) {
@@ -459,7 +448,6 @@ function enable_bg_processing_checkbox_onclick(event) {
 async function enable_bg_processing_checkbox_init() {
   const checkbox = document.getElementById('enable-background');
 
-  // TODO: move this comment to github, make a note of the general pattern
   // TODO: this should be using a local storage variable and instead the
   // permission should be permanently defined.
 
@@ -468,11 +456,7 @@ async function enable_bg_processing_checkbox_init() {
 }
 
 function restrict_idle_polling_checkbox_onclick(event) {
-  if (event.target.checked) {
-    localStorage.ONLY_POLL_IF_IDLE = '1';
-  } else {
-    delete localStorage.ONLY_POLL_IF_IDLE;
-  }
+  config.write_boolean('only_poll_if_idle', event.target.checked);
 }
 
 function bg_image_menu_onchange(event) {
@@ -542,12 +526,7 @@ function body_font_size_slider_onchange(event) {
 }
 
 function justify_text_checkbox_onchange(event) {
-  if (event.target.checked) {
-    config.write_int('justify_text', 1);
-  } else {
-    config.remove('justify_text');
-  }
-
+  config.write_boolean('justify_text', event.target.checked);
   channel.postMessage({type: 'display-settings-changed'});
 }
 
@@ -573,18 +552,15 @@ function options_page_init() {
   }
 
   // Init Enable notifications checkbox
-  const enable_notifications_checkbox =
-      document.getElementById('enable-notifications');
-  enable_notifications_checkbox.checked = 'SHOW_NOTIFICATIONS' in localStorage;
-  enable_notifications_checkbox.onclick = enable_notifications_checkbox_onclick;
+  const enable_notes_checkbox = document.getElementById('enable-notifications');
+  enable_notes_checkbox.checked = config.read_boolean('show_notifications');
+  enable_notes_checkbox.onclick = enable_notifications_checkbox_onclick;
 
   enable_bg_processing_checkbox_init();
 
-  const restrict_idle_polling_checkbox =
-      document.getElementById('enable-idle-check');
-  restrict_idle_polling_checkbox.checked = 'ONLY_POLL_IF_IDLE' in localStorage;
-  restrict_idle_polling_checkbox.onclick =
-      restrict_idle_polling_checkbox_onclick;
+  const idle_poll_checkbox = document.getElementById('enable-idle-check');
+  idle_poll_checkbox.checked = config.read_boolean('only_poll_if_idle');
+  idle_poll_checkbox.onclick = restrict_idle_polling_checkbox_onclick;
 
   feed_list_init();
 
@@ -655,7 +631,7 @@ function options_page_init() {
   entry_margin_input.onchange = entry_margin_slider_onchange;
 
   const justify_text_checkbox = document.getElementById('justify-text');
-  justify_text_checkbox.checked = config.has_key('justify_text');
+  justify_text_checkbox.checked = config.read_boolean('justify_text');
   justify_text_checkbox.onchange = justify_text_checkbox_onchange;
 
   const header_font_size_slider = document.getElementById('header-font-size');
