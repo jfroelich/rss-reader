@@ -33,18 +33,14 @@ channel.onmessage = background_page_channel_onmessage;
 // TODO: move to something like cron_control.install_listener
 chrome.alarms.onAlarm.addListener(cron_control.alarm_listener);
 
-// Fired when when chrome starts or on chrome user profile switch
 chrome.runtime.onStartup.addListener(badge_control.startup_listener);
 
-// Set the config control to listen for install or update events
-chrome.runtime.onInstalled.addListener(config_control.install_listener);
-
-// Fired when the extension is first installed, when the extension is updated
-// to a new version, and when Chrome is updated to a new version.
 // NOTE: this cannot occur from within startup because the binding somehow
 // gets lost on reload
+// NOTE: config comes first as others expect config to be setup
+chrome.runtime.onInstalled.addListener(config_control.install_listener);
 chrome.runtime.onInstalled.addListener(install_update_control.oninstalled);
-
+chrome.runtime.onInstalled.addListener(cron_control.install_listener);
 chrome.runtime.onInstalled.addListener(badge_control.install_listener);
 
 // This must occur in module load scope. This is the only way to get it to

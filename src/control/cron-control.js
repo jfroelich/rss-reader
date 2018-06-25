@@ -1,8 +1,20 @@
 import {archive_entries} from '/src/control/archive-control.js';
-import * as feed_entry_control from '/src/control/feed-entry-control.js';
-import ReaderDAL from '/src/dal.js';
 import * as favicon from '/src/control/favicon/favicon.js';
+import * as feed_entry_control from '/src/control/feed-entry-control.js';
 import {poll_feeds} from '/src/control/poll/poll-feeds.js';
+import ReaderDAL from '/src/dal.js';
+
+export function install_listener(event) {
+  // Of the reasons, if we are not installing, we are doing some kind of update
+  // and do not care which subtype, and all reasons other than install are
+  // update per the chrome api docs
+  if (event.reason === 'install') {
+    create_alarms();
+  } else {
+    const previous_version_string = event.previousVersion;
+    update_alarms(previous_version_string);
+  }
+}
 
 export async function alarm_listener(alarm) {
   console.debug('Alarm wokeup:', alarm.name);
