@@ -1,13 +1,13 @@
 import * as config from '/src/config.js';
 import * as badge from '/src/control/badge-control.js';
+import * as favicon from '/src/control/favicon/favicon.js';
+import {poll_feed} from '/src/control/poll/poll-feeds.js';
 import {subscribe} from '/src/control/subscribe.js';
 import ReaderDAL from '/src/dal.js';
-import {fade_element} from '/src/lib/dom/fade-element.js';
-import * as favicon from '/src/control/favicon/favicon.js';
-import {truncate_html} from '/src/lib/html/truncate-html.js';
 import * as array from '/src/lib/array.js';
+import {fade_element} from '/src/lib/dom/fade-element.js';
+import {truncate_html} from '/src/lib/html/truncate-html.js';
 import * as perm from '/src/lib/permissions.js';
-import {poll_feed} from '/src/control/poll/poll-feeds.js';
 import {page_style_onchange} from '/src/view/slideshow-page/page-style-onchange.js';
 import {page_style_onload} from '/src/view/slideshow-page/page-style-onload.js';
 
@@ -478,9 +478,9 @@ function restrict_idle_polling_checkbox_onclick(event) {
 function bg_image_menu_onchange(event) {
   const path = event.target.value;
   if (path) {
-    localStorage.BG_IMAGE = path;
+    config.write_string('BG_IMAGE', path);
   } else {
-    delete localStorage.BG_IMAGE;
+    config.remove('BG_IMAGE');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -500,9 +500,9 @@ function column_count_menu_onchange(event) {
 function entry_bg_color_input_oninput(event) {
   const color = event.target.value;
   if (color) {
-    localStorage.BG_COLOR = color;
+    config.write_string('BG_COLOR', color);
   } else {
-    delete localStorage.BG_COLOR;
+    config.remove('BG_COLOR');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -513,9 +513,9 @@ function entry_margin_slider_onchange(event) {
   console.debug('entry_margin_slider_onchange new value', margin);
 
   if (margin) {
-    localStorage.PADDING = margin;
+    config.write_int('PADDING', margin);
   } else {
-    delete localStorage.PADDING;
+    config.remove('PADDING');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -612,9 +612,9 @@ function options_page_init() {
     option.textContent = 'Use background color';
     bg_image_menu.appendChild(option);
 
-    let current_path = localStorage.BG_IMAGE;
+    let current_path = config.read_string('BG_IMAGE');
 
-    // Support for legacy path value
+    // Temporary support for legacy path value
     if (current_path && current_path.startsWith('/images/')) {
       current_path = current_path.substring('/images/'.length);
     }
@@ -645,15 +645,16 @@ function options_page_init() {
   }
 
   const bg_color_input = document.getElementById('entry-background-color');
-  if (localStorage.BG_COLOR) {
-    bg_color_input.value = localStorage.BG_COLOR;
+  if (config.read_string('BG_COLOR')) {
+    bg_color_input.value = config.read_string('BG_COLOR');
   } else {
     bg_color_input.removeAttribute('value');
   }
+
   bg_color_input.oninput = entry_bg_color_input_oninput;
 
   const entry_margin_input = document.getElementById('entry-margin');
-  entry_margin_input.value = localStorage.PADDING || '10';
+  entry_margin_input.value = config.read_int('PADDING', 10);
   entry_margin_input.onchange = entry_margin_slider_onchange;
 
   const justify_text_checkbox = document.getElementById('justify-text');

@@ -1,3 +1,4 @@
+import * as config from '/src/config.js';
 import * as css from '/src/lib/dom/css.js';
 
 export function page_style_onchange(event) {
@@ -7,7 +8,7 @@ export function page_style_onchange(event) {
 
   const rule = css.find_rule('.slide-padding-wrapper');
   if (rule) {
-    rule.style.padding = localStorage.PADDING;
+    rule.style.padding = config.read_string('PADDING');
   }
 }
 
@@ -18,14 +19,14 @@ function page_style_entry_update() {
   }
 
   const style = rule.style;
-  let path = localStorage.BG_IMAGE;
+  let path = config.read_string('BG_IMAGE');
 
   // Support for legacy path values
   if (path && path.startsWith('/images/')) {
     path = path.substring('/images/'.length);
   }
 
-  const color = localStorage.BG_COLOR;
+  const color = config.read_string('BG_COLOR');
 
   if (path) {
     style.backgroundColor = '';

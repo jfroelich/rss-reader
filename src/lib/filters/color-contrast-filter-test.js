@@ -13,7 +13,7 @@ async function color_contrast_filter_test1() {
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
 
   const matte = color.WHITE;
-  const threshold = config.read_float('MIN_CONTRAST_RATIO');
+  const threshold = config.read_float('min_contrast_ratio');
 
   let node = it.nextNode();
   while (node) {

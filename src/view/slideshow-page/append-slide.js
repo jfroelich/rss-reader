@@ -60,7 +60,7 @@ function create_article_title_element(entry) {
 
     title = filter_publisher(title);
 
-    const max_length = config.read_int('article_title_display_max_length');
+    const max_length = config.read_int('entry_title_max_length');
     if (!isNaN(max_length)) {
       title = truncate_html(title, max_length);
     }

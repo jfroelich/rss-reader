@@ -1,10 +1,12 @@
+import * as config from '/src/config.js';
+
 export function page_style_onload() {
   const sheet = document.styleSheets[0];
   sheet.addRule('.entry', page_style_entry_rule_create());
   sheet.addRule('.entry .entry-title', page_style_title_rule_create());
   sheet.addRule('.entry .entry-content', page_style_content_rule_create());
 
-  const padding = localStorage.PADDING;
+  const padding = config.read_string('PADDING');
   if (padding) {
     sheet.addRule('.slide-padding-wrapper', 'padding:' + padding);
   }
@@ -13,14 +15,14 @@ export function page_style_onload() {
 function page_style_entry_rule_create() {
   const buffer = [];
 
-  let path = localStorage.BG_IMAGE;
+  let path = config.read_string('BG_IMAGE');
 
   // Support for legacy path that included folder
   if (path && path.startsWith('/images/')) {
     path = path.substring('/images/'.length);
   }
 
-  const color = localStorage.BG_COLOR;
+  const color = config.read_string('BG_COLOR');
 
   if (path) {
     buffer.push(`background: url("/images/${path}");`);

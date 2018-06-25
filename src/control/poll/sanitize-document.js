@@ -69,7 +69,7 @@ export async function sanitize_document(document) {
   const matte = config.read_int('contrast_default_matte');
 
   // TODO: lowercase
-  const mcr = config.read_float('MIN_CONTRAST_RATIO');
+  const mcr = config.read_float('min_contrast_ratio');
   filter_hidden_elements(document, matte, mcr);
 
   const general_blacklist = [
@@ -130,12 +130,10 @@ export async function sanitize_document(document) {
   filter_container_elements(document);
   filter_lists(document);
 
-  const table_scan_max_rows =
-      config.read_int('sanitize_document_table_scan_max_rows');
+  const table_scan_max_rows = config.read_int('table_scan_max_rows');
   filter_tables(document, table_scan_max_rows);
 
-  const emphasis_max_length =
-      config.read_int('sanitize_document_emphasis_max_length');
+  const emphasis_max_length = config.read_int('emphasis_max_length');
   filter_emphasis(document, emphasis_max_length);
   filter_node_whitespace(document);
 

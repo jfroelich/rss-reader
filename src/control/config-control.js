@@ -6,70 +6,70 @@ import * as color from '/src/lib/color.js';
 // other listeners that depend on configuration setup.
 export function install_listener(event) {
   if (event.reason === 'install') {
-    extension_oninstall(event);
+    apply_defaults(event);
   } else {
-    extension_onupdate(event);
+    remove_legacy_keys(event);
   }
 }
 
-// When the extension is updated, do some housekeeping of changes to
-// configuration
-function extension_onupdate(event) {
-  // I always forget what this is, and might use it in the future
-  // const previous_version_string = event.previousVersion;
-
-  // Remove any legacy keys
+function remove_legacy_keys(event) {
   // TODO: updates get fired for many reasons, such as when reloading the
   // extension from the extensions page. This does not indicate a version
   // change. Removing legacy keys should be based on extension version change.
+  // I always forget what this is, and might use it in the future
+  // const previous_version_string = event.previousVersion;
+
+  // no longer in use
   config.remove('debug');
+
+  // no longer in use
   config.remove('refresh_badge_delay');
-  config.remove('sanitize_document_image_size_fetch_timeout');
+
+  // db info should not be configurable
   config.remove('db_name');
   config.remove('db_version');
   config.remove('db_open_timeout');
+
+  // channel name should be hardcoded
   config.remove('channel_name');
+
+  // use shorter names
+  config.remove('sanitize_document_image_size_fetch_timeout');
   config.remove('sanitize_document_low_contrast_default_matte');
+  config.remove('sanitize_document_emphasis_max_length');
+  config.remove('sanitize_document_table_scan_max_rows');
+
+  // use lowercase
+  config.remove('MIN_CONTRAST_RATIO');
+
+  // use a clearer name
+  config.remove('article_title_display_max_length');
 }
 
-// When the extension is installed, record some initial settings
-function extension_oninstall(event) {
-  // TODO: shorten names
+export function apply_defaults(event) {
+  // Settings for content filters
   config.write_int('contrast_default_matte', color.WHITE);
-  config.write_int('sanitize_document_emphasis_max_length', 200);
-  config.write_int('sanitize_document_table_scan_max_rows', 20);
-  // TODO: lowercase
-  config.write_float('MIN_CONTRAST_RATIO', 4.5);
+  config.write_int('emphasis_max_length', 200);
+  config.write_int('table_scan_max_rows', 20);
+  config.write_float('min_contrast_ratio', 4.5);
   config.write_int('set_image_sizes_timeout', 300);
   config.write_int('initial_entry_load_limit', 3);
 
-  // Using a longer delay than near-0 to increase cancelation frequency. The
-  // delay is in milliseconds. Using asap delay (setting delay to 0 or
-  // undefined) was leading to obverably nothing getting canceled and everything
-  // getting scheduled too quickly and reaching its end of deferrment and
-  // starting and therefore everything was running concurrently. So now this
-  // imposes a fake delay on unread count updating that is probably higher than
-  // the default near-0 delay. I don't think it will be noticeable but not sure.
-  // It turns out that the cross-tab channel messages get sent faster than I
-  // expected. Comp specs and load might be a factor I am not accounting for.
-  config.write_int('refresh_badge_delay', 20);
-  config.write_int('article_title_display_max_length', 300);
+  // Settings for render
+  config.write_int('entry_title_max_length', 300);
 
-  // TODO: the following display configuration properties should also be
-  // initialized
-  // TODO: once working, then lowercase in a later commit and deprecate upper
-  // case keys.
+  // TODO: eventually lowercase the display settings
 
-  // localStorage.PADDING
-  // localStorage.BG_IMAGE
-  // localStorage.BG_COLOR
-  // localStorage.HEADER_FONT_FAMILY
-  // localStorage.HEADER_FONT_SIZE
-  // localStorage.BODY_FONT_FAMILY
-  // localStorage.BODY_FONT_SIZE
-  // localStorage.JUSTIFY_TEXT
-  // localStorage.BODY_LINE_HEIGHT
-  // localStorage.COLUMN_COUNT
+  config.write_int('PADDING', 150);
+  // do not set BG_IMAGE, we default to using a color
+  config.write_string('BG_COLOR', '#fefdfd');
+  config.write_string('HEADER_FONT_FAMILY', 'Open Sans Regular');
+  config.write_int('HEADER_FONT_SIZE', 40);
+  config.write_string('BODY_FONT_FAMILY', 'Edward Tufte Roman');
+  config.write_int('BODY_FONT_SIZE', 28);
+  // do not set JUSTIFY_TEXT by default
+  config.write_int('BODY_LINE_HEIGHT', 16);
+  config.write_int('COLUMN_COUNT', 1);
 
   // Install default background images
   // clang-format off
