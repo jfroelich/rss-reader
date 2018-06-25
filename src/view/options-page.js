@@ -478,9 +478,9 @@ function restrict_idle_polling_checkbox_onclick(event) {
 function bg_image_menu_onchange(event) {
   const path = event.target.value;
   if (path) {
-    config.write_string('BG_IMAGE', path);
+    config.write_string('bg_image', path);
   } else {
-    config.remove('BG_IMAGE');
+    config.remove('bg_image');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -489,9 +489,9 @@ function bg_image_menu_onchange(event) {
 function column_count_menu_onchange(event) {
   const count = event.target.value;
   if (count) {
-    config.write_string('COLUMN_COUNT', count);
+    config.write_string('column_count', count);
   } else {
-    config.remove('COLUMN_COUNT');
+    config.remove('column_count');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -500,9 +500,9 @@ function column_count_menu_onchange(event) {
 function entry_bg_color_input_oninput(event) {
   const color = event.target.value;
   if (color) {
-    config.write_string('BG_COLOR', color);
+    config.write_string('bg_color', color);
   } else {
-    config.remove('BG_COLOR');
+    config.remove('bg_color');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -511,9 +511,9 @@ function entry_bg_color_input_oninput(event) {
 function entry_margin_slider_onchange(event) {
   const margin = event.target.value;
   if (margin) {
-    config.write_string('PADDING', margin);
+    config.write_string('padding', margin);
   } else {
-    config.remove('PADDING');
+    config.remove('padding');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -522,9 +522,9 @@ function entry_margin_slider_onchange(event) {
 function header_font_size_slider_onchange(event) {
   const size = event.target.value;
   if (size) {
-    config.write_string('HEADER_FONT_SIZE', size);
+    config.write_string('header_font_size', size);
   } else {
-    config.remove('HEADER_FONT_SIZE');
+    config.remove('header_font_size');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -533,9 +533,9 @@ function header_font_size_slider_onchange(event) {
 function body_font_size_slider_onchange(event) {
   const size = event.target.value;
   if (size) {
-    config.write_string('BODY_FONT_SIZE', size);
+    config.write_string('body_font_size', size);
   } else {
-    config.remove('BODY_FONT_SIZE');
+    config.remove('body_font_size');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -543,9 +543,9 @@ function body_font_size_slider_onchange(event) {
 
 function justify_text_checkbox_onchange(event) {
   if (event.target.checked) {
-    config.write_int('JUSTIFY_TEXT', 1);
+    config.write_int('justify_text', 1);
   } else {
-    config.remove('JUSTIFY_TEXT');
+    config.remove('justify_text');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -554,9 +554,9 @@ function justify_text_checkbox_onchange(event) {
 function body_line_height_input_oninput(event) {
   const height = event.target.value;
   if (height) {
-    config.write_string('BODY_LINE_HEIGHT', height);
+    config.write_string('body_line_height', height);
   } else {
-    config.remove('BODY_LINE_HEIGHT');
+    config.remove('body_line_height');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -609,7 +609,7 @@ function options_page_init() {
     option.textContent = 'Use background color';
     bg_image_menu.appendChild(option);
 
-    let current_path = config.read_string('BG_IMAGE');
+    let current_path = config.read_string('bg_image');
 
     // Temporary support for legacy path value
     if (current_path && current_path.startsWith('/images/')) {
@@ -631,7 +631,7 @@ function options_page_init() {
     const column_count_menu = document.getElementById('column-count');
     column_count_menu.onchange = column_count_menu_onchange;
     const column_count_options = [1, 2, 3];
-    const current_column_count = config.read_int('COLUMN_COUNT');
+    const current_column_count = config.read_int('column_count');
     for (const column_count of column_count_options) {
       const option = document.createElement('option');
       option.value = column_count;
@@ -642,8 +642,8 @@ function options_page_init() {
   }
 
   const bg_color_input = document.getElementById('entry-background-color');
-  if (config.read_string('BG_COLOR')) {
-    bg_color_input.value = config.read_string('BG_COLOR');
+  if (config.read_string('bg_color')) {
+    bg_color_input.value = config.read_string('bg_color');
   } else {
     bg_color_input.removeAttribute('value');
   }
@@ -651,16 +651,16 @@ function options_page_init() {
   bg_color_input.oninput = entry_bg_color_input_oninput;
 
   const entry_margin_input = document.getElementById('entry-margin');
-  entry_margin_input.value = config.read_int('PADDING', 10);
+  entry_margin_input.value = config.read_int('padding', 10);
   entry_margin_input.onchange = entry_margin_slider_onchange;
 
   const justify_text_checkbox = document.getElementById('justify-text');
-  justify_text_checkbox.checked = 'JUSTIFY_TEXT' in localStorage;
+  justify_text_checkbox.checked = config.has_key('justify_text');
   justify_text_checkbox.onchange = justify_text_checkbox_onchange;
 
   const header_font_size_slider = document.getElementById('header-font-size');
   header_font_size_slider.onchange = header_font_size_slider_onchange;
-  const header_font_size = config.read_int('HEADER_FONT_SIZE');
+  const header_font_size = config.read_int('header_font_size');
   if (!isNaN(header_font_size)) {
     header_font_size_slider.value = header_font_size;
   }
@@ -671,7 +671,7 @@ function options_page_init() {
 
   const body_line_height_input = document.getElementById('body-line-height');
   body_line_height_input.oninput = body_line_height_input_oninput;
-  const body_line_height = config.read_int('BODY_LINE_HEIGHT');
+  const body_line_height = config.read_int('body_line_height');
   if (!isNaN(body_line_height)) {
     body_line_height_input.value = body_line_height;
   }

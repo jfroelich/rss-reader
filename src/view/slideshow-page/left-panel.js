@@ -1,7 +1,7 @@
 import * as config from '/src/config.js';
+import * as favicon from '/src/control/favicon/favicon.js';
 import {import_opml} from '/src/control/import-opml-control.js';
 import ReaderDAL from '/src/dal.js';
-import * as favicon from '/src/control/favicon/favicon.js';
 import * as array from '/src/lib/array.js';
 import {create_opml_document} from '/src/lib/opml-document.js';
 import {page_style_onchange} from '/src/view/slideshow-page/page-style-onchange.js';
@@ -140,7 +140,7 @@ function options_menu_onclick(event) {
 function header_font_menu_init(fonts) {
   const menu = document.getElementById('header-font-menu');
   menu.onchange = header_font_menu_onchange;
-  const current_header_font = localStorage.HEADER_FONT_FAMILY;
+  const current_header_font = config.read_string('header_font_family');
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Header Font';
@@ -162,7 +162,7 @@ function header_font_menu_init(fonts) {
 function body_font_menu_init(fonts) {
   const menu = document.getElementById('body-font-menu');
   menu.onchange = body_font_menu_onchange;
-  const current_body_font = localStorage.BODY_FONT_FAMILY;
+  const current_body_font = config.read_string('body_font_family');
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Body Font';
@@ -183,9 +183,9 @@ function body_font_menu_init(fonts) {
 export function header_font_menu_onchange(event) {
   const font_name = event.target.value;
   if (font_name) {
-    localStorage.HEADER_FONT_FAMILY = font_name;
+    config.write_string('header_font_family', font_name);
   } else {
-    delete localStorage.HEADER_FONT_FAMILY;
+    config.remove('header_font_family');
   }
 
   page_style_onchange();
@@ -194,9 +194,9 @@ export function header_font_menu_onchange(event) {
 function body_font_menu_onchange(event) {
   const font_name = event.target.value;
   if (font_name) {
-    localStorage.BODY_FONT_FAMILY = font_name;
+    config.write_string('body_font_family', font_name);
   } else {
-    delete localStorage.BODY_FONT_FAMILY;
+    config.remove('body_font_family');
   }
 
   page_style_onchange();

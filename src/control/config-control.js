@@ -42,8 +42,24 @@ function remove_legacy_keys(event) {
   config.remove('sanitize_document_emphasis_max_length');
   config.remove('sanitize_document_table_scan_max_rows');
 
+  // TODO: instead of just remove in this case, do I want to transfer old
+  // settings to new keys?
+  // yes, create a function rename that reads in old value, copies it to new
+  // value, then deletes old value (treat everything as string), and avoid
+  // creating new key if value is undefined or empty string
+
   // use lowercase
   config.remove('MIN_CONTRAST_RATIO');
+  config.remove('PADDING');
+  config.remove('BG_IMAGE');
+  config.remove('BG_COLOR');
+  config.remove('HEADER_FONT_FAMILY');
+  config.remove('HEADER_FONT_SIZE');
+  config.remove('BODY_FONT_FAMILY');
+  config.remove('BODY_FONT_SIZE');
+  config.remove('BODY_LINE_HEIGHT');
+  config.remove('JUSTIFY_TEXT');
+  config.remove('COLUMN_COUNT');
 
   // use a clearer name
   config.remove('article_title_display_max_length');
@@ -61,18 +77,15 @@ export function apply_defaults(event) {
   // Settings for render
   config.write_int('entry_title_max_length', 300);
 
-  // TODO: eventually lowercase the display settings
-
-  config.write_int('PADDING', 150);
-  // do not set BG_IMAGE, we default to using a color
-  config.write_string('BG_COLOR', '#fefdfd');
-  config.write_string('HEADER_FONT_FAMILY', 'Open Sans Regular');
-  config.write_int('HEADER_FONT_SIZE', 40);
-  config.write_string('BODY_FONT_FAMILY', 'Edward Tufte Roman');
-  config.write_int('BODY_FONT_SIZE', 28);
-  // do not set JUSTIFY_TEXT by default
-  config.write_int('BODY_LINE_HEIGHT', 16);
-  config.write_int('COLUMN_COUNT', 1);
+  // Initial display settings
+  config.write_int('padding', 150);
+  config.write_string('bg_color', '#fefdfd');
+  config.write_string('header_font_family', 'Open Sans Regular');
+  config.write_int('header_font_size', 40);
+  config.write_string('body_font_family', 'Edward Tufte Roman');
+  config.write_int('body_font_size', 28);
+  config.write_int('body_line_height', 16);
+  config.write_int('column_count', 1);
 
   // Install default background images
   // clang-format off
