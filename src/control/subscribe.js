@@ -1,11 +1,12 @@
 import * as app from '/src/app.js';
-import assert from '/src/lib/assert.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import * as array from '/src/lib/array.js';
-import * as Feed from '/src/model/feed.js';
-import {is_valid_feed, sanitize_feed} from '/src/model/sanity.js';
+import assert from '/src/lib/assert.js';
 import {fetch_feed} from '/src/lib/net/fetch-feed.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
+import * as Feed from '/src/model/feed.js';
+import * as sanity from '/src/model/sanity.js';
+
 
 // TODO: look into using a single transaction
 // TODO: implement unsubscribe wrapper and avoid view directly calling
@@ -38,7 +39,7 @@ export async function subscribe(dal, iconn, url, fetch_timeout, should_notify) {
     }
   }
 
-  if (!is_valid_feed(feed)) {
+  if (!sanity.is_valid_feed(feed)) {
     throw new Error('Invalid feed ' + JSON.stringify(feed));
   }
 
@@ -49,7 +50,7 @@ export async function subscribe(dal, iconn, url, fetch_timeout, should_notify) {
     feed.faviconURLString = await favicon.lookup(iconn, url, doc, fetch);
   }
 
-  sanitize_feed(feed);
+  sanity.sanitize_feed(feed);
   await dal.updateFeed(feed);
 
   if (should_notify) {

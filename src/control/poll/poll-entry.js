@@ -11,7 +11,7 @@ import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
 import * as Entry from '/src/model/entry.js';
-import {is_valid_entry, sanitize_entry} from '/src/model/sanity.js';
+import * as sanity from '/src/model/sanity.js';
 
 export class EntryExistsError extends Error {
   constructor(message = 'Entry already exists') {
@@ -106,8 +106,8 @@ export async function poll_entry(
   await sanitize_document(document);
   entry.content = document.documentElement.outerHTML;
 
-  assert(is_valid_entry(entry));
-  entry = sanitize_entry(entry);
+  assert(sanity.is_valid_entry(entry));
+  entry = sanity.sanitize_entry(entry);
   return await dal.updateEntry(entry);
 }
 

@@ -2,7 +2,7 @@ import ReaderDAL from '/src/dal.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import * as Feed from '/src/model/feed.js';
-import {is_valid_feed, sanitize_feed} from '/src/model/sanity.js';
+import * as sanity from '/src/model/sanity.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // Exercises the db-write-feed function in the case of adding a new feed object
@@ -20,8 +20,8 @@ async function create_feed_test() {
   // sanitization. For now do a test where both are done.
   // TODO: or maybe this is dumb, and I shouldn't test this here at all
   // actually? I am starting to think this should not be here.
-  assert(is_valid_feed(feed));
-  sanitize_feed(feed);
+  assert(sanity.is_valid_feed(feed));
+  sanity.sanitize_feed(feed);
 
   const dal = new ReaderDAL();
   await dal.connect('write-new-feed-test');

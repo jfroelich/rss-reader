@@ -1,14 +1,14 @@
 import * as app from '/src/app.js';
-import assert from '/src/lib/assert.js';
-import ReaderDAL from '/src/dal.js';
-import * as array from '/src/lib/array.js';
-import * as Entry from '/src/model/entry.js';
-import * as Feed from '/src/model/feed.js';
-import {is_valid_feed, sanitize_feed} from '/src/model/sanity.js';
-import {fetch_feed} from '/src/lib/net/fetch-feed.js';
-import {OfflineError, TimeoutError} from '/src/lib/net/fetch2.js';
 import {EntryExistsError, poll_entry} from '/src/control/poll/poll-entry.js';
 import {build_rewrite_rules} from '/src/control/poll/rewrite-rules.js';
+import ReaderDAL from '/src/dal.js';
+import * as array from '/src/lib/array.js';
+import assert from '/src/lib/assert.js';
+import {fetch_feed} from '/src/lib/net/fetch-feed.js';
+import {OfflineError, TimeoutError} from '/src/lib/net/fetch2.js';
+import * as Entry from '/src/model/entry.js';
+import * as Feed from '/src/model/feed.js';
+import * as sanity from '/src/model/sanity.js';
 
 const chan_stub = {
   name: 'channel-stub',
@@ -111,8 +111,8 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   // counters that would lead to eventual deactivation
   handle_fetch_success(merged_feed);
 
-  assert(is_valid_feed(merged_feed));
-  sanitize_feed(merged_feed);
+  assert(sanity.is_valid_feed(merged_feed));
+  sanity.sanitize_feed(merged_feed);
 
   const dal = new ReaderDAL();
   dal.conn = rconn;
