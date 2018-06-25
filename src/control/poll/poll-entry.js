@@ -4,7 +4,7 @@ import {sanitize_document} from '/src/control/poll/sanitize-document.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
-import {parse_html} from '/src/lib/html/parse-html.js';
+import * as html from '/src/lib/html.js';
 import {fetch_html} from '/src/lib/net/fetch-html.js';
 import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
@@ -79,7 +79,7 @@ export async function poll_entry(
     let response_text;
     try {
       response_text = await response.text();
-      document = parse_html(response_text);
+      document = html.parse_html(response_text);
     } catch (error) {
     }
 
@@ -92,7 +92,7 @@ export async function poll_entry(
 
   } else {
     try {
-      document = parse_html(entry.content);
+      document = html.parse_html(entry.content);
     } catch (error) {
       document = window.document.implementation.createHTMLDocument();
       document.documentElement.innerHTML = 'Invalid html content';

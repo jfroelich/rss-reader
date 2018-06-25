@@ -1,14 +1,16 @@
 import assert from '/src/lib/assert.js';
-import {truncate_html as truncate} from '/src/lib/html/truncate-html.js';
+import * as html from '/src/lib/html.js';
 import {register_test} from '/src/test/test-registry.js';
 
 async function html_truncate_test() {
+  const truncate = html.truncate_html;
+
   const e = '.';
   let input = 'a<p>b</p>c';
   let output = 'a<p>b.</p>';
   assert(truncate(input, 2, e) === output);
 
-  // TODO: finish up conversion
+  // TODO: finish up conversion to new test format
 
   /*
     const input2 = `<html><head><title>new title</title></head><body>${input1}

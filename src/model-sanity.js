@@ -1,5 +1,4 @@
-import {replace_tags} from '/src/lib/html/replace-tags.js';
-import {truncate_html} from '/src/lib/html/truncate-html.js';
+import * as html from '/src/lib/html.js';
 import * as string from '/src/lib/string.js';
 import * as Model from '/src/model.js';
 
@@ -52,25 +51,25 @@ export function sanitize_entry(
   if (output_entry.author) {
     let author = output_entry.author;
     author = string.filter_control_characters(author);
-    author = replace_tags(author, '');
+    author = html.replace_tags(author, '');
     author = string.condense_whitespace(author);
-    author = truncate_html(author, author_max_length);
+    author = html.truncate_html(author, author_max_length);
     output_entry.author = author;
   }
 
   if (output_entry.content) {
     let content = output_entry.content;
     content = string.filter_unprintable_characters(content);
-    content = truncate_html(content, content_max_length);
+    content = html.truncate_html(content, content_max_length);
     output_entry.content = content;
   }
 
   if (output_entry.title) {
     let title = output_entry.title;
     title = string.filter_control_characters(title);
-    title = replace_tags(title, '');
+    title = html.replace_tags(title, '');
     title = string.condense_whitespace(title);
-    title = truncate_html(title, title_max_length);
+    title = html.truncate_html(title, title_max_length);
     output_entry.title = title;
   }
 
@@ -90,18 +89,18 @@ export function sanitize_feed(feed, options) {
   if (feed.title) {
     let title = feed.title;
     title = string.filter_control_characters(title);
-    title = replace_tags(title, html_tag_replacement);
+    title = html.replace_tags(title, html_tag_replacement);
     title = string.condense_whitespace(title);
-    title = truncate_html(title, title_max_len, repl_suffix);
+    title = html.truncate_html(title, title_max_len, repl_suffix);
     feed.title = title;
   }
 
   if (feed.description) {
     let desc = feed.description;
     desc = string.filter_control_characters(desc);
-    desc = replace_tags(desc, html_tag_replacement);
+    desc = html.replace_tags(desc, html_tag_replacement);
     desc = string.condense_whitespace(desc);
-    desc = truncate_html(desc, desc_max_len, repl_suffix);
+    desc = html.truncate_html(desc, desc_max_len, repl_suffix);
     feed.description = desc;
   }
 }

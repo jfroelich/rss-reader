@@ -1,12 +1,12 @@
 import assert from '/src/lib/assert.js';
 import {filter_empty_attrs} from '/src/lib/filters/filter-empty-attrs.js';
-import {parse_html} from '/src/lib/html/parse-html.js';
+import * as html from '/src/lib/html.js';
 import {register_test} from '/src/test/test-registry.js';
 
 async function empty_attribute_filter_test() {
   // Simple empty non-boolean attribute in body
   let input = '<html><head></head><body><a name="">test</a></body></html>';
-  let doc = parse_html(input);
+  let doc = html.parse_html(input);
   filter_empty_attrs(doc);
   console.debug('%s: input', empty_attribute_filter_test.name, input);
   let output = '<html><head></head><body><a>test</a></body></html>';
@@ -16,7 +16,7 @@ async function empty_attribute_filter_test() {
   input =
       '<html><head></head><body><a disabled="disabled">test</a></body></html>';
   console.debug('%s: input', empty_attribute_filter_test.name, input);
-  doc = parse_html(input);
+  doc = html.parse_html(input);
   filter_empty_attrs(doc);
   output =
       '<html><head></head><body><a disabled="disabled">test</a></body></html>';
@@ -26,7 +26,7 @@ async function empty_attribute_filter_test() {
   // TODO: is this right? not sure if ="" belongs
   input = '<html><head></head><body><a disabled="">test</a></body></html>';
   console.debug('%s: input', empty_attribute_filter_test.name, input);
-  doc = parse_html(input);
+  doc = html.parse_html(input);
   filter_empty_attrs(doc);
   output = '<html><head></head><body><a disabled="">test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);
@@ -34,7 +34,7 @@ async function empty_attribute_filter_test() {
   // Body element with attribute
   input = '<html><head></head><body foo="">test</body></html>';
   console.debug('%s: input', empty_attribute_filter_test.name, input);
-  doc = parse_html(input);
+  doc = html.parse_html(input);
   filter_empty_attrs(doc);
   output = '<html><head></head><body foo="">test</body></html>';
   assert(doc.documentElement.outerHTML === output);
@@ -43,7 +43,7 @@ async function empty_attribute_filter_test() {
   input =
       '<html><head></head><body><p id=""><a name="">test</a></p></body></html>';
   console.debug('%s: input', empty_attribute_filter_test.name, input);
-  doc = parse_html(input);
+  doc = html.parse_html(input);
   filter_empty_attrs(doc);
   output = '<html><head></head><body><p><a>test</a></p></body></html>';
   assert(doc.documentElement.outerHTML === output);
@@ -51,7 +51,7 @@ async function empty_attribute_filter_test() {
   // Multiple non-boolean attributes in element in body
   input = '<html><head></head><body><a id="" name="">test</a></body></html>';
   console.debug('%s: input', empty_attribute_filter_test.name, input);
-  doc = parse_html(input);
+  doc = html.parse_html(input);
   filter_empty_attrs(doc);
   output = '<html><head></head><body><a>test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);
@@ -60,7 +60,7 @@ async function empty_attribute_filter_test() {
   input =
       '<html><head></head><body><a id="" disabled="">test</a></body></html>';
   console.debug('%s: input', empty_attribute_filter_test.name, input);
-  doc = parse_html(input);
+  doc = html.parse_html(input);
   filter_empty_attrs(doc);
   output = '<html><head></head><body><a disabled="">test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);

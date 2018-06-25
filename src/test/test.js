@@ -8,7 +8,7 @@ import '/src/control/favicon/favicon-service-test.js';
 import '/src/lib/filters/boilerplate-test.js';
 import '/src/lib/filters/color-contrast-filter-test.js';
 import '/src/lib/filters/empty-attribute-filter-test.js';
-import '/src/lib/html/truncate-html-test.js';
+import '/src/lib/html-test.js';
 import '/src/lib/indexeddb-test.js';
 import '/src/lib/string-test.js';
 import '/src/lib/net/fetch-feed-test.js';

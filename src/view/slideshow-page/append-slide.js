@@ -1,7 +1,6 @@
 import * as config from '/src/config.js';
 import * as array from '/src/lib/array.js';
-import {escape_html} from '/src/lib/html/escape-html.js';
-import {truncate_html} from '/src/lib/html/truncate-html.js';
+import * as html from '/src/lib/html.js';
 import {filter_publisher} from '/src/lib/nlp.js';
 import * as Model from '/src/model.js';
 import {hide_no_articles_message} from '/src/view/slideshow-page/no-articles-message.js';
@@ -58,14 +57,14 @@ function create_article_title_element(entry) {
 
   if (entry.title) {
     let title = entry.title;
-    title = escape_html(title);
+    title = html.escape_html(title);
     title_element.setAttribute('title', title);
 
     title = filter_publisher(title);
 
     const max_length = config.read_int('entry_title_max_length');
     if (!isNaN(max_length)) {
-      title = truncate_html(title, max_length);
+      title = html.truncate_html(title, max_length);
     }
 
     // Use innerHTML to allow entities

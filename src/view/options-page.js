@@ -3,11 +3,11 @@ import * as badge from '/src/control/badge-control.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import {poll_feed} from '/src/control/poll/poll-feeds.js';
 import {subscribe} from '/src/control/subscribe.js';
-import ModelAccess from '/src/model-access.js';
 import * as array from '/src/lib/array.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
-import {truncate_html} from '/src/lib/html/truncate-html.js';
+import * as html from '/src/lib/html.js';
 import * as perm from '/src/lib/permissions.js';
+import ModelAccess from '/src/model-access.js';
 import {page_style_onchange} from '/src/view/slideshow-page/page-style-onchange.js';
 import {page_style_onload} from '/src/view/slideshow-page/page-style-onload.js';
 
@@ -185,7 +185,7 @@ function feed_list_append_feed(feed) {
 
   const title_element = document.createElement('span');
   let feed_title = feed.title || 'Untitled';
-  feed_title = truncate_html(feed_title, 300);
+  feed_title = html.truncate_html(feed_title, 300);
   title_element.textContent = feed_title;
   item_element.appendChild(title_element);
   const feed_list_element = document.getElementById('feedlist');

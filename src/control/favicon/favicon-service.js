@@ -1,5 +1,5 @@
 import assert from '/src/lib/assert.js';
-import {parse_html} from '/src/lib/html/parse-html.js';
+import * as html from '/src/lib/html.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import {fetch_html} from '/src/lib/net/fetch-html.js';
 import {fetch2} from '/src/lib/net/fetch2.js';
@@ -100,7 +100,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   if (response && response.ok) {
     const text = await response.text();
     try {
-      document = parse_html(text);
+      document = html.parse_html(text);
     } catch (error) {
       console.debug(error);
     }
