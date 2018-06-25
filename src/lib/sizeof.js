@@ -1,6 +1,6 @@
-// The `sizeof` function calculates the approximate byte size of a value. This
-// should only be used for informational purposes because it is hilariously
-// inaccurate. Adapted from http://stackoverflow.com/questions/1248302.
+// Calculates the approximate byte size of a value. This should only be used for
+// informational purposes because it is hilariously inaccurate. Adapted from
+// http://stackoverflow.com/questions/1248302.
 
 // The sizeof function generally does not work with built-ins, which are objects
 // that are a part of the basic Javascript library, like Document, or Element.
@@ -10,7 +10,9 @@
 // to benchmark whether the non-recursive implementation beats the recursive
 // implementation.
 
-export function sizeof(input_value) {
+// TODO: add 4 bytes or something for object references
+
+export default function sizeof(input_value) {
   // visited_objects is a memoization of previously visited objects. In theory a
   // repeated object just means enough bytes to store a reference value, and
   // only the first object actually allocates additional memory.

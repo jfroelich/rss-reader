@@ -1,4 +1,4 @@
-import {sizeof} from '/src/lib/sizeof.js';
+import sizeof from '/src/lib/sizeof.js';
 import * as Entry from '/src/model/entry.js';
 import assert from '/src/lib/assert.js';
 
