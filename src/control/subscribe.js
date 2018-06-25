@@ -5,7 +5,7 @@ import assert from '/src/lib/assert.js';
 import {fetch_feed} from '/src/lib/net/fetch-feed.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import * as Feed from '/src/model/feed.js';
-import * as sanity from '/src/model/sanity.js';
+import * as sanity from '/src/model-sanity.js';
 
 
 // TODO: look into using a single transaction
