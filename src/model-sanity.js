@@ -1,19 +1,18 @@
 import {replace_tags} from '/src/lib/html/replace-tags.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import * as string from '/src/lib/string.js';
-import * as Entry from '/src/model/entry.js';
-import * as Feed from '/src/model/feed.js';
+import * as Model from '/src/model.js';
 
 // TODO: finish implementation
 export function is_valid_entry(entry) {
-  if (!Entry.is_entry(entry)) {
+  if (!Model.is_entry(entry)) {
     return false;
   }
 
   // This could be called on a new entry that does not have an id, so only
   // check id validity when the property exists
   if ('id' in entry) {
-    if (!Entry.is_valid_id(entry.id)) {
+    if (!Model.is_valid_entry_id(entry.id)) {
       return false;
     }
   }
@@ -23,11 +22,11 @@ export function is_valid_entry(entry) {
 
 // TODO: finish implementation
 export function is_valid_feed(feed) {
-  if (!Feed.is_feed(feed)) {
+  if (!Model.is_feed(feed)) {
     return false;
   }
 
-  if ('id' in feed && !Feed.is_valid_id(feed.id)) {
+  if ('id' in feed && !Model.is_valid_feed_id(feed.id)) {
     return false;
   }
 
@@ -47,7 +46,7 @@ export function is_valid_feed(feed) {
 export function sanitize_entry(
     entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {
-  const blank_entry = Entry.create();
+  const blank_entry = Model.create_entry();
   const output_entry = Object.assign(blank_entry, entry);
 
   if (output_entry.author) {

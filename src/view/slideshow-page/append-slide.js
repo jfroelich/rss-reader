@@ -3,15 +3,18 @@ import * as array from '/src/lib/array.js';
 import {escape_html} from '/src/lib/html/escape-html.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
 import {filter_publisher} from '/src/lib/nlp.js';
-import * as Entry from '/src/model/entry.js';
+import * as Model from '/src/model.js';
 import {hide_no_articles_message} from '/src/view/slideshow-page/no-articles-message.js';
 import {slide_onclick} from '/src/view/slideshow-page/slide-onclick.js';
 import * as slideshow_state from '/src/view/slideshow-page/slideshow-state.js';
 
+// TODO: use assert?
+// TODO: simplify logging messages now that wrapper no longer in use
+
 let duration = 0.35;
 
 export function append_slide(entry) {
-  if (!Entry.is_entry(entry)) {
+  if (!Model.is_entry(entry)) {
     console.warn('%s: invalid entry parameter', append_slide.name, entry);
     return;
   }

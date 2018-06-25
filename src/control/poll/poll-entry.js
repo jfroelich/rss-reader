@@ -1,7 +1,6 @@
 import * as config from '/src/config.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import {sanitize_document} from '/src/control/poll/sanitize-document.js';
-import ModelAccess from '/src/model-access.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
@@ -10,8 +9,9 @@ import {fetch_html} from '/src/lib/net/fetch-html.js';
 import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
-import * as Entry from '/src/model/entry.js';
+import ModelAccess from '/src/model-access.js';
 import * as sanity from '/src/model-sanity.js';
+import * as Model from '/src/model.js';
 
 export class EntryExistsError extends Error {
   constructor(message = 'Entry already exists') {
@@ -25,7 +25,7 @@ export class EntryExistsError extends Error {
 export async function poll_entry(
     rconn, iconn, channel, entry, fetch_html_timeout, fetch_image_timeout,
     rewrite_rules) {
-  assert(Entry.is_entry(entry));
+  assert(Model.is_entry(entry));
 
   const dal = new ModelAccess();
   dal.conn = rconn;
@@ -33,7 +33,7 @@ export async function poll_entry(
 
   // Rewrite the entry's last url and append its new url if different.
   let url = new URL(array.peek(entry.urls));
-  Entry.append_url(entry, rewrite_url(url, rewrite_rules));
+  Model.append_entry_url(entry, rewrite_url(url, rewrite_rules));
 
   // Check whether the entry exists. Note we skip over checking the original
   // url and only check the rewritten url, because we always rewrite before
@@ -66,8 +66,8 @@ export async function poll_entry(
     const response_url = new URL(response.url);
     if (url_did_change(url, response_url)) {
       url_changed = true;
-      Entry.append_url(entry, response_url);
-      Entry.append_url(entry, rewrite_url(response_url, rewrite_rules));
+      Model.append_entry_url(entry, response_url);
+      Model.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
       url = new URL(array.peek(entry.urls));
       existing_entry = await dal.getEntry(get_mode, url, key_only);
       if (existing_entry) {

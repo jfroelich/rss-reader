@@ -1,8 +1,8 @@
 import {subscribe} from '/src/control/subscribe.js';
-import ModelAccess from '/src/model-access.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
-import * as Feed from '/src/model/feed.js';
+import ModelAccess from '/src/model-access.js';
+import * as Model from '/src/model.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: it is wrong to ping google, implement something that tests a local
@@ -30,8 +30,8 @@ async function subscribe_test() {
 
   // Test the subscription produced the desired result
   assert(typeof feed === 'object');
-  assert(Feed.is_feed(feed));
-  assert(Feed.is_valid_id(feed.id));
+  assert(Model.is_feed(feed));
+  assert(Model.is_valid_feed_id(feed.id));
   assert(feed.urls.length);
   assert(feed.urls.includes(url.href));
   assert(feed.active);
@@ -44,8 +44,8 @@ async function subscribe_test() {
 
   // Assert that the new feed is findable by id
   const match = await dal.getFeed('id', feed.id);
-  assert(Feed.is_feed(match));
-  assert(Feed.is_valid_id(match.id));
+  assert(Model.is_feed(match));
+  assert(Model.is_valid_feed_id(match.id));
   assert(match.id === feed.id);
 
   // Cleanup

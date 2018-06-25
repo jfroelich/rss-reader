@@ -1,8 +1,8 @@
-import ModelAccess from '/src/model-access.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
-import * as Feed from '/src/model/feed.js';
+import ModelAccess from '/src/model-access.js';
 import * as sanity from '/src/model-sanity.js';
+import * as Model from '/src/model.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // Exercises the db-write-feed function in the case of adding a new feed object
@@ -11,9 +11,9 @@ import {register_test} from '/src/test/test-registry.js';
 // output.
 async function create_feed_test() {
   // Create a dummy feed with minimal properties
-  const feed = Feed.create();
+  const feed = Model.create_feed();
   const feed_url = new URL('http://www.example.com/example.rss');
-  Feed.append_url(feed, feed_url);
+  Model.append_feed_url(feed, feed_url);
 
   // Pre-process the feed using the typical sequence of operations
   // TODO: should do tests that both involve and not involve validation and
@@ -37,7 +37,7 @@ async function create_feed_test() {
   const stored_feed_id = await dal.updateFeed(feed);
 
   assert(feed.id === stored_feed_id);
-  assert(Feed.is_valid_id(feed.id));
+  assert(Model.is_valid_feed_id(feed.id));
 
   // Make assertions about channel communications
   assert(messages.length === 1);
@@ -51,7 +51,7 @@ async function create_feed_test() {
   // Assert the feed is findable by id
   const match = await dal.getFeed('id', feed.id, false);
 
-  assert(Feed.is_feed(match));
+  assert(Model.is_feed(match));
   assert(match.active === true);
   assert('dateCreated' in match);
 

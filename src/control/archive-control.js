@@ -1,6 +1,6 @@
-import sizeof from '/src/lib/sizeof.js';
-import * as Entry from '/src/model/entry.js';
 import assert from '/src/lib/assert.js';
+import * as Model from '/src/model.js';
+import sizeof from '/src/lib/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
@@ -13,7 +13,7 @@ export async function archive_entries(dal, max_age = TWO_DAYS_MS) {
 
   await dal.iterateEntries('archive', txn_writable, cursor => {
     const entry = cursor.value;
-    assert(Entry.is_entry(entry));
+    assert(Model.is_entry(entry));
     assert(entry.dateCreated);
 
     const current_date = new Date();
@@ -41,7 +41,7 @@ function archive_entry(entry) {
     console.warn('Entry increased size', entry);
   }
 
-  ce.archiveState = Entry.STATE_ARCHIVED;
+  ce.archiveState = Model.ENTRY_STATE_ARCHIVED;
   const current_date = new Date();
   ce.dateArchived = current_date;
   ce.dateUpdated = current_date;
@@ -49,7 +49,7 @@ function archive_entry(entry) {
 }
 
 function compact_entry(entry) {
-  const ce = Entry.create();
+  const ce = Model.create_entry();
   ce.dateCreated = entry.dateCreated;
 
   if (entry.dateRead) {

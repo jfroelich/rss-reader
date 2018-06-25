@@ -1,7 +1,7 @@
-import * as Feed from '/src/model/feed.js';
 import {is_allowed_request} from '/src/lib/net/fetch-policy.js';
 import {fetch2} from '/src/lib/net/fetch2.js';
 import {parse_feed} from '/src/lib/parse-feed/parse-feed.js';
+import * as Model from '/src/model.js';
 
 // Fetches a remote feed xml file. Note that this is not a generic library, this
 // applies app-specific behavior. To get generic functionality, directly
@@ -29,10 +29,10 @@ export async function fetch_feed(
   const parsed_feed = parse_feed(res_text, skip_entries, resolve_entry_urls);
 
   // Convert the feed from the parse format to the storage format
-  const feed = Feed.create();
+  const feed = Model.create_feed();
 
   if (parsed_feed.type) {
-    Feed.set_type(feed, parsed_feed.type);
+    Model.set_feed_type(feed, parsed_feed.type);
   }
 
   if (parsed_feed.link) {
@@ -43,41 +43,41 @@ export async function fetch_feed(
     }
 
     if (link_url) {
-      Feed.set_link(feed, link_url.href);
+      Model.set_feed_link(feed, link_url.href);
     }
   }
 
   if (parsed_feed.title) {
-    Feed.set_title(feed, parsed_feed.title);
+    Model.set_feed_title(feed, parsed_feed.title);
   }
 
   if (parsed_feed.description) {
-    Feed.set_description(feed, parsed_feed.description);
+    Model.set_feed_description(feed, parsed_feed.description);
   }
 
   if (parsed_feed.date_published) {
-    Feed.set_date_published(feed, parsed_feed.date_published);
+    Model.set_feed_date_published(feed, parsed_feed.date_published);
   } else {
-    Feed.set_date_published(feed, new Date());
+    Model.set_feed_date_published(feed, new Date());
   }
 
   // Set the request url
-  Feed.append_url(feed, url);
+  Model.append_feed_url(feed, url);
 
   // Set the response url
-  Feed.append_url(feed, new URL(response.url));
+  Model.append_feed_url(feed, new URL(response.url));
 
   // Set the last modified date based on the response
   const last_modified_string = response.headers.get('Last-Modified');
   if (last_modified_string) {
     const last_modified_date = new Date(last_modified_string);
     if (!isNaN(last_modified_date.getTime())) {
-      Feed.set_date_last_modified(feed, last_modified_date);
+      Model.set_feed_date_last_modified(feed, last_modified_date);
     }
   }
 
   // Set the date the feed was fetched to now
-  Feed.set_date_fetched(feed, new Date());
+  Model.set_feed_date_fetched(feed, new Date());
 
   const output_response = {};
   output_response.feed = feed;

@@ -2,8 +2,7 @@ import * as config from '/src/config.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import * as object from '/src/lib/object.js';
-import * as Entry from '/src/model/entry.js';
-import * as Feed from '/src/model/feed.js';
+import * as Model from '/src/model.js';
 
 // Provides a data access layer for interacting with the reader database
 export default function ModelAccess() {
@@ -13,7 +12,7 @@ export default function ModelAccess() {
 
 ModelAccess.prototype.activateFeed = function(feed_id) {
   return new Promise((resolve, reject) => {
-    assert(Feed.is_valid_id(feed_id));
+    assert(Model.is_valid_feed_id(feed_id));
     const txn = this.conn.transaction('feed', 'readwrite');
     txn.oncomplete = _ => {
       this.channel.postMessage({type: 'feed-activated', id: feed_id});
@@ -25,7 +24,7 @@ ModelAccess.prototype.activateFeed = function(feed_id) {
     const request = store.get(feed_id);
     request.onsuccess = _ => {
       const feed = request.result;
-      assert(Feed.is_feed(feed));
+      assert(Model.is_feed(feed));
       assert(feed.active !== true);
       delete feed.deactivationReasonText;
       delete feed.deactivateDate;
@@ -46,7 +45,7 @@ ModelAccess.prototype.countUnreadEntries = function() {
     const txn = this.conn.transaction('entry');
     const store = txn.objectStore('entry');
     const index = store.index('readState');
-    const request = index.count(Entry.STATE_UNREAD);
+    const request = index.count(Model.ENTRY_STATE_UNREAD);
     request.onsuccess = _ => resolve(request.result);
     request.onerror = _ => reject(request.error);
   });
@@ -54,7 +53,7 @@ ModelAccess.prototype.countUnreadEntries = function() {
 
 ModelAccess.prototype.deactivateFeed = function(feed_id, reason) {
   return new Promise((resolve, reject) => {
-    assert(Feed.is_valid_id(feed_id));
+    assert(Model.is_valid_feed_id(feed_id));
     const txn = this.conn.transaction('feed', 'readwrite');
     txn.oncomplete = _ => {
       this.channel.postMessage({type: 'feed-deactivated', id: feed_id});
@@ -66,7 +65,7 @@ ModelAccess.prototype.deactivateFeed = function(feed_id, reason) {
     const request = store.get(feed_id);
     request.onsuccess = _ => {
       const feed = request.result;
-      assert(Feed.is_feed(feed));
+      assert(Model.is_feed(feed));
       assert(feed.active !== false);
       const current_date = new Date();
       feed.deactivationReasonText = reason;
@@ -80,7 +79,7 @@ ModelAccess.prototype.deactivateFeed = function(feed_id, reason) {
 
 ModelAccess.prototype.deleteEntry = function(entry_id, reason) {
   return new Promise((resolve, reject) => {
-    assert(Entry.is_valid_id(entry_id));
+    assert(Model.is_valid_entry_id(entry_id));
     const txn = this.conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
       const msg = {type: 'entry-deleted', id: entry_id, reason: reason};
@@ -94,7 +93,7 @@ ModelAccess.prototype.deleteEntry = function(entry_id, reason) {
 
 ModelAccess.prototype.deleteFeed = function(feed_id, reason) {
   return new Promise((resolve, reject) => {
-    assert(Feed.is_valid_id(feed_id));
+    assert(Model.is_valid_feed_id(feed_id));
 
     const entry_ids = [];
     const txn = this.conn.transaction(['feed', 'entry'], 'readwrite');
@@ -126,7 +125,8 @@ ModelAccess.prototype.deleteFeed = function(feed_id, reason) {
   });
 };
 
-ModelAccess.prototype.getEntries = function(mode = 'all', offset = 0, limit = 0) {
+ModelAccess.prototype.getEntries = function(
+    mode = 'all', offset = 0, limit = 0) {
   return new Promise((resolve, reject) => {
     assert(
         offset === null || offset === undefined || offset === NaN ||
@@ -146,7 +146,7 @@ ModelAccess.prototype.getEntries = function(mode = 'all', offset = 0, limit = 0)
     let request;
     if (mode === 'viewable') {
       const index = store.index('archiveState-readState');
-      const path = [Entry.STATE_UNARCHIVED, Entry.STATE_UNREAD];
+      const path = [Model.ENTRY_STATE_UNARCHIVED, Model.ENTRY_STATE_UNREAD];
       request = index.openCursor(path);
     } else if (mode === 'all') {
       request = store.openCursor();
@@ -182,7 +182,7 @@ ModelAccess.prototype.getEntries = function(mode = 'all', offset = 0, limit = 0)
 
 ModelAccess.prototype.getEntry = function(mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
-    assert(mode !== 'id' || Entry.is_valid_id(value));
+    assert(mode !== 'id' || Model.is_valid_entry_id(value));
     assert(mode !== 'id' || !key_only);
 
     const txn = this.conn.transaction('entry');
@@ -204,8 +204,8 @@ ModelAccess.prototype.getEntry = function(mode = 'id', value, key_only) {
       let entry;
       if (key_only) {
         const entry_id = request.result;
-        if (Entry.is_valid_id(entry_id)) {
-          entry = Entry.create();
+        if (Model.is_valid_entry_id(entry_id)) {
+          entry = Model.create_entry();
           entry.id = entry_id;
         }
       } else {
@@ -230,7 +230,7 @@ ModelAccess.prototype.getFeedIds = function() {
 ModelAccess.prototype.getFeed = function(mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
     assert(mode !== 'url' || (value && typeof value.href === 'string'));
-    assert(mode !== 'id' || Feed.is_valid_id(value));
+    assert(mode !== 'id' || Model.is_valid_feed_id(value));
     assert(mode !== 'id' || !key_only);
 
     const txn = this.conn.transaction('feed');
@@ -252,8 +252,8 @@ ModelAccess.prototype.getFeed = function(mode = 'id', value, key_only) {
       let feed;
       if (key_only) {
         const feed_id = request.result;
-        if (Feed.is_valid_id(feed_id)) {
-          feed = Feed.create();
+        if (Model.is_valid_feed_id(feed_id)) {
+          feed = Model.create_feed();
           feed.id = feed_id;
         }
       } else {
@@ -306,7 +306,7 @@ ModelAccess.prototype.iterateEntries = function(
     let request;
     if (mode === 'archive') {
       const index = store.index('archiveState-readState');
-      const key_path = [Entry.STATE_UNARCHIVED, Entry.STATE_READ];
+      const key_path = [Model.ENTRY_STATE_UNARCHIVED, Model.ENTRY_STATE_READ];
       request = index.openCursor(key_path);
     } else if (mode === 'all') {
       request = store.openCursor();
@@ -328,7 +328,7 @@ ModelAccess.prototype.iterateEntries = function(
 
 ModelAccess.prototype.markEntryRead = function(entry_id) {
   return new Promise((resolve, reject) => {
-    assert(Entry.is_valid_id(entry_id));
+    assert(Model.is_valid_entry_id(entry_id));
 
     const txn = this.conn.transaction('entry', 'readwrite');
     txn.onerror = _ => reject(txn.error);
@@ -341,11 +341,11 @@ ModelAccess.prototype.markEntryRead = function(entry_id) {
     const request = store.get(entry_id);
     request.onsuccess = _ => {
       const entry = request.result;
-      assert(Entry.is_entry(entry));
-      assert(entry.archiveState !== Entry.STATE_ARCHIVED);
-      assert(entry.readState !== Entry.STATE_READ);
+      assert(Model.is_entry(entry));
+      assert(entry.archiveState !== Model.ENTRY_STATE_ARCHIVED);
+      assert(entry.readState !== Model.ENTRY_STATE_READ);
 
-      entry.readState = Entry.STATE_READ;
+      entry.readState = Model.ENTRY_STATE_READ;
       const currentDate = new Date();
       entry.dateUpdated = currentDate;
       entry.dateRead = currentDate;
@@ -424,7 +424,7 @@ function add_magic_to_entries(txn) {
     if (cursor) {
       const entry = cursor.value;
       if (!('magic' in entry)) {
-        entry.magic = Entry.MAGIC;
+        entry.magic = Model.ENTRY_MAGIC;
         entry.dateUpdated = new Date();
         cursor.update(entry);
       }
@@ -442,7 +442,7 @@ function add_magic_to_feeds(txn) {
   request.onsuccess = function(event) {
     const feeds = event.target.result;
     for (const feed of feeds) {
-      feed.magic = Feed.MAGIC;
+      feed.magic = Model.FEED_MAGIC;
       feed.dateUpdated = new Date();
       store.put(feed);
     }
@@ -465,12 +465,12 @@ function add_active_field_to_feeds(store) {
 
 ModelAccess.prototype.updateEntry = function(entry) {
   return new Promise((resolve, reject) => {
-    assert(Entry.is_entry(entry));
+    assert(Model.is_entry(entry));
 
     const creating = !entry.id;
     if (creating) {
-      entry.readState = Entry.STATE_UNREAD;
-      entry.archiveState = Entry.STATE_UNARCHIVED;
+      entry.readState = Model.ENTRY_STATE_UNREAD;
+      entry.archiveState = Model.ENTRY_STATE_UNARCHIVED;
       entry.dateCreated = new Date();
       delete entry.dateUpdated;
     } else {
@@ -497,7 +497,7 @@ ModelAccess.prototype.updateEntry = function(entry) {
 
 ModelAccess.prototype.updateFeed = function(feed) {
   return new Promise((resolve, reject) => {
-    assert(Feed.is_feed(feed));
+    assert(Model.is_feed(feed));
     assert(feed.urls && feed.urls.length);
 
     object.filter_empty_properties(feed);

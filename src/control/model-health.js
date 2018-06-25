@@ -1,6 +1,5 @@
 import ModelAccess from '/src/model-access.js';
-import * as Entry from '/src/model/entry.js';
-import * as Feed from '/src/model/feed.js';
+import * as Model from '/src/model.js';
 
 // Removes entries missing urls from the database
 // TODO: test
@@ -48,12 +47,12 @@ export async function remove_orphaned_entries(conn, channel) {
     const entry = cursor.value;
 
     // If the entry object type is invalid, ignore it
-    if (!Entry.is_entry(entry)) {
+    if (!Model.is_entry(entry)) {
       return;
     }
 
     // If the entry has a valid feed id, ignore it
-    if (Feed.is_valid_id(entry.feed)) {
+    if (Model.is_valid_feed_id(entry.feed)) {
       return;
     }
 
@@ -86,7 +85,7 @@ export async function remove_untyped_objects(conn, channel) {
   const feeds = dal.getFeeds();
   const delete_feed_promises = [];
   for (const feed of feeds) {
-    if (!Feed.is_feed(feed)) {
+    if (!Model.is_feed(feed)) {
       const reason = 'untyped';
       const promise = dal.deleteFeed(feed.id, reason);
       delete_feed_promises.push(promise);
@@ -103,7 +102,7 @@ export async function remove_untyped_objects(conn, channel) {
   const txn_writable = true;
   await dal.iterateEntries('all', txn_writable, cursor => {
     const entry = cursor.value;
-    if (!Entry.is_entry(entry)) {
+    if (!Model.is_entry(entry)) {
       // Collect only necessary properties for the channel post rather than
       // keeping the full objects around in memory
       deleted_entries.push({id: entry.id, feed: entry.feed});
