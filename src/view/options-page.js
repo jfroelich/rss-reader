@@ -1,8 +1,8 @@
 import * as config from '/src/config.js';
 import * as badge from '/src/control/badge-control.js';
-import * as favicon from '/src/control/favicon/favicon.js';
-import {poll_feed} from '/src/control/poll/poll-feeds.js';
-import {subscribe} from '/src/control/subscribe.js';
+import * as favicon from '/src/action/favicon/favicon.js';
+import {poll_feed} from '/src/action/poll/poll-feeds.js';
+import {subscribe} from '/src/action/subscribe.js';
 import * as array from '/src/lib/array.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import * as html from '/src/lib/html.js';

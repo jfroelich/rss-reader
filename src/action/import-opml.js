@@ -1,4 +1,4 @@
-import {subscribe} from '/src/control/subscribe.js';
+import {subscribe} from '/src/action/subscribe.js';
 
 // Concurrently reads in the opml files and subscribes to contained feeds.
 // Returns a promise that resolves to an array of subscribe promise results.

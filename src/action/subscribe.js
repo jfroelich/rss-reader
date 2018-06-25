@@ -1,5 +1,5 @@
 import * as app from '/src/app.js';
-import * as favicon from '/src/control/favicon/favicon.js';
+import * as favicon from '/src/action/favicon/favicon.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {fetch_feed} from '/src/lib/net/fetch-feed.js';

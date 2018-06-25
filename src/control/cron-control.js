@@ -1,8 +1,8 @@
+import {archive_entries} from '/src/action/archive-entries.js';
+import * as model_health from '/src/action/model-health.js';
+import {poll_feeds} from '/src/action/poll/poll-feeds.js';
 import * as config from '/src/config.js';
-import {archive_entries} from '/src/control/archive-control.js';
-import * as favicon from '/src/control/favicon/favicon.js';
-import * as model_health from '/src/control/model-health.js';
-import {poll_feeds} from '/src/control/poll/poll-feeds.js';
+import * as favicon from '/src/action/favicon/favicon.js';
 import ModelAccess from '/src/model-access.js';
 
 // Appropriately modify alarm settings when the extension is installed or
@@ -93,6 +93,9 @@ export async function alarm_listener(alarm) {
     console.warn('Unhandled alarm', alarm.name);
   }
 }
+
+// TODO: switch to cross browser idle state query, see
+// https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/idle/queryState
 
 function query_idle_state(idle_secs) {
   return new Promise(res => chrome.idle.queryState(idle_secs, res));

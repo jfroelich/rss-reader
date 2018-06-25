@@ -1,4 +1,4 @@
-import {subscribe} from '/src/control/subscribe.js';
+import {subscribe} from '/src/action/subscribe.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import ModelAccess from '/src/model-access.js';

@@ -1,6 +1,6 @@
 import * as app from '/src/app.js';
-import {EntryExistsError, poll_entry} from '/src/control/poll/poll-entry.js';
-import {build_rewrite_rules} from '/src/control/poll/rewrite-rules.js';
+import {EntryExistsError, poll_entry} from '/src/action/poll/poll-entry.js';
+import {build_rewrite_rules} from '/src/action/poll/rewrite-rules.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {fetch_feed} from '/src/lib/net/fetch-feed.js';

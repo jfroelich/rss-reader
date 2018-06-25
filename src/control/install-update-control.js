@@ -1,5 +1,10 @@
-import * as favicon from '/src/control/favicon/favicon.js';
+import * as favicon from '/src/action/favicon/favicon.js';
 import ModelAccess from '/src/model-access.js';
+
+// TODO: deprecate, this no longer does that much and was using a weak form of
+// temporal coherency instead of functional coherency. Instead, should create or
+// use individual database controllers with separate install event listeners.
+// See https://en.wikipedia.org/wiki/Cohesion_(computer_science)
 
 export async function oninstalled(event) {
   // See https://developer.chrome.com/extensions/runtime#event-onInstalled
