@@ -65,7 +65,7 @@ function page_style_content_rule_create(sheet) {
 
   const line_height = config.read_int('body_line_height');
   if (!isNaN(line_height)) {
-    buffer.push(`line-height: ${line_height};`);
+    buffer.push(`line-height: ${line_height}px;`);
   }
 
   const column_count = config.read_int('column_count');
