@@ -6,12 +6,12 @@ import * as Entry from '/src/model/entry.js';
 import * as Feed from '/src/model/feed.js';
 
 // Provides a data access layer for interacting with the reader database
-export default function ReaderDAL() {
+export default function ModelAccess() {
   this.conn = undefined;
   this.channel = undefined;
 }
 
-ReaderDAL.prototype.activateFeed = function(feed_id) {
+ModelAccess.prototype.activateFeed = function(feed_id) {
   return new Promise((resolve, reject) => {
     assert(Feed.is_valid_id(feed_id));
     const txn = this.conn.transaction('feed', 'readwrite');
@@ -37,11 +37,11 @@ ReaderDAL.prototype.activateFeed = function(feed_id) {
 };
 
 // NOTE: only closes database, not channel
-ReaderDAL.prototype.close = function() {
+ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-ReaderDAL.prototype.countUnreadEntries = function() {
+ModelAccess.prototype.countUnreadEntries = function() {
   return new Promise((resolve, reject) => {
     const txn = this.conn.transaction('entry');
     const store = txn.objectStore('entry');
@@ -52,7 +52,7 @@ ReaderDAL.prototype.countUnreadEntries = function() {
   });
 };
 
-ReaderDAL.prototype.deactivateFeed = function(feed_id, reason) {
+ModelAccess.prototype.deactivateFeed = function(feed_id, reason) {
   return new Promise((resolve, reject) => {
     assert(Feed.is_valid_id(feed_id));
     const txn = this.conn.transaction('feed', 'readwrite');
@@ -78,7 +78,7 @@ ReaderDAL.prototype.deactivateFeed = function(feed_id, reason) {
   });
 };
 
-ReaderDAL.prototype.deleteEntry = function(entry_id, reason) {
+ModelAccess.prototype.deleteEntry = function(entry_id, reason) {
   return new Promise((resolve, reject) => {
     assert(Entry.is_valid_id(entry_id));
     const txn = this.conn.transaction('entry', 'readwrite');
@@ -92,7 +92,7 @@ ReaderDAL.prototype.deleteEntry = function(entry_id, reason) {
   });
 };
 
-ReaderDAL.prototype.deleteFeed = function(feed_id, reason) {
+ModelAccess.prototype.deleteFeed = function(feed_id, reason) {
   return new Promise((resolve, reject) => {
     assert(Feed.is_valid_id(feed_id));
 
@@ -126,7 +126,7 @@ ReaderDAL.prototype.deleteFeed = function(feed_id, reason) {
   });
 };
 
-ReaderDAL.prototype.getEntries = function(mode = 'all', offset = 0, limit = 0) {
+ModelAccess.prototype.getEntries = function(mode = 'all', offset = 0, limit = 0) {
   return new Promise((resolve, reject) => {
     assert(
         offset === null || offset === undefined || offset === NaN ||
@@ -180,7 +180,7 @@ ReaderDAL.prototype.getEntries = function(mode = 'all', offset = 0, limit = 0) {
   });
 };
 
-ReaderDAL.prototype.getEntry = function(mode = 'id', value, key_only) {
+ModelAccess.prototype.getEntry = function(mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
     assert(mode !== 'id' || Entry.is_valid_id(value));
     assert(mode !== 'id' || !key_only);
@@ -217,7 +217,7 @@ ReaderDAL.prototype.getEntry = function(mode = 'id', value, key_only) {
   });
 };
 
-ReaderDAL.prototype.getFeedIds = function() {
+ModelAccess.prototype.getFeedIds = function() {
   return new Promise((resolve, reject) => {
     const txn = this.conn.transaction('feed');
     txn.onerror = _ => reject(txn.error);
@@ -227,7 +227,7 @@ ReaderDAL.prototype.getFeedIds = function() {
   });
 };
 
-ReaderDAL.prototype.getFeed = function(mode = 'id', value, key_only) {
+ModelAccess.prototype.getFeed = function(mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
     assert(mode !== 'url' || (value && typeof value.href === 'string'));
     assert(mode !== 'id' || Feed.is_valid_id(value));
@@ -265,7 +265,7 @@ ReaderDAL.prototype.getFeed = function(mode = 'id', value, key_only) {
   });
 };
 
-ReaderDAL.prototype.getFeeds = function(mode = 'all', sort = false) {
+ModelAccess.prototype.getFeeds = function(mode = 'all', sort = false) {
   return new Promise((resolve, reject) => {
     const txn = this.conn.transaction('feed');
     const store = txn.objectStore('feed');
@@ -292,7 +292,7 @@ function compare_feeds(a, b) {
   return indexedDB.cmp(s1, s2);
 }
 
-ReaderDAL.prototype.iterateEntries = function(
+ModelAccess.prototype.iterateEntries = function(
     mode = 'all', writable, handle_entry) {
   return new Promise((resolve, reject) => {
     assert(typeof handle_entry === 'function');
@@ -326,7 +326,7 @@ ReaderDAL.prototype.iterateEntries = function(
   });
 };
 
-ReaderDAL.prototype.markEntryRead = function(entry_id) {
+ModelAccess.prototype.markEntryRead = function(entry_id) {
   return new Promise((resolve, reject) => {
     assert(Entry.is_valid_id(entry_id));
 
@@ -355,7 +355,7 @@ ReaderDAL.prototype.markEntryRead = function(entry_id) {
   });
 };
 
-ReaderDAL.prototype.connect =
+ModelAccess.prototype.connect =
     async function(name = 'reader', version = 24, timeout = 500) {
   this.conn = await indexeddb.open(name, version, on_upgrade_needed, timeout);
 };
@@ -463,7 +463,7 @@ function add_active_field_to_feeds(store) {
   };
 }
 
-ReaderDAL.prototype.updateEntry = function(entry) {
+ModelAccess.prototype.updateEntry = function(entry) {
   return new Promise((resolve, reject) => {
     assert(Entry.is_entry(entry));
 
@@ -495,7 +495,7 @@ ReaderDAL.prototype.updateEntry = function(entry) {
   });
 };
 
-ReaderDAL.prototype.updateFeed = function(feed) {
+ModelAccess.prototype.updateFeed = function(feed) {
   return new Promise((resolve, reject) => {
     assert(Feed.is_feed(feed));
     assert(feed.urls && feed.urls.length);

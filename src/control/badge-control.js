@@ -1,4 +1,4 @@
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import ExtensionLock from '/src/lib/extension-lock.js';
 
 export function install_listener(event) {
@@ -24,7 +24,7 @@ export async function refresh(lock_value) {
   if (!lock.isLocked()) {
     lock.acquire(/* unlock_deadline */ 5000);
 
-    const dal = new ReaderDAL();
+    const dal = new ModelAccess();
     await dal.connect();
     const count = await dal.countUnreadEntries();
     dal.close();

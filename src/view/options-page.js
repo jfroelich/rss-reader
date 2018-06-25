@@ -3,7 +3,7 @@ import * as badge from '/src/control/badge-control.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import {poll_feed} from '/src/control/poll/poll-feeds.js';
 import {subscribe} from '/src/control/subscribe.js';
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import * as array from '/src/lib/array.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
@@ -216,7 +216,7 @@ async function feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   await dal.connect();
   const feed = await dal.getFeed('id', feed_id);
   dal.close();
@@ -294,7 +294,7 @@ async function subscribe_form_onsubmit(event) {
   // TODO: subscribe can now throw an error, this should catch the error and
   // show a nice error message or something instead of panic
   // TODO: move this to a helper
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   const conn_promises = Promise.all([dal.connect(), favicon.open()]);
   const [_, iconn] = await conn_promises;
   dal.channel = new BroadcastChannel('reader');
@@ -314,7 +314,7 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   const conn_promises = Promise.all([dal.connect(), favicon.open()]);
   const [_, iconn] = await conn_promises;
   const channel = new BroadcastChannel('reader');
@@ -328,7 +328,7 @@ async function after_subscribe_poll_feed_async(feed) {
 }
 
 async function feed_list_init() {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   await dal.connect();
   const get_mode = 'all', get_sorted = true;
   const feeds = await dal.getFeeds(get_mode, get_sorted);
@@ -377,7 +377,7 @@ function feed_list_remove_feed_by_id(feed_id) {
 
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   dal.channel = new BroadcastChannel('reader');
   await dal.connect();
   await dal.deleteFeed(feed_id, 'unsubscribe');
@@ -389,7 +389,7 @@ async function unsubscribe_button_onclick(event) {
 
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   dal.channel = new BroadcastChannel('reader');
   await dal.connect();
   await dal.activateFeed(feed_id);
@@ -411,7 +411,7 @@ async function activate_feed_button_onclick(event) {
 
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   dal.channel = new BroadcastChannel('reader');
   await dal.connect();
   const reason = 'manual';

@@ -1,4 +1,4 @@
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 
 // Starts transitioning a slide into the read state. Updates both the view and
 // the database. This resolves before the view is fully updated. This only sets
@@ -32,7 +32,7 @@ export async function mark_slide_read_start(conn, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   dal.conn = conn;
   dal.channel = new BroadcastChannel('reader');
   await dal.markEntryRead(entry_id);

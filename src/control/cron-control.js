@@ -3,7 +3,7 @@ import {archive_entries} from '/src/control/archive-control.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import * as model_health from '/src/control/model-health.js';
 import {poll_feeds} from '/src/control/poll/poll-feeds.js';
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 
 // Appropriately modify alarm settings when the extension is installed or
 // updated
@@ -24,7 +24,7 @@ export async function alarm_listener(alarm) {
   config.write_string('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
-    const dal = new ReaderDAL();
+    const dal = new ModelAccess();
     dal.channel = new BroadcastChannel('reader');
     await dal.connect();
     await archive_entries(dal);
@@ -43,7 +43,7 @@ export async function alarm_listener(alarm) {
     const options = {};
     options.ignore_recency_check = false;
     options.notify = true;
-    const dal = new ReaderDAL();
+    const dal = new ModelAccess();
     await dal.connect();
     const iconn = await favicon.open();
     const channel = new BroadcastChannel('reader');
@@ -52,28 +52,28 @@ export async function alarm_listener(alarm) {
     iconn.close();
     dal.close();
   } else if (alarm.name === 'remove-entries-missing-urls') {
-    const dal = new ReaderDAL();
+    const dal = new ModelAccess();
     await dal.connect();
     dal.channel = new BroadcastChannel('reader');
     await model_health.remove_lost_entries(dal);
     dal.close();
     dal.channel.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
-    const dal = new ReaderDAL();
+    const dal = new ModelAccess();
     await dal.connect();
     const channel = new BroadcastChannel('reader');
     await model_health.remove_orphaned_entries(dal.conn, channel);
     dal.close();
     channel.close();
   } else if (alarm.name === 'remove-untyped-objects') {
-    const dal = new ReaderDAL();
+    const dal = new ModelAccess();
     await dal.connect();
     const channel = new BroadcastChannel('reader');
     await model_health.remove_untyped_objects(dal.conn, channel);
     dal.close();
     channel.close();
   } else if (alarm.name === 'refresh-feed-icons') {
-    const dal = new ReaderDAL();
+    const dal = new ModelAccess();
     const proms = [dal.connect(), favicon.open()];
     const [_, iconn] = await Promise.all(proms);
     const channel = new BroadcastChannel('reader');

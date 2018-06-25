@@ -1,7 +1,7 @@
 import * as app from '/src/app.js';
 import {EntryExistsError, poll_entry} from '/src/control/poll/poll-entry.js';
 import {build_rewrite_rules} from '/src/control/poll/rewrite-rules.js';
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {fetch_feed} from '/src/lib/net/fetch-feed.js';
@@ -30,7 +30,7 @@ const default_options = {
 // Checks for new content
 export async function poll_feeds(
     rconn, iconn, channel = chan_stub, options = {}) {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   dal.conn = rconn;
   dal.channel = channel;
 
@@ -114,7 +114,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   assert(sanity.is_valid_feed(merged_feed));
   sanity.sanitize_feed(merged_feed);
 
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   dal.conn = rconn;
   dal.channel = channel;
   await dal.updateFeed(merged_feed);
@@ -234,7 +234,7 @@ async function handle_fetch_error(
     feed.deactivationDate = new Date();
   }
 
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   dal.conn = rconn;
   dal.channel = channel;
   // No need to validate/sanitize, we've had control for the entire lifetime

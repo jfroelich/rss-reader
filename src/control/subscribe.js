@@ -13,7 +13,7 @@ import * as sanity from '/src/model/sanity.js';
 // delete-feed
 
 // Subscribe to a feed
-// @param dal {ReaderDAL} an open ReaderDAL instance
+// @param dal {ModelAccess} an open ModelAccess instance
 // @param iconn {IDBDatabase} an open icon database connection
 // @param url {URL} the url to subscribe
 // @param should_notify {Boolean} whether to send a notification

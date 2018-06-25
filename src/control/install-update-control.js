@@ -1,5 +1,5 @@
 import * as favicon from '/src/control/favicon/favicon.js';
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 
 export async function oninstalled(event) {
   // See https://developer.chrome.com/extensions/runtime#event-onInstalled
@@ -12,7 +12,7 @@ export async function oninstalled(event) {
 
   if (reason === 'install') {
     // Explicitly create the reader database
-    const dal = new ReaderDAL();
+    const dal = new ModelAccess();
     await dal.connect();
     dal.close();
 

@@ -1,4 +1,4 @@
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import * as Feed from '/src/model/feed.js';
@@ -23,7 +23,7 @@ async function create_feed_test() {
   assert(sanity.is_valid_feed(feed));
   sanity.sanitize_feed(feed);
 
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   await dal.connect('write-new-feed-test');
 
   // Mock a broadcast channel along with a way to monitor messages

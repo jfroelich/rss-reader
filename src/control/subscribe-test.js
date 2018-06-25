@@ -1,5 +1,5 @@
 import {subscribe} from '/src/control/subscribe.js';
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import * as Feed from '/src/model/feed.js';
@@ -12,7 +12,7 @@ async function subscribe_test() {
   const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
   const url = new URL(test_url);
 
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   await dal.connect('subscribe-test');
 
   let message_post_count = 0;

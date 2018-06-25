@@ -2,7 +2,7 @@ import {archive_entries} from '/src/control/archive-control.js';
 import * as cron_control from '/src/control/cron-control.js';
 import * as model_health from '/src/control/model-health.js';
 import {subscribe} from '/src/control/subscribe.js';
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import {poll_feed, poll_feeds} from '/src/control/poll/poll-feeds.js';
 
@@ -25,7 +25,7 @@ import {poll_feed, poll_feeds} from '/src/control/poll/poll-feeds.js';
 // article: http://read.humanjavascript.com/ch04-organizing-your-code.html
 
 async function cli_subscribe(url_string, poll = true) {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   const proms = [dal.connect(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
 
@@ -47,7 +47,7 @@ async function cli_subscribe(url_string, poll = true) {
 }
 
 async function cli_archive_entries() {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   dal.channel = new BroadcastChannel('reader');
   await dal.connect();
   await archive_entries(dal);
@@ -56,7 +56,7 @@ async function cli_archive_entries() {
 }
 
 async function cli_refresh_icons() {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   const proms = [dal.connect(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel('reader');
@@ -67,7 +67,7 @@ async function cli_refresh_icons() {
 }
 
 async function cli_poll_feeds() {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   const proms = [dal.connect(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel('reader');
@@ -79,7 +79,7 @@ async function cli_poll_feeds() {
 }
 
 async function cli_remove_lost_entries() {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   await dal.connect();
   dal.channel = new MonitoredBroadcastChannel('reader');
   await model_health.remove_lost_entries(dal);
@@ -89,7 +89,7 @@ async function cli_remove_lost_entries() {
 }
 
 async function cli_remove_orphans() {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   await dal.connect();
   const channel = new MonitoredBroadcastChannel('reader');
   await model_health.remove_orphaned_entries(dal.conn, channel);

@@ -1,7 +1,7 @@
 import * as config from '/src/config.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import {import_opml} from '/src/control/import-opml-control.js';
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import * as array from '/src/lib/array.js';
 import {create_opml_document} from '/src/lib/opml-document.js';
 import {page_style_onchange} from '/src/view/slideshow-page/page-style-onchange.js';
@@ -18,7 +18,7 @@ function import_opml_button_onclick(event) {
 async function uploader_input_onchange(event) {
   // TEMP: monitoring recent changes
   console.debug('Received input change event');
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   const promises = [dal.connect(), favicon.open()];
   const [_, iconn] = await Promise.all(promises);
   dal.channel = new BroadcastChannel('reader');
@@ -32,7 +32,7 @@ async function uploader_input_onchange(event) {
 }
 
 async function export_button_onclick(event) {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   await dal.connect();
   const get_mode = 'all';
   const sort_feeds = false;

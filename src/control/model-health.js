@@ -1,4 +1,4 @@
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import * as Entry from '/src/model/entry.js';
 import * as Feed from '/src/model/feed.js';
 
@@ -23,7 +23,7 @@ export async function remove_lost_entries(dal) {
 // Scans the database for entries not linked to a feed and deletes them
 // TODO: test
 export async function remove_orphaned_entries(conn, channel) {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   dal.conn = conn;
   dal.channel = channel;
 
@@ -79,7 +79,7 @@ export async function remove_orphaned_entries(conn, channel) {
 // that a later failure does not indicate an earlier step failed.
 // TODO: use a single transaction
 export async function remove_untyped_objects(conn, channel) {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   dal.conn = conn;
   dal.channel = channel;
 

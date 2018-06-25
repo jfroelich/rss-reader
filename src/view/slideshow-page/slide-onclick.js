@@ -1,4 +1,4 @@
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import {mark_slide_read_start} from '/src/view/slideshow-page/mark-slide-read.js';
 import {get_current_slide} from '/src/view/slideshow-page/slideshow-state.js';
 
@@ -35,7 +35,7 @@ export async function slide_onclick(event) {
   // the checks within mark_slide_read_start, it avoids opening the connection.
   if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
       !slide.hasAttribute('read-pending')) {
-    const dal = new ReaderDAL();
+    const dal = new ModelAccess();
     await dal.connect();
     await mark_slide_read_start(dal.conn, slide);
     dal.close();

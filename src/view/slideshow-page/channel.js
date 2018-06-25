@@ -1,5 +1,5 @@
 import * as badge from '/src/control/badge-control.js';
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/view/slideshow-page/count-unread-slides.js';
 import {mark_slide_read_end} from '/src/view/slideshow-page/mark-slide-read.js';
@@ -91,7 +91,7 @@ async function onmessage(event) {
     // logic.
 
     let limit = undefined;
-    const dal = new ReaderDAL();
+    const dal = new ModelAccess();
     await dal.connect();
     const entries = await dal.getEntries('viewable', unread_count, limit);
     dal.close();

@@ -1,4 +1,4 @@
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import {FaviconService} from '/src/control/favicon/favicon-service.js';
 import * as array from '/src/lib/array.js';
 
@@ -52,7 +52,7 @@ export function create_lookup_url(feed) {
 
 // Update the favicon of each of the feeds in the database
 export async function refresh_feeds(rconn, iconn, channel) {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   dal.conn = rconn;
   dal.channel = channel;
 
@@ -88,7 +88,7 @@ async function refresh_feed(rconn, iconn, channel, feed) {
       delete feed.faviconURLString;
     }
 
-    const dal = new ReaderDAL();
+    const dal = new ModelAccess();
     dal.conn = rconn;
     dal.channel = channel;
     await dal.updateFeed(feed);

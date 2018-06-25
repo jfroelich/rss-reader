@@ -1,7 +1,7 @@
 import '/src/view/slideshow-page/main-menu.js';
 import '/src/view/slideshow-page/left-panel.js';
 
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import * as channel from '/src/view/slideshow-page/channel.js';
 import {feeds_container_append_feed} from '/src/view/slideshow-page/feeds-container.js';
@@ -21,7 +21,7 @@ async function load_view() {
   show_splash();
   page_style_onload();
 
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
 
   const offset = 0, limit = 6;
   const conn = await dal.connect();

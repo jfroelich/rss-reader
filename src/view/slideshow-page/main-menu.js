@@ -1,4 +1,4 @@
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import {poll_feeds} from '/src/control/poll/poll-feeds.js';
 import {options_menu_hide, options_menu_show} from '/src/view/slideshow-page/left-panel.js';
@@ -15,7 +15,7 @@ async function refresh_button_onclick(event) {
 
   refresh_in_progress = true;
 
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   dal.channel = new BroadcastChannel('reader');
 
   await dal.connect();

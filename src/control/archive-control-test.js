@@ -1,5 +1,5 @@
 import {archive_entries} from '/src/control/archive-control.js';
-import ReaderDAL from '/src/dal.js';
+import ModelAccess from '/src/model-access.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import {register_test} from '/src/test/test-registry.js';
@@ -10,7 +10,7 @@ import {register_test} from '/src/test/test-registry.js';
 // archived, and that messages were posted
 
 async function archive_entries_test() {
-  const dal = new ReaderDAL();
+  const dal = new ModelAccess();
   await dal.connect('archive-entries-test');
   dal.channel = {name: 'stub', postMessage: noop, close: noop};
   await archive_entries(dal);
