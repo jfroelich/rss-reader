@@ -1,4 +1,4 @@
-import {ReaderDAL} from '/src/dal.js';
+import ReaderDAL from '/src/dal.js';
 import ExtensionLock from '/src/lib/extension-lock.js';
 
 export function install_listener(event) {

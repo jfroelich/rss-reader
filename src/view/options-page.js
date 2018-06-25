@@ -1,7 +1,7 @@
 import * as config_control from '/src/config.js';
 import * as badge from '/src/control/badge-control.js';
 import {subscribe} from '/src/control/subscribe.js';
-import {ReaderDAL} from '/src/dal.js';
+import ReaderDAL from '/src/dal.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';

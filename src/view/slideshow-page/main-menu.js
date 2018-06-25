@@ -1,4 +1,4 @@
-import {ReaderDAL} from '/src/dal.js';
+import ReaderDAL from '/src/dal.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import {poll_feeds} from '/src/control/poll/poll-feeds.js';
 import {options_menu_hide, options_menu_show} from '/src/view/slideshow-page/left-panel.js';

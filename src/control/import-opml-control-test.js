@@ -1,7 +1,7 @@
 import {import_opml} from '/src/control/import-opml-control.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
-import {ReaderDAL} from '/src/open-db.js';
+import ReaderDAL from '/src/open-db.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: finish implementation. at the moment this basically just tests if this

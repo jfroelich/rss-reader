@@ -1,6 +1,6 @@
 import {archive_entries} from '/src/control/archive-control.js';
 import * as feed_entry_control from '/src/control/feed-entry-control.js';
-import {ReaderDAL} from '/src/dal.js';
+import ReaderDAL from '/src/dal.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import {poll_feeds} from '/src/control/poll/poll-feeds.js';
 

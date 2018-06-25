@@ -1,4 +1,4 @@
-import {ReaderDAL} from '/src/dal.js';
+import ReaderDAL from '/src/dal.js';
 import {FaviconService} from '/src/control/favicon/favicon-service.js';
 import * as array from '/src/lib/array.js';
 

@@ -6,7 +6,7 @@ import * as Entry from '/src/model/entry.js';
 import * as Feed from '/src/model/feed.js';
 
 // Provides a data access layer for interacting with the reader database
-export function ReaderDAL() {
+export default function ReaderDAL() {
   this.conn = undefined;
   this.channel = undefined;
 }

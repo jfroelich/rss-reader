@@ -1,4 +1,4 @@
-import {ReaderDAL} from '/src/dal.js';
+import ReaderDAL from '/src/dal.js';
 import * as Entry from '/src/model/entry.js';
 import * as Feed from '/src/model/feed.js';
 

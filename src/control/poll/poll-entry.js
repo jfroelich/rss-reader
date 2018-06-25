@@ -1,7 +1,7 @@
 import * as config from '/src/config.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import {sanitize_document} from '/src/control/poll/sanitize-document.js';
-import {ReaderDAL} from '/src/dal.js';
+import ReaderDAL from '/src/dal.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';

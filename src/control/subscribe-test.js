@@ -1,5 +1,5 @@
 import {subscribe} from '/src/control/subscribe.js';
-import {ReaderDAL} from '/src/dal.js';
+import ReaderDAL from '/src/dal.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import * as Feed from '/src/model/feed.js';

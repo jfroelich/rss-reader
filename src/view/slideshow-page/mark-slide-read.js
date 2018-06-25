@@ -1,4 +1,4 @@
-import {ReaderDAL} from '/src/dal.js';
+import ReaderDAL from '/src/dal.js';
 
 // Starts transitioning a slide into the read state. Updates both the view and
 // the database. This resolves before the view is fully updated. This only sets

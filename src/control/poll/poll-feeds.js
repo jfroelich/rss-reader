@@ -1,6 +1,6 @@
 import * as app from '/src/app.js';
 import assert from '/src/lib/assert.js';
-import {ReaderDAL} from '/src/dal.js';
+import ReaderDAL from '/src/dal.js';
 import * as array from '/src/lib/array.js';
 import * as Entry from '/src/model/entry.js';
 import * as Feed from '/src/model/feed.js';
