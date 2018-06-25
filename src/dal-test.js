@@ -1,6 +1,6 @@
-import {assert} from '/src/assert.js';
 import {ReaderDAL} from '/src/dal.js';
-import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
+import assert from '/src/lib/assert.js';
+import * as indexeddb from '/src/lib/indexeddb.js';
 import * as Feed from '/src/model/feed.js';
 import {is_valid_feed, sanitize_feed} from '/src/model/sanity.js';
 import {register_test} from '/src/test/test-registry.js';
@@ -62,7 +62,7 @@ async function create_feed_test() {
   // Teardown the test
   channel.close();
   dal.close();
-  await indexeddb_remove(dal.conn.name);
+  await indexeddb.remove(dal.conn.name);
 }
 
 register_test(create_feed_test);

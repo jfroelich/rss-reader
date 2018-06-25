@@ -1,11 +1,11 @@
 import * as app from '/src/app.js';
-import {assert} from '/src/assert.js';
-import * as favicon from '/src/favicon/favicon.js';
-import * as array from '/src/lang/array.js';
+import assert from '/src/lib/assert.js';
+import * as favicon from '/src/control/favicon/favicon.js';
+import * as array from '/src/lib/array.js';
 import * as Feed from '/src/model/feed.js';
 import {is_valid_feed, sanitize_feed} from '/src/model/sanity.js';
-import {fetch_feed} from '/src/net/fetch-feed.js';
-import {url_did_change} from '/src/net/url-did-change.js';
+import {fetch_feed} from '/src/lib/net/fetch-feed.js';
+import {url_did_change} from '/src/lib/net/url-did-change.js';
 
 // TODO: look into using a single transaction
 // TODO: implement unsubscribe wrapper and avoid view directly calling

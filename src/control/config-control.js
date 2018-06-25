@@ -1,4 +1,4 @@
-import * as color from '/src/argb8888.js';
+import * as color from '/src/lib/color.js';
 import * as config from '/src/config.js';
 
 // TODO: after some reflection, I no longer think database constants should be

@@ -1,7 +1,7 @@
-import {assert} from '/src/assert.js';
 import {archive_entries} from '/src/control/archive-control.js';
 import {ReaderDAL} from '/src/dal.js';
-import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
+import assert from '/src/lib/assert.js';
+import * as indexeddb from '/src/lib/indexeddb.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: actually assert something, what am I trying to test other than 'does it
@@ -16,7 +16,7 @@ async function archive_entries_test() {
   await archive_entries(dal);
   dal.close();
   dal.channel.close();
-  await indexeddb_remove(dal.conn.name);
+  await indexeddb.remove(dal.conn.name);
 }
 
 function noop() {}

@@ -1,7 +1,7 @@
-import {assert} from '/src/assert.js';
 import {subscribe} from '/src/control/subscribe.js';
 import {ReaderDAL} from '/src/dal.js';
-import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
+import assert from '/src/lib/assert.js';
+import * as indexeddb from '/src/lib/indexeddb.js';
 import * as Feed from '/src/model/feed.js';
 import {register_test} from '/src/test/test-registry.js';
 
@@ -51,7 +51,7 @@ async function subscribe_test() {
   // Cleanup
   dal.close();
   dal.channel.close();
-  await indexeddb_remove(dal.conn.name);
+  await indexeddb.remove(dal.conn.name);
 }
 
 function noop() {}

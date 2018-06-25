@@ -1,6 +1,6 @@
-import {sizeof} from '/src/lang/sizeof.js';
+import {sizeof} from '/src/lib/sizeof.js';
 import * as Entry from '/src/model/entry.js';
-import {assert} from '/src/assert.js';
+import assert from '/src/lib/assert.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 

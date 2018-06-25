@@ -1,9 +1,9 @@
 import * as config_control from '/src/config.js';
-import {escape_html} from '/src/html/escape-html.js';
-import {truncate_html} from '/src/html/truncate-html.js';
-import * as array from '/src/lang/array.js';
+import {escape_html} from '/src/lib/html/escape-html.js';
+import {truncate_html} from '/src/lib/html/truncate-html.js';
+import * as array from '/src/lib/array.js';
+import {filter_publisher} from '/src/lib/nlp.js';
 import * as Entry from '/src/model/entry.js';
-import {filter_publisher} from '/src/nlp/nlp.js';
 import {hide_no_articles_message} from '/src/view/slideshow-page/no-articles-message.js';
 import {slide_onclick} from '/src/view/slideshow-page/slide-onclick.js';
 import * as slideshow_state from '/src/view/slideshow-page/slideshow-state.js';

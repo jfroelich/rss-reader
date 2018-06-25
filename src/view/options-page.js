@@ -1,13 +1,13 @@
-import * as badge from '/src/control/badge-control.js';
 import * as config_control from '/src/config.js';
+import * as badge from '/src/control/badge-control.js';
 import {subscribe} from '/src/control/subscribe.js';
 import {ReaderDAL} from '/src/dal.js';
-import {fade_element} from '/src/dom/fade-element.js';
-import * as favicon from '/src/favicon/favicon.js';
-import {truncate_html} from '/src/html/truncate-html.js';
-import * as array from '/src/lang/array.js';
-import * as perm from '/src/permissions.js';
-import {poll_feed} from '/src/poll/poll-feeds.js';
+import {fade_element} from '/src/lib/dom/fade-element.js';
+import * as favicon from '/src/control/favicon/favicon.js';
+import {truncate_html} from '/src/lib/html/truncate-html.js';
+import * as array from '/src/lib/array.js';
+import * as perm from '/src/lib/permissions.js';
+import {poll_feed} from '/src/control/poll/poll-feeds.js';
 import {page_style_onchange} from '/src/view/slideshow-page/page-style-onchange.js';
 import {page_style_onload} from '/src/view/slideshow-page/page-style-onload.js';
 

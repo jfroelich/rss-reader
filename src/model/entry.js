@@ -1,4 +1,4 @@
-import {assert} from '/src/assert.js';
+import assert from '/src/lib/assert.js';
 
 // TODO: for model modules, these are meant to be object-like APIs, so consider
 // camel case

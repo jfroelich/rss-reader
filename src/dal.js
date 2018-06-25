@@ -1,10 +1,11 @@
-import {assert} from '/src/assert.js';
 import * as config_control from '/src/config.js';
-import {indexeddb_open} from '/src/indexeddb/indexeddb-open.js';
-import {filter_empty_properties} from '/src/lang/filter-empty-properties.js';
+import assert from '/src/lib/assert.js';
+import * as indexeddb from '/src/lib/indexeddb.js';
+import * as object from '/src/lib/object.js';
 import * as Entry from '/src/model/entry.js';
 import * as Feed from '/src/model/feed.js';
 
+// Provides a data access layer for interacting with the reader database
 export function ReaderDAL() {
   this.conn = undefined;
   this.channel = undefined;
@@ -367,7 +368,7 @@ ReaderDAL.prototype.openDB = function(name, version, timeout) {
   version = isNaN(version) ? config_control.read_int('db_version') : version;
   timeout =
       isNaN(timeout) ? config_control.read_int('db_open_timeout') : timeout;
-  return indexeddb_open(name, version, on_upgrade_needed, timeout);
+  return indexeddb.open(name, version, on_upgrade_needed, timeout);
 };
 
 function on_upgrade_needed(event) {
@@ -487,7 +488,7 @@ ReaderDAL.prototype.updateEntry = function(entry) {
       entry.dateUpdated = new Date();
     }
 
-    filter_empty_properties(entry);
+    object.filter_empty_properties(entry);
 
     const txn = this.conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
@@ -510,7 +511,7 @@ ReaderDAL.prototype.updateFeed = function(feed) {
     assert(Feed.is_feed(feed));
     assert(feed.urls && feed.urls.length);
 
-    filter_empty_properties(feed);
+    object.filter_empty_properties(feed);
 
     const is_create = !feed.id;
     if (is_create) {

@@ -1,9 +1,9 @@
 import * as config_control from '/src/config.js';
 import {import_opml} from '/src/control/import-opml-control.js';
 import {ReaderDAL} from '/src/dal.js';
-import * as favicon from '/src/favicon/favicon.js';
-import * as array from '/src/lang/array.js';
-import {create_opml_document} from '/src/opml-document.js';
+import * as favicon from '/src/control/favicon/favicon.js';
+import * as array from '/src/lib/array.js';
+import {create_opml_document} from '/src/lib/opml-document.js';
 import {page_style_onchange} from '/src/view/slideshow-page/page-style-onchange.js';
 
 function import_opml_button_onclick(event) {

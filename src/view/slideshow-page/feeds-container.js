@@ -1,4 +1,4 @@
-import * as array from '/src/lang/array.js';
+import * as array from '/src/lib/array.js';
 
 export function feeds_container_append_feed(feed) {
   const feeds_container = document.getElementById('feeds-container');

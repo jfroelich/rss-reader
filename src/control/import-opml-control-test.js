@@ -1,6 +1,6 @@
-import {assert} from '/src/assert.js';
 import {import_opml} from '/src/control/import-opml-control.js';
-import {indexeddb_remove} from '/src/indexeddb/indexeddb-remove.js';
+import assert from '/src/lib/assert.js';
+import * as indexeddb from '/src/lib/indexeddb.js';
 import {ReaderDAL} from '/src/open-db.js';
 import {register_test} from '/src/test/test-registry.js';
 
@@ -55,7 +55,7 @@ async function import_opml_test() {
   dal.close();
   dal.channel.close();
 
-  await indexeddb_remove(dal.conn.name);
+  await indexeddb.remove(dal.conn.name);
 }
 
 register_test(import_opml_test);

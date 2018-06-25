@@ -1,6 +1,6 @@
 import * as cron_control from '/src/control/cron-control.js';
 import {ReaderDAL} from '/src/dal.js';
-import * as favicon from '/src/favicon/favicon.js';
+import * as favicon from '/src/control/favicon/favicon.js';
 
 export async function oninstalled(event) {
   // See https://developer.chrome.com/extensions/runtime#event-onInstalled

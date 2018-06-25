@@ -3,8 +3,8 @@ import * as cron_control from '/src/control/cron-control.js';
 import * as feed_entry_control from '/src/control/feed-entry-control.js';
 import {subscribe} from '/src/control/subscribe.js';
 import {ReaderDAL} from '/src/dal.js';
-import * as favicon from '/src/favicon/favicon.js';
-import {poll_feed, poll_feeds} from '/src/poll/poll-feeds.js';
+import * as favicon from '/src/control/favicon/favicon.js';
+import {poll_feed, poll_feeds} from '/src/control/poll/poll-feeds.js';
 
 // The command-line-interface (CLI) module creates a cli object within the
 // global window object in order to make certain app functionality accessible

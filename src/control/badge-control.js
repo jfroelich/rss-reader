@@ -1,5 +1,5 @@
 import {ReaderDAL} from '/src/dal.js';
-import ExtensionLock from '/src/extension-lock.js';
+import ExtensionLock from '/src/lib/extension-lock.js';
 
 export function install_listener(event) {
   console.debug('Install listener received event, refreshing badge');
