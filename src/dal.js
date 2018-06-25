@@ -355,19 +355,9 @@ ReaderDAL.prototype.markEntryRead = function(entry_id) {
   });
 };
 
-ReaderDAL.prototype.connect = async function(name, version, timeout) {
-  this.conn = await this.openDB(name, version, timeout);
-};
-
-// TODO: cannot rely on config-control, that is wrong direction of layer dep
-ReaderDAL.prototype.openDB = function(name, version, timeout) {
-  // Default to config values. These are not fully hardcoded so that the
-  // function can still be easily overloaded in order to reuse the
-  // on_upgrade_needed handler with a different database name and version.
-  name = typeof name === 'string' ? name : localStorage.db_name;
-  version = isNaN(version) ? config.read_int('db_version') : version;
-  timeout = isNaN(timeout) ? config.read_int('db_open_timeout') : timeout;
-  return indexeddb.open(name, version, on_upgrade_needed, timeout);
+ReaderDAL.prototype.connect =
+    async function(name = 'reader', version = 24, timeout = 500) {
+  this.conn = await indexeddb.open(name, version, on_upgrade_needed, timeout);
 };
 
 function on_upgrade_needed(event) {

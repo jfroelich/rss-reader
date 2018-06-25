@@ -16,10 +16,8 @@ import {register_test} from '/src/test/test-registry.js';
 
 async function indexeddb_test() {
   /*
-  const db_name = 'idb-test-foo';
-  const version = 1;
   let conn, timeout, upgrade_listener;
-  conn = await indexeddb.open(db_name, version, upgrade_listener, timeout);
+  conn = await indexeddb.open('idb-test-foo', 1, upgrade_listener, timeout);
   console.debug('Opened database', conn.name); await
   indexeddb.remove(db_name);
   console.debug('indexeddb_test reached

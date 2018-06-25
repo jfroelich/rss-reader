@@ -1,5 +1,5 @@
-import * as color from '/src/lib/color.js';
 import * as config from '/src/config.js';
+import * as color from '/src/lib/color.js';
 
 // TODO: after some reflection, I no longer think database constants should be
 // stored in configuration. These should be hardcoded and not configurable. This
@@ -32,14 +32,15 @@ function extension_onupdate(event) {
   config.remove('debug');
   config.remove('refresh_badge_delay');
   config.remove('sanitize_document_image_size_fetch_timeout');
+  config.remove('db_name');
+  config.remove('db_version');
+  config.remove('db_open_timeout');
 }
 
 // When the extension is installed, record some initial settings
 function extension_oninstall(event) {
-  config.write_string('db_name', 'reader');
-  config.write_int('db_version', 24);
-  config.write_int('db_open_timeout', 500);
   config.write_string('channel_name', 'reader');
+  // TODO: shorten names
   config.write_int('sanitize_document_low_contrast_default_matte', color.WHITE);
   config.write_int('sanitize_document_emphasis_max_length', 200);
   config.write_int('sanitize_document_table_scan_max_rows', 20);
