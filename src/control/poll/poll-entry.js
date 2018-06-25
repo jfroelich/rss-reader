@@ -111,9 +111,22 @@ export async function poll_entry(
   return await dal.updateEntry(entry);
 }
 
+// TODO: somehow store in configuration instead of here, look into
+// deserializing using Regex constructor or something
+const inaccessible_content_descriptors = [
+  {pattern: /forbes\.com$/i, reason: 'interstitial-advert'},
+  {pattern: /productforums\.google\.com$/i, reason: 'script-generated'},
+  {pattern: /groups\.google\.com$/i, reason: 'script-generated'},
+  {pattern: /nytimes\.com$/i, reason: 'paywall'},
+  {pattern: /wsj\.com$/i, reason: 'paywall'},
+  {pattern: /heraldsun\.com\.au$/i, reason: 'requires-cookies'},
+  {pattern: /ripe\.net$/i, reason: 'requires-cookies'},
+  {pattern: /foxnews.com$/i, reason: 'fake'}
+];
+
 function url_is_inaccessible_content(url) {
-  const descriptors = config.get_inaccessible_content_descriptors();
-  for (const desc of descriptors) {
+  const descs = inaccessible_content_descriptors;
+  for (const desc of descs) {
     if (desc.pattern && desc.pattern.test(url.hostname)) {
       return true;
     }
