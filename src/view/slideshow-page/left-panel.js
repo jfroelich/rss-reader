@@ -1,4 +1,4 @@
-import * as config_control from '/src/config.js';
+import * as config from '/src/config.js';
 import {import_opml} from '/src/control/import-opml-control.js';
 import ReaderDAL from '/src/dal.js';
 import * as favicon from '/src/control/favicon/favicon.js';
@@ -229,7 +229,7 @@ function leftpanel_init() {
   menu_options.onclick = options_menu_onclick;
 
   // Load fonts from local storage once for both init helpers
-  const fonts = config_control.read_array('fonts');
+  const fonts = config.read_array('fonts');
   header_font_menu_init(fonts);
   body_font_menu_init(fonts);
 

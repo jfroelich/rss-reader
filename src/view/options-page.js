@@ -1,4 +1,4 @@
-import * as config_control from '/src/config.js';
+import * as config from '/src/config.js';
 import * as badge from '/src/control/badge-control.js';
 import {subscribe} from '/src/control/subscribe.js';
 import ReaderDAL from '/src/dal.js';
@@ -619,7 +619,7 @@ function options_page_init() {
       current_path = current_path.substring('/images/'.length);
     }
 
-    const background_images = config_control.read_array('background_images');
+    const background_images = config.read_array('background_images');
 
     for (const path of background_images) {
       let option = document.createElement('option');

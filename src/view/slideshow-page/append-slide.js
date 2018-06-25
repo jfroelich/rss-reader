@@ -1,7 +1,7 @@
-import * as config_control from '/src/config.js';
+import * as config from '/src/config.js';
+import * as array from '/src/lib/array.js';
 import {escape_html} from '/src/lib/html/escape-html.js';
 import {truncate_html} from '/src/lib/html/truncate-html.js';
-import * as array from '/src/lib/array.js';
 import {filter_publisher} from '/src/lib/nlp.js';
 import * as Entry from '/src/model/entry.js';
 import {hide_no_articles_message} from '/src/view/slideshow-page/no-articles-message.js';
@@ -60,8 +60,7 @@ function create_article_title_element(entry) {
 
     title = filter_publisher(title);
 
-    const max_length =
-        config_control.read_int('article_title_display_max_length');
+    const max_length = config.read_int('article_title_display_max_length');
     if (!isNaN(max_length)) {
       title = truncate_html(title, max_length);
     }

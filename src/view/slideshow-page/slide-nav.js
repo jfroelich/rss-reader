@@ -1,4 +1,4 @@
-import * as config_control from '/src/config.js';
+import * as config from '/src/config.js';
 import ReaderDAL from '/src/dal.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/view/slideshow-page/count-unread-slides.js';
@@ -23,7 +23,7 @@ export async function show_next_slide() {
   const slide_unread_count = count_unread_slides();
   let entries = [];
   if (slide_unread_count < 3) {
-    const limit = config_control.read_int('initial_entry_load_limit');
+    const limit = config.read_int('initial_entry_load_limit');
     const mode = 'viewable';
     entries = await dal.getEntries(mode, slide_unread_count, limit);
   }
