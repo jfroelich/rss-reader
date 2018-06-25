@@ -65,13 +65,13 @@ export function init_config(event) {
 
   // View settings
   config.write_int('entry_title_max_length', 300);
-  config.write_int('padding', 150);
+  config.write_int('padding', 180);
   config.write_string('bg_color', '#fefdfd');
   config.write_string('header_font_family', 'Open Sans Regular');
-  config.write_int('header_font_size', 40);
+  config.write_int('header_font_size', 70);
   config.write_string('body_font_family', 'Edward Tufte Roman');
-  config.write_int('body_font_size', 28);
-  config.write_int('body_line_height', 16);
+  config.write_int('body_font_size', 36);
+  config.write_int('body_line_height', 46);
   config.write_int('column_count', 1);
   config.write_boolean('justify_text', false);
 
