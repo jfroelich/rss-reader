@@ -1,6 +1,6 @@
 import {archive_entries} from '/src/control/archive-control.js';
 import * as cron_control from '/src/control/cron-control.js';
-import * as feed_entry_control from '/src/control/feed-entry-control.js';
+import * as model_health from '/src/control/model-health.js';
 import {subscribe} from '/src/control/subscribe.js';
 import ReaderDAL from '/src/dal.js';
 import * as favicon from '/src/control/favicon/favicon.js';
@@ -82,7 +82,7 @@ async function cli_remove_lost_entries() {
   const dal = new ReaderDAL();
   await dal.connect();
   dal.channel = new MonitoredBroadcastChannel(localStorage.channel_name);
-  await feed_entry_control.remove_lost_entries(dal);
+  await model_health.remove_lost_entries(dal);
   console.log('Removed %d lost entries', channel.message_count);
   dal.close();
   dal.channel.close();
@@ -92,7 +92,7 @@ async function cli_remove_orphans() {
   const dal = new ReaderDAL();
   await dal.connect();
   const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
-  await feed_entry_control.remove_orphaned_entries(dal.conn, channel);
+  await model_health.remove_orphaned_entries(dal.conn, channel);
   console.log('Deleted %d entries', channel.message_count);
   dal.close();
   channel.close();

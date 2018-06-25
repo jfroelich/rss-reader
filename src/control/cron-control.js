@@ -1,6 +1,6 @@
 import {archive_entries} from '/src/control/archive-control.js';
 import * as favicon from '/src/control/favicon/favicon.js';
-import * as feed_entry_control from '/src/control/feed-entry-control.js';
+import * as model_health from '/src/control/model-health.js';
 import {poll_feeds} from '/src/control/poll/poll-feeds.js';
 import ReaderDAL from '/src/dal.js';
 
@@ -52,21 +52,21 @@ export async function alarm_listener(alarm) {
     const dal = new ReaderDAL();
     await dal.connect();
     dal.channel = new BroadcastChannel(localStorage.channel_name);
-    await feed_entry_control.remove_lost_entries(dal);
+    await model_health.remove_lost_entries(dal);
     dal.close();
     dal.channel.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
     const dal = new ReaderDAL();
     await dal.connect();
     const channel = new BroadcastChannel(localStorage.channel_name);
-    await feed_entry_control.remove_orphaned_entries(dal.conn, channel);
+    await model_health.remove_orphaned_entries(dal.conn, channel);
     dal.close();
     channel.close();
   } else if (alarm.name === 'remove-untyped-objects') {
     const dal = new ReaderDAL();
     await dal.connect();
     const channel = new BroadcastChannel(localStorage.channel_name);
-    await feed_entry_control.remove_untyped_objects(dal.conn, channel);
+    await model_health.remove_untyped_objects(dal.conn, channel);
     dal.close();
     channel.close();
   } else if (alarm.name === 'refresh-feed-icons') {
