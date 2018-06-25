@@ -3,7 +3,6 @@ import ModelAccess from '/src/model-access.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/view/slideshow-page/count-unread-slides.js';
 import {mark_slide_read_end} from '/src/view/slideshow-page/mark-slide-read.js';
-import {page_style_onchange} from '/src/view/slideshow-page/page-style-onchange.js';
 import {remove_slide} from '/src/view/slideshow-page/remove-slide.js';
 import {is_current_slide} from '/src/view/slideshow-page/slideshow-state.js';
 
@@ -99,11 +98,6 @@ async function onmessage(event) {
     for (const entry of entries) {
       append_slide(entry);
     }
-    return;
-  }
-
-  if (type === 'display-settings-changed') {
-    page_style_onchange(message);
     return;
   }
 

@@ -1,10 +1,10 @@
 import * as config from '/src/config.js';
+import * as config_control from '/src/control/config-control.js';
 import * as favicon from '/src/control/favicon/favicon.js';
 import {import_opml} from '/src/control/import-opml-control.js';
-import ModelAccess from '/src/model-access.js';
 import * as array from '/src/lib/array.js';
 import {create_opml_document} from '/src/lib/opml-document.js';
-import {page_style_onchange} from '/src/view/slideshow-page/page-style-onchange.js';
+import ModelAccess from '/src/model-access.js';
 
 function import_opml_button_onclick(event) {
   const uploader_input = document.createElement('input');
@@ -146,8 +146,6 @@ function header_font_menu_init(fonts) {
   default_option.textContent = 'Header Font';
   menu.appendChild(default_option);
 
-
-
   for (const font_name of fonts) {
     const option = document.createElement('option');
     option.value = font_name;
@@ -182,24 +180,42 @@ function body_font_menu_init(fonts) {
 
 export function header_font_menu_onchange(event) {
   const font_name = event.target.value;
+  const old_value = config.read_string('header_font_family');
   if (font_name) {
     config.write_string('header_font_family', font_name);
   } else {
     config.remove('header_font_family');
   }
 
-  page_style_onchange();
+  // HACK: dispatch a fake local change because storage change event listener
+  // only fires if change made from other page
+  config_control.storage_onchange({
+    isTrusted: true,
+    type: 'storage',
+    key: 'header_font_family',
+    newValue: font_name,
+    oldValue: old_value
+  });
 }
 
 function body_font_menu_onchange(event) {
   const font_name = event.target.value;
+  const old_value = config.read_string('body_font_family');
   if (font_name) {
     config.write_string('body_font_family', font_name);
   } else {
     config.remove('body_font_family');
   }
 
-  page_style_onchange();
+  // HACK: dispatch a fake local change because storage change event listener
+  // only fires if change made from other page
+  config_control.storage_onchange({
+    isTrusted: true,
+    type: 'storage',
+    key: 'body_font_family',
+    newValue: font_name,
+    oldValue: old_value
+  });
 }
 
 // Handle clicks outside of the left panel. The left panel should close by

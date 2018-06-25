@@ -1,5 +1,7 @@
 import * as config from '/src/config.js';
+import assert from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
+import * as css from '/src/lib/dom/css.js';
 
 // React to the extension being installed or updated, or when chrome is updated,
 // to do config related things. Note that this listener should be bound before
@@ -46,6 +48,15 @@ function update_config(event) {
   rename('COLUMN_COUNT', 'column_count');
   rename('SHOW_NOTIFICATIONS', 'show_notifications');
   rename('ONLY_POLL_IF_IDLE', 'only_poll_if_idle');
+
+  // In some unknown prior version of the extension, I stored the path prefix
+  // in the images array. This is no longer done, so check if the stored value
+  // still has the path and if so remove it.
+  const path = config.read_string('bg_image');
+  if (path && path.startsWith('/images/')) {
+    console.debug('Stripping /images/ from bg image path', path);
+    config.write_string('bg_image', path.substring('/images/'.length));
+  }
 }
 
 export function init_config(event) {
@@ -141,4 +152,99 @@ function rename(from, to) {
   }
 
   config.remove(from);
+}
+
+// React to a localStorage property change. Note that this is only fired by the
+// browser when another page changes local storage. If a local change is made
+// and there is a desire for the same page to hear it, then the caller must
+// call this directly with a fake event or something like this:
+// https://stackoverflow.com/questions/26974084
+// Note this event listener should only be bound by a page where the appropriate
+// stylesheets are loaded. This assumes those stylesheets exist.
+export function storage_onchange(event) {
+  // TODO: do not use units for 0? maybe that is dumb
+  // TODO: review https://developers.google.com/web/updates/2018/03/cssom
+
+  if (!event.isTrusted) {
+    console.warn('Untrusted event', event);
+    return;
+  }
+
+  if (event.type !== 'storage') {
+    console.debug('Ignoring non-storage event', event);
+    return;
+  }
+
+  const key = event.key;
+  if (key === 'padding') {
+    const rule = css.find_rule('.slide-padding-wrapper');
+    const padding = parseInt(event.newValue, 10);
+    rule.style.padding = isNaN(padding) ? '' : padding + 'px';
+    return;
+  }
+
+  if (key === 'bg_image') {
+    const rule = css.find_rule('.entry');
+    const path = event.newValue;
+    rule.style.backgroundImage = path ? `url("/images/${path}")` : '';
+    return;
+  }
+
+  if (key === 'bg_color') {
+    const rule = css.find_rule('.entry');
+    const color = event.newValue;
+    rule.style.backgroundColor = color ? color : '';
+    return;
+  }
+
+  if (key === 'header_font_family') {
+    const rule = css.find_rule('.entry .entry-title');
+    const family = event.newValue;
+    rule.style.fontFamily = family ? family : 'initial';
+    return;
+  }
+
+  if (key === 'header_font_size') {
+    const rule = css.find_rule('.entry .entry-title');
+    const size = parseInt(event.newValue, 10);
+    rule.style.fontSize = isNaN(size) ? '' : size + 'px';
+    return;
+  }
+
+  if (key === 'body_font_family') {
+    const rule = css.find_rule('.entry .entry-content');
+    const family = event.newValue;
+    rule.style.fontFamily = family ? family : 'initial';
+    return;
+  }
+
+  if (key === 'body_font_size') {
+    const rule = css.find_rule('.entry .entry-content');
+    const size = parseInt(event.newValue, 10);
+    rule.style.fontSize = isNaN(size) ? '' : size + 'px';
+    return;
+  }
+
+  if (key === 'justify_text') {
+    const rule = css.find_rule('.entry .entry-content');
+    rule.style.textAlign = event.newValue ? 'justify' : 'left';
+    return;
+  }
+
+  if (key === 'body_line_height') {
+    const rule = css.find_rule('.entry .entry-content');
+    const height = parseInt(event.newValue, 10);
+    rule.style.lineHeight = isNaN(height) ? '' : height + 'px';
+    return;
+  }
+
+  if (key === 'column_count') {
+    const rule = css.find_rule('.entry .entry-content');
+    const count = parseInt(event.newValue, 10);
+    if (!isNaN(count) && count >= 0 && count <= 3) {
+      rule.style.webkitColumnCount = count;
+    } else {
+      rule.style.webkitColumnCount = '';
+    }
+  }
 }

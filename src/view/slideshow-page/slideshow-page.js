@@ -1,6 +1,7 @@
 import '/src/view/slideshow-page/main-menu.js';
 import '/src/view/slideshow-page/left-panel.js';
 
+import * as config_control from '/src/control/config-control.js';
 import ModelAccess from '/src/model-access.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import * as channel from '/src/view/slideshow-page/channel.js';
@@ -16,7 +17,8 @@ import {hide_splash, show_splash} from '/src/view/slideshow-page/splash.js';
 async function load_view() {
   channel.init();
 
-  window.addEventListener('keydown', onkeydown);
+  addEventListener('storage', config_control.storage_onchange);
+  addEventListener('keydown', onkeydown);
 
   show_splash();
   page_style_onload();

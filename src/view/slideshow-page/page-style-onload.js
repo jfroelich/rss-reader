@@ -16,11 +16,6 @@ function page_style_entry_rule_create() {
   const buffer = [];
 
   let path = config.read_string('bg_image');
-  // Support for legacy path that included folder
-  if (path && path.startsWith('/images/')) {
-    path = path.substring('/images/'.length);
-  }
-
   const color = config.read_string('bg_color');
 
   if (path) {

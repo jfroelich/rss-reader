@@ -8,7 +8,6 @@ import {fade_element} from '/src/lib/dom/fade-element.js';
 import * as html from '/src/lib/html.js';
 import * as perm from '/src/lib/permissions.js';
 import ModelAccess from '/src/model-access.js';
-import {page_style_onchange} from '/src/view/slideshow-page/page-style-onchange.js';
 import {page_style_onload} from '/src/view/slideshow-page/page-style-onload.js';
 
 // View state
@@ -37,9 +36,7 @@ channel.onmessage = function options_page_onmessage(event) {
     badge.refresh(location.pathname);
   }
 
-  if (type === 'display-settings-changed') {
-    page_style_onchange(event);
-  } else if (type === 'feed-activated') {
+  if (type === 'feed-activated') {
     // not implemented
   } else if (type === 'feed-deactivated') {
     // not implemented
@@ -466,8 +463,6 @@ function bg_image_menu_onchange(event) {
   } else {
     config.remove('bg_image');
   }
-
-  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function column_count_menu_onchange(event) {
@@ -477,8 +472,6 @@ function column_count_menu_onchange(event) {
   } else {
     config.remove('column_count');
   }
-
-  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function entry_bg_color_input_oninput(event) {
@@ -488,8 +481,6 @@ function entry_bg_color_input_oninput(event) {
   } else {
     config.remove('bg_color');
   }
-
-  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function entry_margin_slider_onchange(event) {
@@ -499,8 +490,6 @@ function entry_margin_slider_onchange(event) {
   } else {
     config.remove('padding');
   }
-
-  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function header_font_size_slider_onchange(event) {
@@ -510,8 +499,6 @@ function header_font_size_slider_onchange(event) {
   } else {
     config.remove('header_font_size');
   }
-
-  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function body_font_size_slider_onchange(event) {
@@ -521,13 +508,10 @@ function body_font_size_slider_onchange(event) {
   } else {
     config.remove('body_font_size');
   }
-
-  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function justify_text_checkbox_onchange(event) {
   config.write_boolean('justify_text', event.target.checked);
-  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function body_line_height_input_oninput(event) {
@@ -537,8 +521,6 @@ function body_line_height_input_oninput(event) {
   } else {
     config.remove('body_line_height');
   }
-
-  channel.postMessage({type: 'display-settings-changed'});
 }
 
 function options_page_init() {
@@ -586,14 +568,7 @@ function options_page_init() {
     bg_image_menu.appendChild(option);
 
     let current_path = config.read_string('bg_image');
-
-    // Temporary support for legacy path value
-    if (current_path && current_path.startsWith('/images/')) {
-      current_path = current_path.substring('/images/'.length);
-    }
-
     const background_images = config.read_array('background_images');
-
     for (const path of background_images) {
       let option = document.createElement('option');
       option.value = path;
