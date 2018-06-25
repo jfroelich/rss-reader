@@ -14,7 +14,7 @@ export function init() {
     throw new Error('channel already initialized');
   }
 
-  channel = new BroadcastChannel(localStorage.channel_name);
+  channel = new BroadcastChannel('reader');
   channel.onmessage = onmessage;
   channel.onmessageerror = onmessageerror;
 }

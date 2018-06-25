@@ -22,7 +22,7 @@ export async function alarm_listener(alarm) {
 
   if (alarm.name === 'archive') {
     const dal = new ReaderDAL();
-    dal.channel = new BroadcastChannel(localStorage.channel_name);
+    dal.channel = new BroadcastChannel('reader');
     await dal.connect();
     await archive_entries(dal);
     dal.channel.close();
@@ -43,7 +43,7 @@ export async function alarm_listener(alarm) {
     const dal = new ReaderDAL();
     await dal.connect();
     const iconn = await favicon.open();
-    const channel = new BroadcastChannel(localStorage.channel_name);
+    const channel = new BroadcastChannel('reader');
     await poll_feeds(dal.conn, iconn, channel, options);
     channel.close();
     iconn.close();
@@ -51,21 +51,21 @@ export async function alarm_listener(alarm) {
   } else if (alarm.name === 'remove-entries-missing-urls') {
     const dal = new ReaderDAL();
     await dal.connect();
-    dal.channel = new BroadcastChannel(localStorage.channel_name);
+    dal.channel = new BroadcastChannel('reader');
     await model_health.remove_lost_entries(dal);
     dal.close();
     dal.channel.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
     const dal = new ReaderDAL();
     await dal.connect();
-    const channel = new BroadcastChannel(localStorage.channel_name);
+    const channel = new BroadcastChannel('reader');
     await model_health.remove_orphaned_entries(dal.conn, channel);
     dal.close();
     channel.close();
   } else if (alarm.name === 'remove-untyped-objects') {
     const dal = new ReaderDAL();
     await dal.connect();
-    const channel = new BroadcastChannel(localStorage.channel_name);
+    const channel = new BroadcastChannel('reader');
     await model_health.remove_untyped_objects(dal.conn, channel);
     dal.close();
     channel.close();
@@ -73,7 +73,7 @@ export async function alarm_listener(alarm) {
     const dal = new ReaderDAL();
     const proms = [dal.connect(), favicon.open()];
     const [_, iconn] = await Promise.all(proms);
-    const channel = new BroadcastChannel(localStorage.channel_name);
+    const channel = new BroadcastChannel('reader');
     await favicon.refresh_feeds(dal.conn, iconn, channel);
     dal.close();
     iconn.close();

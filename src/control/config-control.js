@@ -1,11 +1,6 @@
 import * as config from '/src/config.js';
 import * as color from '/src/lib/color.js';
 
-// TODO: after some reflection, I no longer think database constants should be
-// stored in configuration. These should be hardcoded and not configurable. This
-// has the added benefit of removing the data access layer's reliance on the
-// config module.
-
 // React to the extension being installed or updated, or when chrome is updated,
 // to do config related things. Note that this listener should be bound before
 // other listeners that depend on configuration setup.
@@ -20,28 +15,27 @@ export function install_listener(event) {
 // When the extension is updated, do some housekeeping of changes to
 // configuration
 function extension_onupdate(event) {
-  // Not currently in use, but I always forget what it is, and might use it in
-  // the future
+  // I always forget what this is, and might use it in the future
   // const previous_version_string = event.previousVersion;
 
+  // Remove any legacy keys
   // TODO: updates get fired for many reasons, such as when reloading the
   // extension from the extensions page. This does not indicate a version
   // change. Removing legacy keys should be based on extension version change.
-
-  // Remove any legacy keys
   config.remove('debug');
   config.remove('refresh_badge_delay');
   config.remove('sanitize_document_image_size_fetch_timeout');
   config.remove('db_name');
   config.remove('db_version');
   config.remove('db_open_timeout');
+  config.remove('channel_name');
+  config.remove('sanitize_document_low_contrast_default_matte');
 }
 
 // When the extension is installed, record some initial settings
 function extension_oninstall(event) {
-  config.write_string('channel_name', 'reader');
   // TODO: shorten names
-  config.write_int('sanitize_document_low_contrast_default_matte', color.WHITE);
+  config.write_int('contrast_default_matte', color.WHITE);
   config.write_int('sanitize_document_emphasis_max_length', 200);
   config.write_int('sanitize_document_table_scan_max_rows', 20);
   // TODO: lowercase

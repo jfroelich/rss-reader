@@ -66,7 +66,7 @@ export async function sanitize_document(document) {
   filter_noscript_elements(document);
 
   // TODO: shorten name, drop sandoc prefix
-  const matte = config.read_int('sanitize_document_low_contrast_default_matte');
+  const matte = config.read_int('contrast_default_matte');
 
   // TODO: lowercase
   const mcr = config.read_float('MIN_CONTRAST_RATIO');

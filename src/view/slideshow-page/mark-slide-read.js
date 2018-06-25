@@ -34,7 +34,7 @@ export async function mark_slide_read_start(conn, slide) {
 
   const dal = new ReaderDAL();
   dal.conn = conn;
-  dal.channel = new BroadcastChannel(localStorage.channel_name);
+  dal.channel = new BroadcastChannel('reader');
   await dal.markEntryRead(entry_id);
   dal.channel.close();
 }

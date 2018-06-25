@@ -16,7 +16,7 @@ async function refresh_button_onclick(event) {
   refresh_in_progress = true;
 
   const dal = new ReaderDAL();
-  dal.channel = new BroadcastChannel(localStorage.channel_name);
+  dal.channel = new BroadcastChannel('reader');
 
   await dal.connect();
   const iconn = await favicon.open();

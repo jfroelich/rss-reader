@@ -15,7 +15,7 @@ import {page_style_onload} from '/src/view/slideshow-page/page-style-onload.js';
 let current_menu_item;
 let current_section;
 
-const channel = new BroadcastChannel(localStorage.channel_name);
+const channel = new BroadcastChannel('reader');
 channel.onmessage = function options_page_onmessage(event) {
   if (!event.isTrusted) {
     return;
@@ -304,7 +304,7 @@ async function subscribe_form_onsubmit(event) {
   const dal = new ReaderDAL();
   const conn_promises = Promise.all([dal.connect(), favicon.open()]);
   const [_, iconn] = await conn_promises;
-  dal.channel = new BroadcastChannel(localStorage.channel_name);
+  dal.channel = new BroadcastChannel('reader');
   const feed = await subscribe(dal, iconn, subscribe_url, undefined, true);
   dal.close();
   dal.channel.close();
@@ -324,7 +324,7 @@ async function after_subscribe_poll_feed_async(feed) {
   const dal = new ReaderDAL();
   const conn_promises = Promise.all([dal.connect(), favicon.open()]);
   const [_, iconn] = await conn_promises;
-  const channel = new BroadcastChannel(localStorage.channel_name);
+  const channel = new BroadcastChannel('reader');
 
   const options = {ignore_recency_check: true, notify: true};
   await poll_feed(dal.conn, iconn, channel, console_stub, options, feed);
@@ -385,7 +385,7 @@ function feed_list_remove_feed_by_id(feed_id) {
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const dal = new ReaderDAL();
-  dal.channel = new BroadcastChannel(localStorage.channel_name);
+  dal.channel = new BroadcastChannel('reader');
   await dal.connect();
   await dal.deleteFeed(feed_id, 'unsubscribe');
   dal.close();
@@ -397,7 +397,7 @@ async function unsubscribe_button_onclick(event) {
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const dal = new ReaderDAL();
-  dal.channel = new BroadcastChannel(localStorage.channel_name);
+  dal.channel = new BroadcastChannel('reader');
   await dal.connect();
   await dal.activateFeed(feed_id);
   dal.channel.close();
@@ -419,7 +419,7 @@ async function activate_feed_button_onclick(event) {
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const dal = new ReaderDAL();
-  dal.channel = new BroadcastChannel(localStorage.channel_name);
+  dal.channel = new BroadcastChannel('reader');
   await dal.connect();
   const reason = 'manual';
   await dal.deactivateFeed(feed_id, reason);

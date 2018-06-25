@@ -21,7 +21,7 @@ async function uploader_input_onchange(event) {
   const dal = new ReaderDAL();
   const promises = [dal.connect(), favicon.open()];
   const [_, iconn] = await Promise.all(promises);
-  dal.channel = new BroadcastChannel(localStorage.channel_name);
+  dal.channel = new BroadcastChannel('reader');
   await import_opml(dal, iconn, event.target.files, 5000);
   dal.close();
   dal.channel.close();

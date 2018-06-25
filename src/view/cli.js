@@ -29,7 +29,7 @@ async function cli_subscribe(url_string, poll = true) {
   const proms = [dal.connect(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
 
-  dal.channel = new BroadcastChannel(localStorage.channel_name);
+  dal.channel = new BroadcastChannel('reader');
 
   // Bubble up errors to console
   const url = new URL(url_string);
@@ -48,7 +48,7 @@ async function cli_subscribe(url_string, poll = true) {
 
 async function cli_archive_entries() {
   const dal = new ReaderDAL();
-  dal.channel = new BroadcastChannel(localStorage.channel_name);
+  dal.channel = new BroadcastChannel('reader');
   await dal.connect();
   await archive_entries(dal);
   dal.channel.close();
@@ -59,7 +59,7 @@ async function cli_refresh_icons() {
   const dal = new ReaderDAL();
   const proms = [dal.connect(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
-  const channel = new BroadcastChannel(localStorage.channel_name);
+  const channel = new BroadcastChannel('reader');
   await favicon.refresh_feeds(dal.conn, iconn, channel);
   dal.close();
   iconn.close();
@@ -70,7 +70,7 @@ async function cli_poll_feeds() {
   const dal = new ReaderDAL();
   const proms = [dal.connect(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
-  const channel = new BroadcastChannel(localStorage.channel_name);
+  const channel = new BroadcastChannel('reader');
   const options = {ignore_recency_check: true};
   await poll_feeds(dal.conn, iconn, channel, options);
   channel.close();
@@ -81,7 +81,7 @@ async function cli_poll_feeds() {
 async function cli_remove_lost_entries() {
   const dal = new ReaderDAL();
   await dal.connect();
-  dal.channel = new MonitoredBroadcastChannel(localStorage.channel_name);
+  dal.channel = new MonitoredBroadcastChannel('reader');
   await model_health.remove_lost_entries(dal);
   console.log('Removed %d lost entries', channel.message_count);
   dal.close();
@@ -91,7 +91,7 @@ async function cli_remove_lost_entries() {
 async function cli_remove_orphans() {
   const dal = new ReaderDAL();
   await dal.connect();
-  const channel = new MonitoredBroadcastChannel(localStorage.channel_name);
+  const channel = new MonitoredBroadcastChannel('reader');
   await model_health.remove_orphaned_entries(dal.conn, channel);
   console.log('Deleted %d entries', channel.message_count);
   dal.close();

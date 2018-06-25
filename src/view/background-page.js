@@ -24,9 +24,9 @@ async function background_page_channel_onmessage(event) {
   }
 }
 
-// Persists for the lifetime of the page. Will not prevent the page from
+// Persists for the lifetime of the page. Does not prevent the page from
 // unloading.
-const channel = new BroadcastChannel(localStorage.channel_name);
+const channel = new BroadcastChannel('reader');
 channel.onmessage = background_page_channel_onmessage;
 
 // Bind alarm listener
