@@ -489,9 +489,9 @@ function bg_image_menu_onchange(event) {
 function column_count_menu_onchange(event) {
   const count = event.target.value;
   if (count) {
-    localStorage.COLUMN_COUNT = count;
+    config.write_string('COLUMN_COUNT', count);
   } else {
-    delete localStorage.COLUMN_COUNT;
+    config.remove('COLUMN_COUNT');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -510,10 +510,8 @@ function entry_bg_color_input_oninput(event) {
 
 function entry_margin_slider_onchange(event) {
   const margin = event.target.value;
-  console.debug('entry_margin_slider_onchange new value', margin);
-
   if (margin) {
-    config.write_int('PADDING', margin);
+    config.write_string('PADDING', margin);
   } else {
     config.remove('PADDING');
   }
@@ -524,9 +522,9 @@ function entry_margin_slider_onchange(event) {
 function header_font_size_slider_onchange(event) {
   const size = event.target.value;
   if (size) {
-    localStorage.HEADER_FONT_SIZE = size;
+    config.write_string('HEADER_FONT_SIZE', size);
   } else {
-    delete localStorage.HEADER_FONT_SIZE;
+    config.remove('HEADER_FONT_SIZE');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -535,20 +533,19 @@ function header_font_size_slider_onchange(event) {
 function body_font_size_slider_onchange(event) {
   const size = event.target.value;
   if (size) {
-    localStorage.BODY_FONT_SIZE = size;
+    config.write_string('BODY_FONT_SIZE', size);
   } else {
-    delete localStorage.BODY_FONT_SIZE;
+    config.remove('BODY_FONT_SIZE');
   }
 
-  console.debug('setting body font size changed message');
   channel.postMessage({type: 'display-settings-changed'});
 }
 
 function justify_text_checkbox_onchange(event) {
   if (event.target.checked) {
-    localStorage.JUSTIFY_TEXT = '1';
+    config.write_int('JUSTIFY_TEXT', 1);
   } else {
-    delete localStorage.JUSTIFY_TEXT;
+    config.remove('JUSTIFY_TEXT');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -557,9 +554,9 @@ function justify_text_checkbox_onchange(event) {
 function body_line_height_input_oninput(event) {
   const height = event.target.value;
   if (height) {
-    localStorage.BODY_LINE_HEIGHT = height;
+    config.write_string('BODY_LINE_HEIGHT', height);
   } else {
-    delete localStorage.BODY_LINE_HEIGHT;
+    config.remove('BODY_LINE_HEIGHT');
   }
 
   channel.postMessage({type: 'display-settings-changed'});
@@ -633,8 +630,8 @@ function options_page_init() {
   {
     const column_count_menu = document.getElementById('column-count');
     column_count_menu.onchange = column_count_menu_onchange;
-    const column_count_options = ['1', '2', '3'];
-    const current_column_count = localStorage.COLUMN_COUNT
+    const column_count_options = [1, 2, 3];
+    const current_column_count = config.read_int('COLUMN_COUNT');
     for (const column_count of column_count_options) {
       const option = document.createElement('option');
       option.value = column_count;
@@ -661,14 +658,22 @@ function options_page_init() {
   justify_text_checkbox.checked = 'JUSTIFY_TEXT' in localStorage;
   justify_text_checkbox.onchange = justify_text_checkbox_onchange;
 
+  const header_font_size_slider = document.getElementById('header-font-size');
+  header_font_size_slider.onchange = header_font_size_slider_onchange;
+  const header_font_size = config.read_int('HEADER_FONT_SIZE');
+  if (!isNaN(header_font_size)) {
+    header_font_size_slider.value = header_font_size;
+  }
+
+
   const body_font_size_slider = document.getElementById('body-font-size');
   body_font_size_slider.onchange = body_font_size_slider_onchange;
 
   const body_line_height_input = document.getElementById('body-line-height');
   body_line_height_input.oninput = body_line_height_input_oninput;
-  const current_body_line_height = parseInt(localStorage.BODY_LINE_HEIGHT, 10);
-  if (!isNaN(current_body_line_height)) {
-    body_line_height_input.value = (current_body_line_height / 10).toFixed(2);
+  const body_line_height = config.read_int('BODY_LINE_HEIGHT');
+  if (!isNaN(body_line_height)) {
+    body_line_height_input.value = body_line_height;
   }
 
   const manifest = chrome.runtime.getManifest();

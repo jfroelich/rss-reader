@@ -20,7 +20,6 @@ function page_style_entry_update() {
 
   const style = rule.style;
   let path = config.read_string('BG_IMAGE');
-
   // Support for legacy path values
   if (path && path.startsWith('/images/')) {
     path = path.substring('/images/'.length);
@@ -47,11 +46,17 @@ function page_style_title_update() {
   }
 
   const style = rule.style;
-  style.fontFamily = localStorage.HEADER_FONT_FAMILY;
 
-  const size = parseInt(localStorage.HEADER_FONT_SIZE, 10);
+  const family = config.read_string('HEADER_FONT_FAMILY');
+  if (family) {
+    style.fontFamily = family;
+  } else {
+    style.fontFamily = 'initial';
+  }
+
+  const size = config.read_int('HEADER_FONT_SIZE');
   if (!isNaN(size)) {
-    style.fontSize = (size / 10).toFixed(2) + 'em';
+    style.fontSize = size + 'px';
   }
 }
 
@@ -61,32 +66,44 @@ function page_style_content_update() {
     return;
   }
 
-  rule.style.background = '';
+  const style = rule.style;
 
-  const font_family = localStorage.BODY_FONT_FAMILY;
+  // I've commented this out, I have no idea why this is here
+  // style.background = '';
+
+  const font_family = config.read_string('BODY_FONT_FAMILY');
   if (font_family) {
-    rule.style.fontFamily = font_family;
+    style.fontFamily = font_family;
   } else {
-    rule.style.fontFamily = 'initial';
+    style.fontFamily = 'initial';
   }
 
-  const font_size_string = localStorage.BODY_FONT_SIZE;
-  if (font_size_string) {
-    const font_size = parseInt(font_size_string, 10);
-    if (font_size) {
-      rule.style.fontSize = (font_size / 10).toFixed(2) + 'em';
-    }
+  const font_size = config.read_int('BODY_FONT_SIZE');
+  if (!isNaN(font_size)) {
+    style.fontSize = font_size + 'px';
   }
 
-  const should_justify = localStorage.JUSTIFY_TEXT === '1';
-  rule.style.textAlign = should_justify ? 'justify' : 'left';
-
-  const line_height = parseInt(localStorage.BODY_LINE_HEIGHT, 10);
-  rule.style.lineHeight = (line_height / 10).toFixed(2);
-
-  let column_count_string = localStorage.COLUMN_COUNT;
-  if (column_count_string && !['1', '2', '3'].includes(column_count_string)) {
-    column_count_string = '1';
+  if (config.has_key('JUSTIFY_TEXT')) {
+    style.textAlign = 'justify';
+  } else {
+    style.textAlign = 'left';
   }
-  rule.style.webkitColumnCount = column_count_string;
+
+  const line_height = config.read_int('BODY_LINE_HEIGHT');
+  if (!isNaN(line_height)) {
+    style.lineHeight = line_height + 'px';
+  } else {
+    delete style.lineHeight;
+  }
+
+  const column_count = config.read_int('COLUMN_COUNT');
+  if (column_count === 1) {
+    style.webkitColumnCount = column_count;
+  } else if (column_count === 2) {
+    style.webkitColumnCount = column_count;
+  } else if (column_count === 3) {
+    style.webkitColumnCount = column_count;
+  } else {
+    style.webkitColumnCount = column_count;
+  }
 }

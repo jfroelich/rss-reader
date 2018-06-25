@@ -58,16 +58,6 @@ h2 {
   display: none;
 }
 
-#display-preview {
-  padding: 0;
-  margin-left: 0;
-  margin-bottom: 20px;
-  margin-right: 5px;
-  overflow-x: none;
-  overflow-y: auto;
-  height: 300px;
-}
-
 #options-table tr td {
   user-select: none;
   -webkit-user-select: none;

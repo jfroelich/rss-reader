@@ -1,6 +1,9 @@
 import * as config from '/src/config.js';
 import * as color from '/src/lib/color.js';
 
+// TODO: init SHOW_NOTIFICATIONS
+// TODO: init ONLY_POLL_IF_IDLE
+
 // React to the extension being installed or updated, or when chrome is updated,
 // to do config related things. Note that this listener should be bound before
 // other listeners that depend on configuration setup.
