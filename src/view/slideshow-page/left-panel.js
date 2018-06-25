@@ -1,7 +1,7 @@
 import * as config from '/src/config.js';
 import * as config_control from '/src/control/config-control.js';
 import * as favicon from '/src/control/favicon/favicon.js';
-import {import_opml} from '/src/control/import-opml-control.js';
+import {import_opml} from '/src/control/import-opml.js';
 import * as array from '/src/lib/array.js';
 import {create_opml_document} from '/src/lib/opml-document.js';
 import ModelAccess from '/src/model-access.js';

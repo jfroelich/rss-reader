@@ -1,4 +1,4 @@
-import {import_opml} from '/src/control/import-opml-control.js';
+import {import_opml} from '/src/control/import-opml.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import ModelAccess from '/src/open-db.js';

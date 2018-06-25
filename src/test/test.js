@@ -17,7 +17,7 @@ import '/src/lib/net/load-url-test.js';
 import '/src/lib/net/mime-test.js';
 import '/src/lib/net/sniff-test.js';
 import '/src/lib/nlp-test.js';
-import '/src/control/import-opml-control-test.js';
+import '/src/control/import-opml-test.js';
 import '/src/lib/parse-feed/parse-feed-test.js';
 import '/src/lib/rewrite-url-test.js';
 import {get_registry} from '/src/test/test-registry.js';
