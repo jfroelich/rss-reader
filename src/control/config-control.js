@@ -25,6 +25,7 @@ function update_config(event) {
   config.remove('db_open_timeout');
   config.remove('channel_name');
 
+  rename('LAST_ALARM', 'last_alarm');
   rename(
       'sanitize_document_image_size_fetch_timeout', 'set_image_sizes_timeout');
   rename(
