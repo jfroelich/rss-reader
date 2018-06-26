@@ -40,6 +40,31 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
+// NOTE: no longer sets feed.id as it did when using updateFeed
+// NOTE: sends feed-created message type instead of feed-written type
+ModelAccess.prototype.createFeed = function(feed) {
+  return new Promise((resolve, reject) => {
+    assert(Model.is_feed(feed));
+    assert(feed.urls && feed.urls.length);
+    object.filter_empty_properties(feed);
+    feed.active = true;
+    feed.dateCreated = new Date();
+    delete feed.dateUpdated;
+
+    let id = 0;
+    const txn = this.conn.transaction('feed', 'readwrite');
+    txn.onerror = _ => reject(txn.error);
+    txn.oncomplete = _ => {
+      this.channel.postMessage({type: 'feed-created', id: id});
+      resolve(id);
+    };
+
+    const store = txn.objectStore('feed');
+    const request = store.put(feed);
+    request.onsuccess = _ => id = request.result;
+  });
+};
+
 ModelAccess.prototype.countUnreadEntries = function() {
   return new Promise((resolve, reject) => {
     const txn = this.conn.transaction('entry');
