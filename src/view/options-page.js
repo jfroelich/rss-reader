@@ -441,19 +441,15 @@ function enable_bg_processing_checkbox_onclick(event) {
   }
 }
 
+// TODO: this should be using a local storage variable and instead the
+// permission should be permanently defined.
 async function enable_bg_processing_checkbox_init() {
   const checkbox = document.getElementById('enable-background');
-
-  // TODO: this should be using a local storage variable and instead the
-  // permission should be permanently defined.
-
   checkbox.onclick = enable_bg_processing_checkbox_onclick;
   checkbox.checked = await perm.has('background');
 }
 
-function restrict_idle_polling_checkbox_onclick(event) {
-  config.write_boolean('only_poll_if_idle', event.target.checked);
-}
+
 
 function bg_image_menu_onchange(event) {
   const path = event.target.value;
@@ -522,15 +518,13 @@ function body_line_height_input_oninput(event) {
   }
 }
 
-function options_page_init() {
-  // Attach click handlers to menu items
+{  // Start on module load init
   // TODO: use single event listener on list itself instead
   const menu_items = document.querySelectorAll('#navigation-menu li');
   for (const menuItem of menu_items) {
     menuItem.onclick = menu_item_onclick;
   }
 
-  // Init Enable notifications checkbox
   const enable_notes_checkbox = document.getElementById('enable-notifications');
   enable_notes_checkbox.checked = config.read_boolean('show_notifications');
   enable_notes_checkbox.onclick = enable_notifications_checkbox_onclick;
@@ -539,7 +533,8 @@ function options_page_init() {
 
   const idle_poll_checkbox = document.getElementById('enable-idle-check');
   idle_poll_checkbox.checked = config.read_boolean('only_poll_if_idle');
-  idle_poll_checkbox.onclick = restrict_idle_polling_checkbox_onclick;
+  idle_poll_checkbox.onclick = event =>
+      config.write_boolean('only_poll_if_idle', event.target.checked);
 
   feed_list_init();
 
@@ -590,32 +585,37 @@ function options_page_init() {
   }
 
   const bg_color_input = document.getElementById('entry-background-color');
-  if (config.read_string('bg_color')) {
-    bg_color_input.value = config.read_string('bg_color');
-  } else {
-    bg_color_input.removeAttribute('value');
+  bg_color_input.oninput = entry_bg_color_input_oninput;
+  const bg_color = config.read_string('bg_color');
+  if (bg_color) {
+    bg_color_input.value = bg_color;
   }
 
-  bg_color_input.oninput = entry_bg_color_input_oninput;
-
   const entry_margin_input = document.getElementById('entry-margin');
-  entry_margin_input.value = config.read_int('padding', 10);
   entry_margin_input.onchange = entry_margin_slider_onchange;
+  const margin = config.read_int('padding', 0);
+  if (!isNaN(margin)) {
+    entry_margin_input.value = margin;
+  }
 
   const justify_checkbox = document.getElementById('justify-text');
   justify_checkbox.checked = config.read_boolean('justify_text');
   justify_checkbox.onchange = event =>
       config.write_boolean('justify_text', event.target.checked);
 
-  const header_font_size_slider = document.getElementById('header-font-size');
-  header_font_size_slider.onchange = header_font_size_slider_onchange;
+  const header_size_range = document.getElementById('header-font-size');
+  header_size_range.onchange = header_font_size_slider_onchange;
   const header_font_size = config.read_int('header_font_size');
   if (!isNaN(header_font_size)) {
-    header_font_size_slider.value = header_font_size;
+    header_size_range.value = header_font_size;
   }
 
-  const body_font_size_slider = document.getElementById('body-font-size');
-  body_font_size_slider.onchange = body_font_size_slider_onchange;
+  const body_size_range = document.getElementById('body-font-size');
+  body_size_range.onchange = body_font_size_slider_onchange;
+  const body_font_size = config.read_int('body_font_size');
+  if (!isNaN(body_font_size)) {
+    body_size_range.value = body_font_size;
+  }
 
   const body_line_height_input = document.getElementById('body-line-height');
   body_line_height_input.oninput = body_line_height_input_oninput;
@@ -625,20 +625,16 @@ function options_page_init() {
   }
 
   const manifest = chrome.runtime.getManifest();
-  const extension_name_element = document.getElementById('extension-name');
-  extension_name_element.textContent = manifest.name;
-  const extension_version_element =
-      document.getElementById('extension-version');
-  extension_version_element.textValue = manifest.version;
-  const extension_author_element = document.getElementById('extension-author');
-  extension_author_element.textContent = manifest.author;
-  const extension_description_element =
-      document.getElementById('extension-description');
-  extension_description_element.textContent = manifest.description || '';
-  const extension_url_element = document.getElementById('extension-homepage');
-  extension_url_element.textContent = manifest.homepage_url;
+  const ext_name_element = document.getElementById('extension-name');
+  ext_name_element.textContent = manifest.name;
+  const ext_version_element = document.getElementById('extension-version');
+  ext_version_element.textValue = manifest.version;
+  const ext_author_element = document.getElementById('extension-author');
+  ext_author_element.textContent = manifest.author;
+  const ext_desc_element = document.getElementById('extension-description');
+  ext_desc_element.textContent = manifest.description || '';
+  const ext_url_element = document.getElementById('extension-homepage');
+  ext_url_element.textContent = manifest.homepage_url;
 
   section_show_by_id('subs-list-section');
-}
-
-options_page_init();
+}  // End on module load init
