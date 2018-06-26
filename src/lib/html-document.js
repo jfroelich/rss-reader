@@ -19,6 +19,9 @@ export function set_base_uri(document, url) {
   assert(typeof url === 'object');
   assert(url.href);
 
+  // TODO: this matches the first base with an href, which may not be the first
+  // base. I am not sure if that is correct.
+
   // According to MDN: "If multiple <base> elements are specified, only the
   // first href and first target value are used; all others are ignored."
   // We begin by searching for the first existing base element. We use
