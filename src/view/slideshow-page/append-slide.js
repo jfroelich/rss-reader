@@ -10,7 +10,7 @@ import * as slideshow_state from '/src/view/slideshow-page/slideshow-state.js';
 // TODO: use assert?
 // TODO: simplify logging messages now that wrapper no longer in use
 
-let duration = 0.35;
+let duration = 0.25;
 
 export function append_slide(entry) {
   if (!Model.is_entry(entry)) {
