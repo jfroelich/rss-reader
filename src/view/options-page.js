@@ -605,9 +605,10 @@ function options_page_init() {
   entry_margin_input.value = config.read_int('padding', 10);
   entry_margin_input.onchange = entry_margin_slider_onchange;
 
-  const justify_text_checkbox = document.getElementById('justify-text');
-  justify_text_checkbox.checked = config.read_boolean('justify_text');
-  justify_text_checkbox.onchange = justify_text_checkbox_onchange;
+  const justify_checkbox = document.getElementById('justify-text');
+  justify_checkbox.checked = config.read_boolean('justify_text');
+  justify_checkbox.onchange = event =>
+      config.write_boolean('justify_text', event.target.checked);
 
   const header_font_size_slider = document.getElementById('header-font-size');
   header_font_size_slider.onchange = header_font_size_slider_onchange;
@@ -615,7 +616,6 @@ function options_page_init() {
   if (!isNaN(header_font_size)) {
     header_font_size_slider.value = header_font_size;
   }
-
 
   const body_font_size_slider = document.getElementById('body-font-size');
   body_font_size_slider.onchange = body_font_size_slider_onchange;
