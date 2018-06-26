@@ -1,120 +1,155 @@
 import assert from '/src/lib/assert.js';
 
-// TODO: consider some kind of overwrite parameter, boolean, to enable the
-// caller to indicate that existing base information should be replaced instead
-// of respected.
-
 // Set the baseURI property of a document. baseURI is readonly. However, its
 // value is derived from base elements, which are manipulable. Therefore baseURI
 // is indirectly manipulable by manipulating base elements. Note that this is a
 // brittle solution because doing other document manipulation that affects base
 // elements or attributes can have unintended side effects.
 //
-// Due to the prohibitive cost of copying document objects, the document input
-// is modified in place rather than treated as immutable.
+// Note this imposes a canonical requirement. After this operation the document
+// will have a canonical base url that is standalone, free of dependency on any
+// kind of inherited/substituted base url that comes from somewhere else.
 //
-// If the document already has a valid base uri, it is left as is.
+// Spec information:
+// https://html.spec.whatwg.org/multipage/semantics.html#the-base-element
+//
+// @param document {Document} the document to modify. Due to the prohibitive
+// cost of copying document objects, the document input is modified in place
+// rather than treated as immutable.
+// @param url {URL} the desired base url to use, which depending on params
+// and the document, will either be ignored, merged with existing base, or will
+// replace the existing base.
+// @param overwrite {Boolean} if true, then existing bases are ignored, and the
+// base uri is set to the input url. If false, then existing bases are
+// respected. Defaults to false. Note that in both cases, all bases other than
+// the intended base element are implicitly removed.
+// @return {void}
 export function set_base_uri(document, url, overwrite) {
   assert(typeof document === 'object');
   assert(typeof url === 'object');
   assert(url.href);
 
+  // SECURITY: this implementation uses createElement. This creates the element
+  // as owned by the input document, which should not be the same document as
+  // the document running this script.
+
+  // If we will be creating a new base element, we want to place it correctly
+  // in the dom hierarchy, under the head element, so we will need to find the
+  // head element.  Use querySelector rather than document.head to retrieve the
+  // head element so as to also support implicitly xml-flagged documents (where
+  // document.head is undefined).
+  let head = document.querySelector('head');
+
+  // If the head element doesn't exist, we will be creating it, and will want to
+  // insert it before the body element.
+  const body = document.querySelector('body');
+
   if (overwrite) {
+    // Per the spec, "[t]here must be no more than one base element per
+    // document." We plan to add one that overwrites anything that exists, and
+    // do not care about the target attribute, so just remove everything else.
+    const bases = document.querySelectorAll('base');
+    for (const base of bases) {
+      base.remove();
+    }
+
     const base = document.createElement('base');
     base.setAttribute('href', url.href);
-    let head = document.querySelector('head');
+
     if (head) {
-      head.insertBefore(base, head.firstChildElement);
+      // Insert the base as the first element within head. If firstElementChild
+      // is undefined, this seamlessly turns into an appendChild operation.
+      head.insertBefore(base, head.firstElementChild);
     } else {
+      // SECURITY: this creates the element as owned by the input document,
+      // which should not be the same document as the document running this
+      // script.
       head = document.createElement('head');
+      // Appending to new head while it is still detached is better performance
+      // in case document is live
       head.appendChild(base);
-      document.documentElement.appendChild(head);
+      // Insert the head before the body (fallback to append if body not found)
+      document.documentElement.insertBefore(head, body);
     }
     return;
   }
 
+  let base = find_first_base(document);
 
-  // TODO: this matches the first base with an href, which may not be the first
-  // base. I am not sure if that is correct.
-
-  // According to MDN: "If multiple <base> elements are specified, only the
-  // first href and first target value are used; all others are ignored."
-  // We begin by searching for the first existing base element. We use
-  // querySelector which matches in document order. If we find a suitable
-  // element, grab its href value and resolve it relative to the input url.
-  // If the href was absolute, it will retain its original origin and ignore the
-  // custom url.
-
-  let href_value;
-  let canonical_base_url;
-  let base_element = document.querySelector('base[href]');
-  if (base_element) {
-    href_value = base_element.getAttribute('href');
-    if (href_value) {
-      href_value = href_value.trim();
-      if (href_value) {
-        canonical_base_url = new URL(href_value, url);
-      }
-    }
-  }
-
-  if (canonical_base_url) {
-    if (canonical_base_url.href !== href_value) {
-      // The document came with a base element but its href value was either
-      // relative or in some way not canonical (e.g. whitespace, trailing
-      // slash). Overwrite the value. Leave the first base element in place,
-      // and assume the browser will consider it as the source of baseURI.
-      base_element.setAttribute('href', canonical_base_url.href);
-      return;
+  // If we struck out trying to get on base, our job is easier.
+  if (!base) {
+    base = document.createElement('base');
+    base.setAttribute('href', url.href);
+    if (head) {
+      head.insertBefore(base, head.firstElementChild);
     } else {
-      // The document came with a base element with a canonical url. Leave the
-      // first base element in place, and assume the browser will use it to
-      // determine baseURI.
-      return;
+      head = document.createElement('head');
+      head.appendChild(base);
+      document.documentElement.insertBefore(head, body);
+    }
+    return;
+  }
+
+  // The spec states that "[t]he href content attribute, if specified, must
+  // contain a valid URL potentially surrounded by spaces." Rather than
+  // explicitly trim, we pass along extraneous whitespace to the URL
+  // constructor, which tolerates it. So long as we pass the base parameter
+  // to the URL constructor, the URL constructor also tolerates when the first
+  // parameter is null or undefined.
+  const href_value = base.getAttribute('href');
+  const canonical_url = new URL(href_value, url);
+
+  const comparable_href = href_value ? href_value.trim() : '';
+  if (canonical_url.href !== comparable_href) {
+    // Canonicalization resulted in a material value change. The value change
+    // could be as simple as removing spaces, adding a trailing slash, or as
+    // complex as making a relative base url absolute with respect to the input
+    // url, or turning an empty value into a full url. So we update this first
+    // base.
+    base.setAttribute('href', canonical_url.href);
+  } else {
+    // If there was no material change to the value after canonicalization, this
+    // means the existing base href value is canonical. Since we are not
+    // overwriting at this point, we respect the existing value.
+  }
+
+  // Per the spec, "[t]here must be no more than one base element per
+  // document." Now that we know which of the existing base elements will be
+  // retained, we remove the others to make the document more spec compliant.
+  const bases = document.querySelectorAll('base');
+  for (const other_base of bases) {
+    if (other_base !== base) {
+      other_base.remove();
     }
   }
+}
 
-  // TODO: I think it would be more accurate to only adjust the first base
-  // element, or create one, rather than doing this suprising side effect.
-  // Mutating other base elements seems to go outside the terms of our API
-  // contract. Unexpected behavior is bad.
-
-  // If we failed to find a canonical base url, let's create our own base.
-  // For safety, just clean up any existing ones. This is less brittle than
-  // trying to rely on the 'first-base' rule, although it is does mean that this
-  // mutation has unexpected side effects (of having other base elements
-  // modified).
-  const base_elements = document.querySelectorAll('base');
-  for (const old_base_element of base_elements) {
-    old_base_element.remove();
-  }
-
-  base_element = document.createElement('base');
-  base_element.setAttribute('href', url.href);
-
-  // In order to append to the head element, we have to find the head element.
-  // document.head is defined for html documents but undefined for xml flagged
-  // documents. querySelector works in both cases. This function exists in a
-  // module designed for html documents, but it is nice to support xml for not
-  // much of a cost. Also note that I prefer to try and shove the base element
-  // into the correct spot, even if that means producing this unexpected side
-  // effect of generating a head element as well.
-
-  // NOTE: it would technically be better for performance to append the base to
-  // the head before appending the head, in the event this is called on a live
-  // document. But this is currently designed with the assumption this document
-  // is inert, so the different order of operations does not matter. Also note
-  // that I assume most documents have a head, and that out-of-body dom
-  // mutations may have minimized impacts on rendering, so this concern seems
-  // trivial.
-
-  let head_element = document.querySelector('head');
-  if (!head_element) {
-    head_element = document.createElement('head');
-    document.documentElement.appendChild(head_element);
-  }
-
-  // We removed all the other bases, just append as last element without any
-  // anxiety over any 'early in document order' conflicting bases
-  head_element.appendChild(base_element);
+// Find the first existing base element in document traversal order. Skip over
+// bases that are missing an href. Per the spec, "[a] base element must have
+// either an href attribute, a target attribute, or both." I assume this means
+// that browsers ignore base elements that are missing such attributes. Also,
+// we do not care about the target attribute. We want to match browser
+// behavior here for security reasons, and to meet expectations.
+//
+// The search is not restricted to head so as to still match when the page
+// author misplaced the element, because I think this relaxed approach better
+// matches browser behavior than a strict one that only looks in the proper
+// location (under head). It is preferable to recognize a document's base url
+// in the same way that the browser would than miss it and substitute in our
+// own. Authors using relative base urls design pages to work in browsers, so
+// if we miss the base url, we could end up setting the wrong base.
+//
+// Note that I am not that strict about href validity, so this departs from
+// spec which states that "[t]he href content attribute, if specified, must
+// contain a valid URL potentially surrounded by spaces." Here we just look
+// for attribute presence. I assume that is good enough.
+//
+// I try to use the native selector instead of an explicit tree walk because
+// the native selector is substantially faster. The tradeoff is that I lose
+// the ability to find only href attributes with valid values.
+//
+// TODO: consider revising to actually find the first base with a valid url, and
+// not merely the first base with an href attribute.
+function find_first_base(document) {
+  return document.querySelector('base[href]');
 }
