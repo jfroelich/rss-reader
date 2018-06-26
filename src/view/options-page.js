@@ -41,6 +41,8 @@ channel.onmessage = function options_page_onmessage(event) {
     // not implemented
   } else if (type === 'feed-written') {
     // not implemented
+  } else if (type === 'entry-read') {
+    // ignore
   } else {
     console.warn('Unknown message type', type);
   }
