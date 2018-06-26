@@ -8,7 +8,6 @@ import {fade_element} from '/src/lib/dom/fade-element.js';
 import * as html from '/src/lib/html.js';
 import * as perm from '/src/lib/permissions.js';
 import ModelAccess from '/src/model-access.js';
-import {page_style_onload} from '/src/view/slideshow-page/page-style-onload.js';
 
 // View state
 let current_menu_item;
@@ -524,8 +523,6 @@ function body_line_height_input_oninput(event) {
 }
 
 function options_page_init() {
-  page_style_onload();
-
   // Attach click handlers to menu items
   // TODO: use single event listener on list itself instead
   const menu_items = document.querySelectorAll('#navigation-menu li');
