@@ -1,5 +1,6 @@
 import * as config from '/src/config.js';
 import * as array from '/src/lib/array.js';
+import assert from '/src/lib/assert.js';
 import * as html from '/src/lib/html.js';
 import {filter_publisher} from '/src/lib/nlp.js';
 import * as Model from '/src/model.js';
@@ -7,31 +8,38 @@ import {hide_no_articles_message} from '/src/view/slideshow-page/no-articles-mes
 import {slide_onclick} from '/src/view/slideshow-page/slide-onclick.js';
 import * as slideshow_state from '/src/view/slideshow-page/slideshow-state.js';
 
-// TODO: use assert?
-// TODO: simplify logging messages now that wrapper no longer in use
+// BUG: create_article_title_element is double encoding entities, so entities
+// show up in the value. I partially fixed by not escaping ampersand but that's
+// not the correct solution.
 
+// TODO: the creation of a slide element, and the appending of a slide element,
+// should be two separate tasks. This will increase flexibility and maybe
+// clarity. append_slide should accept a slide element, not an entry. It is
+// confusing that this function is named append_slide, but it accepts an entry,
+// not a slide, which is just plain bad naming.
+
+// TODO: the default duration should come from localStorage, and be stored
+// in localStorage instead of maintained here in module scope, and should be
+// accessed using config module io operations
+
+
+// Slide animation speed (smaller is faster). This is stored in module scope,
+// and is modifiable after module load via an exported setter function.
 let duration = 0.25;
 
 export function append_slide(entry) {
-  if (!Model.is_entry(entry)) {
-    console.warn('%s: invalid entry parameter', append_slide.name, entry);
-    return;
-  }
-
-  if (array.is_empty(entry.urls)) {
-    console.warn('%s: skipping entry without url', append_slide.name, entry);
-    return;
-  }
-
   // Now that we know there will be at least one visible article, ensure the
   // no articles message is hidden
   hide_no_articles_message();
 
   const slide = create_slide(entry);
-  append_slide_element(slide);
+  attach_slide(slide);
 }
 
 function create_slide(entry) {
+  assert(Model.is_entry(entry));
+  assert(!array.is_empty(entry.urls));
+
   const slide = document.createElement('slide');
   slide.setAttribute('entry', entry.id);
   slide.setAttribute('feed', entry.feed);
@@ -47,8 +55,6 @@ function create_slide(entry) {
 }
 
 
-// BUG: this is double encoding entities somehow, so entities show up in the
-// value. I partially fixed by not escaping ampersand but that's not right.
 function create_article_title_element(entry) {
   const title_element = document.createElement('a');
   title_element.setAttribute('href', array.peek(entry.urls));
@@ -115,11 +121,19 @@ function create_feed_source_element(entry) {
   return source_element;
 }
 
-function append_slide_element(slide) {
+// TODO: this helper should probably be inlined into append_slide once I work
+// out the API better. One of the main things I want to do is resolve the
+// mismatch between the function name, append-slide, and its main parameter,
+// a model entry object. I think the solution is to separate entry-to-element
+// and append-element. This module should ultimately focus only on appending,
+// not creation and coercion.
+function attach_slide(slide) {
   const container = document.getElementById('slideshow-container');
 
   // Defer binding event listener until appending here, not earlier when
-  // creating the element
+  // creating the element. We are not sure a slide will be used until it is
+  // appended, and want to avoid attaching listeners to unused detached
+  // elements.
   slide.addEventListener('click', slide_onclick);
 
   // In order for scrolling to react to keyboard shortcuts such as pressing
@@ -150,7 +164,7 @@ function append_slide_element(slide) {
   // are moved by changing a slide's css left property. This triggers a
   // transition. The transition property must be defined dynamically in order to
   // have the transition only apply to a slide when it is in a certain state. If
-  // set in css then this causes an undesirable immediate transition on the
+  // set via css then this causes an undesirable immediate transition on the
   // first slide.
   slide.style.transition = `left ${duration}s ease-in-out`;
 
@@ -159,7 +173,6 @@ function append_slide_element(slide) {
     // TODO: is this right? I think it is because there is no transition for
     // first slide, so there is no focus call. But maybe not needed?
     slide.focus();
-
     slideshow_state.set_current_slide(slide);
   }
 
@@ -178,11 +191,10 @@ export function set_transition_duration(input_duration) {
   duration = input_duration;
 }
 
-// Handle the end of a transaction. Not meant to be called directly.
+// Handle the end of a transaction. Should not be called directly.
 function transition_onend(event) {
   // The slide that the transition occured upon (event.target) is not guaranteed
   // to be equal to the current slide. We want to affect the current slide.
-
   // We fire off two transitions per animation, one for the slide being moved
   // out of view, and one for the slide being moved into view. Both transitions
   // result in call to this listener, but we only want to call focus on one of
@@ -190,7 +202,8 @@ function transition_onend(event) {
   // complete, the new slide (which is the current slide at this point) is now
   // focused. Therefore we ignore event.target and directly affect the current
   // slide only.
-  slideshow_state.get_current_slide().focus();
+  const slide = slideshow_state.get_current_slide();
+  slide.focus();
 
   // There may be more than one transition effect occurring at the moment.
   // Inform others via global slideshow state that this transition completed.
@@ -198,25 +211,22 @@ function transition_onend(event) {
 }
 
 // Return a date as a formatted string. This is an opinionated implementation
-// that is intended to be very simple
+// that is intended to be very simple. This tries to recover from errors and
+// not throw.
 function format_date(date) {
   if (!(date instanceof Date)) {
     return 'Invalid date';
   }
 
   // When using native date parsing and encountering an error, rather than throw
-  // that error, a date object is created with a NaN time property.
-  //
-  // Which would be ok but the format call below then throws if the time
-  // property is NaN
-
+  // that error, a date object is created with a NaN time property. Which would
+  // be ok but the format call below then throws if the time property is NaN
   if (isNaN(date.getTime())) {
     return 'Invalid date';
   }
 
   // The try/catch is just paranoia for now. This previously threw when date
   // contained time NaN.
-
   const formatter = new Intl.DateTimeFormat();
   try {
     return formatter.format(date);
