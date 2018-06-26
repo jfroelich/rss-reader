@@ -8,20 +8,13 @@ import * as channel from '/src/view/slideshow-page/channel.js';
 import {feeds_container_append_feed} from '/src/view/slideshow-page/feeds-container.js';
 import {show_no_articles_message} from '/src/view/slideshow-page/no-articles-message.js';
 import {onkeydown} from '/src/view/slideshow-page/onkeydown.js';
-import {page_style_onload} from '/src/view/slideshow-page/page-style-onload.js';
 import {hide_splash, show_splash} from '/src/view/slideshow-page/splash.js';
 
 // TODO: if main menu and left panel are separate from slideshow-page, then
 // it would be better to separately load them as modules in the html
 
 async function load_view() {
-  channel.init();
-
-  addEventListener('storage', config_control.storage_onchange);
-  addEventListener('keydown', onkeydown);
-
   show_splash();
-  page_style_onload();
 
   const dal = new ModelAccess();
 
@@ -52,5 +45,10 @@ async function load_view() {
     feeds_container_append_feed(feed);
   }
 }
+
+channel.init();
+addEventListener('storage', config_control.storage_onchange);
+addEventListener('keydown', onkeydown);
+document.addEventListener('DOMContentLoaded', config_control.dom_load_listener);
 
 load_view().catch(console.error);

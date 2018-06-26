@@ -3,6 +3,7 @@ import assert from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
 import * as css from '/src/lib/dom/css.js';
 
+
 // React to the extension being installed or updated, or when chrome is updated,
 // to do config related things. Note that this listener should be bound before
 // other listeners that depend on configuration setup.
@@ -247,4 +248,80 @@ export function storage_onchange(event) {
       rule.style.webkitColumnCount = '';
     }
   }
+}
+
+// Initialize the dom with css settings from config. This should only be bound
+// if stylesheets are present, and to an event later than DOMContentLoaded.
+export function dom_load_listener() {
+  const sheet = document.styleSheets[0];
+  sheet.addRule('.entry', page_style_entry_rule_create());
+  sheet.addRule('.entry .entry-title', page_style_title_rule_create());
+  sheet.addRule('.entry .entry-content', page_style_content_rule_create());
+
+  const padding = config.read_int('padding');
+  if (!isNaN(padding)) {
+    sheet.addRule('.slide-padding-wrapper', 'padding: ' + padding + 'px');
+  }
+}
+
+function page_style_entry_rule_create() {
+  const buffer = [];
+
+  let path = config.read_string('bg_image');
+  const color = config.read_string('bg_color');
+
+  if (path) {
+    buffer.push(`background: url("/images/${path}");`);
+  } else if (color) {
+    buffer.push(`background: ${color};`);
+  }
+
+  return buffer.join('');
+}
+
+function page_style_title_rule_create(sheet) {
+  const buffer = [];
+  const font_size = config.read_int('header_font_size');
+  if (!isNaN(font_size)) {
+    buffer.push(`font-size: ${font_size}px;`);
+  }
+
+  const font_family = config.read_string('header_font_family');
+  if (font_family) {
+    buffer.push(`font-family: ${font_family};`);
+  }
+
+  return buffer.join('');
+}
+
+function page_style_content_rule_create(sheet) {
+  const buffer = [];
+  const font_size = config.read_int('body_font_size');
+  if (!isNaN(font_size)) {
+    buffer.push(`font-size: ${font_size}px;`);
+  }
+
+  if (config.read_boolean('justify_text')) {
+    buffer.push('text-align: justify;');
+  }
+
+  const font_family = config.read_string('body_font_family');
+  if (font_family) {
+    buffer.push(`font-family: ${font_family};`);
+  }
+
+  const line_height = config.read_int('body_line_height');
+  if (!isNaN(line_height)) {
+    buffer.push(`line-height: ${line_height}px;`);
+  }
+
+  // TODO: did column-count become standard css yet? if so drop prefix
+  const column_count = config.read_int('column_count');
+  if (column_count === 2 || column_count === 3) {
+    buffer.push(`-webkit-column-count: ${column_count};`);
+    buffer.push('-webkit-column-gap: 30px;');
+    buffer.push('-webkit-column-rule: 1px outset #aaaaaa;');
+  }
+
+  return buffer.join('');
 }
