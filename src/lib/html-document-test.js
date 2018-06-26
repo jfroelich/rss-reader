@@ -1,15 +1,15 @@
 import assert from '/src/lib/assert.js';
-import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
+import {set_base_uri} from '/src/lib/html-document.js';
 import {register_test} from '/src/test/test-registry.js';
 
-async function set_document_base_uri_test() {
+async function set_base_uri_test() {
   // If a document has no base elements, then this should add a base element
   // and that should become the baseURI value
   let title = 'no existing base';
   console.debug('testing', title);
   let doc = document.implementation.createHTMLDocument(title);
   let url = new URL('http://www.example.com');
-  set_document_base_uri(doc, url);
+  set_base_uri(doc, url);
   assert(doc.baseURI === url.href);
 
   // If a document has a base element, and that base element has a canonical
@@ -23,7 +23,7 @@ async function set_document_base_uri_test() {
   // Before the change, is the document in the expected state
   assert(doc.baseURI === 'http://www.example1.com/');
   url = new URL('http://www.example2.com');
-  set_document_base_uri(doc, url);
+  set_base_uri(doc, url);
   // After the change, is the document in the expected state
   assert(doc.baseURI === 'http://www.example1.com/');
 
@@ -44,7 +44,7 @@ async function set_document_base_uri_test() {
   // console.debug('extension url:', chrome.extension.getURL(''));
   // console.debug('before change for non-canon the base uri is', doc.baseURI);
   url = new URL('http://www.example.com');
-  set_document_base_uri(doc, url);
+  set_base_uri(doc, url);
   assert(doc.baseURI === 'http://www.example.com/path');
 
   // If a document has a base element, and that base element has an href value
@@ -60,7 +60,7 @@ async function set_document_base_uri_test() {
   base.setAttribute('href', '  \t\r\n   foo  bar     ');
   doc.head.appendChild(base);
   url = new URL('http://www.example.com');
-  set_document_base_uri(doc, url);
+  set_base_uri(doc, url);
   console.debug('base uri is ', doc.baseURI);
   assert(doc.baseURI === 'http://www.example.com/foo%20%20bar');
 
@@ -70,4 +70,4 @@ async function set_document_base_uri_test() {
   // href should be the one used
 }
 
-register_test(set_document_base_uri_test);
+register_test(set_base_uri_test);

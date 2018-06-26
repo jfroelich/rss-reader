@@ -3,7 +3,7 @@ import * as favicon from '/src/action/favicon/favicon.js';
 import {sanitize_document} from '/src/action/poll/sanitize-document.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
-import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
+import {set_base_uri} from '/src/lib/html-document.js';
 import * as html from '/src/lib/html.js';
 import {fetch_html} from '/src/lib/net/fetch-html.js';
 import * as sniff from '/src/lib/net/sniff.js';
@@ -102,7 +102,7 @@ export async function poll_entry(
   assert(document);
 
   await update_entry_icon(iconn, entry, document);
-  set_document_base_uri(document, url);
+  set_base_uri(document, url);
   await sanitize_document(document);
   entry.content = document.documentElement.outerHTML;
 

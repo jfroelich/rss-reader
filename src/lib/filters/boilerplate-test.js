@@ -1,5 +1,5 @@
 import assert from '/src/lib/assert.js';
-import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
+import {set_base_uri} from '/src/lib/html-document.js';
 import * as boilerplate from '/src/lib/filters/boilerplate.js';
 import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';
 import {deframe} from '/src/lib/filters/deframe.js';
@@ -41,7 +41,7 @@ async function legacy_boilerplate_test(url_string) {
   // Filters such as canonicalize_urls and set_image_sizes expect a valid
   // baseURI
   const response_url = new URL(response.url);
-  set_document_base_uri(document, response_url);
+  set_base_uri(document, response_url);
 
   deframe(document);
   filter_script_elements(document);

@@ -3,7 +3,7 @@ import '/src/action/subscribe-test.js';
 import '/src/lib/color-test.js';
 import '/src/model-access-test.js';
 import '/src/lib/dom/coerce-element-test.js';
-import '/src/lib/dom/set-document-base-uri-test.js';
+import '/src/lib/html-document-test.js';
 import '/src/action/favicon/favicon-service-test.js';
 import '/src/lib/filters/boilerplate-test.js';
 import '/src/lib/filters/color-contrast-filter-test.js';

@@ -1,6 +1,6 @@
 import {set_image_sizes} from '/src/filters/set-image-sizes.js';
 import assert from '/src/lib/assert.js';
-import {set_document_base_uri} from '/src/lib/dom/set-document-base-uri.js';
+import {set_base_uri} from '/src/lib/html-document.js';
 import * as html from '/src/lib/html.js';
 import {fetch_html} from '/src/lib/net/fetch-html.js';
 import {is_allowed_request} from '/src/lib/net/fetch-policy.js';
@@ -23,7 +23,7 @@ window.test = async function(url_string) {
   const html = await response.text();
   const document = html.parse_html(html);
   const response_url = new URL(response.url);
-  set_document_base_uri(document, response_url);
+  set_base_uri(document, response_url);
   await set_image_sizes(document, undefined, is_allowed_request);
 };
 
@@ -34,7 +34,7 @@ window.test2 = async function() {
       '</body></html>';
   const document = html.parse_html(html);
 
-  set_document_base_uri(document, new URL('http://exercism.io'));
+  set_base_uri(document, new URL('http://exercism.io'));
   await set_image_sizes(document, undefined, is_allowed_request);
 };
 

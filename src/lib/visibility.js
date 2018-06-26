@@ -1,5 +1,7 @@
 import assert from '/src/lib/assert.js';
 
+// TODO: learn and consider cssom
+
 // Returns true if an element is hidden according to its inline style
 export function element_is_hidden_inline(element) {
   // It is an error to call this on something other than an element

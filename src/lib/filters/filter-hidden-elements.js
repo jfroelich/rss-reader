@@ -1,4 +1,4 @@
-import {element_is_hidden_inline} from '/src/lib/dom/element-is-hidden-inline.js';
+import {element_is_hidden_inline} from '/src/lib/visibility.js';
 import {unwrap_element} from '/src/lib/dom/unwrap-element.js';
 import {color_contrast_filter} from '/src/lib/filters/color-contrast-filter.js';
 
