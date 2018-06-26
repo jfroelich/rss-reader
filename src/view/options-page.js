@@ -43,6 +43,8 @@ channel.onmessage = function options_page_onmessage(event) {
     // not implemented
   } else if (type === 'entry-read') {
     // ignore
+  } else if (type === 'entry-write') {
+    // ignore
   } else {
     console.warn('Unknown message type', type);
   }
