@@ -1,5 +1,5 @@
-import ModelAccess from '/src/model-access.js';
-import * as Model from '/src/model.js';
+import ModelAccess from '/src/model/model-access.js';
+import * as Model from '/src/model/model.js';
 
 // Removes entries missing urls from the database
 // TODO: test

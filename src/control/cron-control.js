@@ -2,8 +2,8 @@ import {archive_entries} from '/src/action/archive-entries.js';
 import * as favicon from '/src/action/favicon/favicon.js';
 import {poll_feeds} from '/src/action/poll/poll-feeds.js';
 import * as config from '/src/config.js';
-import ModelAccess from '/src/model-access.js';
-import * as model_health from '/src/model-health.js';
+import ModelAccess from '/src/model/model-access.js';
+import * as model_health from '/src/model/model-health.js';
 
 // Appropriately modify alarm settings when the extension is installed or
 // updated

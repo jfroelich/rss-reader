@@ -9,9 +9,9 @@ import {fetch_html} from '/src/lib/net/fetch-html.js';
 import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
-import ModelAccess from '/src/model-access.js';
-import * as sanity from '/src/model-sanity.js';
-import * as Model from '/src/model.js';
+import ModelAccess from '/src/model/model-access.js';
+import * as sanity from '/src/model/model-sanity.js';
+import * as Model from '/src/model/model.js';
 
 export class EntryExistsError extends Error {
   constructor(message = 'Entry already exists') {

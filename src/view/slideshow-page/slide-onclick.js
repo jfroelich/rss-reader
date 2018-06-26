@@ -1,4 +1,4 @@
-import ModelAccess from '/src/model-access.js';
+import ModelAccess from '/src/model/model-access.js';
 import {mark_slide_read_start} from '/src/view/slideshow-page/mark-slide-read.js';
 import {get_current_slide} from '/src/view/slideshow-page/slideshow-state.js';
 

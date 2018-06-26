@@ -1,8 +1,8 @@
 import {subscribe} from '/src/action/subscribe.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
-import ModelAccess from '/src/model-access.js';
-import * as Model from '/src/model.js';
+import ModelAccess from '/src/model/model-access.js';
+import * as Model from '/src/model/model.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: it is wrong to ping google, implement something that tests a local

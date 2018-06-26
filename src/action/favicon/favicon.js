@@ -1,4 +1,4 @@
-import ModelAccess from '/src/model-access.js';
+import ModelAccess from '/src/model/model-access.js';
 import {FaviconService} from '/src/action/favicon/favicon-service.js';
 import * as array from '/src/lib/array.js';
 

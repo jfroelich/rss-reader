@@ -1,4 +1,4 @@
-import ModelAccess from '/src/model-access.js';
+import ModelAccess from '/src/model/model-access.js';
 
 // Starts transitioning a slide into the read state. Updates both the view and
 // the database. This resolves before the view is fully updated. This only sets

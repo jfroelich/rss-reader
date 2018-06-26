@@ -4,7 +4,7 @@ import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {fetch_feed} from '/src/lib/net/fetch-feed.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
-import * as sanity from '/src/model-sanity.js';
+import * as sanity from '/src/model/model-sanity.js';
 
 // TODO: implement create-feed in the model access layer, and use that here
 // instead of update-feed

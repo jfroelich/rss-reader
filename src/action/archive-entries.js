@@ -1,5 +1,5 @@
 import assert from '/src/lib/assert.js';
-import * as Model from '/src/model.js';
+import * as Model from '/src/model/model.js';
 import sizeof from '/src/lib/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;

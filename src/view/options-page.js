@@ -7,7 +7,7 @@ import * as array from '/src/lib/array.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import * as html from '/src/lib/html.js';
 import * as perm from '/src/lib/permissions.js';
-import ModelAccess from '/src/model-access.js';
+import ModelAccess from '/src/model/model-access.js';
 
 // View state
 let current_menu_item;

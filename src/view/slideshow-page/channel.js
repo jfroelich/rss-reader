@@ -1,5 +1,5 @@
 import * as badge from '/src/control/badge-control.js';
-import ModelAccess from '/src/model-access.js';
+import ModelAccess from '/src/model/model-access.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/view/slideshow-page/count-unread-slides.js';
 import {mark_slide_read_end} from '/src/view/slideshow-page/mark-slide-read.js';

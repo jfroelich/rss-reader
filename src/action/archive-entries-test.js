@@ -1,5 +1,5 @@
 import {archive_entries} from '/src/action/archive-entries.js';
-import ModelAccess from '/src/model-access.js';
+import ModelAccess from '/src/model/model-access.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import {register_test} from '/src/test/test-registry.js';

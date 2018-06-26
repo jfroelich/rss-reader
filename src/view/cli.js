@@ -3,8 +3,8 @@ import * as favicon from '/src/action/favicon/favicon.js';
 import {poll_feed, poll_feeds} from '/src/action/poll/poll-feeds.js';
 import {subscribe} from '/src/action/subscribe.js';
 import * as cron_control from '/src/control/cron-control.js';
-import ModelAccess from '/src/model-access.js';
-import * as model_health from '/src/model-health.js';
+import ModelAccess from '/src/model/model-access.js';
+import * as model_health from '/src/model/model-health.js';
 
 // The command-line-interface (CLI) module creates a cli object within the
 // global window object in order to make certain app functionality accessible

@@ -1,5 +1,5 @@
 import * as favicon from '/src/action/favicon/favicon.js';
-import ModelAccess from '/src/model-access.js';
+import ModelAccess from '/src/model/model-access.js';
 
 // TODO: deprecate, this no longer does that much and was using a weak form of
 // temporal coherency instead of functional coherency. Instead, should create or

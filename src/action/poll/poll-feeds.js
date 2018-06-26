@@ -5,9 +5,9 @@ import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {fetch_feed} from '/src/lib/net/fetch-feed.js';
 import {OfflineError, TimeoutError} from '/src/lib/net/fetch2.js';
-import ModelAccess from '/src/model-access.js';
-import * as ModelSanity from '/src/model-sanity.js';
-import * as Model from '/src/model.js';
+import ModelAccess from '/src/model/model-access.js';
+import * as ModelSanity from '/src/model/model-sanity.js';
+import * as Model from '/src/model/model.js';
 
 const chan_stub = {
   name: 'channel-stub',

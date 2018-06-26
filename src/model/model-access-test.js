@@ -1,8 +1,8 @@
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
-import ModelAccess from '/src/model-access.js';
-import * as sanity from '/src/model-sanity.js';
-import * as Model from '/src/model.js';
+import ModelAccess from '/src/model/model-access.js';
+import * as sanity from '/src/model/model-sanity.js';
+import * as Model from '/src/model/model.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // Exercises the db-write-feed function in the case of adding a new feed object

@@ -2,7 +2,7 @@ import * as config from '/src/config.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import * as object from '/src/lib/object.js';
-import * as Model from '/src/model.js';
+import * as Model from '/src/model/model.js';
 
 // Provides a data access layer for interacting with the reader database
 export default function ModelAccess() {

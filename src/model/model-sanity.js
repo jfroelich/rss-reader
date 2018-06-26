@@ -1,6 +1,6 @@
 import * as html from '/src/lib/html.js';
 import * as string from '/src/lib/string.js';
-import * as Model from '/src/model.js';
+import * as Model from '/src/model/model.js';
 
 // TODO: finish implementation
 export function is_valid_entry(entry) {
