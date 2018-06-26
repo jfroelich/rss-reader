@@ -1,8 +1,6 @@
 import * as config from '/src/config.js';
 import assert from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
-import * as css from '/src/lib/dom/css.js';
-
 
 // React to the extension being installed or updated, or when chrome is updated,
 // to do config related things. Note that this listener should be bound before
@@ -178,69 +176,69 @@ export function storage_onchange(event) {
 
   const key = event.key;
   if (key === 'padding') {
-    const rule = css.find_rule('.slide-padding-wrapper');
+    const rule = find_css_rule('.slide-padding-wrapper');
     const padding = parseInt(event.newValue, 10);
     rule.style.padding = isNaN(padding) ? '' : padding + 'px';
     return;
   }
 
   if (key === 'bg_image') {
-    const rule = css.find_rule('.entry');
+    const rule = find_css_rule('.entry');
     const path = event.newValue;
     rule.style.backgroundImage = path ? `url("/images/${path}")` : '';
     return;
   }
 
   if (key === 'bg_color') {
-    const rule = css.find_rule('.entry');
+    const rule = find_css_rule('.entry');
     const color = event.newValue;
     rule.style.backgroundColor = color ? color : '';
     return;
   }
 
   if (key === 'header_font_family') {
-    const rule = css.find_rule('.entry .entry-title');
+    const rule = find_css_rule('.entry .entry-title');
     const family = event.newValue;
     rule.style.fontFamily = family ? family : 'initial';
     return;
   }
 
   if (key === 'header_font_size') {
-    const rule = css.find_rule('.entry .entry-title');
+    const rule = find_css_rule('.entry .entry-title');
     const size = parseInt(event.newValue, 10);
     rule.style.fontSize = isNaN(size) ? '' : size + 'px';
     return;
   }
 
   if (key === 'body_font_family') {
-    const rule = css.find_rule('.entry .entry-content');
+    const rule = find_css_rule('.entry .entry-content');
     const family = event.newValue;
     rule.style.fontFamily = family ? family : 'initial';
     return;
   }
 
   if (key === 'body_font_size') {
-    const rule = css.find_rule('.entry .entry-content');
+    const rule = find_css_rule('.entry .entry-content');
     const size = parseInt(event.newValue, 10);
     rule.style.fontSize = isNaN(size) ? '' : size + 'px';
     return;
   }
 
   if (key === 'justify_text') {
-    const rule = css.find_rule('.entry .entry-content');
+    const rule = find_css_rule('.entry .entry-content');
     rule.style.textAlign = event.newValue ? 'justify' : 'left';
     return;
   }
 
   if (key === 'body_line_height') {
-    const rule = css.find_rule('.entry .entry-content');
+    const rule = find_css_rule('.entry .entry-content');
     const height = parseInt(event.newValue, 10);
     rule.style.lineHeight = isNaN(height) ? '' : height + 'px';
     return;
   }
 
   if (key === 'column_count') {
-    const rule = css.find_rule('.entry .entry-content');
+    const rule = find_css_rule('.entry .entry-content');
     const count = parseInt(event.newValue, 10);
     if (!isNaN(count) && count >= 0 && count <= 3) {
       rule.style.webkitColumnCount = count;
@@ -324,4 +322,17 @@ function page_style_content_rule_create(sheet) {
   }
 
   return buffer.join('');
+}
+
+// Returns the first matching css rule or undefined
+// @param selector_text {String}
+// @returns rule {CSSStyleRule}
+function find_css_rule(selector_text) {
+  for (const sheet of document.styleSheets) {
+    for (const rule of sheet.rules) {
+      if (rule.selectorText === selector_text) {
+        return rule;
+      }
+    }
+  }
 }
