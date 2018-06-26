@@ -14,10 +14,25 @@ import assert from '/src/lib/assert.js';
 // is modified in place rather than treated as immutable.
 //
 // If the document already has a valid base uri, it is left as is.
-export function set_base_uri(document, url) {
+export function set_base_uri(document, url, overwrite) {
   assert(typeof document === 'object');
   assert(typeof url === 'object');
   assert(url.href);
+
+  if (overwrite) {
+    const base = document.createElement('base');
+    base.setAttribute('href', url.href);
+    let head = document.querySelector('head');
+    if (head) {
+      head.insertBefore(base, head.firstChildElement);
+    } else {
+      head = document.createElement('head');
+      head.appendChild(base);
+      document.documentElement.appendChild(head);
+    }
+    return;
+  }
+
 
   // TODO: this matches the first base with an href, which may not be the first
   // base. I am not sure if that is correct.
