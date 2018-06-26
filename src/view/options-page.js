@@ -1,8 +1,8 @@
-import * as config from '/src/config.js';
-import * as badge from '/src/control/badge-control.js';
 import * as favicon from '/src/action/favicon/favicon.js';
 import {poll_feed} from '/src/action/poll/poll-feeds.js';
-import {subscribe} from '/src/action/subscribe.js';
+import {subscribe, unsubscribe} from '/src/action/subscribe.js';
+import * as config from '/src/config.js';
+import * as badge from '/src/control/badge-control.js';
 import * as array from '/src/lib/array.js';
 import {fade_element} from '/src/lib/dom/fade-element.js';
 import * as html from '/src/lib/html.js';
@@ -377,7 +377,7 @@ async function unsubscribe_button_onclick(event) {
   const dal = new ModelAccess();
   dal.channel = new BroadcastChannel('reader');
   await dal.connect();
-  await dal.deleteFeed(feed_id, 'unsubscribe');
+  await unsubscribe(dal, feed_id);
   dal.close();
   dal.channel.close();
   feed_list_remove_feed_by_id(feed_id);

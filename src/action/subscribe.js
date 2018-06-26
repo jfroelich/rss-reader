@@ -1,14 +1,12 @@
-import * as app from '/src/app.js';
 import * as favicon from '/src/action/favicon/favicon.js';
+import * as app from '/src/app.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {fetch_feed} from '/src/lib/net/fetch-feed.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import * as sanity from '/src/model-sanity.js';
 
-// TODO: consider using a single transaction
-// TODO: implement unsubscribe wrapper to avoid view directly calling
-// delete-feed
+// TODO: if possible, revise subscribe to use a single transaction
 
 // Subscribe to a feed
 // @param dal {ModelAccess} an open ModelAccess instance
@@ -59,4 +57,8 @@ export async function subscribe(dal, iconn, url, fetch_timeout, should_notify) {
   }
 
   return feed;
+}
+
+export function unsubscribe(dal, feed_id) {
+  return dal.deleteFeed(feed_id, 'unsubscribe');
 }
