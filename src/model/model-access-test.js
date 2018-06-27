@@ -92,6 +92,49 @@ async function create_feed_url_constraint_test() {
   await indexeddb.remove(ma.conn.name);
 }
 
+// Exercise the typical createFeeds case
+async function create_feeds_test() {
+  const msgs = [];
+  const ma = new ModelAccess();
+  await ma.connect('create-feeds-test');
+  ma.channel = {name: 'stub', postMessage: m => msgs.push(m), close: noop};
+
+  const num_feeds = 3;
+  const feeds = [];
+  for (let i = 0; i < num_feeds; i++) {
+    const feed = Model.create_feed();
+    Model.append_feed_url(feed, new URL('a://b.c' + i));
+    feeds.push(feed);
+  }
+
+  const ids = await ma.createFeeds(feeds);
+  assert(ids.length === num_feeds, '' + ids);
+
+  const stored_feeds = await ma.getFeeds('all', /* title-sort */ false);
+  assert(stored_feeds.length === num_feeds, '' + stored_feeds);
+
+  // Load the feeds individually by id, albeit concurrently. This exercises the
+  // id check, which getFeeds above does not.
+  const feeds_by_id = await Promise.all(ids.map(id => ma.getFeed('id', id)));
+
+  for (const feed of feeds_by_id) {
+    assert(Model.is_feed(feed));
+    assert(Model.is_valid_feed_id(feed.id));
+    assert(feed.active);
+    assert(feed.dateCreated);
+    assert(feed.dateUpdated === undefined);
+  }
+
+  assert(msgs.length === num_feeds);
+  assert(msgs[0].type === 'feed-created');
+  assert(msgs[0].id === feeds_by_id[0].id);
+
+  // Teardown the test
+  ma.channel.close();
+  ma.close();
+  await indexeddb.remove(ma.conn.name);
+}
+
 // Exercise the normal activateFeed case
 async function activate_feed_test() {
   const msgs = [];
@@ -124,4 +167,5 @@ function noop() {}
 
 register_test(create_feed_test);
 register_test(create_feed_url_constraint_test);
+register_test(create_feeds_test);
 register_test(activate_feed_test);
