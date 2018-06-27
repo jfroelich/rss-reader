@@ -1,12 +1,14 @@
+import assert from '/src/lib/assert.js';
 import * as html from '/src/lib/html.js';
 import * as string from '/src/lib/string.js';
 import * as Model from '/src/model/model.js';
 
 // TODO: finish implementation
 export function is_valid_entry(entry) {
-  if (!Model.is_entry(entry)) {
-    return false;
-  }
+  // It is a programmer error to call this on an object that is not an entry
+  // Validation is for validation of actual entry objects, not general values
+  assert(Model.is_entry(entry));
+
 
   // This could be called on a new entry that does not have an id, so only
   // check id validity when the property exists
@@ -21,9 +23,9 @@ export function is_valid_entry(entry) {
 
 // TODO: finish implementation
 export function is_valid_feed(feed) {
-  if (!Model.is_feed(feed)) {
-    return false;
-  }
+  // This should only be called on objects purporting to be feeds. It is a
+  // programmer error to call this on other values.
+  assert(Model.is_feed(feed));
 
   if ('id' in feed && !Model.is_valid_feed_id(feed.id)) {
     return false;
@@ -44,6 +46,9 @@ export function is_valid_feed(feed) {
 export function sanitize_entry(
     entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {
+  // Calling this on a non-entry value is a persistent programmer error
+  assert(Model.is_entry(entry));
+
   if (entry.author) {
     let author = entry.author;
     author = string.filter_control_characters(author);
@@ -73,6 +78,9 @@ export function sanitize_entry(
 
 // TODO: revert to not using options parameter
 export function sanitize_feed(feed, options) {
+  // It is a persistent programmer error to call this on a non-feed
+  assert(Model.is_feed(feed));
+
   options = options || {};
   const title_max_len = options.title_max_len || 1024;
   const desc_max_len = options.desc_max_len || 1024 * 10;
