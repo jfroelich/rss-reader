@@ -17,9 +17,9 @@ export async function oninstalled(event) {
 
   if (reason === 'install') {
     // Explicitly create the reader database
-    const dal = new ModelAccess();
-    await dal.connect();
-    dal.close();
+    const ma = new ModelAccess();
+    await ma.connect();
+    ma.close();
 
     // Setup the favicon database explicitly
     conn = await favicon.open();

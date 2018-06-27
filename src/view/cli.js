@@ -25,76 +25,76 @@ import * as model_health from '/src/model/model-health.js';
 // article: http://read.humanjavascript.com/ch04-organizing-your-code.html
 
 async function cli_subscribe(url_string, poll = true) {
-  const dal = new ModelAccess();
-  const proms = [dal.connect(), favicon.open()];
+  const ma = new ModelAccess();
+  const proms = [ma.connect(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
 
-  dal.channel = new BroadcastChannel('reader');
+  ma.channel = new BroadcastChannel('reader');
 
   // Bubble up errors to console
   const url = new URL(url_string);
-  const feed = await subscribe(dal, iconn, url, options, 3000, true);
+  const feed = await subscribe(ma, iconn, url, options, 3000, true);
 
   // Do a sequential poll of the created feed
   if (poll) {
     const poll_options = {ignore_recency_check: true, notify: true};
-    await poll_feed(dal.conn, iconn, dal.channel, poll_options, feed);
+    await poll_feed(ma.conn, iconn, ma.channel, poll_options, feed);
   }
 
-  dal.close();
-  dal.channel.close();
+  ma.close();
+  ma.channel.close();
   iconn.close();
 }
 
 async function cli_archive_entries() {
-  const dal = new ModelAccess();
-  dal.channel = new BroadcastChannel('reader');
-  await dal.connect();
-  await archive_entries(dal);
-  dal.channel.close();
-  dal.close();
+  const ma = new ModelAccess();
+  ma.channel = new BroadcastChannel('reader');
+  await ma.connect();
+  await archive_entries(ma);
+  ma.channel.close();
+  ma.close();
 }
 
 async function cli_refresh_icons() {
-  const dal = new ModelAccess();
-  const proms = [dal.connect(), favicon.open()];
+  const ma = new ModelAccess();
+  const proms = [ma.connect(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel('reader');
-  await favicon.refresh_feeds(dal.conn, iconn, channel);
-  dal.close();
+  await favicon.refresh_feeds(ma.conn, iconn, channel);
+  ma.close();
   iconn.close();
   channel.close();
 }
 
 async function cli_poll_feeds() {
-  const dal = new ModelAccess();
-  const proms = [dal.connect(), favicon.open()];
+  const ma = new ModelAccess();
+  const proms = [ma.connect(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
   const channel = new BroadcastChannel('reader');
   const options = {ignore_recency_check: true};
-  await poll_feeds(dal.conn, iconn, channel, options);
+  await poll_feeds(ma.conn, iconn, channel, options);
   channel.close();
-  dal.close();
+  ma.close();
   iconn.close();
 }
 
 async function cli_remove_lost_entries() {
-  const dal = new ModelAccess();
-  await dal.connect();
-  dal.channel = new MonitoredBroadcastChannel('reader');
-  await model_health.remove_lost_entries(dal);
+  const ma = new ModelAccess();
+  await ma.connect();
+  ma.channel = new MonitoredBroadcastChannel('reader');
+  await model_health.remove_lost_entries(ma);
   console.log('Removed %d lost entries', channel.message_count);
-  dal.close();
-  dal.channel.close();
+  ma.close();
+  ma.channel.close();
 }
 
 async function cli_remove_orphans() {
-  const dal = new ModelAccess();
-  await dal.connect();
+  const ma = new ModelAccess();
+  await ma.connect();
   const channel = new MonitoredBroadcastChannel('reader');
-  await model_health.remove_orphaned_entries(dal.conn, channel);
+  await model_health.remove_orphaned_entries(ma.conn, channel);
   console.log('Deleted %d entries', channel.message_count);
-  dal.close();
+  ma.close();
   channel.close();
 }
 

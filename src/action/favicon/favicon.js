@@ -52,14 +52,14 @@ export function create_lookup_url(feed) {
 
 // Update the favicon of each of the feeds in the database
 export async function refresh_feeds(rconn, iconn, channel) {
-  const dal = new ModelAccess();
-  dal.conn = rconn;
-  dal.channel = channel;
+  const ma = new ModelAccess();
+  ma.conn = rconn;
+  ma.channel = channel;
 
   const mode = 'active';
   const sorted = false;
 
-  const feeds = await dal.getFeeds(mode, sorted);
+  const feeds = await ma.getFeeds(mode, sorted);
   const promises = [];
   for (const feed of feeds) {
     promises.push(refresh_feed(rconn, iconn, channel, feed));
@@ -88,9 +88,9 @@ async function refresh_feed(rconn, iconn, channel, feed) {
       delete feed.faviconURLString;
     }
 
-    const dal = new ModelAccess();
-    dal.conn = rconn;
-    dal.channel = channel;
-    await dal.updateFeed(feed);
+    const ma = new ModelAccess();
+    ma.conn = rconn;
+    ma.channel = channel;
+    await ma.updateFeed(feed);
   }
 }

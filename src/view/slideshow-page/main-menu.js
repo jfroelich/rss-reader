@@ -15,18 +15,18 @@ async function refresh_button_onclick(event) {
 
   refresh_in_progress = true;
 
-  const dal = new ModelAccess();
-  dal.channel = new BroadcastChannel('reader');
+  const ma = new ModelAccess();
+  ma.channel = new BroadcastChannel('reader');
 
-  await dal.connect();
+  await ma.connect();
   const iconn = await favicon.open();
 
   const options = {};
   options.ignore_recency_check = true;
-  await poll_feeds(dal.conn, iconn, dal.channel, options);
+  await poll_feeds(ma.conn, iconn, ma.channel, options);
 
-  dal.close();
-  dal.channel.close();
+  ma.close();
+  ma.channel.close();
   iconn.close();
 
   refresh_in_progress = false;

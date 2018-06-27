@@ -24,12 +24,12 @@ export async function alarm_listener(alarm) {
   ls.write_string('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
-    const dal = new ModelAccess();
-    dal.channel = new BroadcastChannel('reader');
-    await dal.connect();
-    await archive_entries(dal);
-    dal.channel.close();
-    dal.close();
+    const ma = new ModelAccess();
+    ma.channel = new BroadcastChannel('reader');
+    await ma.connect();
+    await archive_entries(ma);
+    ma.channel.close();
+    ma.close();
   } else if (alarm.name === 'poll') {
     if (ls.read_boolean('only_poll_if_idle')) {
       // TODO: this value should come from local storage
@@ -43,42 +43,42 @@ export async function alarm_listener(alarm) {
     const options = {};
     options.ignore_recency_check = false;
     options.notify = true;
-    const dal = new ModelAccess();
-    await dal.connect();
+    const ma = new ModelAccess();
+    await ma.connect();
     const iconn = await favicon.open();
     const channel = new BroadcastChannel('reader');
-    await poll_feeds(dal.conn, iconn, channel, options);
+    await poll_feeds(ma.conn, iconn, channel, options);
     channel.close();
     iconn.close();
-    dal.close();
+    ma.close();
   } else if (alarm.name === 'remove-entries-missing-urls') {
-    const dal = new ModelAccess();
-    await dal.connect();
-    dal.channel = new BroadcastChannel('reader');
-    await model_health.remove_lost_entries(dal);
-    dal.close();
-    dal.channel.close();
+    const ma = new ModelAccess();
+    await ma.connect();
+    ma.channel = new BroadcastChannel('reader');
+    await model_health.remove_lost_entries(ma);
+    ma.close();
+    ma.channel.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
-    const dal = new ModelAccess();
-    await dal.connect();
+    const ma = new ModelAccess();
+    await ma.connect();
     const channel = new BroadcastChannel('reader');
-    await model_health.remove_orphaned_entries(dal.conn, channel);
-    dal.close();
+    await model_health.remove_orphaned_entries(ma.conn, channel);
+    ma.close();
     channel.close();
   } else if (alarm.name === 'remove-untyped-objects') {
-    const dal = new ModelAccess();
-    await dal.connect();
+    const ma = new ModelAccess();
+    await ma.connect();
     const channel = new BroadcastChannel('reader');
-    await model_health.remove_untyped_objects(dal.conn, channel);
-    dal.close();
+    await model_health.remove_untyped_objects(ma.conn, channel);
+    ma.close();
     channel.close();
   } else if (alarm.name === 'refresh-feed-icons') {
-    const dal = new ModelAccess();
-    const proms = [dal.connect(), favicon.open()];
+    const ma = new ModelAccess();
+    const proms = [ma.connect(), favicon.open()];
     const [_, iconn] = await Promise.all(proms);
     const channel = new BroadcastChannel('reader');
-    await favicon.refresh_feeds(dal.conn, iconn, channel);
-    dal.close();
+    await favicon.refresh_feeds(ma.conn, iconn, channel);
+    ma.close();
     iconn.close();
     channel.close();
   } else if (alarm.name === 'compact-favicon-db') {

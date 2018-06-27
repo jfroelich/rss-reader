@@ -16,18 +16,18 @@ export async function show_next_slide() {
     return;
   }
 
-  const dal = new ModelAccess();
-  await dal.connect();
-  await mark_slide_read_start(dal.conn, current_slide);
+  const ma = new ModelAccess();
+  await ma.connect();
+  await mark_slide_read_start(ma.conn, current_slide);
 
   const slide_unread_count = count_unread_slides();
   let entries = [];
   if (slide_unread_count < 3) {
     const limit = ls.read_int('initial_entry_load_limit');
     const mode = 'viewable';
-    entries = await dal.getEntries(mode, slide_unread_count, limit);
+    entries = await ma.getEntries(mode, slide_unread_count, limit);
   }
-  dal.close();
+  ma.close();
 
   for (const entry of entries) {
     if (!document.querySelector('slide[entry="' + entry.id + '"]')) {

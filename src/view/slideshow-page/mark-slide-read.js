@@ -32,11 +32,11 @@ export async function mark_slide_read_start(conn, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  const dal = new ModelAccess();
-  dal.conn = conn;
-  dal.channel = new BroadcastChannel('reader');
-  await dal.markEntryRead(entry_id);
-  dal.channel.close();
+  const ma = new ModelAccess();
+  ma.conn = conn;
+  ma.channel = new BroadcastChannel('reader');
+  await ma.markEntryRead(entry_id);
+  ma.channel.close();
 }
 
 // This should be called once the view acknowledges it has received the message

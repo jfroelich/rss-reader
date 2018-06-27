@@ -27,9 +27,9 @@ export async function poll_entry(
     rewrite_rules) {
   assert(Model.is_entry(entry));
 
-  const dal = new ModelAccess();
-  dal.conn = rconn;
-  dal.channel = channel;
+  const ma = new ModelAccess();
+  ma.conn = rconn;
+  ma.channel = channel;
 
   // Rewrite the entry's last url and append its new url if different.
   let url = new URL(array.peek(entry.urls));
@@ -41,7 +41,7 @@ export async function poll_entry(
   // tail url a second time because it may have changed in rewriting.
   url = new URL(array.peek(entry.urls));
   const get_mode = 'url', key_only = true;
-  let existing_entry = await dal.getEntry(get_mode, url, key_only);
+  let existing_entry = await ma.getEntry(get_mode, url, key_only);
   if (existing_entry) {
     throw new EntryExistsError('Entry already exists for url ' + url.href);
   }
@@ -69,7 +69,7 @@ export async function poll_entry(
       Model.append_entry_url(entry, response_url);
       Model.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
       url = new URL(array.peek(entry.urls));
-      existing_entry = await dal.getEntry(get_mode, url, key_only);
+      existing_entry = await ma.getEntry(get_mode, url, key_only);
       if (existing_entry) {
         throw new EntryExistsError(
             'Entry exists for redirected url ' + url.href);
@@ -111,7 +111,7 @@ export async function poll_entry(
   sanity.validate_entry(entry);
 
   sanity.sanitize_entry(entry);
-  return await dal.updateEntry(entry);
+  return await ma.updateEntry(entry);
 }
 
 // TODO: somehow store in configuration instead of here, look into

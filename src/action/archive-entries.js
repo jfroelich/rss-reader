@@ -7,11 +7,11 @@ const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 // Compacts older read entries in the database. Dispatches entry-archived
 // messages once the internal transaction completes. max_age is in ms, optional,
 // defaults to two days, how old an entry must be in order to archive it.
-export async function archive_entries(dal, max_age = TWO_DAYS_MS) {
+export async function archive_entries(ma, max_age = TWO_DAYS_MS) {
   const entry_ids = [];
   const txn_writable = true;
 
-  await dal.iterateEntries('archive', txn_writable, cursor => {
+  await ma.iterateEntries('archive', txn_writable, cursor => {
     const entry = cursor.value;
     assert(Model.is_entry(entry));
     assert(entry.dateCreated);
@@ -28,7 +28,7 @@ export async function archive_entries(dal, max_age = TWO_DAYS_MS) {
   });
 
   for (const id of entry_ids) {
-    dal.channel.postMessage({type: 'entry-archived', id: id});
+    ma.channel.postMessage({type: 'entry-archived', id: id});
   }
 }
 

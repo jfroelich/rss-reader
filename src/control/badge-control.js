@@ -24,10 +24,10 @@ export async function refresh(lock_value) {
   if (!lock.isLocked()) {
     lock.acquire(/* unlock_deadline */ 5000);
 
-    const dal = new ModelAccess();
-    await dal.connect();
-    const count = await dal.countUnreadEntries();
-    dal.close();
+    const ma = new ModelAccess();
+    await ma.connect();
+    const count = await ma.countUnreadEntries();
+    ma.close();
 
     const text = count > 999 ? '1k+' : '' + count;
     chrome.browserAction.setBadgeText({text: text});

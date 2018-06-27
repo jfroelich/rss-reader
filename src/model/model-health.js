@@ -3,10 +3,10 @@ import * as Model from '/src/model/model.js';
 
 // Removes entries missing urls from the database
 // TODO: test
-export async function remove_lost_entries(dal) {
+export async function remove_lost_entries(ma) {
   const deleted_entry_ids = [];
   const txn_writable = true;
-  await dal.iterateEntries('all', txn_writable, cursor => {
+  await ma.iterateEntries('all', txn_writable, cursor => {
     const entry = cursor.value;
     if (!entry.urls || !entry.urls.length) {
       cursor.delete();
@@ -21,14 +21,15 @@ export async function remove_lost_entries(dal) {
 
 // Scans the database for entries not linked to a feed and deletes them
 // TODO: test
+// TODO: use model access api
 export async function remove_orphaned_entries(conn, channel) {
-  const dal = new ModelAccess();
-  dal.conn = conn;
-  dal.channel = channel;
+  const ma = new ModelAccess();
+  ma.conn = conn;
+  ma.channel = channel;
 
   // Query for all feed ids. We load just the ids so that it is faster and more
   // scalable than actually loading all feed info.
-  const feed_ids = await dal.getFeedIds(conn);
+  const feed_ids = await ma.getFeedIds(conn);
 
   // Technically we could continue and let the next transaction do nothing, but
   // it is better for performance to preemptively exit.
@@ -43,7 +44,7 @@ export async function remove_orphaned_entries(conn, channel) {
 
   // Walk the entry store in write mode
   const txn_writable = true;
-  await dal.iterateEntries('all', txn_writable, cursor => {
+  await ma.iterateEntries('all', txn_writable, cursor => {
     const entry = cursor.value;
 
     // If the entry object type is invalid, ignore it
@@ -77,17 +78,18 @@ export async function remove_orphaned_entries(conn, channel) {
 // hidden magic property. Note this uses multiple write transactions. That means
 // that a later failure does not indicate an earlier step failed.
 // TODO: use a single transaction
+// TODO: use model access api
 export async function remove_untyped_objects(conn, channel) {
-  const dal = new ModelAccess();
-  dal.conn = conn;
-  dal.channel = channel;
+  const ma = new ModelAccess();
+  ma.conn = conn;
+  ma.channel = channel;
 
-  const feeds = dal.getFeeds();
+  const feeds = ma.getFeeds();
   const delete_feed_promises = [];
   for (const feed of feeds) {
     if (!Model.is_feed(feed)) {
       const reason = 'untyped';
-      const promise = dal.deleteFeed(feed.id, reason);
+      const promise = ma.deleteFeed(feed.id, reason);
       delete_feed_promises.push(promise);
     }
   }
@@ -100,7 +102,7 @@ export async function remove_untyped_objects(conn, channel) {
   // several entries in a single transaction.
   const deleted_entries = [];
   const txn_writable = true;
-  await dal.iterateEntries('all', txn_writable, cursor => {
+  await ma.iterateEntries('all', txn_writable, cursor => {
     const entry = cursor.value;
     if (!Model.is_entry(entry)) {
       // Collect only necessary properties for the channel post rather than

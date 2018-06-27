@@ -35,9 +35,9 @@ export async function slide_onclick(event) {
   // the checks within mark_slide_read_start, it avoids opening the connection.
   if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
       !slide.hasAttribute('read-pending')) {
-    const dal = new ModelAccess();
-    await dal.connect();
-    await mark_slide_read_start(dal.conn, slide);
-    dal.close();
+    const ma = new ModelAccess();
+    await ma.connect();
+    await mark_slide_read_start(ma.conn, slide);
+    ma.close();
   }
 }

@@ -16,13 +16,13 @@ import {hide_splash, show_splash} from '/src/view/slideshow-page/splash.js';
 async function load_view() {
   show_splash();
 
-  const dal = new ModelAccess();
+  const ma = new ModelAccess();
 
   const offset = 0, limit = 6;
-  const conn = await dal.connect();
-  const get_entries_promise = dal.getEntries('viewable', offset, limit);
-  const get_feeds_promise = dal.getFeeds('all', true);
-  dal.close();
+  const conn = await ma.connect();
+  const get_entries_promise = ma.getEntries('viewable', offset, limit);
+  const get_feeds_promise = ma.getFeeds('all', true);
+  ma.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)
   const entries = await get_entries_promise;

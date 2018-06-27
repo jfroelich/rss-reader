@@ -10,13 +10,13 @@ import {register_test} from '/src/test/test-registry.js';
 // archived, and that messages were posted
 
 async function archive_entries_test() {
-  const dal = new ModelAccess();
-  await dal.connect('archive-entries-test');
-  dal.channel = {name: 'stub', postMessage: noop, close: noop};
-  await archive_entries(dal);
-  dal.close();
-  dal.channel.close();
-  await indexeddb.remove(dal.conn.name);
+  const ma = new ModelAccess();
+  await ma.connect('archive-entries-test');
+  ma.channel = {name: 'stub', postMessage: noop, close: noop};
+  await archive_entries(ma);
+  ma.close();
+  ma.channel.close();
+  await indexeddb.remove(ma.conn.name);
 }
 
 function noop() {}

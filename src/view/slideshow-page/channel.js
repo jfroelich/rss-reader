@@ -90,10 +90,10 @@ async function onmessage(event) {
     // logic.
 
     let limit = undefined;
-    const dal = new ModelAccess();
-    await dal.connect();
-    const entries = await dal.getEntries('viewable', unread_count, limit);
-    dal.close();
+    const ma = new ModelAccess();
+    await ma.connect();
+    const entries = await ma.getEntries('viewable', unread_count, limit);
+    ma.close();
 
     for (const entry of entries) {
       append_slide(entry);
