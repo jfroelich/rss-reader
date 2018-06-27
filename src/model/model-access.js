@@ -42,8 +42,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-// NOTE: no longer sets feed.id as it did when using updateFeed
-// NOTE: sends feed-created message type instead of feed-written type
 ModelAccess.prototype.createFeed = function(feed) {
   return new Promise((resolve, reject) => {
     assert(Model.is_feed(feed));
@@ -580,32 +578,22 @@ ModelAccess.prototype.updateFeed = function(feed) {
   return new Promise((resolve, reject) => {
     assert(Model.is_feed(feed));
     assert(feed.urls && feed.urls.length);
+    assert(Model.is_valid_feed_id(feed.id));
 
     object.filter_empty_properties(feed);
-
-    const is_create = !feed.id;
-    if (is_create) {
-      feed.active = true;
-      feed.dateCreated = new Date();
-      delete feed.dateUpdated;
-    } else {
-      feed.dateUpdated = new Date();
-    }
+    feed.dateUpdated = new Date();
 
     const txn = this.conn.transaction('feed', 'readwrite');
     txn.onerror = event => {
       reject(event.target.error);
     };
     txn.oncomplete = _ => {
-      const message = {type: 'feed-written', id: feed.id, create: is_create};
+      const message = {type: 'feed-updated', id: feed.id};
       this.channel.postMessage(message);
-      resolve(feed.id);
+      resolve();
     };
 
     const store = txn.objectStore('feed');
     const request = store.put(feed);
-    if (is_create) {
-      request.onsuccess = _ => feed.id = request.result;
-    }
   });
 };

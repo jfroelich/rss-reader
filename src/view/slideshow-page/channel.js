@@ -130,7 +130,7 @@ async function onmessage(event) {
     return;
   }
 
-  if (type === 'feed-written') {
+  if (type === 'feed-updated') {
     // TODO: implement
     return;
   }

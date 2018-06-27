@@ -1,6 +1,6 @@
-import * as app from '/src/app.js';
 import {EntryExistsError, poll_entry} from '/src/action/poll/poll-entry.js';
 import {build_rewrite_rules} from '/src/action/poll/rewrite-rules.js';
+import * as app from '/src/app.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {fetch_feed} from '/src/lib/net/fetch-feed.js';
@@ -22,19 +22,18 @@ const default_options = {
   fetch_html_timeout: 5000,
   fetch_image_timeout: 3000,
   deactivation_threshold: 10,
-  badge_update: true,
   notify: true
 };
 
 // Checks for new content
 export async function poll_feeds(
     rconn, iconn, channel = chan_stub, options = {}) {
-  const dal = new ModelAccess();
-  dal.conn = rconn;
-  dal.channel = channel;
+  const ma = new ModelAccess();
+  ma.conn = rconn;
+  ma.channel = channel;
 
   const get_feeds_mode = 'active', get_feeds_sort = false;
-  const feeds = await dal.getFeeds(get_feeds_mode, get_feeds_sort);
+  const feeds = await ma.getFeeds(get_feeds_mode, get_feeds_sort);
 
   options = Object.assign({}, default_options, options);
 
@@ -68,7 +67,6 @@ export async function poll_feeds(
 export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   const ignore_recency_check = options.ignore_recency_check;
   const recency_period = options.recency_period;
-  const badge_update = options.badge_update;
   const notify_flag = options.notify;
   const deactivation_threshold = options.deactivation_threshold;
   const fetch_feed_timeout = options.fetch_feed_timeout;
@@ -113,10 +111,10 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   assert(ModelSanity.is_valid_feed(merged_feed));
   ModelSanity.sanitize_feed(merged_feed);
 
-  const dal = new ModelAccess();
-  dal.conn = rconn;
-  dal.channel = channel;
-  await dal.updateFeed(merged_feed);
+  const ma = new ModelAccess();
+  ma.conn = rconn;
+  ma.channel = channel;
+  await ma.updateFeed(merged_feed);
 
   const count = await poll_entries(
       rconn, iconn, channel, options, response.entries, merged_feed);
@@ -233,11 +231,11 @@ async function handle_fetch_error(
     feed.deactivationDate = new Date();
   }
 
-  const dal = new ModelAccess();
-  dal.conn = rconn;
-  dal.channel = channel;
+  const ma = new ModelAccess();
+  ma.conn = rconn;
+  ma.channel = channel;
   // No need to validate/sanitize, we've had control for the entire lifetime
-  await dal.updateFeed(feed);
+  await ma.updateFeed(feed);
 }
 
 function dedup_entries(entries) {

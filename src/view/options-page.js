@@ -39,7 +39,7 @@ channel.onmessage = function options_page_onmessage(event) {
     // not implemented
   } else if (type === 'feed-deactivated') {
     // not implemented
-  } else if (type === 'feed-written') {
+  } else if (type === 'feed-updated') {
     // not implemented
   } else if (type === 'feed-created') {
     // not implemented
