@@ -1,6 +1,6 @@
-import * as ls from '/src/lib/ls.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
+import * as ls from '/src/lib/ls.js';
 import * as object from '/src/lib/object.js';
 import * as Model from '/src/model/model.js';
 
@@ -47,7 +47,13 @@ ModelAccess.prototype.createFeed = function(feed) {
     assert(Model.is_feed(feed));
     assert(feed.urls && feed.urls.length);
     object.filter_empty_properties(feed);
-    feed.active = true;
+
+    // Initialize as active unless caller expressed other intent, assume that
+    // if active property set, it is valid by this point
+    if (!('active' in feed)) {
+      feed.active = true;
+    }
+
     feed.dateCreated = new Date();
     delete feed.dateUpdated;
 
