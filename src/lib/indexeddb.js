@@ -90,12 +90,8 @@ function create_open_promise(context) {
 // Remove a database
 export function remove(name) {
   return new Promise((resolve, reject) => {
-    console.debug('Deleting database', name);
     const request = indexedDB.deleteDatabase(name);
-    request.onsuccess = _ => {
-      console.debug('Deleted database', name);
-      resolve();
-    };
+    request.onsuccess = resolve;
     request.onerror = _ => reject(request.error);
   });
 }
