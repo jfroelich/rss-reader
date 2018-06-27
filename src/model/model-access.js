@@ -4,12 +4,6 @@ import * as indexeddb from '/src/lib/indexeddb.js';
 import * as object from '/src/lib/object.js';
 import * as Model from '/src/model/model.js';
 
-// NOTE: event.target points to request, there is no txn.error prop
-// NOTE: event.target.error is a DOMException
-// TODO: now that I learned this I need to fix all txn error handler code,
-// but first test if this fixed the problem
-
-
 // Provides a data access layer for interacting with the reader database
 export default function ModelAccess() {
   this.conn = undefined;
@@ -24,7 +18,9 @@ ModelAccess.prototype.activateFeed = function(feed_id) {
       this.channel.postMessage({type: 'feed-activated', id: feed_id});
       resolve();
     };
-    txn.onerror = _ => reject(txn.error);
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
 
     const store = txn.objectStore('feed');
     const request = store.get(feed_id);
@@ -93,7 +89,9 @@ ModelAccess.prototype.deactivateFeed = function(feed_id, reason) {
       this.channel.postMessage({type: 'feed-deactivated', id: feed_id});
       resolve();
     };
-    txn.onerror = _ => reject(txn.error);
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
 
     const store = txn.objectStore('feed');
     const request = store.get(feed_id);
@@ -120,7 +118,9 @@ ModelAccess.prototype.deleteEntry = function(entry_id, reason) {
       this.channel.postMessage(msg);
       resolve();
     };
-    txn.onerror = _ => reject(txn.error);
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
     txn.objectStore('entry').delete(entry_id);
   });
 };
@@ -131,7 +131,9 @@ ModelAccess.prototype.deleteFeed = function(feed_id, reason) {
 
     const entry_ids = [];
     const txn = this.conn.transaction(['feed', 'entry'], 'readwrite');
-    txn.onerror = _ => reject(txn.error);
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
     txn.oncomplete = _ => {
       let msg = {type: 'feed-deleted', id: feed_id, reason: reason};
       this.channel.postMessage(msg);
@@ -159,8 +161,7 @@ ModelAccess.prototype.deleteFeed = function(feed_id, reason) {
   });
 };
 
-ModelAccess.prototype.getEntries = function(
-    mode = 'all', offset = 0, limit = 0) {
+ModelAccess.prototype.getEntries = function(mode = 'all', offset, limit) {
   return new Promise((resolve, reject) => {
     assert(
         offset === null || offset === undefined || offset === NaN ||
@@ -174,7 +175,9 @@ ModelAccess.prototype.getEntries = function(
 
     const txn = this.conn.transaction('entry');
     txn.oncomplete = _ => resolve(entries);
-    txn.onerror = _ => reject(txn.error);
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
     const store = txn.objectStore('entry');
 
     let request;
@@ -220,7 +223,9 @@ ModelAccess.prototype.getEntry = function(mode = 'id', value, key_only) {
     assert(mode !== 'id' || !key_only);
 
     const txn = this.conn.transaction('entry');
-    txn.onerror = _ => reject(txn.error);
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
     const store = txn.objectStore('entry');
 
     let request;
@@ -254,7 +259,9 @@ ModelAccess.prototype.getEntry = function(mode = 'id', value, key_only) {
 ModelAccess.prototype.getFeedIds = function() {
   return new Promise((resolve, reject) => {
     const txn = this.conn.transaction('feed');
-    txn.onerror = _ => reject(txn.error);
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
     const store = txn.objectStore('feed');
     const request = store.getAllKeys();
     request.onsuccess = _ => resolve(request.result);
@@ -268,7 +275,9 @@ ModelAccess.prototype.getFeed = function(mode = 'id', value, key_only) {
     assert(mode !== 'id' || !key_only);
 
     const txn = this.conn.transaction('feed');
-    txn.onerror = _ => reject(txn.error);
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
     const store = txn.objectStore('feed');
 
     let request;
@@ -334,7 +343,9 @@ ModelAccess.prototype.iterateEntries = function(
     const txn_mode = writable ? 'readwrite' : 'readonly';
     const txn = this.conn.transaction('entry', txn_mode);
     txn.oncomplete = resolve;
-    txn.onerror = _ => reject(txn.error);
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
     const store = txn.objectStore('entry');
 
     let request;
@@ -365,7 +376,9 @@ ModelAccess.prototype.markEntryRead = function(entry_id) {
     assert(Model.is_valid_entry_id(entry_id));
 
     const txn = this.conn.transaction('entry', 'readwrite');
-    txn.onerror = _ => reject(txn.error);
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
     txn.oncomplete = _ => {
       this.channel.postMessage({type: 'entry-read', id: entry_id});
       resolve();
@@ -514,7 +527,9 @@ ModelAccess.prototype.updateEntry = function(entry) {
       this.channel.postMessage(message);
       resolve(entry.id);
     };
-    txn.onerror = _ => reject(txn.error);
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
     const store = txn.objectStore('entry');
     const request = store.put(entry);
     if (creating) {
@@ -540,7 +555,9 @@ ModelAccess.prototype.updateFeed = function(feed) {
     }
 
     const txn = this.conn.transaction('feed', 'readwrite');
-    txn.onerror = _ => reject(txn.error);
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
     txn.oncomplete = _ => {
       const message = {type: 'feed-written', id: feed.id, create: is_create};
       this.channel.postMessage(message);
