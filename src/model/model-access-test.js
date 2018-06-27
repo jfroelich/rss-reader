@@ -92,7 +92,36 @@ async function create_feed_url_constraint_test() {
   await indexeddb.remove(ma.conn.name);
 }
 
+// Exercise the normal activateFeed case
+async function activate_feed_test() {
+  const msgs = [];
+  const ma = new ModelAccess();
+  await ma.connect('activate-feed-test');
+  ma.channel = {name: 'stub', postMessage: msg => msgs.push(msg), close: noop};
+
+  const feed = Model.create_feed();
+  feed.active = false;
+  Model.append_feed_url(feed, new URL('a://b.c'));
+
+  const id = await ma.createFeed(feed);
+  await ma.activateFeed(id);
+  const stored_feed = await ma.getFeed('id', id, false);
+
+  assert(Model.is_feed(stored_feed));
+  assert(stored_feed.active === true);
+  assert(stored_feed.deactivateDate === undefined);
+  assert(stored_feed.deactivationReasonText === undefined);
+  assert(msgs.length === 2);  // create + activate
+  assert(msgs[1].type === 'feed-activated');
+  assert(msgs[1].id === stored_feed.id);
+
+  ma.channel.close();
+  ma.close();
+  await indexeddb.remove(ma.conn.name);
+}
+
 function noop() {}
 
 register_test(create_feed_test);
 register_test(create_feed_url_constraint_test);
+register_test(activate_feed_test);
