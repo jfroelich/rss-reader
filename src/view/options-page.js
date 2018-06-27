@@ -41,10 +41,14 @@ channel.onmessage = function options_page_onmessage(event) {
     // not implemented
   } else if (type === 'feed-written') {
     // not implemented
+  } else if (type === 'feed-created') {
+    // not implemented
   } else if (type === 'entry-read') {
     // ignore
   } else if (type === 'entry-write') {
     // ignore
+  } else if (type === 'feed-deleted') {
+    // not implemented
   } else {
     console.warn('Unknown message type', type);
   }
@@ -309,7 +313,12 @@ async function subscribe_form_onsubmit(event) {
   section_show_by_id('subs-list-section');
 
   // intentionally non-blocking
-  after_subscribe_poll_feed_async(feed).catch(console.error);
+  try {
+    after_subscribe_poll_feed_async(feed).catch(console.error);
+  } catch (error) {
+    console.debug(error);
+  }
+
   return false;
 }
 
@@ -320,7 +329,7 @@ async function after_subscribe_poll_feed_async(feed) {
   const channel = new BroadcastChannel('reader');
 
   const options = {ignore_recency_check: true, notify: true};
-  await poll_feed(dal.conn, iconn, channel, console_stub, options, feed);
+  await poll_feed(dal.conn, iconn, channel, options, feed);
 
   dal.close();
   iconn.close();
