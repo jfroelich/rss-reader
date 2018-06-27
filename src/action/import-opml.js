@@ -1,31 +1,48 @@
 import * as string from '/src/lib/string.js';
 import Model from '/src/model/model.js';
 
-// TODO: create and implement a createFeeds function in ModelAccess that uses a
-// single transaction to store several feeds at once, then use that here.
-
 // Concurrently reads in the opml files and creates feeds in the database. Note
 // that this bypasses the subscription process which means there are multiple
 // methods of input, but technically they all still share usage of the
 // ModelAccess.createFeed call. Also note that this does not fetch the full feed
 // data, and instead leaves that concern to the eventual poll that later runs.
-// Also note that this ignores all other data from the opml files, because it is
-// assumed it is better to get the most current data from the network in a
-// subsequent poll, even if that risks potential data loss. Avoiding the network
-// in this operation helps keep this operation reasonably fast.
+// Also note that this ignores all other data from the opml files other than
+// feed urls, because it is assumed it is better to get the most current data
+// from the network in a subsequent poll, even if that risks potential data
+// loss. Avoiding the network in this operation helps keep this operation
+// reasonably fast.
+//
+// File io errors are logged as a side effect, because this does not fail if any
+// individual file fails to be processed.
+//
+// For each inserted feed, a message is broadcast with type feed-created and the
+// id of the new feed.
 //
 // @param ma {ModelAccess} an open instance of ModelAccess
 // @param files {for..of iterable} any iterable collection such as an Array or
 // FileList, the contents of which should be either Blobs or Files
-// @throws database errors
-// @returns {Promise} resolves to an array of ModelAccess.createFeed promise
-// results, the array contains undefined when an individual createFeed promise
-// rejected
+// @throws {DOMException} database error, if any database error occurs then no
+// feeds are stored (internally the operation uses a single transaction)
+// @return {Promise} resolves to an array of ModelAccess.createFeed promise
+// results. The array contains undefined when an individual createFeed promise
+// rejected. Array order is undefined (this makes no contractual guarantees).
 export async function import_opml(ma, files) {
   const read_results = await read_files(files);
   const urls = flatten_file_urls(read_results);
   const unique_urls = dedup_urls(urls);
-  return create_feeds(ma, unique_urls);
+
+  // Map the urls into plain model feed objects
+  const feeds = unique_urls.map(url => {
+    const feed = Model.createFeed();
+    Model.append_feed_url(feed, url);
+    return feed;
+  });
+
+  // Return the raw promise produced by createFeeds. There is no need to await
+  // because we are within an async function that will just wrap the resolved
+  // value within another promise. It is in fact better to just return the
+  // promise.
+  return ma.createFeeds(feeds);
 }
 
 // Read in all the feed urls from all of the files into an array of arrays.
@@ -57,20 +74,6 @@ function flatten_file_urls(all_files_urls) {
     }
   }
   return urls;
-}
-
-function create_feeds(ma, urls) {
-  const promises = [];
-  for (const url of urls) {
-    const feed = Model.createFeed();
-    Model.append_feed_url(feed, url);
-
-    const promise = ma.createFeed(feed);
-    const catch_promise = promise.catch(console.warn);
-    promises.push(catch_promise);
-  }
-
-  return Promise.all(promises);
 }
 
 // Returns a promise that resolves to an array of feed urls in the opml file.
