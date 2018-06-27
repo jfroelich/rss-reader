@@ -108,7 +108,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   // counters that would lead to eventual deactivation
   handle_fetch_success(merged_feed);
 
-  assert(ModelSanity.is_valid_feed(merged_feed));
+  assert(ModelSanity.validate_feed(merged_feed));
   ModelSanity.sanitize_feed(merged_feed);
 
   const ma = new ModelAccess();

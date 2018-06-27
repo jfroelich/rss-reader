@@ -4,11 +4,10 @@ import * as string from '/src/lib/string.js';
 import * as Model from '/src/model/model.js';
 
 // TODO: finish implementation
-export function is_valid_entry(entry) {
+export function validate_entry(entry) {
   // It is a programmer error to call this on an object that is not an entry
   // Validation is for validation of actual entry objects, not general values
   assert(Model.is_entry(entry));
-
 
   // This could be called on a new entry that does not have an id, so only
   // check id validity when the property exists
@@ -22,7 +21,7 @@ export function is_valid_entry(entry) {
 }
 
 // TODO: finish implementation
-export function is_valid_feed(feed) {
+export function validate_feed(feed) {
   // This should only be called on objects purporting to be feeds. It is a
   // programmer error to call this on other values.
   assert(Model.is_feed(feed));

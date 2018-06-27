@@ -73,7 +73,7 @@ export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
   // Prep the feed for storage. This is not baked into createFeed because not
   // all callers do this preparation. Here it is explicit because this is data
   // coming from an untrusted source.
-  if (!sanity.is_valid_feed(feed)) {
+  if (!sanity.validate_feed(feed)) {
     throw new Error('Invalid feed ' + JSON.stringify(feed));
   }
   sanity.sanitize_feed(feed);

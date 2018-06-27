@@ -106,7 +106,7 @@ export async function poll_entry(
   await sanitize_document(document);
   entry.content = document.documentElement.outerHTML;
 
-  assert(sanity.is_valid_entry(entry));
+  assert(sanity.validate_entry(entry));
   sanity.sanitize_entry(entry);
   return await dal.updateEntry(entry);
 }
