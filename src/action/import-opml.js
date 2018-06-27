@@ -1,52 +1,40 @@
 import * as string from '/src/lib/string.js';
 import Model from '/src/model/model.js';
 
-// Concurrently reads in the opml files and creates feeds in the database. Note
-// that this bypasses the subscription process which means there are multiple
-// methods of input, but technically they all still share usage of the
-// ModelAccess.createFeed call. Also note that this does not fetch the full feed
-// data, and instead leaves that concern to the eventual poll that later runs.
-// Also note that this ignores all other data from the opml files other than
-// feed urls, because it is assumed it is better to get the most current data
-// from the network in a subsequent poll, even if that risks potential data
-// loss. Avoiding the network in this operation helps keep this operation
-// reasonably fast.
+// Reads in the files, parses them, finds feed urls, and then creates a feed for
+// each url in the reader database. Other feed data from opml attributes is
+// ignored. Completes when all of the files have been read and each feed has
+// been created. Dispatches a feed-created message for each inserted feed.
 //
-// File io errors are logged as a side effect, because this does not fail if any
-// individual file fails to be processed.
-//
-// For each inserted feed, a message is broadcast with type feed-created and the
-// id of the new feed.
+// File io errors are logged as a side effect and not thrown, and do not
+// interrupt execution.
 //
 // @param ma {ModelAccess} an open instance of ModelAccess
 // @param files {for..of iterable} any iterable collection such as an Array or
 // FileList, the contents of which should be either Blobs or Files
-// @throws {DOMException} database error, if any database error occurs then no
-// feeds are stored (internally the operation uses a single transaction)
-// @return {Promise} resolves to an array of ModelAccess.createFeed promise
-// results. The array contains undefined when an individual createFeed promise
-// rejected. Array order is undefined (this makes no contractual guarantees).
+// @throws {DOMException} database errors
+// @throws {InvalidStateError} if channel from model access is somehow closed
+// at time of posting messages
+// @throws {Error} invalid parameters
+// @return {Promise} resolves to an array of new feed ids
 export async function import_opml(ma, files) {
-  const read_results = await read_files(files);
-  const urls = flatten_file_urls(read_results);
-  const unique_urls = dedup_urls(urls);
+  const read_files_results = await read_files(files);
+  const url_array = flatten_file_urls(read_files_results);
+  const url_array_set = dedup_urls(url_array);
 
-  // Map the urls into plain model feed objects
-  const feeds = unique_urls.map(url => {
+  const feeds = url_array_set.map(url => {
     const feed = Model.createFeed();
     Model.append_feed_url(feed, url);
     return feed;
   });
 
-  // Return the raw promise produced by createFeeds. There is no need to await
-  // because we are within an async function that will just wrap the resolved
-  // value within another promise. It is in fact better to just return the
-  // promise.
   return ma.createFeeds(feeds);
 }
 
 // Read in all the feed urls from all of the files into an array of arrays.
-// Files are read and processed concurrently.
+// Files are read and processed concurrently. Any one file read error does not
+// cancel the operation, instead an undefined value is stored in the output
+// array the returned promise resolved to.
 function read_files(files) {
   const promises = [];
   for (const file of files) {
@@ -67,9 +55,7 @@ function flatten_file_urls(all_files_urls) {
     // that generated it
     if (per_file_urls) {
       for (const url of per_file_urls) {
-        if (url) {
-          urls.push(url);
-        }
+        urls.push(url);
       }
     }
   }
@@ -95,15 +81,16 @@ async function read_file_feeds(file) {
 }
 
 // Return a new array of distinct URLs. The output array is always defined.
+// Using a plain array is sufficient and faster than using a Set.
 function dedup_urls(urls) {
-  const unique_urls = [], seen_url_strings = [];
+  const url_set = [], seen = [];
   for (const url of urls) {
-    if (!seen_url_strings.includes(url.href)) {
-      unique_urls.push(url);
-      seen_url_strings.push(url.href);
+    if (!seen.includes(url.href)) {
+      url_set.push(url);
+      seen.push(url.href);
     }
   }
-  return unique_urls;
+  return url_set;
 }
 
 // Searches the nodes of the document for feed urls. Returns an array of URL
