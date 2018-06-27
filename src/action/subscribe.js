@@ -76,7 +76,7 @@ export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
 
   // This will throw a validation error if there is a problem, we do not handle
   // the error and instead just rethrow it as a subscription error
-  sanity.validate_feed(feed));
+  sanity.validate_feed(feed);
 
   sanity.sanitize_feed(feed);
 
