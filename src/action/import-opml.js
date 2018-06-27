@@ -1,3 +1,4 @@
+import * as string from '/src/lib/string.js';
 import Model from '/src/model/model.js';
 
 // TODO: create and implement a createFeeds function in ModelAccess that uses a
@@ -153,7 +154,7 @@ function parse_opml(xml_string) {
   const document = parser.parseFromString(xml_string, 'application/xml');
   const error = document.querySelector('parsererror');
   if (error) {
-    throw new Error(condense_whitespace(error.textContent));
+    throw new Error(string.condense_whitespace(error.textContent));
   }
 
   // Need to normalize localName when document is xml-flagged
@@ -162,8 +163,4 @@ function parse_opml(xml_string) {
     throw new Error('Document element is not opml: ' + name);
   }
   return document;
-}
-
-function condense_whitespace(value) {
-  return value.replace(/\s{2,}/g, ' ');
 }
