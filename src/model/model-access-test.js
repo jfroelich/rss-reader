@@ -1,30 +1,18 @@
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import ModelAccess from '/src/model/model-access.js';
-import * as sanity from '/src/model/model-sanity.js';
 import * as Model from '/src/model/model.js';
 import {register_test} from '/src/test/test-registry.js';
 
-// Exercises the db-write-feed function in the case of adding a new feed object
-// to the database. The db-write-feed function should properly store the feed in
-// the database, properly assign the feed its new id, and return the expected
-// output.
+// Exercise the createFeed function in the typical case
 async function create_feed_test() {
   // Create a dummy feed with minimal properties
   const feed = Model.create_feed();
   const feed_url = new URL('http://www.example.com/example.rss');
   Model.append_feed_url(feed, feed_url);
 
-  // Pre-process the feed using the typical sequence of operations
-  // TODO: should do tests that both involve and not involve validation and
-  // sanitization. For now do a test where both are done.
-  // TODO: or maybe this is dumb, and I shouldn't test this here at all
-  // actually? I am starting to think this should not be here.
-  assert(sanity.is_valid_feed(feed));
-  sanity.sanitize_feed(feed);
-
-  const dal = new ModelAccess();
-  await dal.connect('write-new-feed-test');
+  const ma = new ModelAccess();
+  await ma.connect('create-feed-test');
 
   // Mock a broadcast channel along with a way to monitor messages
   const messages = [];
@@ -32,37 +20,79 @@ async function create_feed_test() {
   channel.name = 'stub';
   channel.postMessage = message => messages.push(message);
   channel.close = function() {};
-  dal.channel = channel;
+  ma.channel = channel;
 
-  const stored_feed_id = await dal.updateFeed(feed);
+  const stored_feed_id = await ma.createFeed(feed);
 
-  assert(feed.id === stored_feed_id);
-  assert(Model.is_valid_feed_id(feed.id));
+  assert(Model.is_valid_feed_id(stored_feed_id));
 
   // Make assertions about channel communications
   assert(messages.length === 1);
   assert(typeof messages[0] === 'object');
-  assert(messages[0].id === feed.id);
-  assert(messages[0].type === 'feed-written');
+  assert(messages[0].id === stored_feed_id);
+  assert(messages[0].type === 'feed-created');
 
   // Assert the feed is findable by url
-  assert(await dal.getFeed('url', feed_url, true));
+  assert(await ma.getFeed('url', feed_url, true));
 
-  // Assert the feed is findable by id
-  const match = await dal.getFeed('id', feed.id, false);
+  // Assert the feed is findable by id, and this time save the read feed to
+  // assert against it.
+  const stored_feed = await ma.getFeed('id', stored_feed_id, false);
 
-  assert(Model.is_feed(match));
-  assert(match.active === true);
-  assert('dateCreated' in match);
+  assert(Model.is_feed(stored_feed));
 
-  // Created feeds that have never been updated should not have a date updated
-  // property set
-  assert(!match.hasOwnProperty('dateUpdated'));
+  // New feeds should be active by default
+  assert(stored_feed.active === true);
+
+  // New feeds should have a dateCreated set
+  assert(stored_feed.dateCreated);
+
+  // New feeds that have never been updated should not have a dateUpdated
+  assert(stored_feed.dateUpdated === undefined);
 
   // Teardown the test
-  channel.close();
-  dal.close();
-  await indexeddb.remove(dal.conn.name);
+  ma.channel.close();
+  ma.close();
+  await indexeddb.remove(ma.conn.name);
 }
 
+// Test that double url insert fails, it is expected to throw a
+// DOMException with a message about a constraint error because of the unique
+// constraint on the url index of the feed store
+async function create_feed_url_constraint_test() {
+  const feed1 = Model.create_feed();
+  Model.append_feed_url(feed1, new URL('http://www.example.com/example.rss'));
+
+  const feed2 = Model.create_feed();
+  Model.append_feed_url(feed2, new URL('http://www.example.com/example.rss'));
+
+  const ma = new ModelAccess();
+  await ma.connect('create-feed-url-constraint-test');
+  ma.channel = {name: 'stub', postMessage: noop, close: noop};
+
+  // Store the first feed
+  await ma.createFeed(feed1);
+
+  // Now attempt to store the second feed, trapping the error
+  let create_error = null;
+  try {
+    await ma.createFeed(feed2);
+  } catch (error) {
+    create_error = error;
+  }
+
+  // Assert that storing the second feed failed. The error message is something
+  // like the following: "Unable to add key to index 'urls': at least one key
+  // does not satisfy the uniqueness requirements."
+  assert(create_error instanceof DOMException);
+
+  // Teardown the test
+  ma.channel.close();
+  ma.close();
+  await indexeddb.remove(ma.conn.name);
+}
+
+function noop() {}
+
 register_test(create_feed_test);
+register_test(create_feed_url_constraint_test);

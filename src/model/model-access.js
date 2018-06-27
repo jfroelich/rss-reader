@@ -4,6 +4,12 @@ import * as indexeddb from '/src/lib/indexeddb.js';
 import * as object from '/src/lib/object.js';
 import * as Model from '/src/model/model.js';
 
+// NOTE: event.target points to request, there is no txn.error prop
+// NOTE: event.target.error is a DOMException
+// TODO: now that I learned this I need to fix all txn error handler code,
+// but first test if this fixed the problem
+
+
 // Provides a data access layer for interacting with the reader database
 export default function ModelAccess() {
   this.conn = undefined;
@@ -53,7 +59,10 @@ ModelAccess.prototype.createFeed = function(feed) {
 
     let id = 0;
     const txn = this.conn.transaction('feed', 'readwrite');
-    txn.onerror = _ => reject(txn.error);
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
+
     txn.oncomplete = _ => {
       this.channel.postMessage({type: 'feed-created', id: id});
       resolve(id);
@@ -391,22 +400,19 @@ function on_upgrade_needed(event) {
   let feed_store, entry_store;
   const stores = conn.objectStoreNames;
 
-  if (event.oldVersion === 0) {
-    console.debug(
-        'Creating database', conn.name, conn.version, event.oldVersion);
-  } else {
-    console.debug(
-        'Upgrading database %s to version %s from version', conn.name,
-        conn.version, event.oldVersion);
-  }
+  // Some simple debugging. If creating a brand new database, old_version
+  // is expected to be 0 (and not NaN/null/undefined).
+  console.debug('Creating/upgrading database', JSON.stringify({
+    name: conn.name,
+    old_version: event.oldVersion,
+    new_version: conn.version
+  }));
 
   if (event.oldVersion < 20) {
     const feed_store_props = {keyPath: 'id', autoIncrement: true};
-    console.debug('Creating feed object store with props', feed_store_props);
     feed_store = conn.createObjectStore('feed', feed_store_props);
 
     const entry_store_props = {keyPath: 'id', autoIncrement: true};
-    console.debug('Creating entry object store with props', entry_store_props);
     entry_store = conn.createObjectStore('entry', entry_store_props);
 
     feed_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
@@ -441,7 +447,6 @@ function on_upgrade_needed(event) {
 }
 
 function add_magic_to_entries(txn) {
-  console.debug('Adding entry magic');
   const store = txn.objectStore('entry');
   const request = store.openCursor();
   request.onsuccess = function() {
@@ -460,7 +465,6 @@ function add_magic_to_entries(txn) {
 
 // TODO: use cursor over getAll for scalability
 function add_magic_to_feeds(txn) {
-  console.debug('Adding feed magic');
   const store = txn.objectStore('feed');
   const request = store.getAll();
   request.onerror = _ => console.error(request.error);
@@ -475,7 +479,6 @@ function add_magic_to_feeds(txn) {
 }
 
 function add_active_field_to_feeds(store) {
-  console.debug('Adding active property to older feeds');
   const feeds_request = store.getAll();
   feeds_request.onerror = _ => console.error(feeds_request.error);
   feeds_request.onsuccess = function(event) {

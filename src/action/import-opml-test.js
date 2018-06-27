@@ -1,7 +1,7 @@
 import {import_opml} from '/src/action/import-opml.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
-import ModelAccess from '/src/open-db.js';
+import ModelAccess from '/src/model/model-access.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: finish implementation. at the moment this basically just tests if this

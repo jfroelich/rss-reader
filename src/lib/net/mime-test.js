@@ -1,8 +1,9 @@
-import {assert as a} from '/src/lib/assert.js';
+import assert from '/src/lib/assert.js';
 import * as mime from '/src/lib/net/mime.js';
 import {register_test} from '/src/test/test-registry.js';
 
 async function mime_test() {
+  const a = assert;
   // constants tests
   a(mime.MIME_TYPE_MIN_LENGTH < mime.MIME_TYPE_MAX_LENGTH);
   a(mime.MIME_TYPE_MIN_LENGTH >= 0);
