@@ -12,46 +12,39 @@ async function subscribe_test() {
   const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
   const url = new URL(test_url);
 
-  const dal = new ModelAccess();
-  await dal.connect('subscribe-test');
+  const ma = new ModelAccess();
+  await ma.connect('subscribe-test');
 
-  let message_post_count = 0;
-  dal.channel = {
+  const messages = [];
+  ma.channel = {
     name: 'channel-stub',
-    postMessage: function(message) {
-      message_post_count++
-    },
+    postMessage: message => messages.push(message),
     close: noop
   };
 
   // Rethrow subscribe exceptions just like assertion failures by omitting
   // try/catch here.
-  const feed = await subscribe(dal, undefined, url, 7000, false);
+  const feed = await subscribe(ma, undefined, url, 7000, false);
 
   // Test the subscription produced the desired result
   assert(typeof feed === 'object');
   assert(Model.is_feed(feed));
   assert(Model.is_valid_feed_id(feed.id));
+
+  // Length may be 1 or 2 (may have redirected and captured new url)
   assert(feed.urls.length);
   assert(feed.urls.includes(url.href));
   assert(feed.active);
 
-  // Assert that the subscription sent out messages
-  assert(message_post_count > 0);
-
-  // Assert that the new feed is findable by url
-  assert(await dal.getFeed('url', url, true));
-
-  // Assert that the new feed is findable by id
-  const match = await dal.getFeed('id', feed.id);
-  assert(Model.is_feed(match));
-  assert(Model.is_valid_feed_id(match.id));
-  assert(match.id === feed.id);
+  // Assert that the subscription sent out correct messages
+  assert(messages.length === 1);
+  assert(messages[0].type === 'feed-created');
+  assert(messages[0].id === feed.id);
 
   // Cleanup
-  dal.close();
-  dal.channel.close();
-  await indexeddb.remove(dal.conn.name);
+  ma.close();
+  ma.channel.close();
+  await indexeddb.remove(ma.conn.name);
 }
 
 function noop() {}

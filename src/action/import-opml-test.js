@@ -4,58 +4,47 @@ import * as indexeddb from '/src/lib/indexeddb.js';
 import ModelAccess from '/src/model/model-access.js';
 import {register_test} from '/src/test/test-registry.js';
 
-// TODO: finish implementation. at the moment this basically just tests if this
-// can even run, and the subscribe always fails so cannot test results
-
-// TODO: for testing purposes I'd like to be able to subscribe without fetch
-// so I think subscribe needs to be changed to allow that, and I need to be able
-// to pass through an option from import-opml to subscribe
-// otherwise i need to use real urls so subscribe doesn't fail and actually
-// affects the db. but it is bad practice to use real urls.
-// Perhaps instead the subscribe API should be accepting Response objects as
-// input instead of URLs. That way I cut out the fetch issue, and can mock
-// response. But I only partially cut it out because of the icon issue?
-// I guess it is kind of annoying to not abstract away the fetch though. It
-// leads to having too many pieces to compose.
-
-// TODO: stub channel instead of creating a real one
-
-// TODO: add option to import-opml to pass along to subscribe to skip
-// icon lookup, then skip it here in the test
-
 // TODO: test multiple files
 // TODO: test multiple feeds per file
 // TODO: test dup handling
 
-// todo: use try/finally and ensure db cleaned up, maybe use a helper
-
 async function import_opml_test() {
-  // mock file, blobs 'implement' the File interface
-  const opml_string = '<opml version="2.0"> <body><outline type="feed" ' +
-      'xmlUrl="http://www.example.com/example.rss"/></body></opml>';
-  const file0 = new Blob([opml_string], {type: 'application/xml'});
-  file0.name = 'file0.xml';
-
-  const files = [file0];
-
-  const dal = new ModelAccess();
-  await dal.connect('import-opml-test-db', undefined, 3000);
+  const ma = new ModelAccess();
+  await ma.connect('import-opml-test-db', undefined, 3000);
   let iconn = undefined;  // test without favicon caching support
-  dal.channel = new BroadcastChannel('import-opml-test');
+  const messages = [];
+  ma.channel = {
+    name: 'import-opml-test',
+    postMessage: message => messages.push(message),
+    close: noop
+  };
 
-  // It's possible this should be relaxed, undecided. In some sense it impacts
-  // the overall test, and it may be even longer than the test timeout
-  const results = await import_opml(dal, undefined, files, 5000);
+  const opml_string = '<opml version="2.0"><body><outline type="feed" ' +
+      'xmlUrl="http://www.example.com/example.rss"/></body></opml>';
+  const file = create_mock_file('file.xml', opml_string);
+  const results = await import_opml(ma, [file]);
+  assert(results.length === 1);
+  assert(results[0].id === 1);
+  assert(messages.length === 1);
+  assert(messages[0].type === 'feed-created');
+  assert(messages[0].id === 1);
 
-  // TODO: make assertions about the result
-  // is the new database state correct
-  // is the results value correct
-  console.log(results);
+  ma.close();
+  ma.channel.close();
 
-  dal.close();
-  dal.channel.close();
-
-  await indexeddb.remove(dal.conn.name);
+  await indexeddb.remove(ma.conn.name);
 }
+
+// We cannot create File objects directly. However, blobs effectively implement
+// the File interface, so really, we just create a blob, and users of the file
+// such as FileReader do not really know the difference so long as duck typing
+// is used and no pedantic instanceof shenanigans are present.
+function create_mock_file(name, text) {
+  const file = new Blob([text], {type: 'application/xml'});
+  file.name = name;
+  return file;
+}
+
+function noop() {}
 
 register_test(import_opml_test);

@@ -1,7 +1,7 @@
-import * as config from '/src/config.js';
-import * as config_control from '/src/control/config-control.js';
 import * as favicon from '/src/action/favicon/favicon.js';
 import {import_opml} from '/src/action/import-opml.js';
+import * as config from '/src/config.js';
+import * as config_control from '/src/control/config-control.js';
 import * as array from '/src/lib/array.js';
 import {create_opml_document} from '/src/lib/opml-document.js';
 import ModelAccess from '/src/model/model-access.js';
@@ -16,28 +16,21 @@ function import_opml_button_onclick(event) {
 
 // Fired when user submits file browser dialog
 async function uploader_input_onchange(event) {
-  // TEMP: monitoring recent changes
-  console.debug('Received input change event');
-  const dal = new ModelAccess();
-  const promises = [dal.connect(), favicon.open()];
-  const [_, iconn] = await Promise.all(promises);
-  dal.channel = new BroadcastChannel('reader');
-  await import_opml(dal, iconn, event.target.files, 5000);
-  dal.close();
-  dal.channel.close();
-  iconn.close();
-
-  // TEMP: monitoring recent changes
-  console.debug('Completed uploader_input_onchange');
+  const ma = new ModelAccess();
+  await ma.connect();
+  ma.channel = new BroadcastChannel('reader');
+  await import_opml(ma, event.target.files);
+  ma.close();
+  ma.channel.close();
 }
 
 async function export_button_onclick(event) {
-  const dal = new ModelAccess();
-  await dal.connect();
+  const ma = new ModelAccess();
+  await ma.connect();
   const get_mode = 'all';
   const sort_feeds = false;
-  const feeds = await dal.getFeeds(get_mode, sort_feeds);
-  dal.close();
+  const feeds = await ma.getFeeds(get_mode, sort_feeds);
+  ma.close();
 
   const title = 'Subscriptions';
   const filename = 'subscriptions.xml';

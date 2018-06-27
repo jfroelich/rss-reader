@@ -6,6 +6,10 @@ import {fetch_feed} from '/src/lib/net/fetch-feed.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import * as sanity from '/src/model/model-sanity.js';
 
+// TODO: review whether this is ever called without fetching or without
+// notifying. If so, should probably drop those params
+// TODO: fetch-timeout should come from config instead of param?
+
 // TODO: implement create-feed in the model access layer, and use that here
 // instead of update-feed
 
@@ -59,10 +63,6 @@ export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
     }
   }
 
-  if (!sanity.is_valid_feed(feed)) {
-    throw new Error('Invalid feed ' + JSON.stringify(feed));
-  }
-
   if (iconn) {
     const url = favicon.create_lookup_url(feed);
     let doc = undefined;
@@ -70,13 +70,19 @@ export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
     feed.faviconURLString = await favicon.lookup(iconn, url, doc, fetch);
   }
 
+  // Prep the feed for storage. This is not baked into createFeed because not
+  // all callers do this preparation. Here it is explicit because this is data
+  // coming from an untrusted source.
+  if (!sanity.is_valid_feed(feed)) {
+    throw new Error('Invalid feed ' + JSON.stringify(feed));
+  }
   sanity.sanitize_feed(feed);
 
   // Update the model. Note that even though we checked for existing before,
   // this can still fail with a constraint error, because we are using separate
-  // transactions which allows for concurrent database changes to sneak in
-  const new_feed_id = await ma.createFeed(feed);
-  feed.id = new_feed_id;
+  // transactions which allows for concurrent database changes to sneak in.
+  // Also note that createFeed resolves to the id, not the stored object
+  feed.id = await ma.createFeed(feed);
 
   // TODO: I wonder if it makes more sense to only do this subsequent operation
   // in a message handler

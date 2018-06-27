@@ -1,11 +1,30 @@
-import {subscribe} from '/src/action/subscribe.js';
+import Model from '/src/model/model.js';
 
-// Concurrently reads in the opml files and subscribes to contained feeds.
-// Returns a promise that resolves to an array of subscribe promise results.
-export async function import_opml(dal, iconn, files, fetch_timeout) {
+// TODO: create and implement a createFeeds function in ModelAccess that uses a
+// single transaction to store several feeds at once, then use that here.
+
+// Concurrently reads in the opml files and creates feeds in the database. Note
+// that this bypasses the subscription process which means there are multiple
+// methods of input, but technically they all still share usage of the
+// ModelAccess.createFeed call. Also note that this does not fetch the full feed
+// data, and instead leaves that concern to the eventual poll that later runs.
+// Also note that this ignores all other data from the opml files, because it is
+// assumed it is better to get the most current data from the network in a
+// subsequent poll, even if that risks potential data loss. Avoiding the network
+// in this operation helps keep this operation reasonably fast.
+//
+// @param ma {ModelAccess} an open instance of ModelAccess
+// @param files {for..of iterable} any iterable collection such as an Array or
+// FileList, the contents of which should be either Blobs or Files
+// @throws database errors
+// @returns {Promise} resolves to an array of ModelAccess.createFeed promise
+// results, the array contains undefined when an individual createFeed promise
+// rejected
+export async function import_opml(ma, files) {
   const read_results = await read_files(files);
-  const urls = dedup_urls(flatten_file_urls(read_results));
-  return subscribe_all(dal, iconn, fetch_timeout, urls);
+  const urls = flatten_file_urls(read_results);
+  const unique_urls = dedup_urls(urls);
+  return create_feeds(ma, unique_urls);
 }
 
 // Read in all the feed urls from all of the files into an array of arrays.
@@ -14,6 +33,8 @@ function read_files(files) {
   const promises = [];
   for (const file of files) {
     const promise = read_file_feeds(file);
+    // If any one file fails to be read just log an error message and continue
+    // instead of having the whole thing fail.
     const catch_promise = promise.catch(console.warn);
     promises.push(catch_promise);
   }
@@ -24,6 +45,8 @@ function read_files(files) {
 function flatten_file_urls(all_files_urls) {
   const urls = [];
   for (const per_file_urls of all_files_urls) {
+    // per_file_urls may be undefined if there was a problem reading the file
+    // that generated it
     if (per_file_urls) {
       for (const url of per_file_urls) {
         if (url) {
@@ -35,10 +58,13 @@ function flatten_file_urls(all_files_urls) {
   return urls;
 }
 
-function subscribe_all(dal, iconn, fetch_timeout, urls) {
+function create_feeds(ma, urls) {
   const promises = [];
   for (const url of urls) {
-    const promise = subscribe(dal, iconn, url, fetch_timeout, false);
+    const feed = Model.createFeed();
+    Model.append_feed_url(feed, url);
+
+    const promise = ma.createFeed(feed);
     const catch_promise = promise.catch(console.warn);
     promises.push(catch_promise);
   }
@@ -50,13 +76,13 @@ function subscribe_all(dal, iconn, fetch_timeout, urls) {
 // Throws errors if bad parameter, bad file type, i/o, parsing. Does not filter
 // dupes. The return value is always a defined array, but may be empty.
 async function read_file_feeds(file) {
-  if (!file.size) {
-    return [];
-  }
-
   if (!file_is_opml(file)) {
     throw new TypeError(
         'Unacceptable type ' + file.type + ' for file ' + file.name);
+  }
+
+  if (!file.size) {
+    return [];
   }
 
   const file_text = await file_read_text(file);
