@@ -3,6 +3,7 @@ import * as html from '/src/lib/html.js';
 import * as string from '/src/lib/string.js';
 import * as Model from '/src/model/model.js';
 
+// Throws a ValidationError if the input entry has invalid properties
 // TODO: finish implementation
 export function validate_entry(entry) {
   // It is a programmer error to call this on an object that is not an entry
@@ -12,12 +13,16 @@ export function validate_entry(entry) {
   // This could be called on a new entry that does not have an id, so only
   // check id validity when the property exists
   if ('id' in entry) {
-    if (!Model.is_valid_entry_id(entry.id)) {
-      return false;
-    }
+    vassert(Model.is_valid_entry_id(entry.id));
   }
 
-  return true;
+  if (entry.dateCreated && entry.dateUpdated) {
+    vassert(entry.dateUpdated >= entry.dateCreated);
+  }
+
+
+  // NOTE: tolerate custom properties on the object, we only care about
+  // validating known properties
 }
 
 // TODO: finish implementation
@@ -26,20 +31,14 @@ export function validate_feed(feed) {
   // programmer error to call this on other values.
   assert(Model.is_feed(feed));
 
-  if ('id' in feed && !Model.is_valid_feed_id(feed.id)) {
-    return false;
-  }
+  // Either the feed does not have an id, or it has a valid id
+  vassert(feed.id === undefined || Model.is_valid_feed_id(feed.id));
 
-  if (!['undefined', 'string'].includes(typeof feed.title)) {
-    return false;
-  }
+  // Either the feed does not have a title or title is a string
+  vassert(feed.title === undefined || typeof feed.title === 'string');
 
-  const urls = feed.urls;
-  if (urls && !Array.isArray(urls)) {
-    return false;
-  }
-
-  return true;
+  // Eiter the feed does not have a urls property or it is an array
+  vassert(feed.urls === undefined || Array.isArray(feed.urls));
 }
 
 export function sanitize_entry(
@@ -103,5 +102,23 @@ export function sanitize_feed(feed, options) {
     desc = string.condense_whitespace(desc);
     desc = html.truncate_html(desc, desc_max_len, repl_suffix);
     feed.description = desc;
+  }
+}
+
+// This is similar to an AssertionError, but fundamentally still different. I
+// distinguish between errors indicating actual programmer errors, and errors
+// indicating bad data, because not all bad data errors come from programming
+// error. The base assert call should only be used to assert against impossible
+// cases that are only possible because of programmer error. This is to assert
+// against possible cases as well as impossible cases.
+function vassert(condition, message) {
+  if (!condition) {
+    throw new ValidationError(message);
+  }
+}
+
+export class ValidationError extends Error {
+  constructor(message = 'Validation error') {
+    super(message);
   }
 }

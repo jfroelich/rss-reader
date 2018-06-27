@@ -73,9 +73,11 @@ export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
   // Prep the feed for storage. This is not baked into createFeed because not
   // all callers do this preparation. Here it is explicit because this is data
   // coming from an untrusted source.
-  if (!sanity.validate_feed(feed)) {
-    throw new Error('Invalid feed ' + JSON.stringify(feed));
-  }
+
+  // This will throw a validation error if there is a problem, we do not handle
+  // the error and instead just rethrow it as a subscription error
+  sanity.validate_feed(feed));
+
   sanity.sanitize_feed(feed);
 
   // Update the model. Note that even though we checked for existing before,

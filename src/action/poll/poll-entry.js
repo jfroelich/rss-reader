@@ -106,7 +106,10 @@ export async function poll_entry(
   await sanitize_document(document);
   entry.content = document.documentElement.outerHTML;
 
-  assert(sanity.validate_entry(entry));
+  // This will throw a validation error if there is a problem, we do not handle
+  // error here and just rethrow the error as a poll error
+  sanity.validate_entry(entry);
+
   sanity.sanitize_entry(entry);
   return await dal.updateEntry(entry);
 }

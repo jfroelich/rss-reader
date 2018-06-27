@@ -6,7 +6,7 @@ import assert from '/src/lib/assert.js';
 import {fetch_feed} from '/src/lib/net/fetch-feed.js';
 import {OfflineError, TimeoutError} from '/src/lib/net/fetch2.js';
 import ModelAccess from '/src/model/model-access.js';
-import * as ModelSanity from '/src/model/model-sanity.js';
+import * as sanity from '/src/model/model-sanity.js';
 import * as Model from '/src/model/model.js';
 
 const chan_stub = {
@@ -108,8 +108,8 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   // counters that would lead to eventual deactivation
   handle_fetch_success(merged_feed);
 
-  assert(ModelSanity.validate_feed(merged_feed));
-  ModelSanity.sanitize_feed(merged_feed);
+  sanity.validate_feed(merged_feed);
+  sanity.sanitize_feed(merged_feed);
 
   const ma = new ModelAccess();
   ma.conn = rconn;
