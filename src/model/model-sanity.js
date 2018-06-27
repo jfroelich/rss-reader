@@ -133,14 +133,16 @@ export function sanitize_entry(
   }
 }
 
-// TODO: revert to not using options parameter
-export function sanitize_feed(feed, options) {
-  // It is a persistent programmer error to call this on a non-feed
+export function sanitize_feed(feed, title_max_len, desc_max_len) {
   assert(Model.is_feed(feed));
 
-  options = options || {};
-  const title_max_len = options.title_max_len || 1024;
-  const desc_max_len = options.desc_max_len || 1024 * 10;
+  if (isNaN(title_max_len)) {
+    title_max_len = 1024;
+  }
+
+  if (isNaN(desc_max_len)) {
+    desc_max_len = 10240;
+  }
 
   const html_tag_replacement = '';
   const repl_suffix = '';
