@@ -130,6 +130,11 @@ async function onmessage(event) {
     return;
   }
 
+  if (type === 'feed-created') {
+    // TODO: implement
+    return;
+  }
+
   if (type === 'feed-updated') {
     // TODO: implement
     return;
@@ -137,7 +142,7 @@ async function onmessage(event) {
 
   // All types should be explicitly handled, even if they do nothing but exit.
   // This message appearing serves as a continual incentive.
-  console.warn('Unhandled message', message);
+  console.warn('Unhandled message', JSON.stringify(message));
 }
 
 function onmessageerror(event) {
