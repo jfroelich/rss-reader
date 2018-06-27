@@ -81,7 +81,11 @@ ModelAccess.prototype.createFeeds = function(feeds) {
       assert(feed.urls && feed.urls.length);
 
       object.filter_empty_properties(feed);
-      feed.active = true;
+
+      if (feed.active === undefined) {
+        feed.active = true;
+      }
+
       feed.dateCreated = new Date();
       delete feed.dateUpdated;
     }
