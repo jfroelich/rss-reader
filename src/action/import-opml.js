@@ -1,5 +1,5 @@
 import * as string from '/src/lib/string.js';
-import Model from '/src/model/model.js';
+import * as Model from '/src/model/model.js';
 
 // Reads in the files, parses them, finds feed urls, and then creates a feed for
 // each url in the reader database. Other feed data from opml attributes is
@@ -28,6 +28,8 @@ export async function import_opml(ma, files) {
     return feed;
   });
 
+  // Because we are only considering urls, there is no need to do any validation
+  // or sanitization of the feed objects prior to insertion
   return ma.createFeeds(feeds);
 }
 
