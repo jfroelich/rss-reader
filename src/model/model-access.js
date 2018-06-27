@@ -70,6 +70,44 @@ ModelAccess.prototype.createFeed = function(feed) {
   });
 };
 
+ModelAccess.prototype.createFeeds = function(feeds) {
+  return new Promise((resolve, reject) => {
+    for (const feed of feeds) {
+      assert(Model.is_feed(feed));
+      assert(feed.urls && feed.urls.length);
+
+      object.filter_empty_properties(feed);
+      feed.active = true;
+      feed.dateCreated = new Date();
+      delete feed.dateUpdated;
+    }
+
+    const ids = [];
+    const txn = this.conn.transaction('feed', 'readwrite');
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
+
+    txn.oncomplete = _ => {
+      for (const id of ids) {
+        this.channel.postMessage({type: 'feed-created', id: id});
+      }
+      resolve(ids);
+    };
+
+    function request_onsuccess(event) {
+      const id = event.target.result;
+      ids.push(id);
+    }
+
+    const store = txn.objectStore('feed');
+    for (const feed of feeds) {
+      const request = store.put(feed);
+      request.onsuccess = request_onsuccess;
+    }
+  });
+};
+
 ModelAccess.prototype.countUnreadEntries = function() {
   return new Promise((resolve, reject) => {
     const txn = this.conn.transaction('entry');
