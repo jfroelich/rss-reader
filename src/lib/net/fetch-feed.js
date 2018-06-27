@@ -61,10 +61,7 @@ export async function fetch_feed(
     Model.set_feed_date_published(feed, new Date());
   }
 
-  // Set the request url
   Model.append_feed_url(feed, url);
-
-  // Set the response url
   Model.append_feed_url(feed, new URL(response.url));
 
   // Set the last modified date based on the response
