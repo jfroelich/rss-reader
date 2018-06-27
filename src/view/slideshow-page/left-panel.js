@@ -1,8 +1,8 @@
 import * as favicon from '/src/action/favicon/favicon.js';
 import {import_opml} from '/src/action/import-opml.js';
-import * as config from '/src/config.js';
 import * as config_control from '/src/control/config-control.js';
 import * as array from '/src/lib/array.js';
+import * as ls from '/src/lib/ls.js';
 import {create_opml_document} from '/src/lib/opml-document.js';
 import ModelAccess from '/src/model/model-access.js';
 
@@ -133,7 +133,7 @@ function options_menu_onclick(event) {
 function header_font_menu_init(fonts) {
   const menu = document.getElementById('header-font-menu');
   menu.onchange = header_font_menu_onchange;
-  const current_header_font = config.read_string('header_font_family');
+  const current_header_font = ls.read_string('header_font_family');
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Header Font';
@@ -153,7 +153,7 @@ function header_font_menu_init(fonts) {
 function body_font_menu_init(fonts) {
   const menu = document.getElementById('body-font-menu');
   menu.onchange = body_font_menu_onchange;
-  const current_body_font = config.read_string('body_font_family');
+  const current_body_font = ls.read_string('body_font_family');
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Body Font';
@@ -173,11 +173,11 @@ function body_font_menu_init(fonts) {
 
 export function header_font_menu_onchange(event) {
   const font_name = event.target.value;
-  const old_value = config.read_string('header_font_family');
+  const old_value = ls.read_string('header_font_family');
   if (font_name) {
-    config.write_string('header_font_family', font_name);
+    ls.write_string('header_font_family', font_name);
   } else {
-    config.remove('header_font_family');
+    ls.remove('header_font_family');
   }
 
   // HACK: dispatch a fake local change because storage change event listener
@@ -193,11 +193,11 @@ export function header_font_menu_onchange(event) {
 
 function body_font_menu_onchange(event) {
   const font_name = event.target.value;
-  const old_value = config.read_string('body_font_family');
+  const old_value = ls.read_string('body_font_family');
   if (font_name) {
-    config.write_string('body_font_family', font_name);
+    ls.write_string('body_font_family', font_name);
   } else {
-    config.remove('body_font_family');
+    ls.remove('body_font_family');
   }
 
   // HACK: dispatch a fake local change because storage change event listener
@@ -238,7 +238,7 @@ function leftpanel_init() {
   menu_options.onclick = options_menu_onclick;
 
   // Load fonts from local storage once for both init helpers
-  const fonts = config.read_array('fonts');
+  const fonts = ls.read_array('fonts');
   header_font_menu_init(fonts);
   body_font_menu_init(fonts);
 

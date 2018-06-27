@@ -8,7 +8,7 @@ import * as sanity from '/src/model/model-sanity.js';
 
 // TODO: review whether this is ever called without fetching or without
 // notifying. If so, should probably drop those params
-// TODO: fetch-timeout should come from config instead of param?
+// TODO: fetch-timeout should come from configuration instead of param?
 
 // TODO: implement create-feed in the model access layer, and use that here
 // instead of update-feed

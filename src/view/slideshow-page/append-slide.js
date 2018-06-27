@@ -1,4 +1,4 @@
-import * as config from '/src/config.js';
+import * as ls from '/src/lib/ls.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import * as html from '/src/lib/html.js';
@@ -68,7 +68,7 @@ function create_article_title_element(entry) {
 
     title = filter_publisher(title);
 
-    const max_length = config.read_int('entry_title_max_length');
+    const max_length = ls.read_int('entry_title_max_length');
     if (!isNaN(max_length)) {
       title = html.truncate_html(title, max_length);
     }

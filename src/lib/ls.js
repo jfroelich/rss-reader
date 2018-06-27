@@ -1,4 +1,4 @@
-// App settings access layer
+// Simple type-aware localStorage wrapper lib
 
 export function remove(key) {
   delete localStorage[key];

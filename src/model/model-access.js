@@ -1,4 +1,4 @@
-import * as config from '/src/config.js';
+import * as ls from '/src/lib/ls.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import * as object from '/src/lib/object.js';

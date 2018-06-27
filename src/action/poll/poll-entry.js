@@ -1,6 +1,6 @@
 import * as favicon from '/src/action/favicon/favicon.js';
 import {sanitize_document} from '/src/action/poll/sanitize-document.js';
-import * as config from '/src/config.js';
+import * as ls from '/src/lib/ls.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {set_base_uri} from '/src/lib/html-document.js';

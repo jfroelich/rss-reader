@@ -1,4 +1,4 @@
-import * as config from '/src/config.js';
+import * as ls from '/src/lib/ls.js';
 import assert from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
 import * as css_color from '/src/lib/css-color/css-color.js';
@@ -13,7 +13,7 @@ async function color_contrast_filter_test1() {
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
 
   const matte = color.WHITE;
-  const threshold = config.read_float('min_contrast_ratio');
+  const threshold = ls.read_float('min_contrast_ratio');
 
   let node = it.nextNode();
   while (node) {

@@ -1,4 +1,4 @@
-import * as config from '/src/config.js';
+import * as ls from '/src/lib/ls.js';
 import {filter_boilerplate} from '/src/lib/filters/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';
 import {condense_tagnames} from '/src/lib/filters/condense-tagnames.js';
@@ -66,10 +66,10 @@ export async function sanitize_document(document) {
   filter_noscript_elements(document);
 
   // TODO: shorten name, drop sandoc prefix
-  const matte = config.read_int('contrast_default_matte');
+  const matte = ls.read_int('contrast_default_matte');
 
   // TODO: lowercase
-  const mcr = config.read_float('min_contrast_ratio');
+  const mcr = ls.read_float('min_contrast_ratio');
   filter_hidden_elements(document, matte, mcr);
 
   const general_blacklist = [
@@ -109,7 +109,7 @@ export async function sanitize_document(document) {
   lonestar_filter(document);
   filter_dead_images(document);
 
-  const image_size_fetch_timeout = config.read_int('set_image_sizes_timeout');
+  const image_size_fetch_timeout = ls.read_int('set_image_sizes_timeout');
   await set_image_sizes(document, image_size_fetch_timeout, is_allowed_request);
 
   // TODO: compose into filter-images-by-size
@@ -130,10 +130,10 @@ export async function sanitize_document(document) {
   filter_container_elements(document);
   filter_lists(document);
 
-  const table_scan_max_rows = config.read_int('table_scan_max_rows');
+  const table_scan_max_rows = ls.read_int('table_scan_max_rows');
   filter_tables(document, table_scan_max_rows);
 
-  const emphasis_max_length = config.read_int('emphasis_max_length');
+  const emphasis_max_length = ls.read_int('emphasis_max_length');
   filter_emphasis(document, emphasis_max_length);
   filter_node_whitespace(document);
 

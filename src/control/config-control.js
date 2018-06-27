@@ -1,9 +1,9 @@
-import * as config from '/src/config.js';
+import * as ls from '/src/lib/ls.js';
 import assert from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
 
 // React to the extension being installed or updated, or when chrome is updated,
-// to do config related things. Note that this listener should be bound before
+// to do ls related things. Note that this listener should be bound before
 // other listeners that depend on configuration setup.
 export function install_listener(event) {
   if (event.reason === 'install') {
@@ -19,12 +19,12 @@ export function install_listener(event) {
 // I always forget what this is, and might use it in the future
 // const previous_version_string = event.previousVersion;
 function update_config(event) {
-  config.remove('debug');
-  config.remove('refresh_badge_delay');
-  config.remove('db_name');
-  config.remove('db_version');
-  config.remove('db_open_timeout');
-  config.remove('channel_name');
+  ls.remove('debug');
+  ls.remove('refresh_badge_delay');
+  ls.remove('db_name');
+  ls.remove('db_version');
+  ls.remove('db_open_timeout');
+  ls.remove('channel_name');
 
   rename('LAST_ALARM', 'last_alarm');
   rename(
@@ -51,39 +51,39 @@ function update_config(event) {
   // In some unknown prior version of the extension, I stored the path prefix
   // in the images array. This is no longer done, so check if the stored value
   // still has the path and if so remove it.
-  const path = config.read_string('bg_image');
+  const path = ls.read_string('bg_image');
   if (path && path.startsWith('/images/')) {
     console.debug('Stripping /images/ from bg image path', path);
-    config.write_string('bg_image', path.substring('/images/'.length));
+    ls.write_string('bg_image', path.substring('/images/'.length));
   }
 }
 
 export function init_config(event) {
   // General settings
-  config.write_boolean('show_notifications', true);
+  ls.write_boolean('show_notifications', true);
 
   // Poll settings
-  config.write_boolean('only_poll_if_idle', true);
+  ls.write_boolean('only_poll_if_idle', true);
 
   // Content filter settings
-  config.write_int('contrast_default_matte', color.WHITE);
-  config.write_int('emphasis_max_length', 200);
-  config.write_int('table_scan_max_rows', 20);
-  config.write_float('min_contrast_ratio', 4.5);
-  config.write_int('set_image_sizes_timeout', 300);
-  config.write_int('initial_entry_load_limit', 3);
+  ls.write_int('contrast_default_matte', color.WHITE);
+  ls.write_int('emphasis_max_length', 200);
+  ls.write_int('table_scan_max_rows', 20);
+  ls.write_float('min_contrast_ratio', 4.5);
+  ls.write_int('set_image_sizes_timeout', 300);
+  ls.write_int('initial_entry_load_limit', 3);
 
   // View settings
-  config.write_int('entry_title_max_length', 300);
-  config.write_int('padding', 180);
-  config.write_string('bg_color', '#fefdfd');
-  config.write_string('header_font_family', 'Open Sans Regular');
-  config.write_int('header_font_size', 70);
-  config.write_string('body_font_family', 'Edward Tufte Roman');
-  config.write_int('body_font_size', 36);
-  config.write_int('body_line_height', 46);
-  config.write_int('column_count', 1);
-  config.write_boolean('justify_text', false);
+  ls.write_int('entry_title_max_length', 300);
+  ls.write_int('padding', 180);
+  ls.write_string('bg_color', '#fefdfd');
+  ls.write_string('header_font_family', 'Open Sans Regular');
+  ls.write_int('header_font_size', 70);
+  ls.write_string('body_font_family', 'Edward Tufte Roman');
+  ls.write_int('body_font_size', 36);
+  ls.write_int('body_line_height', 46);
+  ls.write_int('column_count', 1);
+  ls.write_boolean('justify_text', false);
 
   // Install default background images
   // clang-format off
@@ -109,7 +109,7 @@ export function init_config(event) {
     'thomas-zucx-noise-lines.png'
   ];
   // clang-format on
-  config.write_array('background_images', background_images);
+  ls.write_array('background_images', background_images);
 
   // Install default fonts
   // clang-format off
@@ -132,25 +132,25 @@ export function init_config(event) {
     'Roboto Regular'
   ];
   // clang-format on
-  config.write_array('fonts', fonts);
+  ls.write_array('fonts', fonts);
 }
 
 // Rename a configuration key.
 function rename(from, to) {
   // There is no need to do any type coercion. Maintain fidelity by using the
-  // string type, because everything in and out of config is derivative of
+  // string type, because everything in and out of ls is derivative of
   // of the string type.
-  const value = config.read_string(from);
+  const value = ls.read_string(from);
 
   // Avoid creating the new key if the value is undefined. If the value is
   // undefined then rename devolves into a remove decorator. Note that due to
   // the strictness of this check, empty strings are retained, even though they
   // are not visibly different from undefined in devtools
   if (typeof value !== 'undefined') {
-    config.write_string(to, value);
+    ls.write_string(to, value);
   }
 
-  config.remove(from);
+  ls.remove(from);
 }
 
 // React to a localStorage property change. Note that this is only fired by the
@@ -248,7 +248,7 @@ export function storage_onchange(event) {
   }
 }
 
-// Initialize the dom with css settings from config. This should only be bound
+// Initialize the dom with css settings from ls. This should only be bound
 // if stylesheets are present, and to an event later than DOMContentLoaded.
 export function dom_load_listener() {
   const sheet = document.styleSheets[0];
@@ -256,7 +256,7 @@ export function dom_load_listener() {
   sheet.addRule('.entry .entry-title', page_style_title_rule_create());
   sheet.addRule('.entry .entry-content', page_style_content_rule_create());
 
-  const padding = config.read_int('padding');
+  const padding = ls.read_int('padding');
   if (!isNaN(padding)) {
     sheet.addRule('.slide-padding-wrapper', 'padding: ' + padding + 'px');
   }
@@ -265,8 +265,8 @@ export function dom_load_listener() {
 function page_style_entry_rule_create() {
   const buffer = [];
 
-  let path = config.read_string('bg_image');
-  const color = config.read_string('bg_color');
+  let path = ls.read_string('bg_image');
+  const color = ls.read_string('bg_color');
 
   if (path) {
     buffer.push(`background: url("/images/${path}");`);
@@ -279,12 +279,12 @@ function page_style_entry_rule_create() {
 
 function page_style_title_rule_create(sheet) {
   const buffer = [];
-  const font_size = config.read_int('header_font_size');
+  const font_size = ls.read_int('header_font_size');
   if (!isNaN(font_size)) {
     buffer.push(`font-size: ${font_size}px;`);
   }
 
-  const font_family = config.read_string('header_font_family');
+  const font_family = ls.read_string('header_font_family');
   if (font_family) {
     buffer.push(`font-family: ${font_family};`);
   }
@@ -294,27 +294,27 @@ function page_style_title_rule_create(sheet) {
 
 function page_style_content_rule_create(sheet) {
   const buffer = [];
-  const font_size = config.read_int('body_font_size');
+  const font_size = ls.read_int('body_font_size');
   if (!isNaN(font_size)) {
     buffer.push(`font-size: ${font_size}px;`);
   }
 
-  if (config.read_boolean('justify_text')) {
+  if (ls.read_boolean('justify_text')) {
     buffer.push('text-align: justify;');
   }
 
-  const font_family = config.read_string('body_font_family');
+  const font_family = ls.read_string('body_font_family');
   if (font_family) {
     buffer.push(`font-family: ${font_family};`);
   }
 
-  const line_height = config.read_int('body_line_height');
+  const line_height = ls.read_int('body_line_height');
   if (!isNaN(line_height)) {
     buffer.push(`line-height: ${line_height}px;`);
   }
 
   // TODO: did column-count become standard css yet? if so drop prefix
-  const column_count = config.read_int('column_count');
+  const column_count = ls.read_int('column_count');
   if (column_count === 2 || column_count === 3) {
     buffer.push(`-webkit-column-count: ${column_count};`);
     buffer.push('-webkit-column-gap: 30px;');
