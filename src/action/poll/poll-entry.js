@@ -1,6 +1,6 @@
-import * as config from '/src/config.js';
 import * as favicon from '/src/action/favicon/favicon.js';
 import {sanitize_document} from '/src/action/poll/sanitize-document.js';
+import * as config from '/src/config.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {set_base_uri} from '/src/lib/html-document.js';
@@ -107,7 +107,7 @@ export async function poll_entry(
   entry.content = document.documentElement.outerHTML;
 
   assert(sanity.is_valid_entry(entry));
-  entry = sanity.sanitize_entry(entry);
+  sanity.sanitize_entry(entry);
   return await dal.updateEntry(entry);
 }
 
