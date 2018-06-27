@@ -10,14 +10,14 @@ import * as sanity from '/src/model/model-sanity.js';
 // instead of update-feed
 
 // Subscribe to a feed
-// @param dal {ModelAccess} an open ModelAccess instance
+// @param ma {ModelAccess} an open ModelAccess instance
 // @param iconn {IDBDatabase} an open icon database connection
 // @param url {URL} the url to subscribe
 // @param should_notify {Boolean} whether to send a notification
 // @param fetch_timeout {Number} fetch timeout
 // @error database errors, type errors, fetch errors, etc
 // @return {Promise} resolves to the feed object stored in the database
-export async function subscribe(dal, iconn, url, fetch_timeout, should_notify) {
+export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
   // Before storing a new feed, subscribing grabs the full data of the remote
   // feed by fetching it from the network. It is assumed that if the caller
   // wants to subscribe instead of just directly inserting a new feed in the
@@ -35,7 +35,7 @@ export async function subscribe(dal, iconn, url, fetch_timeout, should_notify) {
   // index when later calling update-feed, because it is preferable to spam the
   // database with requests instead of spamming the network.
   // IMPLICIT: forward model errors to caller
-  let existing_feed = await dal.getFeed('url', url, true);
+  let existing_feed = await ma.getFeed('url', url, true);
   if (existing_feed) {
     // Match the error type thrown by indexedDB for constraint errors
     throw new DOMException('Already subscribed ' + url.href);
@@ -50,9 +50,10 @@ export async function subscribe(dal, iconn, url, fetch_timeout, should_notify) {
 
   // If we redirected, check if the redirect url exists in the model. This is
   // again done using a separate transaction, even though there is no following
-  // interleaved async call, simply because of convenience and consistency.
+  // interleaved async call, simply because of convenience and consistency. It
+  // still has the benefit of avoiding the favicon lookup.
   if (url_did_change(url, res_url)) {
-    existing_feed = await dal.getFeed('url', res_url, true);
+    existing_feed = await ma.getFeed('url', res_url, true);
     if (existing_feed) {
       throw new Error('Already subscribed ' + res_url.href);
     }
@@ -74,7 +75,8 @@ export async function subscribe(dal, iconn, url, fetch_timeout, should_notify) {
   // Update the model. Note that even though we checked for existing before,
   // this can still fail with a constraint error, because we are using separate
   // transactions which allows for concurrent database changes to sneak in
-  await dal.updateFeed(feed);
+  const new_feed_id = await ma.createFeed(feed);
+  feed.id = new_feed_id;
 
   // TODO: I wonder if it makes more sense to only do this subsequent operation
   // in a message handler
@@ -89,6 +91,6 @@ export async function subscribe(dal, iconn, url, fetch_timeout, should_notify) {
   return feed;
 }
 
-export function unsubscribe(dal, feed_id) {
-  return dal.deleteFeed(feed_id, 'unsubscribe');
+export function unsubscribe(ma, feed_id) {
+  return ma.deleteFeed(feed_id, 'unsubscribe');
 }
