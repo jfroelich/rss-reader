@@ -259,7 +259,7 @@ ModelAccess.prototype.deleteFeed = function(feed_id, reason) {
       const keys = request.result;
       for (const id of keys) {
         entry_ids.push(id);
-        request.source.delete(id);
+        entry_store.delete(id);
       }
     };
   });
