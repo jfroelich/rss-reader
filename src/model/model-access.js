@@ -21,7 +21,12 @@ ModelAccess.prototype.activateFeed = function(feed_id) {
     assert(Model.is_valid_feed_id(feed_id));
     const txn = this.conn.transaction('feed', 'readwrite');
     txn.oncomplete = _ => {
-      this.channel.postMessage({type: 'feed-activated', id: feed_id});
+      try {
+        this.channel.postMessage({type: 'feed-activated', id: feed_id});
+      } catch (error) {
+        console.warn(error);
+      }
+
       resolve();
     };
     txn.onerror = event => {
@@ -64,9 +69,7 @@ ModelAccess.prototype.createFeed = function(feed) {
     assert(feed.urls && feed.urls.length);
     object.filter_empty_properties(feed);
 
-    // Initialize as active unless caller expressed other intent, assume that
-    // if active property set, it is valid by this point
-    if (!('active' in feed)) {
+    if (feed.active === undefined) {
       feed.active = true;
     }
 
@@ -80,7 +83,12 @@ ModelAccess.prototype.createFeed = function(feed) {
     };
 
     txn.oncomplete = _ => {
-      this.channel.postMessage({type: 'feed-created', id: id});
+      try {
+        this.channel.postMessage({type: 'feed-created', id: id});
+      } catch (error) {
+        console.warn(error);
+      }
+
       resolve(id);
     };
 
@@ -113,9 +121,16 @@ ModelAccess.prototype.createFeeds = function(feeds) {
     };
 
     txn.oncomplete = _ => {
-      for (const id of ids) {
-        this.channel.postMessage({type: 'feed-created', id: id});
+      // try intentionally outside the for loop, want to stop iteration on first
+      // error, because it means that the rest will probably also fail
+      try {
+        for (const id of ids) {
+          this.channel.postMessage({type: 'feed-created', id: id});
+        }
+      } catch (error) {
+        console.warn(error);
       }
+
       resolve(ids);
     };
 
@@ -148,7 +163,12 @@ ModelAccess.prototype.deactivateFeed = function(feed_id, reason) {
     assert(Model.is_valid_feed_id(feed_id));
     const txn = this.conn.transaction('feed', 'readwrite');
     txn.oncomplete = _ => {
-      this.channel.postMessage({type: 'feed-deactivated', id: feed_id});
+      try {
+        this.channel.postMessage({type: 'feed-deactivated', id: feed_id});
+      } catch (error) {
+        console.warn(error);
+      }
+
       resolve();
     };
     txn.onerror = event => {
@@ -187,7 +207,12 @@ ModelAccess.prototype.deleteEntry = function(entry_id, reason) {
     const txn = this.conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
       const msg = {type: 'entry-deleted', id: entry_id, reason: reason};
-      this.channel.postMessage(msg);
+      try {
+        this.channel.postMessage(msg);
+      } catch (error) {
+        console.warn(error);
+      }
+
       resolve();
     };
     txn.onerror = event => {
@@ -207,13 +232,20 @@ ModelAccess.prototype.deleteFeed = function(feed_id, reason) {
       reject(event.target.error);
     };
     txn.oncomplete = _ => {
-      let msg = {type: 'feed-deleted', id: feed_id, reason: reason};
-      this.channel.postMessage(msg);
-      msg = {type: 'entry-deleted', id: 0, reason: reason, feed_id: feed_id};
-      for (const id of entry_ids) {
-        msg.id = id;
+      // the whole thing is within try block because first failure probably
+      // means rest of postMessage calls will fail and are pointless to try
+      try {
+        let msg = {type: 'feed-deleted', id: feed_id, reason: reason};
         this.channel.postMessage(msg);
+        msg = {type: 'entry-deleted', id: 0, reason: reason, feed_id: feed_id};
+        for (const id of entry_ids) {
+          msg.id = id;
+          this.channel.postMessage(msg);
+        }
+      } catch (error) {
+        console.warn(error);
       }
+
       resolve();
     };
 
@@ -367,10 +399,13 @@ ModelAccess.prototype.getFeed = function(mode = 'id', value, key_only) {
       let feed;
       if (key_only) {
         const feed_id = request.result;
+
+        // only define if matched, otherwise leave undef
         if (Model.is_valid_feed_id(feed_id)) {
           feed = Model.create_feed();
           feed.id = feed_id;
         }
+
       } else {
         feed = request.result;
       }
@@ -460,7 +495,12 @@ ModelAccess.prototype.markEntryRead = function(entry_id) {
       reject(event.target.error);
     };
     txn.oncomplete = _ => {
-      this.channel.postMessage({type: 'entry-read', id: entry_id});
+      try {
+        this.channel.postMessage({type: 'entry-read', id: entry_id});
+      } catch (error) {
+        console.warn(error);
+      }
+
       resolve();
     };
 
@@ -585,9 +625,9 @@ function add_magic_to_feeds(txn) {
 }
 
 function add_active_field_to_feeds(store) {
-  const feeds_request = store.getAll();
-  feeds_request.onerror = _ => console.error(feeds_request.error);
-  feeds_request.onsuccess = function(event) {
+  const request = store.getAll();
+  request.onerror = _ => console.error(request.error);
+  request.onsuccess = function(event) {
     const feeds = event.target.result;
     for (const feed of feeds) {
       feed.active = true;
@@ -621,7 +661,12 @@ ModelAccess.prototype.createEntry = function(entry) {
     const txn = this.conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
       const message = {type: 'entry-created', id: id};
-      this.channel.postMessage(message);
+      try {
+        this.channel.postMessage(message);
+      } catch (error) {
+        console.warn(error);
+      }
+
       resolve(id);
     };
     txn.onerror = event => {
@@ -643,7 +688,12 @@ ModelAccess.prototype.updateEntry = function(entry) {
 
     const txn = this.conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
-      this.channel.postMessage({type: 'entry-updated', id: entry.id});
+      try {
+        this.channel.postMessage({type: 'entry-updated', id: entry.id});
+      } catch (error) {
+        console.warn(error);
+      }
+
       resolve(entry.id);
     };
     txn.onerror = event => {
@@ -669,7 +719,12 @@ ModelAccess.prototype.updateFeed = function(feed) {
     };
     txn.oncomplete = _ => {
       const message = {type: 'feed-updated', id: feed.id};
-      this.channel.postMessage(message);
+      try {
+        this.channel.postMessage(message);
+      } catch (error) {
+        console.warn(error);
+      }
+
       resolve();
     };
 
