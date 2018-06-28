@@ -49,7 +49,8 @@ async function run_timed_test(test_function, timeout = 0) {
 }
 
 function deferred_rejection(test_function, time_ms) {
-  const error = new Error('Test ' + test_function.name + ' timed out');
+  const test_name = test_function.name.replace(/_/g, '-');
+  const error = new Error('Test "' + test_name + '" timed out');
   return new Promise((_, reject) => setTimeout(reject, time_ms, error));
 }
 
@@ -75,19 +76,26 @@ function find_test_by_name(name) {
 // @param parallel {Boolean} optional, whether to run tests in parallel or
 // serial, defaults to false (serial)
 async function cli_run(name, timeout = 10000, parallel) {
-  if (!['undefined', 'string'].includes(typeof name)) {
-    throw new TypeError('Invalid name parameter ' + name);
-  }
+  // Either run one test, run the named tests, or run all tests
 
-  // Either create an array of one test, or get all tests in the registry
   let tests;
-  if (name) {
+  if (typeof name === 'string') {
     const test = find_test_by_name(name);
     if (!test) {
       console.warn('Test not found', name);
       return;
     }
     tests = [test];
+  } else if (Array.isArray(name)) {
+    tests = [];
+    for (const n of name) {
+      const test = find_test_by_name(n);
+      if (test) {
+        tests.push(test);
+      } else {
+        console.warn('Test not found', name);
+      }
+    }
   } else {
     tests = get_registry();
   }
