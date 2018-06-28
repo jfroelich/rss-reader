@@ -52,6 +52,8 @@ channel.onmessage = function options_page_onmessage(event) {
     // not implemented
   } else if (type === 'feed-deleted') {
     // not implemented
+  } else if (type === 'entry-deleted') {
+    // not implemented
   } else {
     console.warn('Unknown message type', type);
   }
