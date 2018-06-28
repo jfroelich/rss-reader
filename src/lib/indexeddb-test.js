@@ -2,29 +2,15 @@ import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import {register_test} from '/src/test/test-registry.js';
 
+// TODO: test upgrade handler specified vs not specified and assert that
+// upgrade occurs
+// TODO: test error paths like bad database name, bad version, etc
 
-
-// TODO:
-// test create vs upgrade case, assert that onupgradeneeded happens
-// Test that timeout vs no-timeout works as expected
-// Test error paths
-
-// TODO: this test is failing, indexeddb.remove never resolves. On applications
-// tab, the details for the database that was created are missing, and the
-// buttons for delete and refresh do not work (and are opaque). Somehow this is
-// basically creating a database in some kind of bad state
-
-// NOTE: disabled this test for now
-
+// Exercise the basic open, close, delete process
 async function indexeddb_test() {
-  /*
-  let conn, timeout, upgrade_listener;
-  conn = await indexeddb.open('idb-test-foo', 1, upgrade_listener, timeout);
-  console.debug('Opened database', conn.name); await
-  indexeddb.remove(db_name);
-  console.debug('indexeddb_test reached
-  completion and should not timeout'); return true;
-  */
+  const conn = await indexeddb.open('indexeddb-test');
+  conn.close();
+  await indexeddb.remove(conn.name);
 }
 
 // This test asserts my understanding of the serialization. indexedDB can store
@@ -36,27 +22,25 @@ async function indexeddb_test() {
 // difference between my previous understanding and my current one is that
 // indexedDB does in fact tolerate storing objects created by new Func(){}.
 async function indexeddb_function_object_test() {
-  function upgrade(event) {
-    const request = event.target;
-    const db = request.result;
-    if (!db.objectStoreNames.contains('objects')) {
-      db.createObjectStore('objects', {keyPath: 'id', autoIncrement: true});
-    }
-  }
-
+  // Create a really basic database with an object store
   const conn = await indexeddb.open(
-      'indexeddb-function-object-test', undefined, upgrade);
+      'indexeddb-function-object-test', undefined, function(event) {
+        const request = event.target;
+        const db = request.result;
+        if (!db.objectStoreNames.contains('objects')) {
+          db.createObjectStore('objects', {keyPath: 'id', autoIncrement: true});
+        }
+      });
 
-  console.debug('Connected to database', conn.name);
-
+  // Define a class with a method
   function Foo() {
     this.a = 1;
   }
-
   Foo.prototype.bar = function() {
     this.a++;
   };
 
+  // Store a function object
   const pp = new Promise((resolve, reject) => {
     try {
       const txn = conn.transaction('objects', 'readwrite');
@@ -69,7 +53,6 @@ async function indexeddb_function_object_test() {
       const obj = new Foo();
       const request = store.put(obj);
       request.onsuccess = _ => {
-        console.debug('Stored object');
         resolve();
       };
     } catch (error) {
@@ -79,9 +62,9 @@ async function indexeddb_function_object_test() {
 
   try {
     await pp;
-    console.debug('stored function object');
   } catch (error) {
     console.warn(error);
+    assert(false, error.message);
   }
 
   const gp = new Promise((resolve, reject) => {
@@ -95,18 +78,12 @@ async function indexeddb_function_object_test() {
   let robj;
   try {
     robj = await gp;
-    console.debug('retrieved object', robj);
   } catch (error) {
     console.warn(error);
+    assert(false, error.message);
   }
 
-  console.debug('retrieved object has prototype method?', robj.bar);
-
-  console.debug('retrieved obj const name', robj.__proto__.constructor.name);
-
-  console.debug('closing database', conn.name);
   conn.close();
-  console.debug('removing database', conn.name);
   await indexeddb.remove(conn.name);
 }
 
