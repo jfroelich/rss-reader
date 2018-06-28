@@ -597,12 +597,25 @@ ModelAccess.prototype.updateEntry = function(entry) {
 
     const creating = !entry.id;
     if (creating) {
-      entry.readState = Model.ENTRY_STATE_UNREAD;
-      entry.archiveState = Model.ENTRY_STATE_UNARCHIVED;
-      entry.dateCreated = new Date();
+      // Only init to unread if not specified
+      if (entry.readState === undefined) {
+        entry.readState = Model.ENTRY_STATE_UNREAD;
+      }
+
+      // Only init to unarchived if not specified
+      if (entry.archiveState === undefined) {
+        entry.archiveState = Model.ENTRY_STATE_UNARCHIVED;
+      }
+
+      if (entry.dateCreated === undefined) {
+        entry.dateCreated = new Date();
+      }
+
       delete entry.dateUpdated;
     } else {
-      entry.dateUpdated = new Date();
+      if (entry.dateUpdated === undefined) {
+        entry.dateUpdated = new Date();
+      }
     }
 
     object.filter_empty_properties(entry);
