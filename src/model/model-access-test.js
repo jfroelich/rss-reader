@@ -192,9 +192,55 @@ async function activate_feed_test() {
   await indexeddb.remove(ma.conn.name);
 }
 
+async function count_unread_entries_test() {
+  const ma = new ModelAccess();
+  await ma.connect('count-unread-entries-test');
+  ma.channel = {name: 'stub', postMessage: noop, close: noop};
+
+  const empty_count = await ma.countUnreadEntries();
+  assert(empty_count === 0);
+
+  // Create a few unread entries, a few read entries, then ensure the
+  // count is correct
+
+  const insert_unread_count = 3;
+  const entries_to_insert = [];
+  for (let i = 0; i < insert_unread_count; i++) {
+    const entry = Model.create_entry();
+    entry.readState = Model.ENTRY_STATE_UNREAD;
+    Model.append_entry_url(entry, new URL('a://b.c' + i));
+    entries_to_insert.push(entry);
+  }
+
+  const insert_read_count = 5;
+  for (let i = 0; i < insert_read_count; i++) {
+    const entry = Model.create_entry();
+    entry.readState = Model.ENTRY_STATE_READ;
+    Model.append_entry_url(entry, new URL('d://e.f' + i));
+    entries_to_insert.push(entry);
+  }
+
+  const insert_promises = [];
+  for (const entry of entries_to_insert) {
+    const promise = ma.updateEntry(entry);
+    insert_promises.push(ma.updateEntry);
+  }
+
+  await Promise.all(insert_promises);
+
+  const unread_count = await ma.countUnreadEntries();
+  console.debug('Counted %d unread entries', unread_count);
+  assert(unread_count === insert_unread_count);
+
+  ma.channel.close();
+  ma.close();
+  await indexeddb.remove(ma.conn.name);
+}
+
 function noop() {}
 
 register_test(create_feed_test);
 register_test(create_feed_url_constraint_test);
 register_test(create_feeds_test);
 register_test(activate_feed_test);
+register_test(count_unread_entries_test);
