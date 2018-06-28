@@ -623,7 +623,6 @@ ModelAccess.prototype.updateEntry = function(entry) {
     const txn = this.conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
       const message = {type: 'entry-write', id: entry.id, 'create': creating};
-      console.debug(message);
       this.channel.postMessage(message);
       resolve(entry.id);
     };
