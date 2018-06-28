@@ -26,8 +26,18 @@ ModelAccess.prototype.activateFeed = function(feed_id) {
     const request = store.get(feed_id);
     request.onsuccess = _ => {
       const feed = request.result;
-      assert(Model.is_feed(feed));
-      assert(feed.active !== true);
+
+      // Errors thrown in a later tick do not cause rejection
+      if (!Model.is_feed(feed)) {
+        reject(new Error('Loaded feed is not a feed ' + feed_id));
+        return;
+      }
+
+      if (feed.active) {
+        reject(new Error('Feed is already active ' + feed_id));
+        return;
+      }
+
       delete feed.deactivationReasonText;
       delete feed.deactivateDate;
       feed.active = true;
@@ -143,8 +153,18 @@ ModelAccess.prototype.deactivateFeed = function(feed_id, reason) {
     const request = store.get(feed_id);
     request.onsuccess = _ => {
       const feed = request.result;
-      assert(Model.is_feed(feed));
-      assert(feed.active !== false);
+
+      // Errors thrown in a later tick do not cause rejection
+      if (!Model.is_feed(feed)) {
+        reject(new Error('Loaded feed is not a feed ' + feed_id));
+        return;
+      }
+
+      if (feed.active !== true) {
+        reject(new Error('Cannot deactivate inactive feed ' + feed_id));
+        return;
+      }
+
       const current_date = new Date();
       feed.deactivationReasonText = reason;
       feed.deactivateDate = current_date;
@@ -411,7 +431,15 @@ ModelAccess.prototype.iterateEntries = function(
         return;
       }
 
-      handle_entry(cursor);
+      // Errors thrown in a later tick do not cause rejection. Therefore it is
+      // unsafe to call this without trapping errors because we cannot rely on
+      // the caller to carefully craft the handle_entry callback.
+      try {
+        handle_entry(cursor);
+      } catch (error) {
+        console.warn(error);
+      }
+
       cursor.continue();
     };
   });
@@ -434,9 +462,22 @@ ModelAccess.prototype.markEntryRead = function(entry_id) {
     const request = store.get(entry_id);
     request.onsuccess = _ => {
       const entry = request.result;
-      assert(Model.is_entry(entry));
-      assert(entry.archiveState !== Model.ENTRY_STATE_ARCHIVED);
-      assert(entry.readState !== Model.ENTRY_STATE_READ);
+
+      // Errors thrown in a later tick do not cause rejection
+      if (!Model.is_entry(entry)) {
+        reject(new Error('Loaded object is not an entry ' + entry_id));
+        return;
+      }
+
+      if (entry.archiveState === Model.ENTRY_STATE_ARCHIVED) {
+        reject(new Error('Cannot mark archived entry as read ' + entry_id));
+        return;
+      }
+
+      if (entry.readState === Model.ENTRY_STATE_READ) {
+        reject(new Error('Cannot mark read entry as read ' + entry_id));
+        return;
+      }
 
       entry.readState = Model.ENTRY_STATE_READ;
       const currentDate = new Date();
