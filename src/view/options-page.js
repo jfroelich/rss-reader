@@ -30,7 +30,8 @@ channel.onmessage = function options_page_onmessage(event) {
   // from here, and that could affect unread count. If unsubscribing from here
   // then slideshow may not be loaded, and also background page may not be
   // loaded.
-  const badge_types = ['entry-write', 'entry-deleted', 'entry-read'];
+  const badge_types =
+      ['entry-created', 'entry-updated', 'entry-deleted', 'entry-read'];
   if (badge_types.includes(type)) {
     badge.refresh(location.pathname);
   }
@@ -45,8 +46,10 @@ channel.onmessage = function options_page_onmessage(event) {
     // not implemented
   } else if (type === 'entry-read') {
     // ignore
-  } else if (type === 'entry-write') {
-    // ignore
+  } else if (type === 'entry-created') {
+    // not implemented
+  } else if (type === 'entry-updated') {
+    // not implemented
   } else if (type === 'feed-deleted') {
     // not implemented
   } else {

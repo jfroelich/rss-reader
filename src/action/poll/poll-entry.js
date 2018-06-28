@@ -1,10 +1,10 @@
 import * as favicon from '/src/action/favicon/favicon.js';
 import {sanitize_document} from '/src/action/poll/sanitize-document.js';
-import * as ls from '/src/lib/ls.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {set_base_uri} from '/src/lib/html-document.js';
 import * as html from '/src/lib/html.js';
+import * as ls from '/src/lib/ls.js';
 import {fetch_html} from '/src/lib/net/fetch-html.js';
 import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
@@ -106,12 +106,11 @@ export async function poll_entry(
   await sanitize_document(document);
   entry.content = document.documentElement.outerHTML;
 
-  // This will throw a validation error if there is a problem, we do not handle
-  // error here and just rethrow the error as a poll error
-  sanity.validate_entry(entry);
-
+  // Cleanup the entry properties
   sanity.sanitize_entry(entry);
-  return await ma.updateEntry(entry);
+  // Throw a validation error if invalid
+  sanity.validate_entry(entry);
+  return await ma.createEntry(entry);
 }
 
 // TODO: somehow store in configuration instead of here, look into

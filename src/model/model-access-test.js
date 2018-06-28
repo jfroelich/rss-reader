@@ -220,7 +220,7 @@ async function count_unread_entries_test() {
     entries_to_insert.push(entry);
   }
 
-  const insert_promises = entries_to_insert.map(ma.updateEntry, ma);
+  const insert_promises = entries_to_insert.map(ma.createEntry, ma);
   await Promise.all(insert_promises);
 
   const unread_count = await ma.countUnreadEntries();

@@ -4,6 +4,12 @@ import * as ls from '/src/lib/ls.js';
 import * as object from '/src/lib/object.js';
 import * as Model from '/src/model/model.js';
 
+// TODO: all postMessage calls that happen in a deferred context can throw an
+// InvalidStateError if the channel is closed, but this will not cause the
+// promise to properly reject because the exception occurs in a later tick.
+// Therefore must use try/catch and reject around all non-immediate postMessage
+// calls.
+
 // Provides a data access layer for interacting with the reader database
 export default function ModelAccess() {
   this.conn = undefined;
@@ -591,39 +597,53 @@ function add_active_field_to_feeds(store) {
   };
 }
 
+ModelAccess.prototype.createEntry = function(entry) {
+  return new Promise((resolve, reject) => {
+    assert(Model.is_entry(entry));
+    assert(entry.id === undefined);
+
+    if (entry.readState === undefined) {
+      entry.readState = Model.ENTRY_STATE_UNREAD;
+    }
+
+    if (entry.archiveState === undefined) {
+      entry.archiveState = Model.ENTRY_STATE_UNARCHIVED;
+    }
+
+    if (entry.dateCreated === undefined) {
+      entry.dateCreated = new Date();
+    }
+
+    delete entry.dateUpdated;
+    object.filter_empty_properties(entry);
+
+    let id;
+    const txn = this.conn.transaction('entry', 'readwrite');
+    txn.oncomplete = _ => {
+      const message = {type: 'entry-created', id: id};
+      this.channel.postMessage(message);
+      resolve(id);
+    };
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
+    const store = txn.objectStore('entry');
+    const request = store.put(entry);
+    request.onsuccess = _ => id = request.result;
+  });
+};
+
 ModelAccess.prototype.updateEntry = function(entry) {
   return new Promise((resolve, reject) => {
     assert(Model.is_entry(entry));
+    assert(Model.is_valid_entry_id(entry.id));
 
-    const creating = !entry.id;
-    if (creating) {
-      // Only init to unread if not specified
-      if (entry.readState === undefined) {
-        entry.readState = Model.ENTRY_STATE_UNREAD;
-      }
-
-      // Only init to unarchived if not specified
-      if (entry.archiveState === undefined) {
-        entry.archiveState = Model.ENTRY_STATE_UNARCHIVED;
-      }
-
-      if (entry.dateCreated === undefined) {
-        entry.dateCreated = new Date();
-      }
-
-      delete entry.dateUpdated;
-    } else {
-      if (entry.dateUpdated === undefined) {
-        entry.dateUpdated = new Date();
-      }
-    }
-
+    entry.dateUpdated = new Date();
     object.filter_empty_properties(entry);
 
     const txn = this.conn.transaction('entry', 'readwrite');
     txn.oncomplete = _ => {
-      const message = {type: 'entry-write', id: entry.id, 'create': creating};
-      this.channel.postMessage(message);
+      this.channel.postMessage({type: 'entry-updated', id: entry.id});
       resolve(entry.id);
     };
     txn.onerror = event => {
@@ -631,9 +651,6 @@ ModelAccess.prototype.updateEntry = function(entry) {
     };
     const store = txn.objectStore('entry');
     const request = store.put(entry);
-    if (creating) {
-      request.onsuccess = _ => entry.id = request.result;
-    }
   });
 };
 

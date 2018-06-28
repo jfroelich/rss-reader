@@ -30,7 +30,8 @@ async function onmessage(event) {
   }
 
   // Common behavior for type handlers related to updating the badge
-  const badge_types = ['entry-write', 'entry-deleted', 'entry-read'];
+  const badge_types =
+      ['entry-created', 'entry-updated', 'entry-deleted', 'entry-read'];
   if (badge_types.includes(message.type)) {
     const locker_name = location.pathname;
     badge.refresh(locker_name);  // non-blocking
@@ -48,11 +49,12 @@ async function onmessage(event) {
     return;
   }
 
-  // TODO: rename event type globally to entry-written
-  if (type === 'entry-write') {
+  // TODO: this double test against type is awkward, need to revisit, but
+  // currently only focused on deprecating entry-write message type
+  if (type === 'entry-created' || type === 'entry-updated') {
     // For now, we only care about newly added articles, because we do support
     // hot-swapping content
-    if (!message.create) {
+    if (type !== 'entry-created') {
       return;
     }
 

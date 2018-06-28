@@ -18,7 +18,8 @@ async function background_page_channel_onmessage(event) {
   // one is found, request the unread count to be updated. This is needed
   // because actions that occur in the background while no views are open would
   // otherwise cause messages to go unheard.
-  const badge_types = ['entry-write', 'entry-deleted', 'entry-read'];
+  const badge_types =
+      ['entry-created', 'entry-updated', 'entry-deleted', 'entry-read'];
   if (badge_types.includes(message.type)) {
     badge_control.refresh(location.pathname);
   }
