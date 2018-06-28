@@ -23,11 +23,22 @@ export function create_entry() {
 // Function objects are not allowed, hence the duck-type check. Note that typeof
 // null === 'object'
 export function is_entry(value) {
-  return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
+  return value && typeof value === 'object' && value.magic === ENTRY_MAGIC &&
+      is_plain_object(value);
+}
+
+// Return true only if the object is a plain object, not a function object.
+// Function objects (e.g. var f = new F()) will have a constructor name "F"
+// where as plain objects have a constructor "Object", and we know that "F"
+// cannot replace "Object".
+function is_plain_object(value) {
+  return value && value.__proto__ && value.__proto__.constructor &&
+      value.__proto__.constructor.name === 'Object';
 }
 
 export function is_feed(value) {
-  return value && typeof value === 'object' && value.magic === FEED_MAGIC;
+  return value && typeof value === 'object' && value.magic === FEED_MAGIC &&
+      is_plain_object(value);
 }
 
 export function is_valid_entry_id(value) {
