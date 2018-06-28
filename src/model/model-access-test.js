@@ -135,7 +135,6 @@ async function create_feeds_test() {
   await indexeddb.remove(ma.conn.name);
 }
 
-// Exercise the normal activateFeed case
 async function activate_feed_test() {
   const msgs = [];
   const ma = new ModelAccess();
@@ -157,6 +156,36 @@ async function activate_feed_test() {
   assert(msgs.length === 2);  // create + activate
   assert(msgs[1].type === 'feed-activated');
   assert(msgs[1].id === stored_feed.id);
+
+  // Activating a feed that is already active should fail
+  // NOTE: so I sort of learned an important lesson about the leaky abstraction
+  // that is promises. My original understanding was that when an exception is
+  // thrown inside of a promise, it is translated into a rejection. That
+  // understanding is incorrect. There is more nuance. In particular, only
+  // immediately-thrown exceptions are translated automatically into rejections.
+  // If an error is thrown in a later event loop iteration (e.g. next tick)
+  // while within the executor of the promise, such as after setTimeout
+  // resolves, or after an indexedDB request event occurs, then the error is NOT
+  // transformed into a rejection. It remains an uncaught exception that leaves
+  // the promise in an unsettled state (the promise never rejects). Therefore,
+  // all promises that do work that occurs after the current event loop epoch
+  // has elapsed must use try/catch in non-immediate contexts or somehow avoid
+  // throwing errors entirely. All code that occurs in a later tick from within
+  // a promise is untrustworthy.
+
+  // TODO: convert model-access to reject instead of assert in the above
+  // situation, as a partial solution.
+  // TODO: perform a thorough review of all promises that do deferred work.
+
+  let activation_error;
+  try {
+    await ma.activateFeed(id);
+  } catch (error) {
+    activation_error = error;
+  }
+
+  // Assert that the activation attempt failed as expected
+  assert(activation_error);
 
   ma.channel.close();
   ma.close();
