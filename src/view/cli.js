@@ -1,4 +1,3 @@
-import {archive_entries} from '/src/action/archive-entries.js';
 import * as favicon from '/src/action/favicon/favicon.js';
 import {poll_feed, poll_feeds} from '/src/action/poll/poll-feeds.js';
 import {subscribe} from '/src/action/subscribe.js';
@@ -50,7 +49,7 @@ async function cli_archive_entries() {
   const ma = new ModelAccess();
   ma.channel = new BroadcastChannel('reader');
   await ma.connect();
-  await archive_entries(ma);
+  await ma.archiveEntries();
   ma.channel.close();
   ma.close();
 }

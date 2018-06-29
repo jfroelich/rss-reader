@@ -3,12 +3,7 @@ import * as indexeddb from '/src/lib/indexeddb.js';
 import * as ls from '/src/lib/ls.js';
 import * as object from '/src/lib/object.js';
 import * as Model from '/src/model/model.js';
-
-// TODO: all postMessage calls that happen in a deferred context can throw an
-// InvalidStateError if the channel is closed, but this will not cause the
-// promise to properly reject because the exception occurs in a later tick.
-// Therefore must use try/catch and reject around all non-immediate postMessage
-// calls.
+import sizeof from '/src/lib/sizeof.js';
 
 // Provides a data access layer for interacting with the reader database
 export default function ModelAccess() {
@@ -57,6 +52,109 @@ ModelAccess.prototype.activateFeed = function(feed_id) {
     };
   });
 };
+
+const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
+
+// Compacts older read entries in the database. Dispatches entry-archived
+// messages once the internal transaction completes. max_age is in ms, optional,
+// defaults to two days, how old an entry must be in order to archive it.
+ModelAccess.prototype.archiveEntries = function(max_age = TWO_DAYS_MS) {
+  return new Promise((resolve, reject) => {
+    const entry_ids = [];
+    const txn = this.conn.transaction('entry', 'readwrite');
+    txn.oncomplete = _ => {
+      for (const id of entry_ids) {
+        // This occurs in a later tick so must trap exceptions. Because the
+        // transaction committed by this point, just warn.
+        try {
+          this.channel.postMessage({type: 'entry-archived', id: id});
+        } catch (error) {
+          console.warn(error);
+        }
+      }
+      resolve();
+    };
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
+
+    const store = txn.objectStore('entry');
+    const index = store.index('archiveState-readState');
+    const key_path = [Model.ENTRY_STATE_UNARCHIVED, Model.ENTRY_STATE_READ];
+    const request = index.openCursor(key_path);
+
+    request.onsuccess = event => {
+      const cursor = event.target.result;
+      if (!cursor) {
+        return;
+      }
+      const entry = cursor.value;
+
+      // Cannot throw because this occurs in a later tick where exception would
+      // not be translated into rejection and would leave promise unsettled
+      // TODO: abort the transaction? or reject and return?
+      if (!Model.is_entry(entry)) {
+        console.warn('Not an entry', entry);
+        cursor.continue();
+        return;
+      }
+
+      if (!entry.dateCreated) {
+        console.warn('No date created', entry);
+        cursor.continue();
+        return;
+      }
+
+      const current_date = new Date();
+      const age = current_date - entry.dateCreated;
+
+      if (age < 0) {
+        console.warn('Future entry', entry);
+        cursor.continue();
+        return;
+      }
+
+      if (age > max_age) {
+        const ae = archive_entry(entry);
+        cursor.update(ae);
+        entry_ids.push(ae.id);
+      }
+
+      cursor.continue();
+    };
+  });
+};
+
+function archive_entry(entry) {
+  const before_size = sizeof(entry);
+  const ce = compact_entry(entry);
+  const after_size = sizeof(ce);
+
+  if (after_size > before_size) {
+    console.warn('Entry increased size', entry);
+  }
+
+  ce.archiveState = Model.ENTRY_STATE_ARCHIVED;
+  const current_date = new Date();
+  ce.dateArchived = current_date;
+  ce.dateUpdated = current_date;
+  return ce;
+}
+
+function compact_entry(entry) {
+  const ce = Model.create_entry();
+  ce.dateCreated = entry.dateCreated;
+
+  if (entry.dateRead) {
+    ce.dateRead = entry.dateRead;
+  }
+
+  ce.feed = entry.feed;
+  ce.id = entry.id;
+  ce.readState = entry.readState;
+  ce.urls = entry.urls;
+  return ce;
+}
 
 // NOTE: only closes database, not channel
 ModelAccess.prototype.close = function() {
@@ -442,6 +540,8 @@ function compare_feeds(a, b) {
   return indexedDB.cmp(s1, s2);
 }
 
+// TODO: drop mode parameter, it is no longer in use, not doing it right now
+// because I am focusing on archiveEntries
 ModelAccess.prototype.iterateEntries = function(
     mode = 'all', writable, handle_entry) {
   return new Promise((resolve, reject) => {
@@ -454,17 +554,7 @@ ModelAccess.prototype.iterateEntries = function(
       reject(event.target.error);
     };
     const store = txn.objectStore('entry');
-
-    let request;
-    if (mode === 'archive') {
-      const index = store.index('archiveState-readState');
-      const key_path = [Model.ENTRY_STATE_UNARCHIVED, Model.ENTRY_STATE_READ];
-      request = index.openCursor(key_path);
-    } else if (mode === 'all') {
-      request = store.openCursor();
-    } else {
-      throw new Error('Invalid mode ' + mode);
-    }
+    const request = store.openCursor();
 
     request.onsuccess = _ => {
       const cursor = request.result;
