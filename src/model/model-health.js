@@ -1,8 +1,6 @@
-import {ModelAccess} from '/src/model/model-access.js';
 import * as Model from '/src/model/model.js';
 
 // Removes entries missing urls from the database
-// TODO: test
 export async function remove_lost_entries(ma) {
   const deleted_entry_ids = [];
   const txn_writable = true;
@@ -20,20 +18,8 @@ export async function remove_lost_entries(ma) {
 }
 
 // Scans the database for entries not linked to a feed and deletes them
-// TODO: test
-// TODO: use model access api
-export async function remove_orphaned_entries(conn, channel) {
-  // TODO; ma should be a parameter
-  const ma = new ModelAccess();
-  ma.conn = conn;
-  ma.channel = channel;
-
-  // Query for all feed ids. We load just the ids so that it is faster and more
-  // scalable than actually loading all feed info.
+export async function remove_orphaned_entries(ma) {
   const feed_ids = await ma.getFeedIds(conn);
-
-  // Technically we could continue and let the next transaction do nothing, but
-  // it is better for performance to preemptively exit.
   if (!feed_ids.length) {
     return;
   }
@@ -43,7 +29,6 @@ export async function remove_orphaned_entries(conn, channel) {
   // after the commit.
   const deleted_entry_ids = [];
 
-  // Walk the entry store in write mode
   const txn_writable = true;
   await ma.iterateEntries('all', txn_writable, cursor => {
     const entry = cursor.value;
@@ -78,14 +63,7 @@ export async function remove_orphaned_entries(conn, channel) {
 // Scan the feed store and the entry store and delete any objects missing their
 // hidden magic property. Note this uses multiple write transactions. That means
 // that a later failure does not indicate an earlier step failed.
-// TODO: use a single transaction
-// TODO: use model access api
-export async function remove_untyped_objects(conn, channel) {
-  // TODO: ma should be a parameter
-  const ma = new ModelAccess();
-  ma.conn = conn;
-  ma.channel = channel;
-
+export async function remove_untyped_objects(ma) {
   const feeds = ma.getFeeds();
   const delete_feed_promises = [];
   for (const feed of feeds) {

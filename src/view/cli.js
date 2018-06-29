@@ -69,15 +69,12 @@ async function cli_poll_feeds() {
 async function cli_remove_lost_entries() {
   const ma = await openModelAccess(/* channeled */ true);
   await model_health.remove_lost_entries(ma);
-  console.log('Removed %d lost entries', channel.message_count);
   ma.close();
 }
 
 async function cli_remove_orphans() {
   const ma = await openModelAccess(/* channeled */ true);
-  // TODO: should just be passing around ma
-  await model_health.remove_orphaned_entries(ma.conn, ma.channel);
-  console.log('Deleted %d entries', channel.message_count);
+  await model_health.remove_orphaned_entries(ma);
   ma.close();
 }
 

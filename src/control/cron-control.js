@@ -52,13 +52,11 @@ export async function alarm_listener(alarm) {
     ma.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
     const ma = await openModelAccess(/* channeled */ true);
-    // TODO: should just be passing around ma
-    await model_health.remove_orphaned_entries(ma.conn, ma.channel);
+    await model_health.remove_orphaned_entries(ma);
     ma.close();
   } else if (alarm.name === 'remove-untyped-objects') {
     const ma = await openModelAccess(/* channeled */ true);
-    // TODO: should just be passing around ma
-    await model_health.remove_untyped_objects(ma.conn, ma.channel);
+    await model_health.remove_untyped_objects(ma);
     ma.close();
   } else if (alarm.name === 'refresh-feed-icons') {
     const proms = [await openModelAccess(/* channeled */ true), favicon.open()];
