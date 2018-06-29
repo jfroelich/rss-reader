@@ -51,26 +51,17 @@ export function create_lookup_url(feed) {
 }
 
 // Update the favicon of each of the feeds in the database
-export async function refresh_feeds(rconn, iconn, channel) {
-  // TODO: this should use ma parameter
-  const ma = new ModelAccess();
-  ma.conn = rconn;
-  ma.channel = channel;
-
-  const mode = 'active';
-  const sorted = false;
-
-  const feeds = await ma.getFeeds(mode, sorted);
+export async function refresh_feeds(ma, iconn) {
+  const feeds = await ma.getFeeds('active', /* sorted */ false);
   const promises = [];
   for (const feed of feeds) {
-    promises.push(refresh_feed(rconn, iconn, channel, feed));
+    promises.push(refresh_feed(ma, iconn, feed));
   }
   return Promise.all(promises);
 }
 
-// TODO: this should use modelaccess parameter
 // Update the favicon of a feed in the database
-async function refresh_feed(rconn, iconn, channel, feed) {
+async function refresh_feed(ma, iconn, feed) {
   if (array.is_empty(feed.urls)) {
     return;
   }
@@ -90,10 +81,6 @@ async function refresh_feed(rconn, iconn, channel, feed) {
       delete feed.faviconURLString;
     }
 
-    // TODO: this should come from parameter
-    const ma = new ModelAccess();
-    ma.conn = rconn;
-    ma.channel = channel;
     await ma.updateFeed(feed);
   }
 }

@@ -50,8 +50,7 @@ async function cli_archive_entries() {
 async function cli_refresh_icons() {
   const proms = [openModelAccess(/* channeled */ true), favicon.open()];
   const [ma, iconn] = await Promise.all(proms);
-  // TODO: should be passing around ma
-  await favicon.refresh_feeds(ma.conn, iconn, ma.channel);
+  await favicon.refresh_feeds(ma, iconn);
   ma.close();
   iconn.close();
 }

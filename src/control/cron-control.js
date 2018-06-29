@@ -61,9 +61,7 @@ export async function alarm_listener(alarm) {
   } else if (alarm.name === 'refresh-feed-icons') {
     const proms = [await openModelAccess(/* channeled */ true), favicon.open()];
     const [ma, iconn] = await Promise.all(proms);
-
-    // TODO: should just be passing around ma
-    await favicon.refresh_feeds(ma.conn, iconn, ma.channel);
+    await favicon.refresh_feeds(ma, iconn);
     ma.close();
     iconn.close();
   } else if (alarm.name === 'compact-favicon-db') {
