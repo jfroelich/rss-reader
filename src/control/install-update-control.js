@@ -18,7 +18,8 @@ export async function oninstalled(event) {
   if (reason === 'install') {
     // Explicitly create the reader database
     const ma = new ModelAccess();
-    await ma.connect();
+    // TODO: I don't think this needs to be writable? Review
+    await ma.connect(/* writable */ false);
     ma.close();
 
     // Setup the favicon database explicitly

@@ -1,5 +1,5 @@
-import ModelAccess from '/src/model/model-access.js';
 import ExtensionLock from '/src/lib/extension-lock.js';
+import ModelAccess from '/src/model/model-access.js';
 
 export function install_listener(event) {
   console.debug('Install listener received event, refreshing badge');
@@ -25,7 +25,7 @@ export async function refresh(lock_value) {
     lock.acquire(/* unlock_deadline */ 5000);
 
     const ma = new ModelAccess();
-    await ma.connect();
+    await ma.connect(/* writable*/ false);
     const count = await ma.countUnreadEntries();
     ma.close();
 

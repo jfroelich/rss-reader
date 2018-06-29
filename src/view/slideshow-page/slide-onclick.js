@@ -36,8 +36,8 @@ export async function slide_onclick(event) {
   if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
       !slide.hasAttribute('read-pending')) {
     const ma = new ModelAccess();
-    await ma.connect();
-    await mark_slide_read_start(ma.conn, slide);
+    await ma.connect(/* writable*/ true);
+    await mark_slide_read_start(ma, slide);
     ma.close();
   }
 }

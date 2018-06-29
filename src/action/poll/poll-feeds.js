@@ -28,6 +28,7 @@ const default_options = {
 // Checks for new content
 export async function poll_feeds(
     rconn, iconn, channel = chan_stub, options = {}) {
+  // TODO: should have ma as parameter instead of recreating the object here
   const ma = new ModelAccess();
   ma.conn = rconn;
   ma.channel = channel;
@@ -111,6 +112,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   sanity.validate_feed(merged_feed);
   sanity.sanitize_feed(merged_feed);
 
+  // TODO: this should be coming from parameter instead of recreating here
   const ma = new ModelAccess();
   ma.conn = rconn;
   ma.channel = channel;
@@ -231,6 +233,7 @@ async function handle_fetch_error(
     feed.deactivationDate = new Date();
   }
 
+  // TODO: this should come from parameter instead of recreating here
   const ma = new ModelAccess();
   ma.conn = rconn;
   ma.channel = channel;

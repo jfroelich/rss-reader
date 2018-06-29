@@ -23,6 +23,7 @@ export async function remove_lost_entries(ma) {
 // TODO: test
 // TODO: use model access api
 export async function remove_orphaned_entries(conn, channel) {
+  // TODO; ma should be a parameter
   const ma = new ModelAccess();
   ma.conn = conn;
   ma.channel = channel;
@@ -80,6 +81,7 @@ export async function remove_orphaned_entries(conn, channel) {
 // TODO: use a single transaction
 // TODO: use model access api
 export async function remove_untyped_objects(conn, channel) {
+  // TODO: ma should be a parameter
   const ma = new ModelAccess();
   ma.conn = conn;
   ma.channel = channel;

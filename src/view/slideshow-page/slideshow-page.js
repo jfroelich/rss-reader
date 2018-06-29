@@ -17,9 +17,8 @@ async function load_view() {
   show_splash();
 
   const ma = new ModelAccess();
-
+  const conn = await ma.connect(/* writable */ false);
   const offset = 0, limit = 6;
-  const conn = await ma.connect();
   const get_entries_promise = ma.getEntries('viewable', offset, limit);
   const get_feeds_promise = ma.getFeeds('all', true);
   ma.close();

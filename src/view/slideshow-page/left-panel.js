@@ -17,16 +17,14 @@ function import_opml_button_onclick(event) {
 // Fired when user submits file browser dialog
 async function uploader_input_onchange(event) {
   const ma = new ModelAccess();
-  await ma.connect();
-  ma.channel = new BroadcastChannel('reader');
+  await ma.connect(/* writable */ true);
   await import_opml(ma, event.target.files);
   ma.close();
-  ma.channel.close();
 }
 
 async function export_button_onclick(event) {
   const ma = new ModelAccess();
-  await ma.connect();
+  await ma.connect(/* writable */ false);
   const get_mode = 'all';
   const sort_feeds = false;
   const feeds = await ma.getFeeds(get_mode, sort_feeds);

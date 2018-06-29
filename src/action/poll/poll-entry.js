@@ -27,6 +27,9 @@ export async function poll_entry(
     rewrite_rules) {
   assert(Model.is_entry(entry));
 
+  // TODO: should be passing around ma instance instead of separate params and
+  // recreating the instance here
+
   const ma = new ModelAccess();
   ma.conn = rconn;
   ma.channel = channel;

@@ -17,8 +17,8 @@ export async function show_next_slide() {
   }
 
   const ma = new ModelAccess();
-  await ma.connect();
-  await mark_slide_read_start(ma.conn, current_slide);
+  await ma.connect(/* writable */ true);
+  await mark_slide_read_start(ma, current_slide);
 
   const slide_unread_count = count_unread_slides();
   let entries = [];

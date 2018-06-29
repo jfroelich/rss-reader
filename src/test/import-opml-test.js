@@ -10,7 +10,12 @@ import {register_test} from '/src/test/test-registry.js';
 
 async function import_opml_test() {
   const ma = new ModelAccess();
-  await ma.connect('import-opml-test-db', undefined, 3000);
+
+  // pretend not writable to avoid creating channel so we can stub our own
+  // without need to close
+  await ma.connect(
+      /* writable */ false, 'import-opml-test-db', undefined, 3000);
+
   let iconn = undefined;  // test without favicon caching support
   const messages = [];
   ma.channel = {
@@ -30,8 +35,6 @@ async function import_opml_test() {
   assert(messages[0].id === 1);
 
   ma.close();
-  ma.channel.close();
-
   await indexeddb.remove(ma.conn.name);
 }
 

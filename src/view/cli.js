@@ -25,10 +25,8 @@ import * as model_health from '/src/model/model-health.js';
 
 async function cli_subscribe(url_string, poll = true) {
   const ma = new ModelAccess();
-  const proms = [ma.connect(), favicon.open()];
+  const proms = [ma.connect(/* writable */ true), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
-
-  ma.channel = new BroadcastChannel('reader');
 
   // Bubble up errors to console
   const url = new URL(url_string);
@@ -41,60 +39,53 @@ async function cli_subscribe(url_string, poll = true) {
   }
 
   ma.close();
-  ma.channel.close();
   iconn.close();
 }
 
 async function cli_archive_entries() {
   const ma = new ModelAccess();
-  ma.channel = new BroadcastChannel('reader');
-  await ma.connect();
+  await ma.connect(/* writable */ true);
   await ma.archiveEntries();
-  ma.channel.close();
   ma.close();
 }
 
 async function cli_refresh_icons() {
   const ma = new ModelAccess();
-  const proms = [ma.connect(), favicon.open()];
+  const proms = [ma.connect(/* writable */ true), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
-  const channel = new BroadcastChannel('reader');
-  await favicon.refresh_feeds(ma.conn, iconn, channel);
+  // TODO: should be passing around ma
+  await favicon.refresh_feeds(ma.conn, iconn, ma.channel);
   ma.close();
   iconn.close();
-  channel.close();
 }
 
 async function cli_poll_feeds() {
   const ma = new ModelAccess();
-  const proms = [ma.connect(), favicon.open()];
+  const proms = [ma.connect(/* writable */ true), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
-  const channel = new BroadcastChannel('reader');
   const options = {ignore_recency_check: true};
-  await poll_feeds(ma.conn, iconn, channel, options);
-  channel.close();
+  // TODO: should be passing around ma
+  await poll_feeds(ma.conn, iconn, ma.channel, options);
   ma.close();
   iconn.close();
 }
 
 async function cli_remove_lost_entries() {
   const ma = new ModelAccess();
-  await ma.connect();
-  ma.channel = new MonitoredBroadcastChannel('reader');
+  await ma.connect(/* writable */ true);
   await model_health.remove_lost_entries(ma);
   console.log('Removed %d lost entries', channel.message_count);
   ma.close();
-  ma.channel.close();
 }
 
 async function cli_remove_orphans() {
   const ma = new ModelAccess();
-  await ma.connect();
-  const channel = new MonitoredBroadcastChannel('reader');
-  await model_health.remove_orphaned_entries(ma.conn, channel);
+  await ma.connect(/* writable */ true);
+
+  // TODO: should just be passing around ma
+  await model_health.remove_orphaned_entries(ma.conn, ma.channel);
   console.log('Deleted %d entries', channel.message_count);
   ma.close();
-  channel.close();
 }
 
 async function cli_lookup_favicon(url_string, cached) {
@@ -110,25 +101,6 @@ async function cli_lookup_favicon(url_string, cached) {
   }
 
   return icon_url_string;
-}
-
-// A proxy for a BroadcastChannel that logs each message to the console and
-// keeps a count of sent messages.
-class MonitoredBroadcastChannel {
-  constructor(name) {
-    this.channel = new BroadcastChannel(name);
-    this.message_count = 0;
-  }
-
-  postMessage(message) {
-    console.debug(message);
-    this.channel.postMessage(message);
-    this.message_count++;
-  }
-
-  close() {
-    this.channel.close();
-  }
 }
 
 function cli_print_alarms() {

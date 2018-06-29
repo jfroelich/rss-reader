@@ -24,10 +24,8 @@ export async function alarm_listener(alarm) {
 
   if (alarm.name === 'archive') {
     const ma = new ModelAccess();
-    ma.channel = new BroadcastChannel('reader');
-    await ma.connect();
+    await ma.connect(/* writable */ true);
     await ma.archiveEntries();
-    ma.channel.close();
     ma.close();
   } else if (alarm.name === 'poll') {
     if (ls.read_boolean('only_poll_if_idle')) {
@@ -43,43 +41,38 @@ export async function alarm_listener(alarm) {
     options.ignore_recency_check = false;
     options.notify = true;
     const ma = new ModelAccess();
-    await ma.connect();
+    await ma.connect(/* writable */ true);
     const iconn = await favicon.open();
-    const channel = new BroadcastChannel('reader');
-    await poll_feeds(ma.conn, iconn, channel, options);
-    channel.close();
+    // TODO: should just be passing around ma
+    await poll_feeds(ma.conn, iconn, ma.channel, options);
     iconn.close();
     ma.close();
   } else if (alarm.name === 'remove-entries-missing-urls') {
     const ma = new ModelAccess();
-    await ma.connect();
-    ma.channel = new BroadcastChannel('reader');
+    await ma.connect(/* writable */ true);
     await model_health.remove_lost_entries(ma);
     ma.close();
-    ma.channel.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
     const ma = new ModelAccess();
-    await ma.connect();
-    const channel = new BroadcastChannel('reader');
-    await model_health.remove_orphaned_entries(ma.conn, channel);
+    await ma.connect(/* writable */ true);
+    // TODO: should just be passing around ma
+    await model_health.remove_orphaned_entries(ma.conn, ma.channel);
     ma.close();
-    channel.close();
   } else if (alarm.name === 'remove-untyped-objects') {
     const ma = new ModelAccess();
-    await ma.connect();
-    const channel = new BroadcastChannel('reader');
-    await model_health.remove_untyped_objects(ma.conn, channel);
+    await ma.connect(/* writable */ true);
+    // TODO: should just be passing around ma
+    await model_health.remove_untyped_objects(ma.conn, ma.channel);
     ma.close();
-    channel.close();
   } else if (alarm.name === 'refresh-feed-icons') {
     const ma = new ModelAccess();
-    const proms = [ma.connect(), favicon.open()];
+    const proms = [ma.connect(/* writable */ true), favicon.open()];
     const [_, iconn] = await Promise.all(proms);
-    const channel = new BroadcastChannel('reader');
-    await favicon.refresh_feeds(ma.conn, iconn, channel);
+
+    // TODO: should just be passing around ma
+    await favicon.refresh_feeds(ma.conn, iconn, ma.channel);
     ma.close();
     iconn.close();
-    channel.close();
   } else if (alarm.name === 'compact-favicon-db') {
     await favicon.compact();
   } else if (alarm.name === 'cleanup-refresh-badge-lock') {

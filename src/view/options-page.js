@@ -226,7 +226,7 @@ async function feed_list_item_onclick(event) {
   const feed_id = parseInt(feed_id_string, 10);
 
   const ma = new ModelAccess();
-  await ma.connect();
+  await ma.connect(/* writable */ false);
   const feed = await ma.getFeed('id', feed_id);
   ma.close();
 
@@ -304,12 +304,11 @@ async function subscribe_form_onsubmit(event) {
   // show a nice error message or something instead of panic
   // TODO: move this to a helper
   const ma = new ModelAccess();
-  const conn_promises = Promise.all([ma.connect(), favicon.open()]);
+  const conn_promises =
+      Promise.all([ma.connect(/* writable */ true), favicon.open()]);
   const [_, iconn] = await conn_promises;
-  ma.channel = new BroadcastChannel('reader');
   const feed = await subscribe(ma, iconn, subscribe_url, undefined, true);
   ma.close();
-  ma.channel.close();
   iconn.close();
 
   feed_list_append_feed(feed);
@@ -329,21 +328,19 @@ async function subscribe_form_onsubmit(event) {
 
 async function after_subscribe_poll_feed_async(feed) {
   const ma = new ModelAccess();
-  const conn_promises = Promise.all([ma.connect(), favicon.open()]);
+  const conn_promises =
+      Promise.all([ma.connect(/* writable */ true), favicon.open()]);
   const [_, iconn] = await conn_promises;
-  const channel = new BroadcastChannel('reader');
-
   const options = {ignore_recency_check: true, notify: true};
-  await poll_feed(ma.conn, iconn, channel, options, feed);
-
+  // TODO: should just be passing around ma
+  await poll_feed(ma.conn, iconn, ma.channel, options, feed);
   ma.close();
   iconn.close();
-  channel.close();
 }
 
 async function feed_list_init() {
   const ma = new ModelAccess();
-  await ma.connect();
+  await ma.connect(/* writable */ false);
   const get_mode = 'all', get_sorted = true;
   const feeds = await ma.getFeeds(get_mode, get_sorted);
   ma.close();
@@ -392,11 +389,9 @@ function feed_list_remove_feed_by_id(feed_id) {
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const ma = new ModelAccess();
-  ma.channel = new BroadcastChannel('reader');
-  await ma.connect();
+  await ma.connect(/* writable */ true);
   await unsubscribe(ma, feed_id);
   ma.close();
-  ma.channel.close();
   feed_list_remove_feed_by_id(feed_id);
   section_show_by_id('subs-list-section');
 }
@@ -404,10 +399,8 @@ async function unsubscribe_button_onclick(event) {
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const ma = new ModelAccess();
-  ma.channel = new BroadcastChannel('reader');
-  await ma.connect();
+  await ma.connect(/* writable */ true);
   await ma.activateFeed(feed_id);
-  ma.channel.close();
   ma.close();
 
   // TODO: handling the event here may be wrong, it should be done in the
@@ -426,11 +419,9 @@ async function activate_feed_button_onclick(event) {
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const ma = new ModelAccess();
-  ma.channel = new BroadcastChannel('reader');
-  await ma.connect();
+  await ma.connect(/* writable */ true);
   const reason = 'manual';
   await ma.deactivateFeed(feed_id, reason);
-  ma.channel.close();
   ma.close();
 
   // Deactivate the corresponding element in the view

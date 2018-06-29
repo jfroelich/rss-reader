@@ -158,7 +158,13 @@ function compact_entry(entry) {
 
 // NOTE: only closes database, not channel
 ModelAccess.prototype.close = function() {
-  this.conn.close();
+  if (this.channel) {
+    this.channel.close();
+  }
+
+  if (this.conn) {
+    this.conn.close();
+  }
 };
 
 ModelAccess.prototype.createFeed = function(feed) {
@@ -625,8 +631,13 @@ ModelAccess.prototype.markEntryRead = function(entry_id) {
   });
 };
 
-ModelAccess.prototype.connect =
-    async function(name = 'reader', version = 24, timeout = 500) {
+ModelAccess.prototype.connect = async function(
+    writable = false, name = 'reader', version = 24, timeout = 500) {
+  // We only need a channel in write mode
+  if (writable) {
+    this.channel = new BroadcastChannel('reader');
+  }
+
   this.conn = await indexeddb.open(name, version, on_upgrade_needed, timeout);
 };
 

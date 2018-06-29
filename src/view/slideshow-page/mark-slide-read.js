@@ -1,9 +1,7 @@
-import ModelAccess from '/src/model/model-access.js';
-
 // Starts transitioning a slide into the read state. Updates both the view and
 // the database. This resolves before the view is fully updated. This only sets
 // the slide's read-pending attribute, not its read attribute.
-export async function mark_slide_read_start(conn, slide) {
+export async function mark_slide_read_start(ma, slide) {
   const entry_id_string = slide.getAttribute('entry');
   const entry_id = parseInt(entry_id_string, 10);
 
@@ -32,11 +30,7 @@ export async function mark_slide_read_start(conn, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  const ma = new ModelAccess();
-  ma.conn = conn;
-  ma.channel = new BroadcastChannel('reader');
   await ma.markEntryRead(entry_id);
-  ma.channel.close();
 }
 
 // This should be called once the view acknowledges it has received the message

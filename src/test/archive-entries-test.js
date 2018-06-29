@@ -5,7 +5,9 @@ import {register_test} from '/src/test/test-registry.js';
 
 async function archive_entries_test() {
   const ma = new ModelAccess();
-  await ma.connect('archive-entries-test');
+  await ma.connect(/* writable */ true, 'archive-entries-test');
+  ma.channel.close();  // recloses the opened channel we don't want it
+  // overwrite the closed channel with a stub channel to trap messages
   ma.channel = {name: 'stub', postMessage: noop, close: noop};
   await ma.archiveEntries();
 
@@ -15,7 +17,6 @@ async function archive_entries_test() {
   // was not archived, and that messages were posted
 
   ma.close();
-  ma.channel.close();
   await indexeddb.remove(ma.conn.name);
 }
 

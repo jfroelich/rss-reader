@@ -93,7 +93,7 @@ async function onmessage(event) {
 
     let limit = undefined;
     const ma = new ModelAccess();
-    await ma.connect();
+    await ma.connect(/* writable */ false);
     const entries = await ma.getEntries('viewable', unread_count, limit);
     ma.close();
 

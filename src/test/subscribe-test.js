@@ -13,7 +13,7 @@ async function subscribe_test() {
   const url = new URL(test_url);
 
   const ma = new ModelAccess();
-  await ma.connect('subscribe-test');
+  await ma.connect(/* writable */ false, 'subscribe-test');
 
   const messages = [];
   ma.channel = {
@@ -41,9 +41,7 @@ async function subscribe_test() {
   assert(messages[0].type === 'feed-created');
   assert(messages[0].id === feed.id);
 
-  // Cleanup
   ma.close();
-  ma.channel.close();
   await indexeddb.remove(ma.conn.name);
 }
 
