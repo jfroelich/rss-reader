@@ -2,7 +2,6 @@ import * as favicon from '/src/action/favicon/favicon.js';
 import {poll_feeds} from '/src/action/poll/poll-feeds.js';
 import * as ls from '/src/lib/ls.js';
 import {openModelAccess} from '/src/model/model-access.js';
-import * as model_health from '/src/model/model-health.js';
 
 // Appropriately modify alarm settings when the extension is installed or
 // updated
@@ -43,15 +42,15 @@ export async function alarm_listener(alarm) {
     iconn.close();
   } else if (alarm.name === 'remove-entries-missing-urls') {
     const ma = await openModelAccess(/* channeled */ true);
-    await model_health.remove_lost_entries(ma);
+    await ma.removeLostEntries();
     ma.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
     const ma = await openModelAccess(/* channeled */ true);
-    await model_health.remove_orphaned_entries(ma);
+    await ma.removeOrphanedEntries();
     ma.close();
   } else if (alarm.name === 'remove-untyped-objects') {
     const ma = await openModelAccess(/* channeled */ true);
-    await model_health.remove_untyped_objects(ma);
+    await ma.removeUntypedObjects();
     ma.close();
   } else if (alarm.name === 'refresh-feed-icons') {
     const proms = [await openModelAccess(/* channeled */ true), favicon.open()];

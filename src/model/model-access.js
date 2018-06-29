@@ -291,6 +291,47 @@ function add_active_field_to_feeds(store) {
   };
 }
 
+ModelAccess.prototype.createEntry = function(entry) {
+  return new Promise((resolve, reject) => {
+    assert(Model.is_entry(entry));
+    assert(entry.id === undefined);
+
+    if (entry.readState === undefined) {
+      entry.readState = Model.ENTRY_STATE_UNREAD;
+    }
+
+    if (entry.archiveState === undefined) {
+      entry.archiveState = Model.ENTRY_STATE_UNARCHIVED;
+    }
+
+    if (entry.dateCreated === undefined) {
+      entry.dateCreated = new Date();
+    }
+
+    delete entry.dateUpdated;
+    object.filter_empty_properties(entry);
+
+    let id;
+    const txn = this.conn.transaction('entry', 'readwrite');
+    txn.oncomplete = _ => {
+      const message = {type: 'entry-created', id: id};
+      try {
+        this.channel.postMessage(message);
+      } catch (error) {
+        console.warn(error);
+      }
+
+      resolve(id);
+    };
+    txn.onerror = event => {
+      reject(event.target.error);
+    };
+    const store = txn.objectStore('entry');
+    const request = store.put(entry);
+    request.onsuccess = _ => id = request.result;
+  });
+};
+
 ModelAccess.prototype.createFeed = function(feed) {
   return new Promise((resolve, reject) => {
     assert(Model.is_feed(feed));
@@ -670,10 +711,7 @@ function compare_feeds(a, b) {
   return indexedDB.cmp(s1, s2);
 }
 
-// TODO: drop mode parameter, it is no longer in use, not doing it right now
-// because I am focusing on archiveEntries
-ModelAccess.prototype.iterateEntries = function(
-    mode = 'all', writable, handle_entry) {
+ModelAccess.prototype.iterateEntries = function(mode, writable, handle_entry) {
   return new Promise((resolve, reject) => {
     assert(typeof handle_entry === 'function');
 
@@ -755,46 +793,88 @@ ModelAccess.prototype.markEntryRead = function(entry_id) {
   });
 };
 
-
-ModelAccess.prototype.createEntry = function(entry) {
-  return new Promise((resolve, reject) => {
-    assert(Model.is_entry(entry));
-    assert(entry.id === undefined);
-
-    if (entry.readState === undefined) {
-      entry.readState = Model.ENTRY_STATE_UNREAD;
+// Removes entries that are missing urls
+ModelAccess.prototype.removeLostEntries = async function() {
+  const deleted_ids = [];
+  const txn_writable = true;
+  await this.iterateEntries('all', txn_writable, cursor => {
+    const entry = cursor.value;
+    if (!entry.urls || !entry.urls.length) {
+      cursor.delete();
+      deleted_ids.push(entry.id);
     }
-
-    if (entry.archiveState === undefined) {
-      entry.archiveState = Model.ENTRY_STATE_UNARCHIVED;
-    }
-
-    if (entry.dateCreated === undefined) {
-      entry.dateCreated = new Date();
-    }
-
-    delete entry.dateUpdated;
-    object.filter_empty_properties(entry);
-
-    let id;
-    const txn = this.conn.transaction('entry', 'readwrite');
-    txn.oncomplete = _ => {
-      const message = {type: 'entry-created', id: id};
-      try {
-        this.channel.postMessage(message);
-      } catch (error) {
-        console.warn(error);
-      }
-
-      resolve(id);
-    };
-    txn.onerror = event => {
-      reject(event.target.error);
-    };
-    const store = txn.objectStore('entry');
-    const request = store.put(entry);
-    request.onsuccess = _ => id = request.result;
   });
+
+  for (const id of deleted_ids) {
+    this.channel.postMessage({type: 'entry-deleted', id: id, reason: 'lost'});
+  }
+};
+
+// Scans the database for entries not linked to a feed and deletes them
+ModelAccess.prototype.removeOrphanedEntries = async function() {
+  const feed_ids = await this.getFeedIds(conn);
+  if (!feed_ids.length) {
+    return;
+  }
+
+  const entry_ids = [];
+  await this.iterateEntries('all', true, cursor => {
+    const entry = cursor.value;
+
+    if (!Model.is_entry(entry)) {
+      return;
+    }
+
+    if (Model.is_valid_feed_id(entry.feed)) {
+      return;
+    }
+
+    if (feed_ids.includes(entry.feed)) {
+      return;
+    }
+
+    entry_ids.push(entry.id);
+    cursor.delete();
+  });
+
+  for (const id of entry_ids) {
+    this.channel.postMessage({type: 'entry-deleted', id: id, reason: 'orphan'});
+  }
+};
+
+// Scan the feed store and the entry store and delete any objects missing their
+// hidden magic property. This is not 'thread-safe' because this uses multiple
+// write transactions.
+ModelAccess.prototype.removeUntypedObjects = async function() {
+  const feeds = this.getFeeds();
+  const delete_feed_promises = [];
+  for (const feed of feeds) {
+    if (!Model.is_feed(feed)) {
+      const reason = 'untyped';
+      const promise = this.deleteFeed(feed.id, reason);
+      delete_feed_promises.push(promise);
+    }
+  }
+
+  await Promise.all(delete_feed_promises);
+
+  const entries = [];
+  await this.iterateEntries('all', true, cursor => {
+    const entry = cursor.value;
+    if (!Model.is_entry(entry)) {
+      entries.push({id: entry.id, feed: entry.feed});
+      cursor.delete();
+    }
+  });
+
+  for (const entry of entries) {
+    this.channel.postMessage({
+      type: 'entry-deleted',
+      id: entry.id,
+      feed_id: entry.feed,
+      reason: 'orphan'
+    });
+  }
 };
 
 ModelAccess.prototype.updateEntry = function(entry) {

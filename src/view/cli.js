@@ -3,7 +3,6 @@ import {poll_feed, poll_feeds} from '/src/action/poll/poll-feeds.js';
 import {subscribe} from '/src/action/subscribe.js';
 import * as cron_control from '/src/control/cron-control.js';
 import {openModelAccess} from '/src/model/model-access.js';
-import * as model_health from '/src/model/model-health.js';
 
 // The command-line-interface (CLI) module creates a cli object within the
 // global window object in order to make certain app functionality accessible
@@ -65,13 +64,13 @@ async function cli_poll_feeds() {
 
 async function cli_remove_lost_entries() {
   const ma = await openModelAccess(/* channeled */ true);
-  await model_health.remove_lost_entries(ma);
+  await ma.removeLostEntries();
   ma.close();
 }
 
 async function cli_remove_orphans() {
   const ma = await openModelAccess(/* channeled */ true);
-  await model_health.remove_orphaned_entries(ma);
+  await ma.removeOrphanedEntries();
   ma.close();
 }
 
