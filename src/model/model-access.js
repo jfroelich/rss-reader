@@ -711,12 +711,10 @@ function compare_feeds(a, b) {
   return indexedDB.cmp(s1, s2);
 }
 
-ModelAccess.prototype.iterateEntries = function(mode, writable, handle_entry) {
+ModelAccess.prototype.iterateEntries = function(handle_entry) {
   return new Promise((resolve, reject) => {
     assert(typeof handle_entry === 'function');
-
-    const txn_mode = writable ? 'readwrite' : 'readonly';
-    const txn = this.conn.transaction('entry', txn_mode);
+    const txn = this.conn.transaction('entry', 'readwrite');
     txn.oncomplete = resolve;
     txn.onerror = event => {
       reject(event.target.error);
@@ -796,8 +794,7 @@ ModelAccess.prototype.markEntryRead = function(entry_id) {
 // Removes entries that are missing urls
 ModelAccess.prototype.removeLostEntries = async function() {
   const deleted_ids = [];
-  const txn_writable = true;
-  await this.iterateEntries('all', txn_writable, cursor => {
+  await this.iterateEntries(cursor => {
     const entry = cursor.value;
     if (!entry.urls || !entry.urls.length) {
       cursor.delete();
@@ -818,7 +815,7 @@ ModelAccess.prototype.removeOrphanedEntries = async function() {
   }
 
   const entry_ids = [];
-  await this.iterateEntries('all', true, cursor => {
+  await this.iterateEntries(cursor => {
     const entry = cursor.value;
 
     if (!Model.is_entry(entry)) {
@@ -859,7 +856,7 @@ ModelAccess.prototype.removeUntypedObjects = async function() {
   await Promise.all(delete_feed_promises);
 
   const entries = [];
-  await this.iterateEntries('all', true, cursor => {
+  await this.iterateEntries(cursor => {
     const entry = cursor.value;
     if (!Model.is_entry(entry)) {
       entries.push({id: entry.id, feed: entry.feed});
