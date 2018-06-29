@@ -1,6 +1,5 @@
 import {FaviconService} from '/src/action/favicon/favicon-service.js';
 import * as array from '/src/lib/array.js';
-import {ModelAccess, openModelAccess} from '/src/model/model-access.js';
 
 // Return a promise that resolves to a new connection to the favicon cache
 // database
