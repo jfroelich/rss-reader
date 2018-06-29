@@ -1,7 +1,7 @@
 import {import_opml} from '/src/action/import-opml.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
-import ModelAccess from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model/model-access.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: test multiple files
@@ -9,13 +9,8 @@ import {register_test} from '/src/test/test-registry.js';
 // TODO: test dup handling
 
 async function import_opml_test() {
-  const ma = new ModelAccess();
-
-  // pretend not writable to avoid creating channel so we can stub our own
-  // without need to close
-  await ma.connect(
-      /* writable */ false, 'import-opml-test-db', undefined, 3000);
-
+  const ma = await openModelAccess(
+      /* channeled */ false, 'import-opml-test-db', undefined, 3000);
   let iconn = undefined;  // test without favicon caching support
   const messages = [];
   ma.channel = {

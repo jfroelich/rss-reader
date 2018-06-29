@@ -4,7 +4,7 @@ import * as config_control from '/src/control/config-control.js';
 import * as array from '/src/lib/array.js';
 import * as ls from '/src/lib/ls.js';
 import {create_opml_document} from '/src/lib/opml-document.js';
-import ModelAccess from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model/model-access.js';
 
 function import_opml_button_onclick(event) {
   const uploader_input = document.createElement('input');
@@ -16,18 +16,14 @@ function import_opml_button_onclick(event) {
 
 // Fired when user submits file browser dialog
 async function uploader_input_onchange(event) {
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ true);
+  const ma = await openModelAccess(/* channeled */ true);
   await import_opml(ma, event.target.files);
   ma.close();
 }
 
 async function export_button_onclick(event) {
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ false);
-  const get_mode = 'all';
-  const sort_feeds = false;
-  const feeds = await ma.getFeeds(get_mode, sort_feeds);
+  const ma = await openModelAccess(/* channeled */ false);
+  const feeds = await ma.getFeeds('all', false);
   ma.close();
 
   const title = 'Subscriptions';

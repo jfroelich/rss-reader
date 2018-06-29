@@ -9,7 +9,7 @@ import {fetch_html} from '/src/lib/net/fetch-html.js';
 import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
-import ModelAccess from '/src/model/model-access.js';
+import {ModelAccess} from '/src/model/model-access.js';
 import * as sanity from '/src/model/model-sanity.js';
 import * as Model from '/src/model/model.js';
 
@@ -29,7 +29,6 @@ export async function poll_entry(
 
   // TODO: should be passing around ma instance instead of separate params and
   // recreating the instance here
-
   const ma = new ModelAccess();
   ma.conn = rconn;
   ma.channel = channel;

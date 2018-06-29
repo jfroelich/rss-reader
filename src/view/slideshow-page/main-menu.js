@@ -1,6 +1,6 @@
 import * as favicon from '/src/action/favicon/favicon.js';
 import {poll_feeds} from '/src/action/poll/poll-feeds.js';
-import ModelAccess from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model/model-access.js';
 import {options_menu_hide, options_menu_show} from '/src/view/slideshow-page/left-panel.js';
 import {hide_no_articles_message, show_no_articles_message} from '/src/view/slideshow-page/no-articles-message.js';
 
@@ -15,9 +15,8 @@ async function refresh_button_onclick(event) {
 
   refresh_in_progress = true;
 
-  const ma = new ModelAccess();
-
-  await ma.connect(/* writable */ true);
+  // TODO: open concurrently
+  const ma = await openModelAccess(/* channeled */ true);
   const iconn = await favicon.open();
   const options = {};
   options.ignore_recency_check = true;

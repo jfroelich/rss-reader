@@ -1,6 +1,6 @@
-import ModelAccess from '/src/model/model-access.js';
 import {FaviconService} from '/src/action/favicon/favicon-service.js';
 import * as array from '/src/lib/array.js';
+import {ModelAccess, openModelAccess} from '/src/model/model-access.js';
 
 // Return a promise that resolves to a new connection to the favicon cache
 // database
@@ -52,6 +52,7 @@ export function create_lookup_url(feed) {
 
 // Update the favicon of each of the feeds in the database
 export async function refresh_feeds(rconn, iconn, channel) {
+  // TODO: this should use ma parameter
   const ma = new ModelAccess();
   ma.conn = rconn;
   ma.channel = channel;
@@ -67,6 +68,7 @@ export async function refresh_feeds(rconn, iconn, channel) {
   return Promise.all(promises);
 }
 
+// TODO: this should use modelaccess parameter
 // Update the favicon of a feed in the database
 async function refresh_feed(rconn, iconn, channel, feed) {
   if (array.is_empty(feed.urls)) {
@@ -88,6 +90,7 @@ async function refresh_feed(rconn, iconn, channel, feed) {
       delete feed.faviconURLString;
     }
 
+    // TODO: this should come from parameter
     const ma = new ModelAccess();
     ma.conn = rconn;
     ma.channel = channel;

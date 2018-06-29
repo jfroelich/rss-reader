@@ -7,7 +7,7 @@ import {fade_element} from '/src/lib/dom/fade-element.js';
 import * as html from '/src/lib/html.js';
 import * as ls from '/src/lib/ls.js';
 import * as perm from '/src/lib/permissions.js';
-import ModelAccess from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model/model-access.js';
 
 // View state
 let current_menu_item;
@@ -225,8 +225,7 @@ async function feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ false);
+  const ma = await openModelAccess(/* channeled */ false);
   const feed = await ma.getFeed('id', feed_id);
   ma.close();
 
@@ -303,10 +302,9 @@ async function subscribe_form_onsubmit(event) {
   // TODO: subscribe can now throw an error, this should catch the error and
   // show a nice error message or something instead of panic
   // TODO: move this to a helper
-  const ma = new ModelAccess();
   const conn_promises =
-      Promise.all([ma.connect(/* writable */ true), favicon.open()]);
-  const [_, iconn] = await conn_promises;
+      Promise.all([openModelAccess(/* channeled */ true), favicon.open()]);
+  const [ma, iconn] = await conn_promises;
   const feed = await subscribe(ma, iconn, subscribe_url, undefined, true);
   ma.close();
   iconn.close();
@@ -327,10 +325,9 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const ma = new ModelAccess();
   const conn_promises =
-      Promise.all([ma.connect(/* writable */ true), favicon.open()]);
-  const [_, iconn] = await conn_promises;
+      Promise.all([openModelAccess(/* channeled */ true), favicon.open()]);
+  const [ma, iconn] = await conn_promises;
   const options = {ignore_recency_check: true, notify: true};
   // TODO: should just be passing around ma
   await poll_feed(ma.conn, iconn, ma.channel, options, feed);
@@ -339,10 +336,8 @@ async function after_subscribe_poll_feed_async(feed) {
 }
 
 async function feed_list_init() {
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ false);
-  const get_mode = 'all', get_sorted = true;
-  const feeds = await ma.getFeeds(get_mode, get_sorted);
+  const ma = await openModelAccess(/* channeled */ false);
+  const feeds = await ma.getFeeds('all', true);
   ma.close();
 
   for (const feed of feeds) {
@@ -388,8 +383,7 @@ function feed_list_remove_feed_by_id(feed_id) {
 
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ true);
+  const ma = await openModelAccess(/* channeled */ true);
   await unsubscribe(ma, feed_id);
   ma.close();
   feed_list_remove_feed_by_id(feed_id);
@@ -398,8 +392,7 @@ async function unsubscribe_button_onclick(event) {
 
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ true);
+  const ma = await openModelAccess(/* channeled */ true);
   await ma.activateFeed(feed_id);
   ma.close();
 
@@ -418,8 +411,7 @@ async function activate_feed_button_onclick(event) {
 
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ true);
+  const ma = await openModelAccess(/* channeled */ true);
   const reason = 'manual';
   await ma.deactivateFeed(feed_id, reason);
   ma.close();

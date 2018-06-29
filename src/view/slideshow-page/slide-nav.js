@@ -1,5 +1,5 @@
 import * as ls from '/src/lib/ls.js';
-import ModelAccess from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model/model-access.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/view/slideshow-page/count-unread-slides.js';
 import {mark_slide_read_start} from '/src/view/slideshow-page/mark-slide-read.js';
@@ -16,8 +16,7 @@ export async function show_next_slide() {
     return;
   }
 
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ true);
+  const ma = await openModelAccess(/* channeled */ true);
   await mark_slide_read_start(ma, current_slide);
 
   const slide_unread_count = count_unread_slides();

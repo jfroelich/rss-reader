@@ -1,6 +1,6 @@
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
-import ModelAccess from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model/model-access.js';
 import * as Model from '/src/model/model.js';
 import {register_test} from '/src/test/test-registry.js';
 
@@ -11,11 +11,7 @@ async function create_feed_test() {
   const feed_url = new URL('http://www.example.com/example.rss');
   Model.append_feed_url(feed, feed_url);
 
-  const ma = new ModelAccess();
-  // pretend it is unwritable so we can stub in our own channel without need
-  // to close the built in one
-  await ma.connect(/* writable */ false, 'create-feed-test');
-
+  const ma = await openModelAccess(/* channeled */ false, 'create-feed-test');
   // Mock a broadcast channel along with a way to monitor messages
   const messages = [];
   const channel = {};
@@ -67,8 +63,8 @@ async function create_feed_url_constraint_test() {
   const feed2 = Model.create_feed();
   Model.append_feed_url(feed2, new URL('http://www.example.com/example.rss'));
 
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ false, 'create-feed-url-constraint-test');
+  const ma = await openModelAccess(
+      /* channeled */ false, 'create-feed-url-constraint-test');
   ma.channel = {name: 'stub', postMessage: noop, close: noop};
 
   // Store the first feed
@@ -96,8 +92,7 @@ async function create_feed_url_constraint_test() {
 // Exercise the typical createFeeds case
 async function create_feeds_test() {
   const msgs = [];
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ false, 'create-feeds-test');
+  const ma = await openModelAccess(/* channeled */ false, 'create-feeds-test');
   ma.channel = {name: 'stub', postMessage: m => msgs.push(m), close: noop};
 
   const num_feeds = 3;
@@ -136,8 +131,7 @@ async function create_feeds_test() {
 
 async function activate_feed_test() {
   const msgs = [];
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ false, 'activate-feed-test');
+  const ma = await openModelAccess(/* channeled */ false, 'activate-feed-test');
   ma.channel = {name: 'stub', postMessage: msg => msgs.push(msg), close: noop};
 
   const feed = Model.create_feed();
@@ -191,8 +185,8 @@ async function activate_feed_test() {
 }
 
 async function count_unread_entries_test() {
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ false, 'count-unread-entries-test');
+  const ma =
+      await openModelAccess(/* channeled */ false, 'count-unread-entries-test');
   ma.channel = {name: 'stub', postMessage: noop, close: noop};
 
   const empty_count = await ma.countUnreadEntries();

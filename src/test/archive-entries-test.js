@@ -1,13 +1,11 @@
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
-import ModelAccess from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model/model-access.js';
 import {register_test} from '/src/test/test-registry.js';
 
 async function archive_entries_test() {
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ true, 'archive-entries-test');
-  ma.channel.close();  // recloses the opened channel we don't want it
-  // overwrite the closed channel with a stub channel to trap messages
+  const ma =
+      await openModelAccess(/* channeled */ false, 'archive-entries-test');
   ma.channel = {name: 'stub', postMessage: noop, close: noop};
   await ma.archiveEntries();
 

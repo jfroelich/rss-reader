@@ -2,7 +2,7 @@ import '/src/view/slideshow-page/main-menu.js';
 import '/src/view/slideshow-page/left-panel.js';
 
 import * as config_control from '/src/control/config-control.js';
-import ModelAccess from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model/model-access.js';
 import {append_slide} from '/src/view/slideshow-page/append-slide.js';
 import * as channel from '/src/view/slideshow-page/channel.js';
 import {feeds_container_append_feed} from '/src/view/slideshow-page/feeds-container.js';
@@ -16,10 +16,8 @@ import {hide_splash, show_splash} from '/src/view/slideshow-page/splash.js';
 async function load_view() {
   show_splash();
 
-  const ma = new ModelAccess();
-  const conn = await ma.connect(/* writable */ false);
-  const offset = 0, limit = 6;
-  const get_entries_promise = ma.getEntries('viewable', offset, limit);
+  const ma = await openModelAccess(/* channeled */ false);
+  const get_entries_promise = ma.getEntries('viewable', 0, 6);
   const get_feeds_promise = ma.getFeeds('all', true);
   ma.close();
 

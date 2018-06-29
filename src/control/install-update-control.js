@@ -1,5 +1,5 @@
 import * as favicon from '/src/action/favicon/favicon.js';
-import ModelAccess from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model/model-access.js';
 
 // TODO: deprecate, this no longer does that much and was using a weak form of
 // temporal coherency instead of functional coherency. Instead, should create or
@@ -17,9 +17,8 @@ export async function oninstalled(event) {
 
   if (reason === 'install') {
     // Explicitly create the reader database
-    const ma = new ModelAccess();
-    // TODO: I don't think this needs to be writable? Review
-    await ma.connect(/* writable */ false);
+    // TODO: does this need to be writable?
+    const ma = await openModelAccess(/* channeled */ false);
     ma.close();
 
     // Setup the favicon database explicitly

@@ -6,7 +6,7 @@ import * as Model from '/src/model/model.js';
 import sizeof from '/src/lib/sizeof.js';
 
 // Provides a data access layer for interacting with the reader database
-export default function ModelAccess() {
+export function ModelAccess() {
   this.conn = undefined;
   this.channel = undefined;
 }
@@ -156,16 +156,126 @@ function compact_entry(entry) {
   return ce;
 }
 
-// NOTE: only closes database, not channel
 ModelAccess.prototype.close = function() {
   if (this.channel) {
     this.channel.close();
   }
 
-  if (this.conn) {
-    this.conn.close();
-  }
+  this.conn.close();
 };
+
+export async function openModelAccess(writable, name, version, timeout) {
+  const ma = new ModelAccess();
+  await ma.connect(writable, name, version, timeout);
+  return ma;
+}
+
+ModelAccess.prototype.connect = async function(
+    writable = false, name = 'reader', version = 24, timeout = 500) {
+  // We only need a channel in write mode
+  if (writable) {
+    this.channel = new BroadcastChannel('reader');
+  }
+
+  this.conn = await indexeddb.open(name, version, on_upgrade_needed, timeout);
+};
+
+function on_upgrade_needed(event) {
+  const conn = event.target.result;
+  const txn = event.target.transaction;
+  let feed_store, entry_store;
+  const stores = conn.objectStoreNames;
+
+  // Some simple debugging. If creating a brand new database, old_version
+  // is expected to be 0 (and not NaN/null/undefined).
+  console.debug('Creating/upgrading database', JSON.stringify({
+    name: conn.name,
+    old_version: event.oldVersion,
+    new_version: conn.version
+  }));
+
+  if (event.oldVersion < 20) {
+    const feed_store_props = {keyPath: 'id', autoIncrement: true};
+    feed_store = conn.createObjectStore('feed', feed_store_props);
+
+    const entry_store_props = {keyPath: 'id', autoIncrement: true};
+    entry_store = conn.createObjectStore('entry', entry_store_props);
+
+    feed_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
+
+    entry_store.createIndex('readState', 'readState');
+    entry_store.createIndex('feed', 'feed');
+    entry_store.createIndex(
+        'archiveState-readState', ['archiveState', 'readState']);
+    entry_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
+  } else {
+    feed_store = txn.objectStore('feed');
+    entry_store = txn.objectStore('entry');
+  }
+
+  if (event.oldVersion < 21) {
+    add_magic_to_entries(txn);
+  }
+
+  if (event.oldVersion < 22) {
+    add_magic_to_feeds(txn);
+  }
+
+  if (event.oldVersion < 23) {
+    if (feed_store.indexNames.contains('title')) {
+      feed_store.deleteIndex('title');
+    }
+  }
+
+  if (event.oldVersion < 24) {
+    add_active_field_to_feeds(feed_store);
+  }
+}
+
+function add_magic_to_entries(txn) {
+  const store = txn.objectStore('entry');
+  const request = store.openCursor();
+  request.onsuccess = function() {
+    const cursor = request.result;
+    if (cursor) {
+      const entry = cursor.value;
+      if (!('magic' in entry)) {
+        entry.magic = Model.ENTRY_MAGIC;
+        entry.dateUpdated = new Date();
+        cursor.update(entry);
+      }
+    }
+  };
+  request.onerror = _ => console.error(request.error);
+}
+
+// TODO: use cursor over getAll for scalability
+function add_magic_to_feeds(txn) {
+  const store = txn.objectStore('feed');
+  const request = store.getAll();
+  request.onerror = _ => console.error(request.error);
+  request.onsuccess = function(event) {
+    const feeds = event.target.result;
+    for (const feed of feeds) {
+      feed.magic = Model.FEED_MAGIC;
+      feed.dateUpdated = new Date();
+      store.put(feed);
+    }
+  }
+}
+
+function add_active_field_to_feeds(store) {
+  const request = store.getAll();
+  request.onerror = _ => console.error(request.error);
+  request.onsuccess = function(event) {
+    const feeds = event.target.result;
+    for (const feed of feeds) {
+      feed.active = true;
+      feed.dateUpdated = new Date();
+      store.put(feed);
+    }
+  };
+}
 
 ModelAccess.prototype.createFeed = function(feed) {
   return new Promise((resolve, reject) => {
@@ -631,112 +741,6 @@ ModelAccess.prototype.markEntryRead = function(entry_id) {
   });
 };
 
-ModelAccess.prototype.connect = async function(
-    writable = false, name = 'reader', version = 24, timeout = 500) {
-  // We only need a channel in write mode
-  if (writable) {
-    this.channel = new BroadcastChannel('reader');
-  }
-
-  this.conn = await indexeddb.open(name, version, on_upgrade_needed, timeout);
-};
-
-function on_upgrade_needed(event) {
-  const conn = event.target.result;
-  const txn = event.target.transaction;
-  let feed_store, entry_store;
-  const stores = conn.objectStoreNames;
-
-  // Some simple debugging. If creating a brand new database, old_version
-  // is expected to be 0 (and not NaN/null/undefined).
-  console.debug('Creating/upgrading database', JSON.stringify({
-    name: conn.name,
-    old_version: event.oldVersion,
-    new_version: conn.version
-  }));
-
-  if (event.oldVersion < 20) {
-    const feed_store_props = {keyPath: 'id', autoIncrement: true};
-    feed_store = conn.createObjectStore('feed', feed_store_props);
-
-    const entry_store_props = {keyPath: 'id', autoIncrement: true};
-    entry_store = conn.createObjectStore('entry', entry_store_props);
-
-    feed_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
-
-    entry_store.createIndex('readState', 'readState');
-    entry_store.createIndex('feed', 'feed');
-    entry_store.createIndex(
-        'archiveState-readState', ['archiveState', 'readState']);
-    entry_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
-  } else {
-    feed_store = txn.objectStore('feed');
-    entry_store = txn.objectStore('entry');
-  }
-
-  if (event.oldVersion < 21) {
-    add_magic_to_entries(txn);
-  }
-
-  if (event.oldVersion < 22) {
-    add_magic_to_feeds(txn);
-  }
-
-  if (event.oldVersion < 23) {
-    if (feed_store.indexNames.contains('title')) {
-      feed_store.deleteIndex('title');
-    }
-  }
-
-  if (event.oldVersion < 24) {
-    add_active_field_to_feeds(feed_store);
-  }
-}
-
-function add_magic_to_entries(txn) {
-  const store = txn.objectStore('entry');
-  const request = store.openCursor();
-  request.onsuccess = function() {
-    const cursor = request.result;
-    if (cursor) {
-      const entry = cursor.value;
-      if (!('magic' in entry)) {
-        entry.magic = Model.ENTRY_MAGIC;
-        entry.dateUpdated = new Date();
-        cursor.update(entry);
-      }
-    }
-  };
-  request.onerror = _ => console.error(request.error);
-}
-
-// TODO: use cursor over getAll for scalability
-function add_magic_to_feeds(txn) {
-  const store = txn.objectStore('feed');
-  const request = store.getAll();
-  request.onerror = _ => console.error(request.error);
-  request.onsuccess = function(event) {
-    const feeds = event.target.result;
-    for (const feed of feeds) {
-      feed.magic = Model.FEED_MAGIC;
-      feed.dateUpdated = new Date();
-      store.put(feed);
-    }
-  }
-}
-
-function add_active_field_to_feeds(store) {
-  const request = store.getAll();
-  request.onerror = _ => console.error(request.error);
-  request.onsuccess = function(event) {
-    const feeds = event.target.result;
-    for (const feed of feeds) {
-      feed.active = true;
-      feed.dateUpdated = new Date();
-      store.put(feed);
-    }
-  };
-}
 
 ModelAccess.prototype.createEntry = function(entry) {
   return new Promise((resolve, reject) => {

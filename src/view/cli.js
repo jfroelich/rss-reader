@@ -2,7 +2,7 @@ import * as favicon from '/src/action/favicon/favicon.js';
 import {poll_feed, poll_feeds} from '/src/action/poll/poll-feeds.js';
 import {subscribe} from '/src/action/subscribe.js';
 import * as cron_control from '/src/control/cron-control.js';
-import ModelAccess from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model/model-access.js';
 import * as model_health from '/src/model/model-health.js';
 
 // The command-line-interface (CLI) module creates a cli object within the
@@ -24,9 +24,8 @@ import * as model_health from '/src/model/model-health.js';
 // article: http://read.humanjavascript.com/ch04-organizing-your-code.html
 
 async function cli_subscribe(url_string, poll = true) {
-  const ma = new ModelAccess();
-  const proms = [ma.connect(/* writable */ true), favicon.open()];
-  const [_, iconn] = await Promise.all(proms);
+  const proms = [openModelAccess(/* channeled */ true), favicon.open()];
+  const [ma, iconn] = await Promise.all(proms);
 
   // Bubble up errors to console
   const url = new URL(url_string);
@@ -43,16 +42,14 @@ async function cli_subscribe(url_string, poll = true) {
 }
 
 async function cli_archive_entries() {
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ true);
+  const ma = await openModelAccess(/* channeled */ true);
   await ma.archiveEntries();
   ma.close();
 }
 
 async function cli_refresh_icons() {
-  const ma = new ModelAccess();
-  const proms = [ma.connect(/* writable */ true), favicon.open()];
-  const [_, iconn] = await Promise.all(proms);
+  const proms = [openModelAccess(/* channeled */ true), favicon.open()];
+  const [ma, iconn] = await Promise.all(proms);
   // TODO: should be passing around ma
   await favicon.refresh_feeds(ma.conn, iconn, ma.channel);
   ma.close();
@@ -60,9 +57,8 @@ async function cli_refresh_icons() {
 }
 
 async function cli_poll_feeds() {
-  const ma = new ModelAccess();
-  const proms = [ma.connect(/* writable */ true), favicon.open()];
-  const [_, iconn] = await Promise.all(proms);
+  const proms = [openModelAccess(/* channeled */ true), favicon.open()];
+  const [ma, iconn] = await Promise.all(proms);
   const options = {ignore_recency_check: true};
   // TODO: should be passing around ma
   await poll_feeds(ma.conn, iconn, ma.channel, options);
@@ -71,17 +67,14 @@ async function cli_poll_feeds() {
 }
 
 async function cli_remove_lost_entries() {
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ true);
+  const ma = await openModelAccess(/* channeled */ true);
   await model_health.remove_lost_entries(ma);
   console.log('Removed %d lost entries', channel.message_count);
   ma.close();
 }
 
 async function cli_remove_orphans() {
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ true);
-
+  const ma = await openModelAccess(/* channeled */ true);
   // TODO: should just be passing around ma
   await model_health.remove_orphaned_entries(ma.conn, ma.channel);
   console.log('Deleted %d entries', channel.message_count);

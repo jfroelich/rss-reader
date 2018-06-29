@@ -1,7 +1,7 @@
 import {subscribe} from '/src/action/subscribe.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
-import ModelAccess from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model/model-access.js';
 import * as Model from '/src/model/model.js';
 import {register_test} from '/src/test/test-registry.js';
 
@@ -12,9 +12,7 @@ async function subscribe_test() {
   const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
   const url = new URL(test_url);
 
-  const ma = new ModelAccess();
-  await ma.connect(/* writable */ false, 'subscribe-test');
-
+  const ma = await openModelAccess(/* channeled */ false, 'subscribe-test');
   const messages = [];
   ma.channel = {
     name: 'channel-stub',
