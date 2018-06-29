@@ -58,9 +58,7 @@ async function cli_refresh_icons() {
 async function cli_poll_feeds() {
   const proms = [openModelAccess(/* channeled */ true), favicon.open()];
   const [ma, iconn] = await Promise.all(proms);
-  const options = {ignore_recency_check: true};
-  // TODO: should be passing around ma
-  await poll_feeds(ma.conn, iconn, ma.channel, options);
+  await poll_feeds(ma, iconn, {ignore_recency_check: true});
   ma.close();
   iconn.close();
 }

@@ -5,15 +5,8 @@ import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {fetch_feed} from '/src/lib/net/fetch-feed.js';
 import {OfflineError, TimeoutError} from '/src/lib/net/fetch2.js';
-import {ModelAccess} from '/src/model/model-access.js';
 import * as sanity from '/src/model/model-sanity.js';
 import * as Model from '/src/model/model.js';
-
-const chan_stub = {
-  name: 'channel-stub',
-  postMessage: noop,
-  close: noop
-};
 
 const default_options = {
   ignore_recency_check: false,
@@ -25,14 +18,7 @@ const default_options = {
   notify: true
 };
 
-// Checks for new content
-export async function poll_feeds(
-    rconn, iconn, channel = chan_stub, options = {}) {
-  // TODO: should have ma as parameter instead of recreating the object here
-  const ma = new ModelAccess();
-  ma.conn = rconn;
-  ma.channel = channel;
-
+export async function poll_feeds(ma, iconn, options = {}) {
   const get_feeds_mode = 'active', get_feeds_sort = false;
   const feeds = await ma.getFeeds(get_feeds_mode, get_feeds_sort);
 
@@ -41,7 +27,7 @@ export async function poll_feeds(
   // Concurrently poll feeds, skipping individual errors
   const promises = [];
   for (const feed of feeds) {
-    const promise = poll_feed(rconn, iconn, channel, options, feed);
+    const promise = poll_feed(ma, iconn, options, feed);
     const catch_promise = promise.catch(console.warn);
     promises.push(promise);
   }
@@ -65,11 +51,11 @@ export async function poll_feeds(
 
 
 // Check if a remote feed has new data and store it in the database
-export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
+export async function poll_feed(ma, iconn, options = {}, feed) {
   const ignore_recency_check = options.ignore_recency_check;
   const recency_period = options.recency_period;
   const notify_flag = options.notify;
-  const deactivation_threshold = options.deactivation_threshold;
+  const threshold = options.deactivation_threshold;
   const fetch_feed_timeout = options.fetch_feed_timeout;
 
   assert(Model.is_feed(feed));
@@ -87,7 +73,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
     assert(elapsed_ms >= recency_period);
   }
 
-  // Fetch the feed. Trap non-programmer errors.
+  // Fetch the feed
   const skip_entries = false;
   const resolve_entry_urls = true;
   let response;
@@ -95,10 +81,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
     response = await fetch_feed(
         tail_url, fetch_feed_timeout, skip_entries, resolve_entry_urls);
   } catch (error) {
-    // NOTE: in the error case, we only write the db-loaded feed back to the
-    // database, and ignore any new info from the fetched feed.
-    await handle_fetch_error(
-        rconn, channel, error, feed, deactivation_threshold);
+    await handle_fetch_error(ma, error, feed, threshold);
     return 0;
   }
 
@@ -111,15 +94,10 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
 
   sanity.validate_feed(merged_feed);
   sanity.sanitize_feed(merged_feed);
-
-  // TODO: this should be coming from parameter instead of recreating here
-  const ma = new ModelAccess();
-  ma.conn = rconn;
-  ma.channel = channel;
   await ma.updateFeed(merged_feed);
 
-  const count = await poll_entries(
-      rconn, iconn, channel, options, response.entries, merged_feed);
+  const count =
+      await poll_entries(ma, iconn, options, response.entries, merged_feed);
 
   if (notify_flag && count) {
     const title = 'Added articles';
@@ -131,7 +109,7 @@ export async function poll_feed(rconn, iconn, channel, options = {}, feed) {
   return count;
 }
 
-async function poll_entries(rconn, iconn, channel, options, entries, feed) {
+async function poll_entries(ma, iconn, options, entries, feed) {
   const feed_url_string = array.peek(feed.urls);
 
   console.debug(
@@ -152,13 +130,11 @@ async function poll_entries(rconn, iconn, channel, options, entries, feed) {
   }
 
   const rewrite_rules = build_rewrite_rules();
-
   const poll_entry_promises = [];
   for (const entry of entries) {
     const promise = poll_entry(
-        rconn, iconn, channel, entry, options.fetch_html_timeout,
+        ma, iconn, entry, options.fetch_html_timeout,
         options.fetch_image_timeout, rewrite_rules);
-    // Avoid Promise.all short-circuiting
     const catch_promise = promise.catch(poll_entry_onerror);
     poll_entry_promises.push(catch_promise);
   }
@@ -212,11 +188,8 @@ function handle_fetch_success(feed) {
   return false;
 }
 
-async function handle_fetch_error(
-    rconn, channel, error, feed, deactivation_threshold) {
-  // Ignore ephemeral fetch errors
+async function handle_fetch_error(ma, error, feed, threshold) {
   if (error instanceof TimeoutError || error instanceof OfflineError) {
-    console.debug('Ignoring ephemeral fetch error', error);
     return;
   }
 
@@ -227,16 +200,12 @@ async function handle_fetch_error(
   feed.errorCount = Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;
 
   // Auto-deactivate on threshold breach
-  if (feed.errorCount > deactivation_threshold) {
+  if (feed.errorCount > threshold) {
     feed.active = false;
     feed.deactivationReasonText = 'fetch';
     feed.deactivationDate = new Date();
   }
 
-  // TODO: this should come from parameter instead of recreating here
-  const ma = new ModelAccess();
-  ma.conn = rconn;
-  ma.channel = channel;
   // No need to validate/sanitize, we've had control for the entire lifetime
   await ma.updateFeed(feed);
 }

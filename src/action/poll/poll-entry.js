@@ -9,7 +9,6 @@ import {fetch_html} from '/src/lib/net/fetch-html.js';
 import * as sniff from '/src/lib/net/sniff.js';
 import {url_did_change} from '/src/lib/net/url-did-change.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
-import {ModelAccess} from '/src/model/model-access.js';
 import * as sanity from '/src/model/model-sanity.js';
 import * as Model from '/src/model/model.js';
 
@@ -23,15 +22,8 @@ export class EntryExistsError extends Error {
 // the full text of the entry. Either returns the added entry id, or throws an
 // error.
 export async function poll_entry(
-    rconn, iconn, channel, entry, fetch_html_timeout, fetch_image_timeout,
-    rewrite_rules) {
+    ma, iconn, entry, fetch_html_timeout, fetch_image_timeout, rewrite_rules) {
   assert(Model.is_entry(entry));
-
-  // TODO: should be passing around ma instance instead of separate params and
-  // recreating the instance here
-  const ma = new ModelAccess();
-  ma.conn = rconn;
-  ma.channel = channel;
 
   // Rewrite the entry's last url and append its new url if different.
   let url = new URL(array.peek(entry.urls));

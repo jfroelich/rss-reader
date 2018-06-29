@@ -15,13 +15,9 @@ async function refresh_button_onclick(event) {
 
   refresh_in_progress = true;
 
-  // TODO: open concurrently
-  const ma = await openModelAccess(/* channeled */ true);
-  const iconn = await favicon.open();
-  const options = {};
-  options.ignore_recency_check = true;
-  // TODO: should just be passing around channel
-  await poll_feeds(ma.conn, iconn, ma.channel, options);
+  const promises = [openModelAccess(/* channeled */ true), favicon.open()];
+  const [ma, iconn] = await Promise.all(promises);
+  await poll_feeds(ma, iconn, {ignore_recency_check: true});
   ma.close();
   iconn.close();
 

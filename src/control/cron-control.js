@@ -36,16 +36,11 @@ export async function alarm_listener(alarm) {
       }
     }
 
-    const options = {};
-    options.ignore_recency_check = false;
-    options.notify = true;
-    // TODO: should be opening both conns at once
-    const ma = await openModelAccess(/* channeled */ true);
-    const iconn = await favicon.open();
-    // TODO: should just be passing around ma
-    await poll_feeds(ma.conn, iconn, ma.channel, options);
-    iconn.close();
+    const promises = [openModelAccess(/* channeled */ true), favicon.open()];
+    const [ma, iconn] = await Promise.all(promises);
+    await poll_feeds(ma, iconn, {ignore_recency_check: false, notify: true});
     ma.close();
+    iconn.close();
   } else if (alarm.name === 'remove-entries-missing-urls') {
     const ma = await openModelAccess(/* channeled */ true);
     await model_health.remove_lost_entries(ma);
