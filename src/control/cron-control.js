@@ -1,5 +1,6 @@
 import * as favicon from '/src/action/favicon/favicon.js';
 import {poll_feeds} from '/src/action/poll/poll-feeds.js';
+import {refresh_feed_icons} from '/src/action/refresh-feed-icons.js';
 import * as ls from '/src/lib/ls.js';
 import {openModelAccess} from '/src/model/model-access.js';
 
@@ -55,7 +56,7 @@ export async function alarm_listener(alarm) {
   } else if (alarm.name === 'refresh-feed-icons') {
     const proms = [await openModelAccess(/* channeled */ true), favicon.open()];
     const [ma, iconn] = await Promise.all(proms);
-    await favicon.refresh_feeds(ma, iconn);
+    await refresh_feed_icons(ma, iconn);
     ma.close();
     iconn.close();
   } else if (alarm.name === 'compact-favicon-db') {

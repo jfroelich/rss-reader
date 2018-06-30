@@ -1,5 +1,6 @@
 import * as favicon from '/src/action/favicon/favicon.js';
 import {poll_feed, poll_feeds} from '/src/action/poll/poll-feeds.js';
+import {refresh_feed_icons} from '/src/action/refresh-feed-icons.js';
 import {subscribe} from '/src/action/subscribe.js';
 import * as cron_control from '/src/control/cron-control.js';
 import {openModelAccess} from '/src/model/model-access.js';
@@ -49,7 +50,7 @@ async function cli_archive_entries() {
 async function cli_refresh_icons() {
   const proms = [openModelAccess(/* channeled */ true), favicon.open()];
   const [ma, iconn] = await Promise.all(proms);
-  await favicon.refresh_feeds(ma, iconn);
+  await refresh_feed_icons(ma, iconn);
   ma.close();
   iconn.close();
 }

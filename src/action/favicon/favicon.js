@@ -48,38 +48,3 @@ export function create_lookup_url(feed) {
   const tail_url = new URL(array.peek(feed.urls));
   return new URL(tail_url.origin);
 }
-
-// Update the favicon of each of the feeds in the database
-export async function refresh_feeds(ma, iconn) {
-  const feeds = await ma.getFeeds('active', /* sorted */ false);
-  const promises = [];
-  for (const feed of feeds) {
-    promises.push(refresh_feed(ma, iconn, feed));
-  }
-  return Promise.all(promises);
-}
-
-// Update the favicon of a feed in the database
-async function refresh_feed(ma, iconn, feed) {
-  if (array.is_empty(feed.urls)) {
-    return;
-  }
-
-  const lookup_url = create_lookup_url(feed);
-  if (!lookup_url) {
-    return;
-  }
-
-  let doc, fetch_flag = true;
-  const icon_url_string = await lookup(iconn, lookup_url, doc, fetch_flag);
-
-  if (feed.faviconURLString !== icon_url_string) {
-    if (icon_url_string) {
-      feed.faviconURLString = icon_url_string;
-    } else {
-      delete feed.faviconURLString;
-    }
-
-    await ma.updateFeed(feed);
-  }
-}
