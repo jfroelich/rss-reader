@@ -1,9 +1,10 @@
 import assert from '/src/lib/assert.js';
 
-// indexedDB does not support storing Function objects, because Function objects
-// are not serializable. Therefore instanceof and typeof are not usable for
-// making assertions about type. Therefore, use a hidden "magic" property to
-// enable some minimal form of type checking.
+// Because we cannot read function objects from indexedDB, and serializes
+// function objects into plain objects on write, there is no way to encode type
+// information into the stored data objects. Therefore instanceof and typeof are
+// not usable for making assertions about type. Therefore, use a hidden "magic"
+// property to enable basic type checking.
 export const FEED_MAGIC = 0xfeedfeed;
 export const ENTRY_MAGIC = 0xdeadbeef;
 
