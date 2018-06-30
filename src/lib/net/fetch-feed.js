@@ -18,22 +18,14 @@ export async function fetch_feed(
     'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
   ];
 
-  // Get the response, rethrow any fetch errors
   const options = {timeout: timeout, types: feed_mime_types};
   const response = await fetch2(url, options, is_allowed_request);
-
-  // Get the response full text. Rethrow i/o errors
   const res_text = await response.text();
-
-  // Parse the full text into a parsed-feed object. Rethrow parse errors
   const parsed_feed = parse_feed(res_text, skip_entries, resolve_entry_urls);
 
   // Convert the feed from the parse format to the storage format
   const feed = Model.create_feed();
-
-  if (parsed_feed.type) {
-    Model.set_feed_type(feed, parsed_feed.type);
-  }
+  feed.type = parsed_feed.type;
 
   if (parsed_feed.link) {
     let link_url;
@@ -43,23 +35,13 @@ export async function fetch_feed(
     }
 
     if (link_url) {
-      Model.set_feed_link(feed, link_url.href);
+      feed.link = link_url.href;
     }
   }
 
-  if (parsed_feed.title) {
-    Model.set_feed_title(feed, parsed_feed.title);
-  }
-
-  if (parsed_feed.description) {
-    Model.set_feed_description(feed, parsed_feed.description);
-  }
-
-  if (parsed_feed.date_published) {
-    Model.set_feed_date_published(feed, parsed_feed.date_published);
-  } else {
-    Model.set_feed_date_published(feed, new Date());
-  }
+  feed.title = parsed_feed.title;
+  feed.description = parsed_feed.description;
+  feed.datePublished = parsed_feed.date_published || new Date();
 
   Model.append_feed_url(feed, url);
   Model.append_feed_url(feed, new URL(response.url));
@@ -69,12 +51,11 @@ export async function fetch_feed(
   if (last_modified_string) {
     const last_modified_date = new Date(last_modified_string);
     if (!isNaN(last_modified_date.getTime())) {
-      Model.set_feed_date_last_modified(feed, last_modified_date);
+      feed.dateLastModifed = last_modified_date;
     }
   }
 
-  // Set the date the feed was fetched to now
-  Model.set_feed_date_fetched(feed, new Date());
+  feed.dateFetched = new Date();
 
   const output_response = {};
   output_response.feed = feed;

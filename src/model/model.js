@@ -75,31 +75,3 @@ function append_url_common(object, url) {
 
   return true;
 }
-
-export function set_feed_date_fetched(feed, date) {
-  feed.dateFetched = date;
-}
-
-export function set_feed_date_last_modified(feed, date) {
-  feed.dateLastModifed = date;
-}
-
-export function set_feed_date_published(feed, date) {
-  feed.datePublished = date;
-}
-
-export function set_feed_description(feed, description) {
-  feed.description = description;
-}
-
-export function set_feed_link(feed, url_string) {
-  feed.link = url_string;
-}
-
-export function set_feed_title(feed, title) {
-  feed.title = title;
-}
-
-export function set_feed_type(feed, feed_type_string) {
-  feed.type = feed_type_string;
-}
