@@ -198,7 +198,7 @@ export function deactivate_feed(conn, feed_id, reason) {
       deactivate_feed_executor.bind(null, conn, feed_id, reason));
 }
 
-function deactivate_feed_executor(conn, feed_id, reason) {
+function deactivate_feed_executor(conn, feed_id, reason, resolve, reject) {
   const txn = conn.transaction('feed', 'readwrite');
   txn.oncomplete = resolve;
   txn.onerror = event => reject(event.target.error);
@@ -319,7 +319,7 @@ export function get_entry(conn, mode, value, key_only) {
       get_entry_executor.bind(null, conn, mode, value, key_only));
 }
 
-function get_entry_executor(conn, mode, value, key_only) {
+function get_entry_executor(conn, mode, value, key_only, resolve, reject) {
   const txn = conn.transaction('entry');
   txn.onerror = event => reject(event.target.error);
   const store = txn.objectStore('entry');
