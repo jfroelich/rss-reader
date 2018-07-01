@@ -1,6 +1,6 @@
 import assert from '/src/lib/assert.js';
 import * as sniff from '/src/lib/net/sniff.js';
-import {register_test} from '/src/test/test-registry.js';
+import {register_test} from '/test/test-registry.js';
 
 async function sniff_test() {
   // expected binary output

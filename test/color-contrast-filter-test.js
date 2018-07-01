@@ -3,7 +3,7 @@ import assert from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
 import * as css_color from '/src/lib/css-color/css-color.js';
 import * as ccf from '/src/lib/filters/color-contrast-filter.js';
-import {register_test} from '/src/test/test-registry.js';
+import {register_test} from '/test/test-registry.js';
 
 // TODO: these tests were written to work off a live document. Instead, create
 // a local fake document, and test against it

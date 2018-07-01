@@ -3,7 +3,7 @@ import {filter_dead_images} from '/src/lib/filters/filter-dead-images.js';
 import {filter_lazy_images} from '/src/lib/filters/filter-lazy-images.js';
 import * as html from '/src/lib/html.js';
 import {fetch_html} from '/src/lib/net/fetch-html.js';
-import {register_test} from '/src/test/test-registry.js';
+import {register_test} from '/test/test-registry.js';
 
 // TODO: rewrite in new test format
 // TODO: rewrite without input, load a local file internally

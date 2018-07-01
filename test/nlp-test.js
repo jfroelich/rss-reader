@@ -1,6 +1,6 @@
 import assert from '/src/lib/assert.js';
 import {filter_publisher as f} from '/src/lib/nlp.js';
-import {register_test} from '/src/test/test-registry.js';
+import {register_test} from '/test/test-registry.js';
 
 // TODO: test using additional parameters where other parameters are not the
 // default values

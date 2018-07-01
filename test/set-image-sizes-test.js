@@ -4,7 +4,7 @@ import {set_base_uri} from '/src/lib/html-document.js';
 import * as html from '/src/lib/html.js';
 import {fetch_html} from '/src/lib/net/fetch-html.js';
 import {is_allowed_request} from '/src/lib/net/fetch-policy.js';
-import {register_test} from '/src/test/test-registry.js';
+import {register_test} from '/test/test-registry.js';
 
 // TODO: these tests must be rewritten using new approach
 

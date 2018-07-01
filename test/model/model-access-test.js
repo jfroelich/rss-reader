@@ -2,7 +2,7 @@ import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import {openModelAccess} from '/src/model/model-access.js';
 import * as Model from '/src/model/model.js';
-import {register_test} from '/src/test/test-registry.js';
+import {register_test} from '/test/test-registry.js';
 
 // Exercise the createFeed function in the typical case
 async function create_feed_test() {

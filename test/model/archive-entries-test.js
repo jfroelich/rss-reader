@@ -1,7 +1,7 @@
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import {openModelAccess} from '/src/model/model-access.js';
-import {register_test} from '/src/test/test-registry.js';
+import {register_test} from '/test/test-registry.js';
 
 async function archive_entries_test() {
   const ma =

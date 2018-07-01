@@ -10,7 +10,7 @@ import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import * as html from '/src/lib/html.js';
 import {fetch_html} from '/src/lib/net/fetch-html.js';
 import {is_allowed_request} from '/src/lib/net/fetch-policy.js';
-import {register_test} from '/src/test/test-registry.js';
+import {register_test} from '/test/test-registry.js';
 
 // TODO: assert stuff, use a known test url
 // TODO: build a document in memory and test against it, don't bother with

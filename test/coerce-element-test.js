@@ -1,7 +1,7 @@
 import assert from '/src/lib/assert.js';
 import {coerce_element} from '/src/lib/dom/coerce-element.js';
 import * as html from '/src/lib/html.js';
-import {register_test} from '/src/test/test-registry.js';
+import {register_test} from '/test/test-registry.js';
 
 async function coerce_element_test() {
   const input = '<html><head></head><body><p></p><a></a></body></html>';
