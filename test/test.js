@@ -1,4 +1,4 @@
-import '/test/model/archive-entries-test.js';
+import '/test/model/idb-model-test.js';
 import '/test/subscribe-test.js';
 import '/test/color-test.js';
 import '/test/model/model-access-test.js';
