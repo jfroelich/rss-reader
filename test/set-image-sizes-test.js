@@ -1,5 +1,5 @@
-import {set_image_sizes} from '/src/filters/set-image-sizes.js';
 import assert from '/src/lib/assert.js';
+import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import {set_base_uri} from '/src/lib/html-document.js';
 import * as html from '/src/lib/html.js';
 import {fetch_html} from '/src/lib/net/fetch-html.js';
