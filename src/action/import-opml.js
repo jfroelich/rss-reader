@@ -23,7 +23,7 @@ export async function import_opml(ma, files) {
   const url_array_set = dedup_urls(url_array);
 
   const feeds = url_array_set.map(url => {
-    const feed = Model.createFeed();
+    const feed = Model.create_feed();
     Model.append_feed_url(feed, url);
     return feed;
   });
