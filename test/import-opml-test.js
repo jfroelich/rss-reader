@@ -2,6 +2,7 @@ import {import_opml} from '/src/action/import-opml.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import {openModelAccess} from '/src/model/model-access.js';
+import * as Model from '/src/model/model.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: test multiple files
@@ -21,16 +22,12 @@ async function import_opml_test() {
 
   const opml_string = '<opml version="2.0"><body><outline type="feed" ' +
       'xmlUrl="a://b/c"/></body></opml>';
-  const file = create_mock_file('file.xml', opml_string);
+  const file = mock_opml_file('file.xml', opml_string);
 
   const results = await import_opml(ma, [file]);
-
-  // TODO: import-opml calls createFeeds which yields an array of new feed ids,
-  // not new feed objects. Therefore these asserts are incorrect
-  // assert(results.length === 1);
-  // assert(results[0].id === 1);
-
-  // TODO: assert the database changed
+  assert(results);
+  assert(results.length === 1);
+  assert(Model.is_valid_feed_id(results[0]));
 
   assert(messages.length === 1);
   assert(messages[0].type === 'feed-created');
@@ -40,12 +37,10 @@ async function import_opml_test() {
   await indexeddb.remove(ma.conn.name);
 }
 
-// We cannot create File objects directly. However, blobs effectively implement
-// the File interface, so really, we just create a blob, and users of the file
-// such as FileReader do not really know the difference so long as duck typing
-// is used and no pedantic instanceof shenanigans are present.
-function create_mock_file(name, text) {
+// Blobs are files!
+function mock_opml_file(name, text) {
   const file = new Blob([text], {type: 'application/xml'});
+  // Blobs have type and size, but not a name (I think)
   file.name = name;
   return file;
 }
