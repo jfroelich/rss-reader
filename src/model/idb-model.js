@@ -495,11 +495,11 @@ function on_upgrade_needed(event) {
 
   // Some simple debugging. If creating a brand new database, old_version
   // is expected to be 0 (and not NaN/null/undefined).
-  console.debug('Creating/upgrading database', JSON.stringify({
-    name: conn.name,
-    old_version: event.oldVersion,
-    new_version: conn.version
-  }));
+  // console.debug('Creating/upgrading database', JSON.stringify({
+  //  name: conn.name,
+  //  old_version: event.oldVersion,
+  //  new_version: conn.version
+  // }));
 
   if (event.oldVersion < 20) {
     const feed_store_props = {keyPath: 'id', autoIncrement: true};
