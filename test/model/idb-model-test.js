@@ -4,6 +4,34 @@ import * as idbmodel from '/src/model/idb-model.js';
 import * as Model from '/src/model/model.js';
 import {register_test} from '/test/test-registry.js';
 
+async function activate_feed_test() {
+  const feed = Model.create_feed();
+  feed.active = false;
+  Model.append_feed_url(feed, new URL('a://b.c'));
+
+  const conn = await idbmodel.open('activate-feed-test');
+  const id = await idbmodel.create_feed(conn, feed);
+  await idbmodel.activate_feed(conn, id);
+  const stored_feed = await idbmodel.get_feed(conn, 'id', id);
+
+  assert(Model.is_feed(stored_feed));
+  assert(stored_feed.active === true);
+  assert(stored_feed.deactivateDate === undefined);
+  assert(stored_feed.deactivationReasonText === undefined);
+
+  // Activating a feed that is already active should fail
+  let activation_error;
+  try {
+    await idbmodel.activate_feed(conn, id);
+  } catch (error) {
+    activation_error = error;
+  }
+  assert(activation_error);
+
+  conn.close();
+  await indexeddb.remove(conn.name);
+}
+
 async function archive_entries_test() {
   // TODO: insert archivable data, non-archivable data, and then assert the
   // archivable data was archived, and that the non-archivable data was not
@@ -11,6 +39,20 @@ async function archive_entries_test() {
   const conn = await idbmodel.open('archive-entries-test');
   const max_age = 100;
   const ids = await idbmodel.archive_entries(conn, max_age);
+  conn.close();
+  await indexeddb.remove(conn.name);
+}
+
+async function create_entry_test() {
+  const conn = await idbmodel.open('create-entry-test');
+  const entry = Model.create_entry();
+  const id = await idbmodel.create_entry(conn, entry);
+  const stored_entry = await idbmodel.get_entry(conn, 'id', id);
+
+  assert(stored_entry);
+  assert(Model.is_entry(stored_entry));
+  assert(stored_entry.id === id);
+
   conn.close();
   await indexeddb.remove(conn.name);
 }
@@ -54,8 +96,6 @@ async function create_feed_url_constraint_test() {
   await indexeddb.remove(conn.name);
 }
 
-
-// Exercise the typical createFeeds case
 async function create_feeds_test() {
   const conn = await idbmodel.open('create-feeds-test');
 
@@ -84,7 +124,6 @@ async function create_feeds_test() {
   conn.close();
   await indexeddb.remove(conn.name);
 }
-
 
 async function count_unread_entries_test() {
   const conn = await idbmodel.open('count-unread-entries-test');
@@ -122,7 +161,9 @@ async function count_unread_entries_test() {
   await indexeddb.remove(conn.name);
 }
 
+register_test(activate_feed_test);
 register_test(archive_entries_test);
+register_test(create_entry_test);
 register_test(create_feed_test);
 register_test(create_feed_url_constraint_test);
 register_test(create_feeds_test);
