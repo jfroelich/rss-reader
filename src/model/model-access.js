@@ -122,6 +122,10 @@ ModelAccess.prototype.createFeeds = async function(feeds) {
   for (const id of ids) {
     this.channel.postMessage({type: 'feed-created', id: id});
   }
+
+  // NOTE: this was previously a bug, this must return the set of new ids, not
+  // undefined, null, or an array of feed objects
+  return ids;
 };
 
 ModelAccess.prototype.countUnreadEntries = function() {
