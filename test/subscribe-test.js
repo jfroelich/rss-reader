@@ -25,7 +25,7 @@ async function subscribe_test() {
   const feed = await subscribe(ma, undefined, url, 7000, false);
 
   // Test the subscription produced the desired result
-  assert(typeof feed === 'object');
+  assert(feed);
   assert(Model.is_feed(feed));
   assert(Model.is_valid_feed_id(feed.id));
 

@@ -101,6 +101,7 @@ ModelAccess.prototype.createFeed = async function(feed) {
 
   const id = await idbmodel.create_feed(this.conn, feed);
   this.channel.postMessage({type: 'feed-created', id: id});
+  return id;
 };
 
 ModelAccess.prototype.createFeeds = async function(feeds) {
