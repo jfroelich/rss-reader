@@ -355,7 +355,7 @@ export async function poll_entry(
   sanity.sanitize_entry(entry);
   // Throw a validation error if invalid
   sanity.validate_entry(entry);
-  return await ma.createEntry(entry);
+  return ma.createEntry(entry);
 }
 
 // TODO: somehow store in configuration instead of here, look into
