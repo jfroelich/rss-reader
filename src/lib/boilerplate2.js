@@ -4,6 +4,9 @@ import * as string from '/src/lib/string.js';
 // menu, advertisement, read more, newsletter signup, site search,
 // TODO: but reward footnotes!
 
+// TODO: text relative size bias
+// TODO: proximity bias
+
 // TODO: I could separate out the model stuff into a separate thing, then
 // this takes a model and a document and scores the document using the model,
 // but for now I am going to do it all at once.
@@ -36,6 +39,12 @@ export function annotate(document) {
     element.setAttribute('position-info', 'near-end');
   }
 
+  // Calculate this once for entire document. Note this includes lots of
+  // extraneous whitespace like simple text nodes resulting from separating
+  // elements on new lines, but the individual element length calculation is
+  // less affected by such nodes.
+  const document_length = get_text_length(document.body.textContent);
+
   // Only these elements are analyzed
   const container_element_names = [
     'article', 'aside', 'div', 'dl', 'footer', 'header', 'layer', 'main',
@@ -45,13 +54,19 @@ export function annotate(document) {
   const selector = container_element_names.join(',');
   const elements = document.body.querySelectorAll(selector);
   for (const element of elements) {
-    annotate_element(element);
+    annotate_element(element, document_length);
   }
 }
 
-function annotate_element(element) {
+function annotate_element(element, document_length) {
   const type_bias = derive_element_type_bias(element);
   element.setAttribute('type-bias', type_bias);
+
+  const text_bias = derive_text_bias(element, document_length);
+  element.setAttribute('text-bias', text_bias);
+
+  const line_count_bias = derive_line_count_bias(element);
+  element.setAttribute('line-count-bias', line_count_bias);
 
   const anchor_density_bias = derive_anchor_density_bias(element);
   element.setAttribute('anchor-density-bias', anchor_density_bias);
@@ -71,8 +86,10 @@ function annotate_element(element) {
   const neutral_bias = 50;
 
   let bias = neutral_bias;
-  bias += anchor_density_bias;
   bias += type_bias;
+  bias += text_bias;
+  bias += line_count_bias;
+  bias += anchor_density_bias;
   bias += image_bias;
   bias += form_bias;
   bias += position_bias;
@@ -88,7 +105,7 @@ function annotate_element(element) {
   // The closer to 0, the more likely to be boilerplate.
 
   if (bias > 75) {
-    element.setAttribute('boilerplate', 'very-low');
+    element.setAttribute('boilerplate', 'lowest');
   } else if (bias > 50) {
     element.setAttribute('boilerplate', 'low');
   } else if (bias === 50) {
@@ -96,8 +113,80 @@ function annotate_element(element) {
   } else if (bias > 25) {
     element.setAttribute('boilerplate', 'high');
   } else {
-    element.setAttribute('boilerplate', 'very-high');
+    element.setAttribute('boilerplate', 'highest');
   }
+}
+
+function derive_text_bias(element, document_length) {
+  if (!document_length) {
+    return 0;
+  }
+
+  const text_length = get_text_length(element.textContent);
+  if (!text_length) {
+    return 0;
+  }
+
+  const ratio = text_length / document_length;
+
+  const max_text_bias = 5;
+
+  // Calc bias
+  let bias = (100 * ratio * max_text_bias) | 0;
+  // Cap influence to max
+  bias = Math.min(max_text_bias, bias);
+
+  return bias;
+}
+
+function derive_line_count_bias(element) {
+  const text_length = get_text_length(element.textContent);
+  if (!text_length) {
+    return 0;
+  }
+
+  const line_count = count_text_lines(element);
+  const text_per_line = (text_length / line_count) | 0;
+  // console.debug(text_length, line_count, text_per_line);
+  element.setAttribute('text-per-line', text_per_line);
+
+  // Text with lots of lines and a short amount of text per line is probably
+  // boilerplate, where as text with lots of text per line are probably content.
+  if (text_per_line > 100) {
+    return 10;
+  } else if (text_per_line > 50) {
+    return 5;
+  } else if (text_per_line > 20) {
+    return -1;
+  } else {
+    return -5;
+  }
+}
+
+// Returns an approximate count of the number of lines in a block of text
+function count_text_lines(element) {
+  // Special handling for preformatted text
+  let newline_count = 0;
+  if (['pre', 'code'].includes(element.localName)) {
+    const lines = element.textContent.split('\n');
+    newline_count = lines.length;
+  }
+
+  // Use the number of descendant flow-breaking elements as an estimate of
+  // line length.
+  // TODO: make this more exhaustive, look for typical flow-breaking elements
+  const splitters = ['br', 'p', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr'];
+  const selector = splitters.join(',');
+  const elements = element.querySelectorAll(splitters);
+  let line_count = elements.length;
+  line_count += newline_count;
+
+  // Always count the first line as a line
+  if (line_count === 0) {
+    line_count = 1;
+  }
+
+  return line_count;
 }
 
 // TODO: am I supposed to be rewarding large text as probably content?
@@ -164,44 +253,6 @@ function derive_anchor_length(element) {
 }
 
 function derive_element_type_bias(element) {
-  // NOTE: I chose to include neutrals in the map to be explicit about them,
-  // even though they produce the equivalent non-bias, because I prefer to have
-  // the opinion be encoded clearly.
-  // NOTE: I assume compiler will hoist this map that is invariant to function
-  // if this function is deemed hot
-  // NOTE: we only care about container-type elements, as in, those elements
-  // which may contain other elements, that semantically tend to represent a
-  // unit or block of context that should be treated as a whole. We do not care
-  // about void elements or elements that contain only text (generally).
-
-  // NOTE: we only bias the element itself here, not its children, because
-  // the children will be removed by virtue of the parent being boilerplate
-  // most of the time. If the parent is not-boilerplate we still want some
-  // children to be removed but those are the containers themselves again in the
-  // case of a hierarchical container.
-
-  // We heavily penalize indications of navigation or non-content, and remain
-  // relatively neutral or timid on other types
-  const type_bias_map = {
-    article: 10,
-    section: 0,
-    layer: 0,
-    div: 0,
-    dl: 0,
-    td: 0,
-    table: 0,
-    header: -10,
-    footer: -10,
-    ul: 0,
-    aside: -5,
-    nav: -20,
-    menu: -20,
-    // menuitem is not really a content container we care about, and is
-    // subsumed by menu
-    menuitem: 0,
-    ol: 0
-  };
-
   const bias = type_bias_map[element.localName];
   return bias ? bias : 0;
 }
@@ -244,7 +295,6 @@ function derive_image_bias(element) {
     return 0;
   }
 
-  console.debug('Found area: ', total_area);
   element.setAttribute('image-area', total_area);
 
   const ratio = total_area / screen_area_average;
@@ -263,7 +313,7 @@ function derive_image_bias(element) {
 function derive_position_bias(element) {
   const info = element.getAttribute('position-info');
   if (info === 'near-start' || info === 'near-end') {
-    return -15;
+    return -5;
   }
   return 0;
 }
@@ -280,56 +330,6 @@ function derive_form_bias(element) {
     return 0;
   }
 }
-
-// TODO: these are now percentages, need to update
-const token_weights = {
-  ad: -40,
-  ads: -40,
-  advert: -40,
-  article: 30,
-  author: -10,
-  bio: -20,
-  body: 20,
-  comment: -40,
-  content: 20,
-  contentpane: 50,
-  copyright: -10,
-  credit: -2,
-  date: -10,
-  footer: -20,
-  gutter: -30,
-  keywords: -10,
-  left: -20,
-  links: -10,
-  main: 30,
-  meta: -30,
-  metadata: -10,
-  more: -15,
-  nav: -30,
-  navbar: -30,
-  newsarticle: 50,
-  page: 10,
-  post: 5,
-  promo: -50,
-  rail: -50,
-  recommend: -10,
-  recommended: -10,
-  rel: -50,
-  relate: -50,
-  related: -50,
-  right: -50,
-  sidebar: -20,
-  social: -30,
-  story: 50,
-  storytxt: 50,
-  stub: -10,
-  tag: -15,
-  tags: -20,
-  tool: -30,
-  tools: -30,
-  widget: -20,
-  zone: -20
-};
 
 function derive_attribute_bias(element) {
   const vals = [
@@ -370,3 +370,95 @@ function derive_attribute_bias(element) {
 function tokenize(value) {
   return value.split(/[\s\-_0-9]+/g);
 }
+
+// NOTE: I chose to include neutrals in the map to be explicit about them,
+// even though they produce the equivalent non-bias, because I prefer to have
+// the opinion be encoded clearly.
+
+// NOTE: we only care about container-type elements, as in, those elements
+// which may contain other elements, that semantically tend to represent a
+// unit or block of context that should be treated as a whole. We do not care
+// about void elements or elements that contain only text (generally).
+
+// NOTE: we only bias the element itself here, not its children, because
+// the children will be removed by virtue of the parent being boilerplate
+// most of the time. If the parent is not-boilerplate we still want some
+// children to be removed but those are the containers themselves again in the
+// case of a hierarchical container.
+
+// We heavily penalize indications of navigation or non-content, and remain
+// relatively neutral or timid on other types
+const type_bias_map = {
+  article: 10,
+  blockquote: 5,
+  section: 0,
+  layer: 0,
+  code: 10,
+  div: 0,
+  dl: 0,
+  td: 0,
+  table: 0,
+  header: -10,
+  footer: -10,
+  ul: 0,
+  aside: -5,
+  nav: -20,
+  menu: -20,
+  // menuitem is not really a content container we care about, and is
+  // subsumed by menu
+  menuitem: 0,
+  ol: 0,
+  pre: 5,
+};
+
+const token_weights = {
+  ad: -40,
+  ads: -40,
+  advert: -40,
+  article: 30,
+  author: -10,
+  bio: -20,
+  body: 20,
+  branding: -10,
+  comment: -40,
+  content: 20,
+  contentpane: 50,
+  copyright: -10,
+  credit: -2,
+  date: -10,
+  entry: 10,
+  footer: -20,
+  gutter: -30,
+  keywords: -10,
+  left: -20,
+  links: -10,
+  main: 30,
+  meta: -30,
+  metadata: -10,
+  more: -15,
+  nav: -30,
+  navbar: -30,
+  newsarticle: 50,
+  page: 10,
+  post: 5,
+  promo: -50,
+  rail: -50,
+  recommend: -10,
+  recommended: -10,
+  rel: -50,
+  relate: -50,
+  related: -50,
+  right: -50,
+  sidebar: -20,
+  social: -30,
+  story: 50,
+  storytxt: 50,
+  stub: -10,
+  subscription: -20,
+  tag: -15,
+  tags: -20,
+  tool: -30,
+  tools: -30,
+  widget: -20,
+  zone: -20
+};
