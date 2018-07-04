@@ -47,9 +47,20 @@ const default_average_document_area = 1500 * 2000;
 //
 // This generally does not include inline-block elements (e.g. span, a).
 const block_element_names = [
-  'article', 'aside', 'blockquote', 'code', 'div', 'dl', 'footer', 'header',
-  'layer', 'main', 'mainmenu', 'menu', 'nav', 'ol', 'pre', 'section', 'table',
-  'td', 'ul'
+  'article', 'aside',  'blockquote', 'code',    'div',  'dl',
+  'figure',  'footer', 'header',     'layer',   'main', 'mainmenu',
+  'menu',    'nav',    'ol',         'picture', 'pre',  'section',
+  'table',   'td',     'tr',         'ul'
+];
+
+// The presence of these elements within an element's descendant hierarchy
+// is a rough indication of content spanning over a new line.
+// TODO: make this more exhaustive, look for typical flow-breaking elements,
+// maybe consider any other container-type block. In fact maybe instead of
+// line count I should be looking at text-to-child-blocks ratio.
+const line_splitter_element_names = [
+  'br', 'dt', 'dd', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'li', 'menuitem',
+  'p', 'tr'
 ];
 
 // Elements are scored on a scale of [0..100]. I've chosen this over using
@@ -165,38 +176,100 @@ export function annotate(
     throw new Error('Calculated invalid cutoff indices');
   }
 
-  // Finally, iterate over each of the blocks. We iterate over all elements
-  // so as to track the per-element index, but we then only pay attention
-  // to blocks.
-  for (let i = 0; i < num_elements; i++) {
-    const element = elements[i];
-    if (block_element_names.includes(element.localName)) {
-      annotate_block(
-          element, i, num_elements, document_text_length, front_max, end_min,
-          average_document_area);
-    }
+  const info = {
+    text_length: document_text_length,
+    elements_length: num_elements,
+    front_max: front_max,
+    end_min: end_min,
+    area: average_document_area
+  };
+
+  const blocks = create_blocks(elements, num_elements);
+
+  for (const block of blocks) {
+    extract_block_features(block, info);
+  }
+
+  for (const block of blocks) {
+    annotate_block(block, info);
   }
 }
 
-// TODO: implement. Basically convert the document into a dataset, where a
-// dataset is an object with a rows property. Each row represents a block. A
-// block is a basic object. It has properties, one of which is the element the
-// block reprsents. along with arbitrary other properties. As an intermediate
-// step towards that implementation, this for now just creates an array of
-// elements.
-//
-// The thing is, I am not sure if this abstraction adds value. Ambivalent for
-// whether I should continue here.
-function create_blocks(elements) {
-  // TODO: we want a filter operation, along with a map operation
-
-  const rows = [];
-  for (const element of elements) {
+// Tokenize the elements array into an array of blocks. Returns an array of
+// block objects.
+function create_blocks(elements, elements_length) {
+  const blocks = [];
+  for (let i = 0; i < elements_length; i++) {
+    const element = elements[i];
     if (block_element_names.includes(element.localName)) {
-      rows.push(element);
+      const block = new Block();
+      block.element = element;
+      block.element_index = i;
+      block.element_type = element.localName;
+      blocks.push(block);
     }
   }
-  return rows;
+
+  return blocks;
+}
+
+// A block is a representation of a portion of a document's content.
+function Block() {
+  // A live reference to the node in the full document. Each block tracks its
+  // represented root element to allow for deferring processing that depends
+  // on the element into later block iterations (later passes).
+  this.element = undefined;
+  // index into all elements array. This is a representation of the position
+  // of the block within the content. -1 means not set or invalid index.
+  this.element_index = -1;
+
+  // The element's type (e.g. the tagname), all lowercase, not qualified. This
+  // is redundant with the live reference, but the live reference only exists
+  // for performance sake. This is the extracted feature out of the reference.
+  // The caller is responsible for ensuring correspondence to the element
+  // property.
+  this.element_type = undefined;
+
+  // The number of node hops to the root node. -1 means invalid
+  this.depth = -1;
+
+  // A representation of the count of characters within the element. This is
+  // similar to the total length of the text nodes within the element. -1 is
+  // an invalid length.
+  this.text_length = -1;
+
+  // A representation of the number of lines of content within the block. This
+  // does not necessarily correspond to a simple count of '\n' characters. This
+  // is more of an approximation of how many flow-breaks there are within this
+  // block of content. Many things within the block content can cause a
+  // flow-break, such as the presence of a p tag, or an h1 tag, the start of a
+  // table, a new table row, etc.
+  this.line_count = 0;
+
+  // The block's content score. On scale of [0..100]. 50 means neutral. 0 means
+  // good content, 100 means boilerplate. All blocks start off as neutral.
+  this.score = 50;
+}
+
+// Populates other properties of the block based on the block's content. The
+// goal of feature extraction is not to do any inference, it is just to unpack
+// the latent information that is in the content blob into individual
+// properties.
+function extract_block_features(block, info) {
+  block.depth = derive_block_depth(block);
+  block.text_length = get_text_length(block.element.textContent);
+  block.line_count = count_text_lines(block);
+  block.anchor_text_length = derive_anchor_length(block);
+}
+
+function derive_block_depth(block) {
+  const element = block.element;
+  let depth = 0;
+
+  for (let node = element.parentNode; node; node = node.parentNode) {
+    depth++;
+  }
+  return depth;
 }
 
 // Determine whether a block is boilerplate.
@@ -211,26 +284,51 @@ function create_blocks(elements) {
 // @param end_min {Number} the cutoff index into the all-elements array below
 // which an element is in the middle, and after is near the end.
 // @param average_document_area {Number} the approximate size of the window
-function annotate_block(
-    element, index, num_elements, document_text_length, front_max, end_min,
-    average_document_area) {
+function annotate_block(block, doc_info) {
+  const element = block.element;
+  const index = block.element_index;
+
+  // TODO: there is no need to perform these variable assignments. These
+  // statements are part of a temporary refactor where I modified the parameters
+  // to annotate_block, just to keep the function working after the refactor.
+  const num_elements = doc_info.elements_length;
+  const document_text_length = doc_info.text_length;
+  const front_max = doc_info.front_max;
+  const end_min = doc_info.end_min;
+  const average_document_area = doc_info.area;
+
+  // TODO: rename bias to score
+  // TODO: break these analysis steps into two parts. The first pass is feature
+  // extraction, where I populate the block's properties with minimal analysis.
+  // The second pass is where functions examine the block's properties to
+  // calculate the block's score. The set of functions is the model, and the
+  // calculation of the block's score is the scoring of the block.
+
   let bias = neutral_score;
 
-  const type_bias = derive_element_type_bias(element);
+  const depth_bias = derive_depth_bias(block);
+  element.setAttribute('depth-bias', depth_bias);
+  bias += depth_bias;
+
+  const type_bias = derive_element_type_bias(block);
   element.setAttribute('type-bias', type_bias);
   bias += type_bias;
 
-  const text_bias = derive_text_length_bias(element, document_text_length);
+  const text_bias = derive_text_length_bias(block, doc_info);
   element.setAttribute('text-bias', text_bias);
   bias += text_bias;
 
-  const line_count_bias = derive_line_count_bias(element);
+  const line_count_bias = derive_line_count_bias(block);
   element.setAttribute('line-count-bias', line_count_bias);
   bias += line_count_bias;
 
-  const anchor_density_bias = derive_anchor_density_bias(element);
+  const anchor_density_bias = derive_anchor_density_bias(block);
   element.setAttribute('anchor-density-bias', anchor_density_bias);
   bias += anchor_density_bias;
+
+  const list_bias = derive_list_bias(element);
+  element.setAttribute('list-bias', list_bias);
+  bias += list_bias;
 
   const paragraph_bias = derive_paragraph_bias(element);
   element.setAttribute('paragraph-bias', paragraph_bias);
@@ -280,17 +378,36 @@ function annotate_block(
   }
 }
 
-function derive_text_length_bias(element, document_text_length) {
+function derive_depth_bias(block) {
+  const d = block.depth;
+
+
+  if (d < 2) {
+    // documentElement is 0
+    // body is 1
+    return 50;
+  } else if (d < 4) {
+    return 20;
+  } else if (d < 5) {
+    return 5;
+  } else if (d < 10) {
+    return 0;
+  } else {
+    return -2;
+  }
+}
+
+function derive_text_length_bias(block, info) {
+  const document_text_length = info.text_length;
   if (!document_text_length) {
     return 0;
   }
 
-  const text_length = get_text_length(element.textContent);
-  if (!text_length) {
+  if (!block.text_length) {
     return 0;
   }
 
-  const ratio = text_length / document_text_length;
+  const ratio = block.text_length / document_text_length;
 
   const max_text_bias = 5;
 
@@ -302,13 +419,12 @@ function derive_text_length_bias(element, document_text_length) {
   return bias;
 }
 
-function derive_line_count_bias(element) {
-  const text_length = get_text_length(element.textContent);
-  if (!text_length) {
+function derive_line_count_bias(block) {
+  if (!block.text_length) {
     return 0;
   }
 
-  const line_count = count_text_lines(element);
+  const line_count = block.line_count;
 
   // Ignore text that is basically too small. The line count heuristic probably
   // is not worth that much in this case. The inference is too tenuous.
@@ -316,9 +432,11 @@ function derive_line_count_bias(element) {
     return 0;
   }
 
-  const text_per_line = (text_length / line_count) | 0;
-  // console.debug(text_length, line_count, text_per_line);
-  element.setAttribute('text-per-line', text_per_line);
+  const text_per_line = (block.text_length / line_count) | 0;
+
+  // TEMP: debugging
+  // console.debug(block.text_length, line_count, text_per_line);
+  block.element.setAttribute('text-per-line', text_per_line);
 
   // Text with lots of lines and a short amount of text per line is probably
   // boilerplate, where as text with lots of text per line are probably content.
@@ -333,56 +451,13 @@ function derive_line_count_bias(element) {
   }
 }
 
-// Returns an approximate count of the number of lines in a block of text
-function count_text_lines(element) {
-  // Special handling for preformatted text
-  let newline_count = 0;
-  if (['pre', 'code'].includes(element.localName)) {
-    const lines = element.textContent.split('\n');
-    newline_count = lines.length;
-  }
+function derive_anchor_density_bias(block) {
+  const ratio = block.anchor_text_length / (block.text_length || 1);
 
-  // Use the number of descendant flow-breaking elements as an estimate of
-  // line length.
-  // TODO: make this more exhaustive, look for typical flow-breaking elements,
-  // maybe consider any other container-type block. In fact maybe instead of
-  // line count I should be looking at text-to-child-blocks ratio.
-  const splitters = ['br', 'p', 'td', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr'];
-  const selector = splitters.join(',');
-  const elements = element.querySelectorAll(splitters);
-  let line_count = elements.length;
-  line_count += newline_count;
-
-  // Always count the first line as a line
-  if (line_count === 0) {
-    line_count = 1;
-  }
-
-  return line_count;
-}
-
-function derive_anchor_density_bias(element) {
-  // Indicate no bias on anchors themselves
-  if (element.localName === 'a') {
+  if (block.element_type === 'a') {
+    // This heuristic is only valid for non-anchor blocks
     return 0;
-  }
-
-  const anchor_length = derive_anchor_length(element);
-
-  // Do not bias when there is no anchor text
-  if (!anchor_length) {
-    return 0;
-  }
-
-  // This includes the characters that were within anchors together with those
-  // not in anchors.
-  const text_length = get_text_length(element.textContent);
-  const ratio = anchor_length / text_length;
-
-  // These are the deltas from the baseline of 50. Negative means it is that
-  // much more likely to be boilerplate. Positive means less likely to be
-  // boilerplate. These are hand-crafted and might be poor estimations
-  if (ratio > 0.9) {
+  } else if (ratio > 0.9) {
     return -40;
   } else if (ratio > 0.5) {
     return -20;
@@ -402,21 +477,10 @@ function get_text_length(text) {
   return condensed_text.length;
 }
 
-// Find the count of characters in anchors that are anywhere in the
-// descendant hierarchy of this element. This assumes anchors do not contain
-// each other (e.g. not misnested).
-function derive_anchor_length(element) {
-  const anchors = element.querySelectorAll('a[href]');
-  let anchor_length = 0;
-  for (const anchor of anchors) {
-    const text_length = get_text_length(anchor.textContent);
-    anchor_length += text_length;
-  }
-  return anchor_length;
-}
 
-function derive_element_type_bias(element) {
-  const bias = type_bias_map[element.localName];
+
+function derive_element_type_bias(block) {
+  const bias = type_bias_map[block.element_type];
   return bias ? bias : 0;
 }
 
@@ -429,7 +493,7 @@ function derive_paragraph_bias(element) {
     }
   }
 
-  let bias = pcount * 2;
+  let bias = pcount * 5;
   bias = Math.min(20, bias);
   return bias;
 }
@@ -490,10 +554,17 @@ function derive_form_bias(element) {
   if (fields.length > 10) {
     return 0;
   } else if (fields.length > 0) {
-    return -20;
+    return -10;
   } else {
     return 0;
   }
+}
+
+function derive_list_bias(element) {
+  const items = element.querySelectorAll('li, dd, dt');
+  let bias = -1 * items.length;
+  bias = Math.max(-20, bias);
+  return bias;
 }
 
 // Look at the values of attributes of a block element to indicate whether a
@@ -528,6 +599,7 @@ function derive_attribute_bias(element) {
   const token_set = [];
 
   // Inexact, just an upper bound to try and reduce calls
+  // TODO: this should be a parameter to function, and treated as constant
   const max_token_len = 15;
 
   let bias = 0;
@@ -548,7 +620,51 @@ function tokenize(value) {
   return value.split(/[\s\-_0-9]+/g);
 }
 
+// Find the count of characters in anchors that are anywhere in the
+// descendant hierarchy of this element. This assumes anchors do not contain
+// each other (e.g. not misnested).
+function derive_anchor_length(block) {
+  const element = block.element;
+  const anchors = element.querySelectorAll('a[href]');
+  let anchor_length = 0;
+  for (const anchor of anchors) {
+    const text_length = get_text_length(anchor.textContent);
+    anchor_length += text_length;
+  }
+  return anchor_length;
+}
+
+// Returns an approximate count of the number of lines in a block of text
+function count_text_lines(block) {
+  if (!block.text_length) {
+    return 1;
+  }
+
+  // Use the number of descendant flow-breaking elements as an estimate of
+  // line length.
+
+  const selector = line_splitter_element_names.join(',');
+  const elements = block.element.querySelectorAll(line_splitter_element_names);
+  let line_count = elements.length;
+
+  // Special handling for preformatted text
+  let newline_count = 0;
+  if (['pre', 'code'].includes(block.element_type)) {
+    const lines = block.element.textContent.split('\n');
+    newline_count = lines.length;
+  }
+  line_count += newline_count;
+
+  // Always count the first line as a line
+  if (line_count === 0) {
+    line_count = 1;
+  }
+
+  return line_count;
+}
+
 const token_weights = {
+  account: -10,
   ad: -50,
   ads: -50,
   advert: -50,
@@ -563,6 +679,7 @@ const token_weights = {
   col: -2,
   colm: -2,  // alternate abbr for column
   comment: -40,
+  contact: -10,
   content: 20,
   contentpane: 50,
   copyright: -10,
@@ -573,48 +690,65 @@ const token_weights = {
   dsq: -30,  // disqus abbreviation
   entry: 10,
   fb: -5,  // facebook
+  fixture: -5,
   footer: -20,
+  furniture: -5,
   gutter: -30,
+  header: -10,
   headline: -10,
   keywords: -10,
   left: -20,
   links: -10,
+  list: -10,
+  login: -30,
   main: 30,
   meta: -30,
   metadata: -10,
+  mini: -5,
   more: -15,
   nav: -30,
   navbar: -30,
+  navigation: -20,
   newsarticle: 50,
   newsletter: -20,
   page: 10,
   popular: -30,
   post: 5,
+  primary: 10,
   promo: -50,
+  promotion: -50,
   rail: -50,
   recirculation: -20,
   recommend: -10,
   recommended: -10,
+  register: -30,
   rel: -50,
   relate: -50,
   related: -50,
   right: -50,
+  secondary: -20,
+  share: -20,
   side: -5,
   sidebar: -20,
   sign: -10,
   signup: -30,
   social: -30,
+  splash: -10,
   story: 50,
   storytxt: 50,
   stub: -10,
   subscription: -20,
   tag: -15,
   tags: -20,
+  tease: -20,
+  teaser: -20,
   thread: -10,
   tool: -30,
   tools: -30,
+  top: -10,
   trend: -5,
   trending: -10,
+  utility: -10,
   widget: -20,
   zone: -20
 };
@@ -659,5 +793,13 @@ const token_weights = {
 // TODO: penalize all next-siblings of footer elements, and all prev siblings
 // of header elements
 
-// TODO: decouple from string module, even though this re-uses one function, it
-// would be beneficial to be standalone
+// TODO: depth bias - the closer the content is to the root node, the less
+// likely it is bias. this should hopefully offset the over-penalization of
+// the root, which blanks the article
+
+// TODO: do a final pass that checks if too little percentage of the annotated
+// content is non-boilerplate, and if so, halve the penalties or something
+// and reclassify. This is a bailout because the heurstics are too harsh for
+// certain content. Basially there should be a minimum amount of content that
+// always passes through the filter. To do this efficiently I need to pass over
+// block.score. So this has to wait until that is implemented.
