@@ -31,8 +31,11 @@ const type_bias_map = {
   pre: 5,
 };
 
-const default_average_document_area = 1500 * 2000;
+// The typical dimensions of a document
+const default_document_area = 1500 * 2000;
 
+// TODO: block-element-names is redundant with the type bias map, maybe the two
+// should be merged somehow
 
 // Names of elements that tend to represent distinguishable areas of content.
 // These blocks are generally what will be individually retained or removed
@@ -53,22 +56,17 @@ const block_element_names = [
   'table',   'td',     'tr',         'ul'
 ];
 
-// The presence of these elements within an element's descendant hierarchy
-// is a rough indication of content spanning over a new line.
-// TODO: make this more exhaustive, look for typical flow-breaking elements,
-// maybe consider any other container-type block. In fact maybe instead of
-// line count I should be looking at text-to-child-blocks ratio.
-const line_splitter_element_names = [
-  'br', 'dt', 'dd', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'li', 'menuitem',
-  'p', 'tr'
-];
 
-// Elements are scored on a scale of [0..100]. I've chosen this over using
+// Blocks are scored on a scale of [0..100]. I've chosen this range over using
 // negative scores to keep it simple and to treat scores as unsigned. A score
 // is similar to a probability of boilerplate. A score of 0 means that we are
 // confident a block is content, and a score of 100 means we are confident a
-// block is boilerplate. A score of 50 means we totally unsure.
+// block is boilerplate. A score of 50 means we are unsure.
 const neutral_score = 50;
+
+// TODO: use an options object. i feel like there might be new options in the
+// future, but i want to maintain the same api. using an options object would
+// make this easy.
 
 // Marks up some of the elements of a document based on whether the elements are
 // boilerplate. There are several attributes added to various elements, along
@@ -101,14 +99,13 @@ const neutral_score = 50;
 // content in the middle. Content in the tails is more likely to be boilerplate,
 // so increasing tail size will tend to increase the amount of boilerplate
 // found.
-// @param average_document_area {Number} optional, defaults to the default
+// @param document_area {Number} optional, defaults to the default
 // constant defined in this module, used to approximate the area of a typical
 // desktop screen. This assumes that any given document is generally viewed full
 // screen. This is used to estimate the proportional area of a block based
 // on any images it contains.
 export function annotate(
-    document, tail_size = 0.2,
-    average_document_area = default_average_document_area) {
+    document, tail_size = 0.2, document_area = default_document_area) {
   if (!document) {
     throw new TypeError('document must be an instance of Document');
   }
@@ -117,16 +114,16 @@ export function annotate(
     throw new TypeError('tail_size is not a number');
   }
 
-  if (tail_size < 0 || tail_size > 0.5) {
-    throw new RangeError('tail_size must be in the range [0 .. 0.5]');
+  if (tail_size < 0 || tail_size >= 0.5) {
+    throw new RangeError('tail_size must be in the range [0..0.5)');
   }
 
-  if (isNaN(average_document_area)) {
-    throw new TypeError('average_document_area is not a number');
+  if (isNaN(document_area)) {
+    throw new TypeError('document_area is not a number');
   }
 
-  if (average_document_area < 0) {
-    throw new TypeError('average_document_area should be a positive integer');
+  if (document_area < 0) {
+    throw new TypeError('document_area should be a positive integer');
   }
 
   // Analysis is restricted to body, because content only appears in the body
@@ -178,28 +175,29 @@ export function annotate(
 
   const info = {
     text_length: document_text_length,
-    elements_length: num_elements,
     front_max: front_max,
     end_min: end_min,
-    area: average_document_area
+    area: document_area
   };
 
-  const blocks = create_blocks(elements, num_elements);
+  const blocks = create_blocks(elements);
 
   for (const block of blocks) {
     extract_block_features(block, info);
-  }
-
-  for (const block of blocks) {
     annotate_block(block, info);
   }
 }
 
 // Tokenize the elements array into an array of blocks. Returns an array of
-// block objects.
-function create_blocks(elements, elements_length) {
+// block objects. Not all elements are mapped into blocks.
+function create_blocks(elements) {
+  // We cannot use filter and map here, because it is not ergonomic, because we
+  // want the index into the elements array, without having to track it using
+  // a hidden property mutation on each element object. Writing hidden
+  // properties to dom objects is bad.
+
   const blocks = [];
-  for (let i = 0; i < elements_length; i++) {
+  for (let i = 0, len = elements.length; i < len; i++) {
     const element = elements[i];
     if (block_element_names.includes(element.localName)) {
       const block = new Block();
@@ -246,9 +244,12 @@ function Block() {
   // table, a new table row, etc.
   this.line_count = 0;
 
-  // The block's content score. On scale of [0..100]. 50 means neutral. 0 means
-  // good content, 100 means boilerplate. All blocks start off as neutral.
-  this.score = 50;
+  this.image_area = 0;
+
+  // NOTE: this is not yet fully implemented
+  this.attribute_tokens = [];
+
+  this.score = neutral_score;
 }
 
 // Populates other properties of the block based on the block's content. The
@@ -256,34 +257,42 @@ function Block() {
 // the latent information that is in the content blob into individual
 // properties.
 function extract_block_features(block, info) {
-  block.depth = derive_block_depth(block);
+  block.depth = get_block_depth(block);
   block.text_length = get_text_length(block.element.textContent);
-  block.line_count = count_text_lines(block);
-  block.anchor_text_length = derive_anchor_length(block);
+  block.line_count = get_line_count(block);
+  block.anchor_text_length = get_anchor_text_length(block);
+  block.image_area = get_block_image_area(block);
+  block.attribute_tokens = get_block_attribute_tokens(block);
 }
 
-function derive_block_depth(block) {
-  const element = block.element;
+function get_block_depth(block) {
+  let node = block.element.parentNode;
   let depth = 0;
-
-  for (let node = element.parentNode; node; node = node.parentNode) {
+  while (node) {
+    node = node.parentNode;
     depth++;
   }
   return depth;
 }
 
-// Determine whether a block is boilerplate.
-// @param element {Element} the element to analyze and annotate
-// @param index {Number} the index into the all-elements array
-// @param num_elements {Number} the length of the all elements array
-// @param document_text_length {Number} the approximate character count of all
-// text in document.body
-// @param front_max {Number} the cutoff index into the all-elements array below
-// which an element is considered to be near the start of the document, and
-// after which an element is considered to be in the middle of the document
-// @param end_min {Number} the cutoff index into the all-elements array below
-// which an element is in the middle, and after is near the end.
-// @param average_document_area {Number} the approximate size of the window
+// This is a conservative approach to calculating total area from descendant
+// images. This assumes that images within the block have explicit width and
+// height attributes, and therefore have initialized width and height
+// properties.
+function get_block_image_area(block) {
+  const images = block.element.getElementsByTagName('img');
+  let area = 0;
+  for (const image of images) {
+    area += image.width * image.height;
+  }
+  return area;
+}
+
+function get_block_attribute_tokens(block) {
+  // Not yet implemented, see the todos for derive_attribute_bias
+}
+
+// Determine whether a block is boilerplate
 function annotate_block(block, doc_info) {
   const element = block.element;
   const index = block.element_index;
@@ -291,11 +300,10 @@ function annotate_block(block, doc_info) {
   // TODO: there is no need to perform these variable assignments. These
   // statements are part of a temporary refactor where I modified the parameters
   // to annotate_block, just to keep the function working after the refactor.
-  const num_elements = doc_info.elements_length;
   const document_text_length = doc_info.text_length;
   const front_max = doc_info.front_max;
   const end_min = doc_info.end_min;
-  const average_document_area = doc_info.area;
+  const document_area = doc_info.area;
 
   // TODO: rename bias to score
   // TODO: break these analysis steps into two parts. The first pass is feature
@@ -306,7 +314,7 @@ function annotate_block(block, doc_info) {
 
   let bias = neutral_score;
 
-  const depth_bias = derive_depth_bias(block);
+  const depth_bias = derive_depth_bias(block.depth);
   element.setAttribute('depth-bias', depth_bias);
   bias += depth_bias;
 
@@ -338,7 +346,7 @@ function annotate_block(block, doc_info) {
   element.setAttribute('form-bias', form_bias);
   bias += form_bias;
 
-  const image_bias = derive_image_bias(element, average_document_area);
+  const image_bias = derive_image_bias(block, document_area);
   element.setAttribute('image-bias', image_bias);
   bias += image_bias;
 
@@ -347,7 +355,7 @@ function annotate_block(block, doc_info) {
   element.setAttribute('position-bias', position_bias);
   bias += position_bias;
 
-  const attribute_bias = derive_attribute_bias(element);
+  const attribute_bias = derive_attribute_bias(block);
   element.setAttribute('attribute-bias', attribute_bias);
   bias += attribute_bias;
 
@@ -378,23 +386,20 @@ function annotate_block(block, doc_info) {
   }
 }
 
-function derive_depth_bias(block) {
-  const d = block.depth;
-
-
-  if (d < 2) {
-    // documentElement is 0
-    // body is 1
-    return 50;
-  } else if (d < 4) {
-    return 20;
-  } else if (d < 5) {
-    return 5;
-  } else if (d < 10) {
-    return 0;
-  } else {
-    return -2;
-  }
+// Calculates a bias that should increase or decrease an element's boilerplate
+// score based on the element's depth. The general heuristic is that the deeper
+// the node, the greater the probability it is boilerplate. There is no risk
+// of the document element or the body element from being scored because
+// analysis starts from within body, so depth values 0 and 1 are grouped into
+// the first bin and do not get any explicit treatment.
+function derive_depth_bias(depth) {
+  // NOTE: the coefficient is was chosen empirical, need to do actual analysis
+  // using something like linear regression, i am not even sure depth is a great
+  // independent variable, this is also why i capped it to limit its impact
+  const slope = -4;
+  let bias = slope * depth + 20;
+  bias = Math.max(-10, Math.min(10, bias));
+  return bias;
 }
 
 function derive_text_length_bias(block, info) {
@@ -424,18 +429,16 @@ function derive_line_count_bias(block) {
     return 0;
   }
 
-  const line_count = block.line_count;
-
   // Ignore text that is basically too small. The line count heuristic probably
   // is not worth that much in this case. The inference is too tenuous.
-  if (line_count < 3) {
+  if (block.line_count < 3) {
     return 0;
   }
 
-  const text_per_line = (block.text_length / line_count) | 0;
+  const text_per_line = (block.text_length / block.line_count) | 0;
 
   // TEMP: debugging
-  // console.debug(block.text_length, line_count, text_per_line);
+  // console.debug(block.text_length, block.line_count, text_per_line);
   block.element.setAttribute('text-per-line', text_per_line);
 
   // Text with lots of lines and a short amount of text per line is probably
@@ -451,13 +454,13 @@ function derive_line_count_bias(block) {
   }
 }
 
+// Assumes that anchors are not blocks themselves
 function derive_anchor_density_bias(block) {
   const ratio = block.anchor_text_length / (block.text_length || 1);
 
-  if (block.element_type === 'a') {
-    // This heuristic is only valid for non-anchor blocks
-    return 0;
-  } else if (ratio > 0.9) {
+  // TODO: instead of binning, using a coefficient
+
+  if (ratio > 0.9) {
     return -40;
   } else if (ratio > 0.5) {
     return -20;
@@ -469,15 +472,13 @@ function derive_anchor_density_bias(block) {
 }
 
 function get_text_length(text) {
-  // We trim separately so that basic text nodes like author pressing
-  // enter between elements are completely excluded
+  // Exclude trailing whitespace entirely. This effectively excludes common
+  // text nodes such as '\t\n' from contributing to length.
   const trimmed_text = text.trim();
-  // then we condense so as to normalize inner extra space
+  // Condense inner whitespace
   const condensed_text = trimmed_text.replace(/\s{2,}/g, ' ');
   return condensed_text.length;
 }
-
-
 
 function derive_element_type_bias(block) {
   const bias = type_bias_map[block.element_type];
@@ -498,45 +499,8 @@ function derive_paragraph_bias(element) {
   return bias;
 }
 
-
-
-function derive_image_bias(element, average_document_area) {
-  const max_width = 2000;
-  const max_height = 1500;
-
-  // This is a conservative approach to calculating total area from nested
-  // images
-
-  const images = element.querySelectorAll('img');
-  let total_image_area = 0;
-  for (const image of images) {
-    if (image.width && image.height) {
-      const area =
-          Math.min(image.width, max_width) * Math.min(image.height, max_height);
-      if (area > 0) {
-        total_image_area += area;
-      }
-    }
-  }
-
-  if (total_image_area < 1) {
-    return 0;
-  }
-
-  // TEMP: debugging
-  element.setAttribute('image-area', total_image_area);
-
-  const ratio = total_image_area / average_document_area;
-
-  if (ratio > 0.9) {
-    return 15;
-  } else if (ratio > 5) {
-    return 10;
-  } else if (ratio > 1) {
-    return 5;
-  } else {
-    return 0;
-  }
+function derive_image_bias(block, doc_area) {
+  return Math.min(50, (50 * block.image_area / doc_area) | 0);
 }
 
 function derive_position_bias(element, index, front_max, end_min) {
@@ -560,21 +524,37 @@ function derive_form_bias(element) {
   }
 }
 
+
+// TODO: this incorrectly penalizes certain lists, for example see
+// https://theoutline.com/post/5208/eating-gummies-is-not-a-substitute-for-wearing-sunscreen
+// Maybe this should be excluding ol/ul/dl themselves from being analyzed, and
+// doing something like comparing it to neighboring text length. boilerplate
+// tends to have very little text outside of the list, but in-main-content-area
+// lists tend to have a lot of surrounding text. also note in the example page
+// that the list in question does not have any links. Using -1 might be
+// overkill.
 function derive_list_bias(element) {
   const items = element.querySelectorAll('li, dd, dt');
   let bias = -1 * items.length;
-  bias = Math.max(-20, bias);
+  bias = Math.max(-10, bias);
   return bias;
 }
 
+
+// TODO: use block.attribute_tokens instead. attribute_tokens should represent
+// the set, that means i need to change the loop in derive_attribute_bias, and
+// use two loops, one loop that creates the set and ensures uniqueness, then
+// the second loop that iterates over the set and calcs bias. This function
+// should work off the set (as an array).
+
 // Look at the values of attributes of a block element to indicate whether a
 // block represents boilerplate
-function derive_attribute_bias(element) {
+function derive_attribute_bias(block) {
   // Accessing attribute values by property appears to be a tiny bit faster
 
   const vals = [
-    element.id, element.name, element.className,
-    element.getAttribute('itemprop')
+    block.element.id, block.element.name, block.element.className,
+    block.element.getAttribute('itemprop')
   ];
 
   // It is not obvious, so note that join implicitly filters undefined values so
@@ -623,7 +603,7 @@ function tokenize(value) {
 // Find the count of characters in anchors that are anywhere in the
 // descendant hierarchy of this element. This assumes anchors do not contain
 // each other (e.g. not misnested).
-function derive_anchor_length(block) {
+function get_anchor_text_length(block) {
   const element = block.element;
   const anchors = element.querySelectorAll('a[href]');
   let anchor_length = 0;
@@ -635,13 +615,32 @@ function derive_anchor_length(block) {
 }
 
 // Returns an approximate count of the number of lines in a block of text
-function count_text_lines(block) {
+function get_line_count(block) {
   if (!block.text_length) {
     return 1;
   }
 
   // Use the number of descendant flow-breaking elements as an estimate of
   // line length.
+
+  // The presence of these elements within an element's descendant hierarchy
+  // is a rough indication of content spanning over a new line.
+  //
+  // These do not necessarily correspond to block elements.
+  //
+  // This array is defined per call, but it is const, and I assume v8 is smart
+  // enough to hoist this invariant if this function gets hot. I think the
+  // proper style is to define a variable as local as possible without regard
+  // for optimization. I am still a bit wary of this.
+  //
+  // TODO: make this more exhaustive, look for typical flow-breaking elements,
+  // maybe consider any other container-type block. In fact maybe instead of
+  // line count I should be looking at text-to-child-blocks ratio. Maybe also
+  // include some of the other block elements as flow-breaking.
+  const line_splitter_element_names = [
+    'br', 'dt', 'dd', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'li',
+    'menuitem', 'p', 'tr'
+  ];
 
   const selector = line_splitter_element_names.join(',');
   const elements = block.element.querySelectorAll(line_splitter_element_names);
@@ -695,7 +694,7 @@ const token_weights = {
   furniture: -5,
   gutter: -30,
   header: -10,
-  headline: -10,
+  headline: -5,
   keywords: -10,
   left: -20,
   links: -10,
@@ -752,6 +751,7 @@ const token_weights = {
   widget: -20,
   zone: -20
 };
+
 
 
 // TODO: think about image-in-list stuff, such as related-posts sections
