@@ -34,6 +34,9 @@ const type_bias_map = {
 // The typical dimensions of a document
 const default_document_area = 1500 * 2000;
 
+// The percentage of content that must remain after boilerplate analysis.
+const default_minimum_content_threshold = 0.2;
+
 // TODO: block-element-names is redundant with the type bias map, maybe the two
 // should be merged somehow
 
@@ -105,7 +108,8 @@ const neutral_score = 50;
 // screen. This is used to estimate the proportional area of a block based
 // on any images it contains.
 export function annotate(
-    document, tail_size = 0.2, document_area = default_document_area) {
+    document, tail_size = 0.2, document_area = default_document_area,
+    minimum_content_threshold = default_minimum_content_threshold) {
   if (!document) {
     throw new TypeError('document must be an instance of Document');
   }
@@ -152,13 +156,8 @@ export function annotate(
   // almost always use querySelectorAll to allow for easier mutation during
   // iteration.
   const elements = document.body.getElementsByTagName('*');
-
-  // Calculate the length once, as this is not actually a simple property access
   const num_elements = elements.length;
 
-  // Given that we know there is non-0 text length, 0-elements means body is
-  // just a bunch of non-element nodes. There is no point to analysis because it
-  // all looks like content.
   if (!num_elements) {
     return;
   }
@@ -186,6 +185,62 @@ export function annotate(
     extract_block_features(block, info);
     annotate_block(block, info);
   }
+
+  ensure_minimum_content(blocks, info, minimum_content_threshold);
+  set_boilerplate_score(blocks);
+  derive_boilerplate_category(blocks);
+}
+
+// An element's score indicates whether it is boilerplate. A higher score means
+// less likely to be boilerplate.
+// TODO: implement, for now this just spews a warning
+// TODO: adjust the scores of certain blocks until the minimum threshold
+// is met. How do I adjust? Maybe use a loop? Maybe calculate the amount needed
+// to adjust, then equally adjust things? We want to increment just up to the
+// threshold and not past it. If I use a loop, how fast should it correct? In
+// how many iterations? Do I do something like just increment score by 1, then
+// have a ton of iterations? How safe is the loops stopping condition?
+// TODO: should I be using content length or number of blocks to number of
+// elements?
+// TODO: should this function be broken up into pieces, and the caller instead
+// should be assembling those pieces? This might be the wrong abstraction.
+// TODO: block annotation hardcodes the derived 'boilerplate' attribute, this
+// needs to happen after this step instead, but right now it happens before so
+// it will be wrong
+function ensure_minimum_content(
+    blocks, document_info, minimum_content_threshold) {
+  const content_text_length = get_content_length(blocks);
+  let ratio = content_text_length / document_info.text_length;
+
+  const max_iterations = 20;
+  let iterations = 0;
+  while (ratio < minimum_content_threshold && iterations < max_iterations) {
+    for (const block of blocks) {
+      if (block.score < neutral_score) {
+        block.score += 1;
+      }
+    }
+
+    ratio = content_text_length / document_info.text_length;
+    iterations++;
+  }
+
+  // TEMP: debugging
+  if (iterations > 0) {
+    console.debug('Iteration count for adjustment', iterations);
+  }
+}
+
+// Get the total text length of all blocks that are content. Neutral blocks
+// are included.
+function get_content_length(blocks) {
+  let length = 0;
+  for (const block of blocks) {
+    if (block.score <= neutral_score) {
+      length += block.text_length;
+    }
+  }
+  return length;
 }
 
 // Tokenize the elements array into an array of blocks. Returns an array of
@@ -293,96 +348,97 @@ function get_block_attribute_tokens(block) {
 }
 
 // Determine whether a block is boilerplate
+// TODO: break these analysis steps into two parts. The first pass is feature
+// extraction, where I populate the block's properties with minimal analysis.
+// The second pass is where functions examine the block's properties to
+// calculate the block's score. The set of functions is the model, and the
+// calculation of the block's score is the scoring of the block. Note that this
+// todo is in progress, some of the steps have been split up but others have
+// not.
 function annotate_block(block, doc_info) {
-  const element = block.element;
-  const index = block.element_index;
-
-  // TODO: there is no need to perform these variable assignments. These
-  // statements are part of a temporary refactor where I modified the parameters
-  // to annotate_block, just to keep the function working after the refactor.
-  const document_text_length = doc_info.text_length;
-  const front_max = doc_info.front_max;
-  const end_min = doc_info.end_min;
-  const document_area = doc_info.area;
-
-  // TODO: rename bias to score
-  // TODO: break these analysis steps into two parts. The first pass is feature
-  // extraction, where I populate the block's properties with minimal analysis.
-  // The second pass is where functions examine the block's properties to
-  // calculate the block's score. The set of functions is the model, and the
-  // calculation of the block's score is the scoring of the block.
-
-  let bias = neutral_score;
+  let score = neutral_score;
 
   const depth_bias = derive_depth_bias(block.depth);
-  element.setAttribute('depth-bias', depth_bias);
-  bias += depth_bias;
+  block.element.setAttribute('depth-bias', depth_bias);
+  score += depth_bias;
 
   const type_bias = derive_element_type_bias(block);
-  element.setAttribute('type-bias', type_bias);
-  bias += type_bias;
+  block.element.setAttribute('type-bias', type_bias);
+  score += type_bias;
 
   const text_bias = derive_text_length_bias(block, doc_info);
-  element.setAttribute('text-bias', text_bias);
-  bias += text_bias;
+  block.element.setAttribute('text-bias', text_bias);
+  score += text_bias;
 
   const line_count_bias = derive_line_count_bias(block);
-  element.setAttribute('line-count-bias', line_count_bias);
-  bias += line_count_bias;
+  block.element.setAttribute('line-count-bias', line_count_bias);
+  score += line_count_bias;
 
   const anchor_density_bias = derive_anchor_density_bias(block);
-  element.setAttribute('anchor-density-bias', anchor_density_bias);
-  bias += anchor_density_bias;
+  block.element.setAttribute('anchor-density-bias', anchor_density_bias);
+  score += anchor_density_bias;
 
-  const list_bias = derive_list_bias(element);
-  element.setAttribute('list-bias', list_bias);
-  bias += list_bias;
+  const list_bias = derive_list_bias(block.element);
+  block.element.setAttribute('list-bias', list_bias);
+  score += list_bias;
 
-  const paragraph_bias = derive_paragraph_bias(element);
-  element.setAttribute('paragraph-bias', paragraph_bias);
-  bias += paragraph_bias;
+  const paragraph_bias = derive_paragraph_bias(block.element);
+  block.element.setAttribute('paragraph-bias', paragraph_bias);
+  score += paragraph_bias;
 
-  const form_bias = derive_form_bias(element);
-  element.setAttribute('form-bias', form_bias);
-  bias += form_bias;
+  const form_bias = derive_form_bias(block.element);
+  block.element.setAttribute('form-bias', form_bias);
+  score += form_bias;
 
-  const image_bias = derive_image_bias(block, document_area);
-  element.setAttribute('image-bias', image_bias);
-  bias += image_bias;
+  const image_bias = derive_image_bias(block, doc_info.area);
+  block.element.setAttribute('image-bias', image_bias);
+  score += image_bias;
 
-  const position_bias =
-      derive_position_bias(element, index, front_max, end_min);
-  element.setAttribute('position-bias', position_bias);
-  bias += position_bias;
+  const position_bias = derive_position_bias(
+      block.element, block.element_index, doc_info.front_max, doc_info.end_min);
+  block.element.setAttribute('position-bias', position_bias);
+  score += position_bias;
 
   const attribute_bias = derive_attribute_bias(block);
-  element.setAttribute('attribute-bias', attribute_bias);
-  bias += attribute_bias;
+  block.element.setAttribute('attribute-bias', attribute_bias);
+  score += attribute_bias;
 
-  // Just leave neutral elements as is, there is nothing to do
-  if (bias === 50) {
-    return;
+  // We tolerate the score going temporarily out of range during analysis
+  // because this avoids losing some bias that would otherwise be truncated, but
+  // here we return it to within range
+  score = Math.max(0, Math.min(score, 100));
+
+  block.score = score;
+}
+
+function set_boilerplate_score(blocks) {
+  for (const block of blocks) {
+    block.element.setAttribute('score', block.score);
   }
+}
 
-  // Clamp bias in [0..100]. We allow for the probability to go out of range
-  // during analysis, but here we return it to within range. We allow it to
-  // temporarily go out of range because this avoids losing some bias that
-  // would otherwise be truncated away if we keep bias within range.
-  bias = Math.min(bias, 100);
-  bias = Math.max(0, bias);
-
-  element.setAttribute('boilerplate-bias', bias);
-
-  if (bias > 75) {
-    element.setAttribute('boilerplate', 'lowest');
-  } else if (bias > 50) {
-    element.setAttribute('boilerplate', 'low');
-  } else if (bias === 50) {
-    element.setAttribute('boilerplate', 'neutral');
-  } else if (bias > 25) {
-    element.setAttribute('boilerplate', 'high');
-  } else {
-    element.setAttribute('boilerplate', 'highest');
+// Set the boilerplate attribute for each block based on its score. This
+// basically bins the scores from a numerical variable into a categorical
+// variable
+// TODO: do I even need to set if neutral? I do need to exclude, but do I need
+// to set? It feels like that is the implied default, so why be explicit? Other
+// than indicating the block was analyzed (once all other indicators removed)
+// I do not see any obvious benefit.
+function derive_boilerplate_category(blocks) {
+  for (const block of blocks) {
+    const bias = block.score;
+    const element = block.element;
+    if (bias > 75) {
+      element.setAttribute('boilerplate', 'lowest');
+    } else if (bias > 50) {
+      element.setAttribute('boilerplate', 'low');
+    } else if (bias === 50) {
+      element.setAttribute('boilerplate', 'neutral');
+    } else if (bias > 25) {
+      element.setAttribute('boilerplate', 'high');
+    } else {
+      element.setAttribute('boilerplate', 'highest');
+    }
   }
 }
 
