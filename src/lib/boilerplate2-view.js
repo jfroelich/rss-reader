@@ -47,7 +47,7 @@ async function bptest(url_string) {
     noscript.remove();
   }
 
-  // Carry out the actual analysis
+  // Carry out the actual analysis using default options
   bp.annotate(doc);
 
   // Reset the view explicitly. There are some strange shenanigans that can

@@ -67,10 +67,6 @@ const block_element_names = [
 // block is boilerplate. A score of 50 means we are unsure.
 const neutral_score = 50;
 
-// TODO: use an options object. i feel like there might be new options in the
-// future, but i want to maintain the same api. using an options object would
-// make this easy.
-
 // Marks up some of the elements of a document based on whether the elements are
 // boilerplate. There are several attributes added to various elements, along
 // with a key attribute named "boilerplate" that ultimately indicates whether
@@ -94,7 +90,7 @@ const neutral_score = 50;
 // keeps it easy to analyze classification errors.
 //
 // @param document {Document} an html document, preferably inert
-// @param tail-size {Number} optional, should be between 0 and 0.5. The
+// @option tail-size {Number} optional, should be between 0 and 0.5. The
 // algorithm divides the document into sections of start, middle, and end.
 // The tail size is the approximate size of each of the start and end sections,
 // e.g. a tail size of 0.2 means that the start section is about 20% of the
@@ -102,14 +98,19 @@ const neutral_score = 50;
 // content in the middle. Content in the tails is more likely to be boilerplate,
 // so increasing tail size will tend to increase the amount of boilerplate
 // found.
-// @param document_area {Number} optional, defaults to the default
+// @option document_area {Number} optional, defaults to the default
 // constant defined in this module, used to approximate the area of a typical
 // desktop screen. This assumes that any given document is generally viewed full
 // screen. This is used to estimate the proportional area of a block based
 // on any images it contains.
-export function annotate(
-    document, tail_size = 0.2, document_area = default_document_area,
-    minimum_content_threshold = default_minimum_content_threshold) {
+export function annotate(document, options = {}) {
+  const tail_size = isNaN(options.tail_size) ? 0.2 : options.tail_size;
+  const document_area = isNaN(options.document_area) ? default_document_area :
+                                                       options.document_area;
+  const minimum_content_threshold = isNaN(options.minimum_content_threshold) ?
+      default_minimum_content_threshold :
+      options.minimum_content_threshold;
+
   if (!document) {
     throw new TypeError('document must be an instance of Document');
   }
@@ -188,7 +189,10 @@ export function annotate(
 
   ensure_minimum_content(blocks, info, minimum_content_threshold);
   set_boilerplate_score(blocks);
-  derive_boilerplate_category(blocks);
+
+  for (const block of blocks) {
+    derive_boilerplate_category(blocks);
+  }
 }
 
 // An element's score indicates whether it is boilerplate. A higher score means
@@ -209,18 +213,37 @@ export function annotate(
 // it will be wrong
 function ensure_minimum_content(
     blocks, document_info, minimum_content_threshold) {
-  const content_text_length = get_content_length(blocks);
-  let ratio = content_text_length / document_info.text_length;
+  if (!document_info.text_length) {
+    return;
+  }
 
+  if (!blocks.length) {
+    return;
+  }
+
+
+  // This is about how far we are willing to go before giving up on promoting
+  // boilerplate into content (given score adjustment by 1% at a time).
   const max_iterations = 20;
   let iterations = 0;
+
+  // Loop over the blocks, uniformly incrementing boilerplate block scores a bit
+  // each iteration, until we reach the minimum content threshold or give up
+  // after a number of iterations.
+  let content_text_length = get_content_length(blocks);
+  let ratio = content_text_length / document_info.text_length;
   while (ratio < minimum_content_threshold && iterations < max_iterations) {
+    // Slightly adjust all boilerplate blocks. We do not favor any particular
+    // block, everything gets a bump.
     for (const block of blocks) {
       if (block.score < neutral_score) {
         block.score += 1;
       }
     }
 
+    // Now recount the non-boilerplate block length, which may have changed,
+    // and recalculate the ratio for the next iteration.
+    content_text_length = get_content_length(blocks);
     ratio = content_text_length / document_info.text_length;
     iterations++;
   }
@@ -417,28 +440,27 @@ function set_boilerplate_score(blocks) {
   }
 }
 
-// Set the boilerplate attribute for each block based on its score. This
-// basically bins the scores from a numerical variable into a categorical
-// variable
+// Set the boilerplate attribute of a block based on its score. This
+// basically bins the score from a numerical variable into a categorical
+// variable.
 // TODO: do I even need to set if neutral? I do need to exclude, but do I need
 // to set? It feels like that is the implied default, so why be explicit? Other
 // than indicating the block was analyzed (once all other indicators removed)
 // I do not see any obvious benefit.
-function derive_boilerplate_category(blocks) {
-  for (const block of blocks) {
-    const bias = block.score;
-    const element = block.element;
-    if (bias > 75) {
-      element.setAttribute('boilerplate', 'lowest');
-    } else if (bias > 50) {
-      element.setAttribute('boilerplate', 'low');
-    } else if (bias === 50) {
-      element.setAttribute('boilerplate', 'neutral');
-    } else if (bias > 25) {
-      element.setAttribute('boilerplate', 'high');
-    } else {
-      element.setAttribute('boilerplate', 'highest');
-    }
+function derive_boilerplate_category(block) {
+  const bias = block.score;
+  const element = block.element;
+  if (bias > 75) {
+    element.setAttribute('boilerplate', 'lowest');
+  } else if (bias > 50) {
+    element.setAttribute('boilerplate', 'low');
+  } else if (bias === 50) {
+    // Leave as is. A neutral block is equivalent to a not-analyzed block.
+    // element.setAttribute('boilerplate', 'neutral');
+  } else if (bias > 25) {
+    element.setAttribute('boilerplate', 'high');
+  } else {
+    element.setAttribute('boilerplate', 'highest');
   }
 }
 
@@ -556,7 +578,7 @@ function derive_paragraph_bias(element) {
 }
 
 function derive_image_bias(block, doc_area) {
-  return Math.min(50, (50 * block.image_area / doc_area) | 0);
+  return Math.min(70, (70 * block.image_area / doc_area) | 0);
 }
 
 function derive_position_bias(element, index, front_max, end_min) {
@@ -809,6 +831,20 @@ const token_weights = {
 };
 
 
+
+// TODO: if an image is large enough, it should be considered a block of its
+// own, and all the block handlers should have special treatment for image
+// blocks, and image (or maybe picture/figure?) should also be considered as
+// independent blocks. Right now things tend to work because images are almost
+// always in a separate container, but sometiems it doesn't work. The main
+// problem is some of the important content-images that appear in the large
+// article body get flagged as sub-boilerplate because they tend to be in a
+// block that has a couple links or other negative features that outweight the
+// image bias itself. At the same time this is problematic witih respect to the
+// idea that boilerplate blocks apply to all descendants, if the ancestor thinks
+// it is boilerplate the image score doesn't matter. in fact right now all
+// iamges are non-boilerplate. so really need to fix image ancestor score. maybe
+// the anchor density bias needs to take into account image size.
 
 // TODO: think about image-in-list stuff, such as related-posts sections
 // I think the reasoning here is that if an element looks like it occupies
