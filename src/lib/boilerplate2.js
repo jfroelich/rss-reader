@@ -31,6 +31,26 @@ const type_bias_map = {
   pre: 5,
 };
 
+const element_type_block_type_map = {
+  article: 'content_container',
+  blockquote: 'container',
+  section: 'container',
+  layer: 'container',
+  code: 'content_container',
+  div: 'container',
+  dl: 'list',
+  td: 'table',
+  table: 'table',
+  header: 'meta_container',
+  footer: 'meta_container',
+  ul: 'list',
+  aside: 'side_container',
+  nav: 'navigation',
+  menu: 'navigation',
+  ol: 'list',
+  pre: 'content_container',
+};
+
 // The typical dimensions of a document
 const default_document_area = 1500 * 2000;
 
@@ -180,18 +200,18 @@ export function annotate(document, options = {}) {
     area: document_area
   };
 
-  const blocks = create_blocks(elements);
+  const blocks =
+      Array.prototype.reduce.call(elements, reduce_element_to_block, []);
 
   for (const block of blocks) {
     extract_block_features(block, info);
-    annotate_block(block, info);
+    calc_block_score(block, info);
   }
 
   ensure_minimum_content(blocks, info, minimum_content_threshold);
-  set_boilerplate_score(blocks);
 
   for (const block of blocks) {
-    derive_boilerplate_category(blocks);
+    set_score_attributes(block);
   }
 }
 
@@ -249,42 +269,24 @@ function get_content_length(blocks) {
   return length;
 }
 
-// Tokenize the elements array into an array of blocks. Returns an array of
-// block objects. Not all elements are mapped into blocks.
-// TODO: We cannot use filter and map here, because it is not ergonomic,
-// because we want the maintain the index into the elements array. So consider
-// reduce? Or is this too hot?
-function create_blocks(elements) {
-  const blocks = [];
-  for (let i = 0, len = elements.length; i < len; i++) {
-    const element = elements[i];
-    if (block_element_names.includes(element.localName)) {
-      const block = new Block();
-      block.element = element;
-      block.element_index = i;
-
-      // TODO: this should be set during feature abstraction, it may end up
-      // being a more abstraction operation than this
-      block.element_type = element.localName;
-
-      blocks.push(block);
-    }
+function reduce_element_to_block(blocks, element, index) {
+  if (block_element_names.includes(element.localName)) {
+    blocks.push(new Block(element, index));
   }
-
   return blocks;
 }
 
 // A block is a representation of a portion of a document's content along with
 // some derived properties.
-function Block() {
+function Block(element, element_index = -1) {
   // A live reference to the node in the full document. Each block tracks its
   // represented root element to allow for deferring processing that depends
   // on the element into later iterations over the live dom.
-  this.element = undefined;
+  this.element = element;
 
   // index into all elements array. This is a representation of the position
   // of the block within the content. -1 means not set or invalid index.
-  this.element_index = -1;
+  this.element_index = element_index;
 
   // The element's type (e.g. the tagname), all lowercase, not qualified. This
   // is redundant with the live reference, but the live reference only exists
@@ -300,7 +302,6 @@ function Block() {
   // benefit is that the type-bias method would do a lookup within a smaller
   // map. Another benefit is that it feels less wonky to have the bias-map be
   // separate from the block-element-names array.
-
   this.element_type = undefined;
 
   // The number of node hops (edge traversals or path length) to the root
@@ -341,6 +342,8 @@ function Block() {
 // can easily be reused by later analytical steps, and to help organize the
 // overall process into smaller steps.
 function extract_block_features(block, info) {
+  block.element_type = block.element.localName;
+
   block.depth = get_node_depth(block.element);
   block.text_length = get_text_length(block.element.textContent);
   block.line_count = get_line_count(block);
@@ -391,7 +394,7 @@ function get_block_attribute_tokens(block) {
 // Determine whether a block is boilerplate
 // TODO: finish converting bias functions to rely on extracted features instead
 // of doing feature extraction within the functions themselves
-function annotate_block(block, doc_info) {
+function calc_block_score(block, doc_info) {
   let score = neutral_score;
 
   const depth_bias = derive_depth_bias(block.depth);
@@ -442,33 +445,23 @@ function annotate_block(block, doc_info) {
   // We tolerate the score going temporarily out of range during analysis
   // because this avoids truncation, up until this point where we record it
   score = Math.max(0, Math.min(score, 100));
-
   block.score = score;
 }
 
-// TODO: refactor to accept a single block as parameter, have the caller do the
-// loop, that way this is more flexible in how it is used, this also matches
-// the new style of derive-boilerplate-category
-function set_boilerplate_score(blocks) {
-  for (const block of blocks) {
-    block.element.setAttribute('score', block.score);
-  }
-}
-
-// Set the boilerplate attribute of a block based on its score. This
-// basically bins the score from a numerical variable into a categorical
-// variable.
-function derive_boilerplate_category(block) {
-  const bias = block.score;
+function set_score_attributes(block) {
+  const score = block.score;
   const element = block.element;
-  if (bias > 75) {
+
+  element.setAttribute('score', score);
+
+  // Also produce binned annotation
+  if (score > 75) {
     element.setAttribute('boilerplate', 'lowest');
-  } else if (bias > 50) {
+  } else if (score > 50) {
     element.setAttribute('boilerplate', 'low');
-  } else if (bias === 50) {
+  } else if (score === 50) {
     // Leave as is. A neutral block is equivalent to a not-analyzed block.
-    // element.setAttribute('boilerplate', 'neutral');
-  } else if (bias > 25) {
+  } else if (score > 25) {
     element.setAttribute('boilerplate', 'high');
   } else {
     element.setAttribute('boilerplate', 'highest');
@@ -852,8 +845,6 @@ const token_weights = {
   zone: -20
 };
 
-
-
 // TODO: if an image is large enough, it should be considered a block of its
 // own, and all the block handlers should have special treatment for image
 // blocks, and image (or maybe picture/figure?) should also be considered as
@@ -862,7 +853,7 @@ const token_weights = {
 // problem is some of the important content-images that appear in the large
 // article body get flagged as sub-boilerplate because they tend to be in a
 // block that has a couple links or other negative features that outweight the
-// image bias itself. At the same time this is problematic witih respect to the
+// image bias itself. At the same time this is problematic with respect to the
 // idea that boilerplate blocks apply to all descendants, if the ancestor thinks
 // it is boilerplate the image score doesn't matter. in fact right now all
 // iamges are non-boilerplate. so really need to fix image ancestor score. maybe
@@ -893,7 +884,6 @@ const token_weights = {
 
 // TODO: increase list penalty, look at the amount of text within a list vs
 // text not in a list
-
 // TODO: slightly penalize any block containing list, or look at ratio of
 // text outside of list to text in list
 
@@ -906,14 +896,3 @@ const token_weights = {
 
 // TODO: penalize all next-siblings of footer elements, and all prev siblings
 // of header elements
-
-// TODO: depth bias - the closer the content is to the root node, the less
-// likely it is bias. this should hopefully offset the over-penalization of
-// the root, which blanks the article
-
-// TODO: do a final pass that checks if too little percentage of the annotated
-// content is non-boilerplate, and if so, halve the penalties or something
-// and reclassify. This is a bailout because the heurstics are too harsh for
-// certain content. Basially there should be a minimum amount of content that
-// always passes through the filter. To do this efficiently I need to pass over
-// block.score. So this has to wait until that is implemented.
