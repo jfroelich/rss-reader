@@ -197,20 +197,6 @@ export function annotate(document, options = {}) {
 
 // An element's score indicates whether it is boilerplate. A higher score means
 // less likely to be boilerplate.
-// TODO: implement, for now this just spews a warning
-// TODO: adjust the scores of certain blocks until the minimum threshold
-// is met. How do I adjust? Maybe use a loop? Maybe calculate the amount needed
-// to adjust, then equally adjust things? We want to increment just up to the
-// threshold and not past it. If I use a loop, how fast should it correct? In
-// how many iterations? Do I do something like just increment score by 1, then
-// have a ton of iterations? How safe is the loops stopping condition?
-// TODO: should I be using content length or number of blocks to number of
-// elements?
-// TODO: should this function be broken up into pieces, and the caller instead
-// should be assembling those pieces? This might be the wrong abstraction.
-// TODO: block annotation hardcodes the derived 'boilerplate' attribute, this
-// needs to happen after this step instead, but right now it happens before so
-// it will be wrong
 function ensure_minimum_content(
     blocks, document_info, minimum_content_threshold) {
   if (!document_info.text_length) {
@@ -220,7 +206,6 @@ function ensure_minimum_content(
   if (!blocks.length) {
     return;
   }
-
 
   // This is about how far we are willing to go before giving up on promoting
   // boilerplate into content (given score adjustment by 1% at a time).
@@ -241,8 +226,6 @@ function ensure_minimum_content(
       }
     }
 
-    // Now recount the non-boilerplate block length, which may have changed,
-    // and recalculate the ratio for the next iteration.
     content_text_length = get_content_length(blocks);
     ratio = content_text_length / document_info.text_length;
     iterations++;
@@ -254,12 +237,12 @@ function ensure_minimum_content(
   }
 }
 
-// Get the total text length of all blocks that are content. Neutral blocks
-// are included.
+// Get the total text length of all non-boilerplate blocks
 function get_content_length(blocks) {
   let length = 0;
   for (const block of blocks) {
-    if (block.score <= neutral_score) {
+    // > neutral is content, = neutral is content, < neutral is boilerplate
+    if (block.score >= neutral_score) {
       length += block.text_length;
     }
   }
@@ -268,12 +251,10 @@ function get_content_length(blocks) {
 
 // Tokenize the elements array into an array of blocks. Returns an array of
 // block objects. Not all elements are mapped into blocks.
+// TODO: We cannot use filter and map here, because it is not ergonomic,
+// because we want the maintain the index into the elements array. So consider
+// reduce? Or is this too hot?
 function create_blocks(elements) {
-  // We cannot use filter and map here, because it is not ergonomic, because we
-  // want the index into the elements array, without having to track it using
-  // a hidden property mutation on each element object. Writing hidden
-  // properties to dom objects is bad.
-
   const blocks = [];
   for (let i = 0, len = elements.length; i < len; i++) {
     const element = elements[i];
@@ -281,7 +262,11 @@ function create_blocks(elements) {
       const block = new Block();
       block.element = element;
       block.element_index = i;
+
+      // TODO: this should be set during feature abstraction, it may end up
+      // being a more abstraction operation than this
       block.element_type = element.localName;
+
       blocks.push(block);
     }
   }
@@ -289,12 +274,14 @@ function create_blocks(elements) {
   return blocks;
 }
 
-// A block is a representation of a portion of a document's content.
+// A block is a representation of a portion of a document's content along with
+// some derived properties.
 function Block() {
   // A live reference to the node in the full document. Each block tracks its
   // represented root element to allow for deferring processing that depends
-  // on the element into later block iterations (later passes).
+  // on the element into later iterations over the live dom.
   this.element = undefined;
+
   // index into all elements array. This is a representation of the position
   // of the block within the content. -1 means not set or invalid index.
   this.element_index = -1;
@@ -304,38 +291,57 @@ function Block() {
   // for performance sake. This is the extracted feature out of the reference.
   // The caller is responsible for ensuring correspondence to the element
   // property.
+  // TODO: instead of the actual element name, I could use this to aggregate
+  // element types together into block types, and have block types such as
+  // 'container' or 'list', where it does not matter if the block is div/ul/ol
+  // or whatever anymore, just its more abstract type. Code that requires the
+  // element name can still dig into the element reference, but other code that
+  // relies on element type can just compare at the more abstract level. Another
+  // benefit is that the type-bias method would do a lookup within a smaller
+  // map. Another benefit is that it feels less wonky to have the bias-map be
+  // separate from the block-element-names array.
+
   this.element_type = undefined;
 
-  // The number of node hops to the root node. -1 means invalid
+  // The number of node hops (edge traversals or path length) to the root
+  // node (not the body node!). -1 means invalid or not set.
   this.depth = -1;
 
   // A representation of the count of characters within the element. This is
-  // similar to the total length of the text nodes within the element. -1 is
-  // an invalid length.
+  // roughly equivalent to the total length of the text nodes within the element
+  // or any of its descendants. -1 is an invalid length.
   this.text_length = -1;
 
   // A representation of the number of lines of content within the block. This
   // does not necessarily correspond to a simple count of '\n' characters. This
   // is more of an approximation of how many flow-breaks there are within this
   // block of content. Many things within the block content can cause a
-  // flow-break, such as the presence of a p tag, or an h1 tag, the start of a
-  // table, a new table row, etc.
+  // flow-break, such as the presence of a p tag, or an h1 tag, a new table row,
+  // etc.
   this.line_count = 0;
 
+  // An approximation of the size of this element based on the size of the
+  // images contained within the element or its descendants.
   this.image_area = 0;
 
-  // NOTE: this is not yet fully implemented
+  // A set of strings pulled from the block element's own html attributes, such
+  // as element id or class. NOTE: this is not yet fully implemented
   this.attribute_tokens = [];
 
+  // The block's content score. All blocks are initially neutral. The lower the
+  // score the more likely the content is boilerplate. Score is clamped within
+  // the range [0..100].
   this.score = neutral_score;
 }
 
-// Populates other properties of the block based on the block's content. The
+// Populate other properties of a block based on the block's element. The
 // goal of feature extraction is not to do any inference, it is just to unpack
-// the latent information that is in the content blob into individual
-// properties.
+// the latent information of the content blob into easily accessible
+// properties. This is done in a separate step from analysis so that features
+// can easily be reused by later analytical steps, and to help organize the
+// overall process into smaller steps.
 function extract_block_features(block, info) {
-  block.depth = get_block_depth(block);
+  block.depth = get_node_depth(block.element);
   block.text_length = get_text_length(block.element.textContent);
   block.line_count = get_line_count(block);
   block.anchor_text_length = get_anchor_text_length(block);
@@ -343,8 +349,9 @@ function extract_block_features(block, info) {
   block.attribute_tokens = get_block_attribute_tokens(block);
 }
 
-function get_block_depth(block) {
-  let node = block.element.parentNode;
+// Return the distance of the node to the owning document's root node.
+function get_node_depth(node) {
+  node = node.parentNode;
   let depth = 0;
   while (node) {
     node = node.parentNode;
@@ -353,8 +360,17 @@ function get_block_depth(block) {
   return depth;
 }
 
+// TODO: change to be specific to DOM elements, not specific to blocks, because
+// this is a general purpose function for dom interaction that we happen to use
+// in a particular way, this is more like an adaptation of the
+// getComputedStyle.bounds technique
+// TODO: consider generalizing to all media, such as video and audio components,
+// and not just images.
+// TODO: consider using a default width and default height of all images, that
+// when dimensions are unknown, the defaults are used, so it does not matter as
+// much if document is inert (e.g. from XMLHttpRequest or DOMParser)
 // This is a conservative approach to calculating total area from descendant
-// images. This assumes that images within the block have explicit width and
+// images. This assumes that images within the element have explicit width and
 // height attributes, and therefore have initialized width and height
 // properties.
 function get_block_image_area(block) {
@@ -368,16 +384,13 @@ function get_block_image_area(block) {
 
 function get_block_attribute_tokens(block) {
   // Not yet implemented, see the todos for derive_attribute_bias
+
+  // TODO: this should produce a distinct set, not just the full set
 }
 
 // Determine whether a block is boilerplate
-// TODO: break these analysis steps into two parts. The first pass is feature
-// extraction, where I populate the block's properties with minimal analysis.
-// The second pass is where functions examine the block's properties to
-// calculate the block's score. The set of functions is the model, and the
-// calculation of the block's score is the scoring of the block. Note that this
-// todo is in progress, some of the steps have been split up but others have
-// not.
+// TODO: finish converting bias functions to rely on extracted features instead
+// of doing feature extraction within the functions themselves
 function annotate_block(block, doc_info) {
   let score = neutral_score;
 
@@ -427,13 +440,15 @@ function annotate_block(block, doc_info) {
   score += attribute_bias;
 
   // We tolerate the score going temporarily out of range during analysis
-  // because this avoids losing some bias that would otherwise be truncated, but
-  // here we return it to within range
+  // because this avoids truncation, up until this point where we record it
   score = Math.max(0, Math.min(score, 100));
 
   block.score = score;
 }
 
+// TODO: refactor to accept a single block as parameter, have the caller do the
+// loop, that way this is more flexible in how it is used, this also matches
+// the new style of derive-boilerplate-category
 function set_boilerplate_score(blocks) {
   for (const block of blocks) {
     block.element.setAttribute('score', block.score);
@@ -443,10 +458,6 @@ function set_boilerplate_score(blocks) {
 // Set the boilerplate attribute of a block based on its score. This
 // basically bins the score from a numerical variable into a categorical
 // variable.
-// TODO: do I even need to set if neutral? I do need to exclude, but do I need
-// to set? It feels like that is the implied default, so why be explicit? Other
-// than indicating the block was analyzed (once all other indicators removed)
-// I do not see any obvious benefit.
 function derive_boilerplate_category(block) {
   const bias = block.score;
   const element = block.element;
@@ -471,15 +482,19 @@ function derive_boilerplate_category(block) {
 // analysis starts from within body, so depth values 0 and 1 are grouped into
 // the first bin and do not get any explicit treatment.
 function derive_depth_bias(depth) {
-  // NOTE: the coefficient is was chosen empirical, need to do actual analysis
-  // using something like linear regression, i am not even sure depth is a great
-  // independent variable, this is also why i capped it to limit its impact
+  // NOTE: the coefficient used here was chosen empirically, need to do actual
+  // analysis using something like linear regression, i am not even sure depth
+  // is a great independent variable, this is also why i capped it to limit its
+  // impact
   const slope = -4;
-  let bias = slope * depth + 20;
-  bias = Math.max(-10, Math.min(10, bias));
+  let bias = slope * depth + 10;
+  bias = Math.max(-6, Math.min(6, bias));
   return bias;
 }
 
+// Calculate a bias for an element's score based on the amount of text it
+// contains relative to the overall amount of text in the document. Generally,
+// large blocks of text are not boilerplate.
 function derive_text_length_bias(block, info) {
   const document_text_length = info.text_length;
   if (!document_text_length) {
@@ -517,18 +532,20 @@ function derive_line_count_bias(block) {
 
   // TEMP: debugging
   // console.debug(block.text_length, block.line_count, text_per_line);
-  block.element.setAttribute('text-per-line', text_per_line);
+  // block.element.setAttribute('text-per-line', text_per_line);
 
   // Text with lots of lines and a short amount of text per line is probably
-  // boilerplate, where as text with lots of text per line are probably content.
+  // boilerplate, whereas text with lots of text per line are probably content.
   if (text_per_line > 100) {
     return 5;
   } else if (text_per_line > 50) {
     return 0;
   } else if (text_per_line > 20) {
     return -1;
-  } else {
+  } else if (text_per_line > 1) {
     return -5;
+  } else {
+    return 0;
   }
 }
 
@@ -536,7 +553,7 @@ function derive_line_count_bias(block) {
 function derive_anchor_density_bias(block) {
   const ratio = block.anchor_text_length / (block.text_length || 1);
 
-  // TODO: instead of binning, using a coefficient
+  // TODO: instead of binning, use a coefficient
 
   if (ratio > 0.9) {
     return -40;
@@ -564,6 +581,7 @@ function derive_element_type_bias(block) {
 }
 
 function derive_paragraph_bias(element) {
+  // TODO: this should be done during feature extraction
   let pcount = 0;
   for (let child = element.firstElementChild; child;
        child = child.nextElementSibling) {
@@ -618,7 +636,6 @@ function derive_list_bias(element) {
   return bias;
 }
 
-
 // TODO: use block.attribute_tokens instead. attribute_tokens should represent
 // the set, that means i need to change the loop in derive_attribute_bias, and
 // use two loops, one loop that creates the set and ensures uniqueness, then
@@ -628,7 +645,9 @@ function derive_list_bias(element) {
 // Look at the values of attributes of a block element to indicate whether a
 // block represents boilerplate
 function derive_attribute_bias(block) {
-  // Accessing attribute values by property appears to be a tiny bit faster
+  // TODO: accessing attribute values by property appears to be a tiny bit
+  // faster, but I am not sure if it is worth it. Should probably just revert to
+  // using getAttribute in a uniform manner
 
   const vals = [
     block.element.id, block.element.name, block.element.className,
@@ -674,6 +693,9 @@ function derive_attribute_bias(block) {
   return bias;
 }
 
+// TODO: add support for camel-case splitting
+// TODO: see https://stackoverflow.com/questions/18379254
+// see https://stackoverflow.com/questions/7593969
 function tokenize(value) {
   return value.split(/[\s\-_0-9]+/g);
 }
