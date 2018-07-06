@@ -47,14 +47,13 @@ async function bptest(url_string) {
     noscript.remove();
   }
 
-  // Carry out the actual analysis using default options
-  bp.annotate(doc);
-
-  // Reset the view explicitly. There are some strange shenanigans that can
-  // happen if just replacing innerHTML (e.g. like head elements getting merged)
+  // Reset the view as an explicit and isolated step instead of simply replacing
+  // it later. There are some shenanigans that can happen when just replacing
+  // innerHTML (e.g. like head elements getting merged).
   document.body.innerHTML = '';
 
-  // Update the view
+  bp.classify(doc, {annotate: true});
+
   document.body.innerHTML = doc.body.innerHTML;
 }
 

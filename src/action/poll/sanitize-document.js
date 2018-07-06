@@ -1,5 +1,4 @@
-import * as ls from '/src/lib/ls.js';
-import {filter_boilerplate} from '/src/lib/filters/boilerplate-filter.js';
+import {filter_boilerplate} from '/src/lib/filters/boilerplate2-filter.js';
 import {canonicalize_urls} from '/src/lib/filters/canonicalize-urls.js';
 import {condense_tagnames} from '/src/lib/filters/condense-tagnames.js';
 import {deframe} from '/src/lib/filters/deframe.js';
@@ -38,6 +37,7 @@ import {filter_unknown_attrs} from '/src/lib/filters/filter-unknown-attrs.js';
 import {lonestar_filter} from '/src/lib/filters/lonestar-filter.js';
 import {set_image_sizes} from '/src/lib/filters/set-image-sizes.js';
 import {trim_document} from '/src/lib/filters/trim-document.js';
+import * as ls from '/src/lib/ls.js';
 import {is_allowed_request} from '/src/lib/net/fetch-policy.js';
 
 // Transforms a document by removing or changing nodes for various reasons:

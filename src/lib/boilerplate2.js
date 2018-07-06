@@ -85,7 +85,7 @@ const block_element_names = [
 // is similar to a probability of boilerplate. A score of 0 means that we are
 // confident a block is content, and a score of 100 means we are confident a
 // block is boilerplate. A score of 50 means we are unsure.
-const neutral_score = 50;
+export const neutral_score = 50;
 
 // Marks up some of the elements of a document based on whether the elements are
 // boilerplate. There are several attributes added to various elements, along
@@ -123,52 +123,31 @@ const neutral_score = 50;
 // desktop screen. This assumes that any given document is generally viewed full
 // screen. This is used to estimate the proportional area of a block based
 // on any images it contains.
-export function annotate(document, options = {}) {
+// @option annotate {Boolean} optional, defaults to false, if true then this
+// marks up the input document
+export function classify(document, options = {}) {
+  assert(document);
+
   const tail_size = isNaN(options.tail_size) ? 0.2 : options.tail_size;
+  assert(!isNaN(tail_size));
+  assert(tail_size >= 0 && tail_size < 0.5);
+
   const document_area = isNaN(options.document_area) ? default_document_area :
                                                        options.document_area;
+  assert(!isNaN(document_area));
+  assert(document_area >= 0);
+
   const minimum_content_threshold = isNaN(options.minimum_content_threshold) ?
       default_minimum_content_threshold :
       options.minimum_content_threshold;
 
-  if (!document) {
-    throw new TypeError('document must be an instance of Document');
-  }
-
-  if (isNaN(tail_size)) {
-    throw new TypeError('tail_size is not a number');
-  }
-
-  if (tail_size < 0 || tail_size >= 0.5) {
-    throw new RangeError('tail_size must be in the range [0..0.5)');
-  }
-
-  if (isNaN(document_area)) {
-    throw new TypeError('document_area is not a number');
-  }
-
-  if (document_area < 0) {
-    throw new TypeError('document_area should be a positive integer');
-  }
-
-  // Analysis is restricted to body, because content only appears in the body
-  // assuming the document is minimally well-formed. If there is no body then
-  // there is no point to analysis.
   if (!document.body) {
-    return;
+    return [];
   }
 
-  // Calculate this once for entire document. Note this includes lots of
-  // extraneous whitespace like simple text nodes resulting from separating
-  // elements on new lines, but the individual element text length calculation
-  // is less affected by such nodes.
   const document_text_length = get_text_length(document.body.textContent);
-
-  // If there is no text in the document, analysis will not be very useful.
-  // Maybe there is some merit to analyzing images, but right now that is
-  // pretty weak, so just exit.
   if (!document_text_length) {
-    return;
+    return [];
   }
 
   // Query for all elements. Using getElementsByTagName because I assume it is
@@ -178,10 +157,6 @@ export function annotate(document, options = {}) {
   // iteration.
   const elements = document.body.getElementsByTagName('*');
   const num_elements = elements.length;
-
-  if (!num_elements) {
-    return;
-  }
 
   // Find the cutoff indices into the all-elements array between start-middle
   // and between middle-end. Do this once here because it is loop invariant.
@@ -200,19 +175,32 @@ export function annotate(document, options = {}) {
     area: document_area
   };
 
+  // TODO: this should all be arranged slightly differently. There are two
+  // major steps I think. One is creating the dataset. The second is analyzing
+  // and scoring the dataset. Ok maybe 3 steps, the feature extraction step
+  // in the middle
+
+  // TODO: nothing in the final step should depend on the live element property
+  // of each block. So what I kind of want to go for is multiple public steps
+  // the caller assembles, instead of one giant classify function.
+
   const blocks =
       Array.prototype.reduce.call(elements, reduce_element_to_block, []);
 
   for (const block of blocks) {
     extract_block_features(block, info);
-    calc_block_score(block, info);
+    calc_block_score(block, info, options.annotate);
   }
 
   ensure_minimum_content(blocks, info, minimum_content_threshold);
 
-  for (const block of blocks) {
-    set_score_attributes(block);
+  if (options.annotate) {
+    for (const block of blocks) {
+      annotate_block(block);
+    }
   }
+
+  return blocks;
 }
 
 // An element's score indicates whether it is boilerplate. A higher score means
@@ -333,7 +321,24 @@ function Block(element, element_index = -1) {
   // score the more likely the content is boilerplate. Score is clamped within
   // the range [0..100].
   this.score = neutral_score;
+
+  // Biases
+  this.depth_bias = 0;
+  this.type_bias = 0;
+  this.text_bias = 0;
+  this.line_count_bias = 0;
+  this.anchor_density_bias = 0;
+  this.list_bias = 0;
+  this.paragraph_bias = 0;
+  this.form_bias = 0;
+  this.image_bias = 0;
+  this.position_bias = 0;
+  this.attribute_bias = 0;
 }
+
+Block.prototype.isBoilerplate = function() {
+  return this.score < neutral_score;
+};
 
 // Populate other properties of a block based on the block's element. The
 // goal of feature extraction is not to do any inference, it is just to unpack
@@ -343,7 +348,6 @@ function Block(element, element_index = -1) {
 // overall process into smaller steps.
 function extract_block_features(block, info) {
   block.element_type = block.element.localName;
-
   block.depth = get_node_depth(block.element);
   block.text_length = get_text_length(block.element.textContent);
   block.line_count = get_line_count(block);
@@ -395,73 +399,71 @@ function get_block_attribute_tokens(block) {
 // TODO: finish converting bias functions to rely on extracted features instead
 // of doing feature extraction within the functions themselves
 function calc_block_score(block, doc_info) {
-  let score = neutral_score;
-
-  const depth_bias = derive_depth_bias(block.depth);
-  block.element.setAttribute('depth-bias', depth_bias);
-  score += depth_bias;
-
-  const type_bias = derive_element_type_bias(block);
-  block.element.setAttribute('type-bias', type_bias);
-  score += type_bias;
-
-  const text_bias = derive_text_length_bias(block, doc_info);
-  block.element.setAttribute('text-bias', text_bias);
-  score += text_bias;
-
-  const line_count_bias = derive_line_count_bias(block);
-  block.element.setAttribute('line-count-bias', line_count_bias);
-  score += line_count_bias;
-
-  const anchor_density_bias = derive_anchor_density_bias(block);
-  block.element.setAttribute('anchor-density-bias', anchor_density_bias);
-  score += anchor_density_bias;
-
-  const list_bias = derive_list_bias(block.element);
-  block.element.setAttribute('list-bias', list_bias);
-  score += list_bias;
-
-  const paragraph_bias = derive_paragraph_bias(block.element);
-  block.element.setAttribute('paragraph-bias', paragraph_bias);
-  score += paragraph_bias;
-
-  const form_bias = derive_form_bias(block.element);
-  block.element.setAttribute('form-bias', form_bias);
-  score += form_bias;
-
-  const image_bias = derive_image_bias(block, doc_info.area);
-  block.element.setAttribute('image-bias', image_bias);
-  score += image_bias;
-
-  const position_bias = derive_position_bias(
+  // Do the bias calculations and store the intermediate results
+  block.depth_bias = derive_depth_bias(block.depth);
+  block.type_bias = derive_element_type_bias(block);
+  block.text_bias = derive_text_length_bias(block, doc_info);
+  block.line_count_bias = derive_line_count_bias(block);
+  block.anchor_density_bias = derive_anchor_density_bias(block);
+  block.list_bias = derive_list_bias(block.element);
+  block.paragraph_bias = derive_paragraph_bias(block.element);
+  block.form_bias = derive_form_bias(block.element);
+  block.image_bias = derive_image_bias(block, doc_info.area);
+  block.position_bias = derive_position_bias(
       block.element, block.element_index, doc_info.front_max, doc_info.end_min);
-  block.element.setAttribute('position-bias', position_bias);
-  score += position_bias;
+  block.attribute_bias = derive_attribute_bias(block);
 
-  const attribute_bias = derive_attribute_bias(block);
-  block.element.setAttribute('attribute-bias', attribute_bias);
-  score += attribute_bias;
+  // Calc net score
+  let score = neutral_score;
+  score += block.depth_bias;
+  score += block.type_bias;
+  score += block.text_bias;
+  score += block.line_count_bias;
+  score += block.anchor_density_bias;
+  score += block.list_bias;
+  score += block.paragraph_bias;
+  score += block.form_bias;
+  score += block.image_bias;
+  score += block.position_bias;
+  score += block.attribute_bias;
 
   // We tolerate the score going temporarily out of range during analysis
   // because this avoids truncation, up until this point where we record it
-  score = Math.max(0, Math.min(score, 100));
-  block.score = score;
+  block.score = Math.max(0, Math.min(score, 100));
 }
 
-function set_score_attributes(block) {
-  const score = block.score;
+function annotate_block(block) {
   const element = block.element;
 
-  element.setAttribute('score', score);
+  // TODO: also annotate extracted features
+  // TODO: use dataset setter instead?
+
+  element.setAttribute('depth-bias', block.depth_bias);
+  element.setAttribute('type-bias', block.type_bias);
+  element.setAttribute('text-bias', block.text_bias);
+  element.setAttribute('line-count-bias', block.line_count_bias);
+  element.setAttribute('anchor-density-bias', block.anchor_density_bias);
+  element.setAttribute('list-bias', block.list_bias);
+  element.setAttribute('paragraph-bias', block.paragraph_bias);
+  element.setAttribute('form-bias', block.form_bias);
+  element.setAttribute('image-bias', block.image_bias);
+  element.setAttribute('position-bias', block.position_bias);
+  element.setAttribute('attribute-bias', block.attribute_bias);
+
+  element.setAttribute('score', block.score);
+
+  if (isNaN(block.score)) {
+    console.warn('block score is nan', JSON.stringify(block));
+  }
 
   // Also produce binned annotation
-  if (score > 75) {
+  if (block.score > 75) {
     element.setAttribute('boilerplate', 'lowest');
-  } else if (score > 50) {
+  } else if (block.score > 50) {
     element.setAttribute('boilerplate', 'low');
-  } else if (score === 50) {
+  } else if (block.score === 50) {
     // Leave as is. A neutral block is equivalent to a not-analyzed block.
-  } else if (score > 25) {
+  } else if (block.score > 25) {
     element.setAttribute('boilerplate', 'high');
   } else {
     element.setAttribute('boilerplate', 'highest');
@@ -753,6 +755,12 @@ function get_line_count(block) {
   }
 
   return line_count;
+}
+
+function assert(condition, message) {
+  if (!condition) {
+    throw new Error(message || 'Assertion error');
+  }
 }
 
 const token_weights = {
