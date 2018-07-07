@@ -47,6 +47,16 @@ async function bptest(url_string) {
     noscript.remove();
   }
 
+  const elements = doc.body.getElementsByTagName('*');
+  for (const element of elements) {
+    element.removeAttribute('style');
+  }
+
+  const styles = doc.querySelectorAll('style');
+  for (const style of styles) {
+    style.remove();
+  }
+
   // Reset the view as an explicit and isolated step instead of simply replacing
   // it later. There are some shenanigans that can happen when just replacing
   // innerHTML (e.g. like head elements getting merged).
