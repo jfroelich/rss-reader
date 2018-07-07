@@ -93,7 +93,7 @@ export const neutral_score = 50;
 // or not the element contains boilerplate.
 //
 // Boilerplate elements may contain non-boilerplate, and non-boilerplate
-// elements may contain boilerplate. Be way of naively pruning all elements
+// elements may contain boilerplate. Be wary of naively pruning all elements
 // classified as boilerplate.
 //
 // This assumes that images have known dimensions (that image.width and
@@ -151,11 +151,11 @@ export function classify(document, evaluate_model, options = {}) {
     return [];
   }
 
-  // Query for all elements. Using getElementsByTagName because I assume it is
-  // faster than querySelectorAll. Also not obvious is that I am using
-  // getElementsByTagName to indicate that no mutation will occur, because I
-  // almost always use querySelectorAll to allow for easier mutation during
-  // iteration.
+  // TODO: is this still in use locally? Note that I changed
+  // create_block_dataset to generate its own elements array internally and
+  // operate off of document instead of this. I am not sure if this still needs
+  // to be calculated, will need to revisit this, it might be redundant
+  // calculation somehow.
   const elements = document.body.getElementsByTagName('*');
   const num_elements = elements.length;
 
@@ -163,11 +163,6 @@ export function classify(document, evaluate_model, options = {}) {
   // and between middle-end. Do this once here because it is loop invariant.
   const front_max = (tail_size * num_elements) | 0;
   const end_min = num_elements - front_max;
-
-  // If the thresholds somehow overlap there is a programmer error
-  if (end_min < front_max) {
-    throw new Error('Calculated invalid cutoff indices');
-  }
 
   // TODO: this is the wrong grouping, front_max and end_min are options,
   // not metadata, area is an option, and text_length is the only data point
@@ -180,14 +175,16 @@ export function classify(document, evaluate_model, options = {}) {
   };
 
   // Step 1: represent the document as a dataset
-  // TODO: create_block_dataset should operate on the document itself
-  const dataset = create_block_dataset(elements);
+  const dataset = create_block_dataset(document);
 
   // Step 2: extract features from each element in the dataset
   for (const block of dataset) {
     block.element_type = block.element.localName;
     block.depth = get_node_depth(block.element);
     block.text_length = get_text_length(block.element.textContent);
+    block.list_item_count = get_list_item_count(block.element);
+    block.paragraph_count = get_paragraph_count(block.element);
+    block.field_count = get_field_count(block.element);
 
     // TODO: these helper functions should not rely on the block, just the
     // element, these should be generic DOM utility type functions
@@ -198,12 +195,14 @@ export function classify(document, evaluate_model, options = {}) {
   }
 
   // Step 3: evaluate the model and save its properties
-  // TODO: the model should actually just be a single scoring function
   for (const block of dataset) {
     block.score = evaluate_model(block, info);
   }
 
   // Step 4: adjust the classification scores to avoid too much boilerplate
+  // TODO: the info object has some stamp coupling anti-pattern I think, if
+  // there is only one property used then only pass that sole property instead
+  // of the whole object
   ensure_minimum_content(dataset, info, minimum_content_threshold);
 
   return dataset;
@@ -232,37 +231,55 @@ export function annotate_document(document, dataset) {
   }
 }
 
-function create_block_dataset(elements) {
-  return Array.prototype.reduce.call(elements, reduce_element_to_block, []);
+function create_block_dataset(document) {
+  if (!document.body) {
+    return [];
+  }
+
+  const elements = document.body.getElementsByTagName('*');
+  const dataset = [];
+  for (let element_index = 0, len = elements.length; element_index < len;
+       element_index++) {
+    const element = elements[element_index];
+    if (block_element_names.includes(element.localName)) {
+      const block = new Block(element, element_index);
+
+      // Find and set parent block index
+      for (let block_index = dataset.length - 1; block_index > -1;
+           block_index--) {
+        if (dataset[block_index].element.contains(element)) {
+          block.parent_block_index = block_index;
+          break;
+        }
+      }
+
+      dataset.push(block);
+    }
+  }
+
+  return dataset;
 }
 
-// Returns a model evaluation function that operates on a dataset, which in this
-// case is an array of Block objects. Also the model is hardcoded for now.
+// Returns a model evaluation function that operates on a row of a dataset
 export function create_model() {
-  return function evaluator(block, document_info) {
-    // TODO: nothing should depend directly on block.element
-    // TODO: finish converting bias functions to rely on extracted features
-    // instead of doing feature extraction within the functions themselves
-    // TODO: this shouldn't actually modify the block in any way whatsoever, so
-    // I need to think about how to get out the debugging information in another
-    // way.
-
+  return function evaluator(block, info) {
     let score = neutral_score;
     score += derive_depth_bias(block.depth);
-    score += derive_element_type_bias(block);
-    score += derive_text_length_bias(block, document_info);
-    score += derive_line_count_bias(block);
-    score += derive_anchor_density_bias(block);
+    score += derive_element_type_bias(block.element_type);
+    score += derive_text_length_bias(block.text_length, info.text_length);
+    score += derive_line_count_bias(block.text_length, block.line_count);
+    score +=
+        derive_anchor_density_bias(block.anchor_text_length, block.text_length);
+    score += derive_list_bias(block.list_item_count);
+    score += derive_paragraph_bias(block.paragraph_count);
+    score += derive_field_bias(block.field_count);
+    score += derive_image_bias(block.image_area, info.area);
+    score +=
+        derive_position_bias(block.element_index, info.front_max, info.end_min);
 
-    // TODO: these functions should not be able to rely on element at this point
-    score += derive_list_bias(block.element);
-    score += derive_paragraph_bias(block.element);
-    score += derive_form_bias(block.element);
-    score += derive_image_bias(block, document_info.area);
-    score += derive_position_bias(
-        block.element, block.element_index, document_info.front_max,
-        document_info.end_min);
-    score += derive_attribute_bias(block);
+    // TODO: this should not rely on element
+    score += derive_attribute_bias(block.element);
+
     return Math.max(0, Math.min(score, 100));
   };
 }
@@ -284,12 +301,22 @@ function ensure_minimum_content(
   const max_iterations = 20;
   let iterations = 0;
 
+  // TODO: see the note regarding get-content-length, the calculation is
+  // currently incorrect, it is counting elements that may be hidden because
+  // they are nested within boilerplate blocks, the result being that this
+  // ensure loop barely ensures anything
+
   // Loop over the blocks, uniformly incrementing boilerplate block scores a bit
   // each iteration, until we reach the minimum content threshold or give up
   // after a number of iterations.
-  let content_text_length = get_content_length(blocks);
+  let content_text_length = get_visible_content_length(blocks);
   let ratio = content_text_length / document_info.text_length;
   while (ratio < minimum_content_threshold && iterations < max_iterations) {
+    // TEMP: debugging
+    console.debug(
+        'Adjusting scores to meet min-content-length threshold', ratio,
+        minimum_content_threshold);
+
     // Slightly adjust all boilerplate blocks. We do not favor any particular
     // block, everything gets a bump.
     for (const block of blocks) {
@@ -298,47 +325,57 @@ function ensure_minimum_content(
       }
     }
 
-    content_text_length = get_content_length(blocks);
+    content_text_length = get_visible_content_length(blocks);
     ratio = content_text_length / document_info.text_length;
     iterations++;
   }
-
-  // TEMP: debugging
-  if (iterations > 0) {
-    console.debug('Iteration count for adjustment', iterations);
-  }
 }
 
-// Get the total text length of all non-boilerplate blocks
-function get_content_length(blocks) {
+// Get the total text length of all non-boilerplate blocks. A block only
+// contributes to visible length when the block itself is visible and all of its
+// ancestors are visible.
+function get_visible_content_length(blocks) {
   let length = 0;
   for (const block of blocks) {
-    // > neutral is content, = neutral is content, < neutral is boilerplate
-    if (block.score >= neutral_score) {
+    let visible = block.score >= neutral_score;
+    let index = block.parent_block_index;
+    while (visible && index > -1) {
+      const ancestor = blocks[index];
+      if (ancestor.score < neutral_score) {
+        visible = false;
+      } else {
+        index = ancestor.parent_block_index;
+      }
+    }
+
+    if (visible) {
       length += block.text_length;
     }
   }
   return length;
 }
 
-function reduce_element_to_block(blocks, element, index) {
-  if (block_element_names.includes(element.localName)) {
-    blocks.push(new Block(element, index));
-  }
-  return blocks;
-}
-
 // A block is a representation of a portion of a document's content along with
 // some derived properties.
+//
+// @param element {Element} a live reference to the element in a document that
+// this block represents
+// @param element_index {Number} the index of the block in the all-body-elements
+// array
 function Block(element, element_index = -1) {
   // A live reference to the node in the full document. Each block tracks its
   // represented root element to allow for deferring processing that depends
   // on the element into later iterations over the live dom.
   this.element = element;
 
-  // index into all elements array. This is a representation of the position
-  // of the block within the content. -1 means not set or invalid index.
+  // index into body-elements array. This is a representation of the position
+  // of the block within the content. -1 means not set or invalid index or not
+  // present in elements array.
   this.element_index = element_index;
+
+  // index into the blocks array of the parent block. -1 indicates not set or
+  // no parent.
+  this.parent_block_index = -1;
 
   // The element's type (e.g. the tagname), all lowercase, not qualified. This
   // is redundant with the live reference, but the live reference only exists
@@ -376,6 +413,15 @@ function Block(element, element_index = -1) {
   // An approximation of the size of this element based on the size of the
   // images contained within the element or its descendants.
   this.image_area = 0;
+
+  // A count of nested listed items (e.g. li, dl)
+  this.list_item_count = 0;
+
+  // A count of nested paragraphs
+  this.paragraph_count = 0;
+
+  // A count of nested form fields
+  this.field_count = 0;
 
   // A set of strings pulled from the block element's own html attributes, such
   // as element id or class. NOTE: this is not yet fully implemented
@@ -466,18 +512,18 @@ function derive_depth_bias(depth) {
 // Calculate a bias for an element's score based on the amount of text it
 // contains relative to the overall amount of text in the document. Generally,
 // large blocks of text are not boilerplate.
-function derive_text_length_bias(block, info) {
-  const document_text_length = info.text_length;
+function derive_text_length_bias(block_text_length, document_text_length) {
   if (!document_text_length) {
     return 0;
   }
 
-  if (!block.text_length) {
+  if (!block_text_length) {
     return 0;
   }
 
-  const ratio = block.text_length / document_text_length;
+  const ratio = block_text_length / document_text_length;
 
+  // should be a param from somewhere
   const max_text_bias = 5;
 
   // Calc bias
@@ -488,32 +534,22 @@ function derive_text_length_bias(block, info) {
   return bias;
 }
 
-function derive_line_count_bias(block) {
-  if (!block.text_length) {
-    return 0;
-  }
+// Text with lots of lines and a short amount of text per line is probably
+// boilerplate, whereas text with lots of text per line are probably content.
+function derive_line_count_bias(text_length, line_count) {
+  // Calculate the typical text length of the lines of the block
+  // TODO: the rounding can occur on the bias value after applying the
+  // coefficient, we don't need to round lines here
+  const line_length = (text_length / (line_count || 1)) | 0;
 
-  // Ignore text that is basically too small. The line count heuristic probably
-  // is not worth that much in this case. The inference is too tenuous.
-  if (block.line_count < 3) {
-    return 0;
-  }
-
-  const text_per_line = (block.text_length / block.line_count) | 0;
-
-  // TEMP: debugging
-  // console.debug(block.text_length, block.line_count, text_per_line);
-  // block.element.setAttribute('text-per-line', text_per_line);
-
-  // Text with lots of lines and a short amount of text per line is probably
-  // boilerplate, whereas text with lots of text per line are probably content.
-  if (text_per_line > 100) {
+  // TODO: use a coefficient instead
+  if (line_length > 100) {
     return 5;
-  } else if (text_per_line > 50) {
+  } else if (line_length > 50) {
     return 0;
-  } else if (text_per_line > 20) {
+  } else if (line_length > 20) {
     return -1;
-  } else if (text_per_line > 1) {
+  } else if (line_length > 1) {
     return -5;
   } else {
     return 0;
@@ -521,10 +557,10 @@ function derive_line_count_bias(block) {
 }
 
 // Assumes that anchors are not blocks themselves
-function derive_anchor_density_bias(block) {
-  const ratio = block.anchor_text_length / (block.text_length || 1);
+function derive_anchor_density_bias(anchor_text_length, text_length) {
+  const ratio = anchor_text_length / (text_length || 1);
 
-  // TODO: instead of binning, use a coefficient
+  // TODO: use a coefficient and round
 
   if (ratio > 0.9) {
     return -40;
@@ -546,31 +582,32 @@ function get_text_length(text) {
   return condensed_text.length;
 }
 
-function derive_element_type_bias(block) {
-  const bias = type_bias_map[block.element_type];
+function derive_element_type_bias(element_type) {
+  const bias = type_bias_map[element_type];
   return bias ? bias : 0;
 }
 
-function derive_paragraph_bias(element) {
-  // TODO: this should be done during feature extraction
-  let pcount = 0;
+function derive_paragraph_bias(paragraph_count) {
+  return Math.min(20, paragraph_count * 5);
+}
+
+// Counts child paragraphs (not all descendants!)
+function get_paragraph_count(element) {
+  let count = 0;
   for (let child = element.firstElementChild; child;
        child = child.nextElementSibling) {
     if (child.localName === 'p') {
-      pcount++;
+      count++;
     }
   }
-
-  let bias = pcount * 5;
-  bias = Math.min(20, bias);
-  return bias;
+  return count;
 }
 
-function derive_image_bias(block, doc_area) {
-  return Math.min(70, (70 * block.image_area / doc_area) | 0);
+function derive_image_bias(image_area, doc_area) {
+  return Math.min(70, (70 * image_area / doc_area) | 0);
 }
 
-function derive_position_bias(element, index, front_max, end_min) {
+function derive_position_bias(index, front_max, end_min) {
   // If the element is located near the start or the end then penalize it
   if (index < front_max || index > end_min) {
     return -5;
@@ -578,17 +615,12 @@ function derive_position_bias(element, index, front_max, end_min) {
   return 0;
 }
 
-function derive_form_bias(element) {
-  const fields =
-      element.querySelectorAll('form, input, select, button, textarea');
+function derive_field_bias(field_count) {
+  return field_count > 0 && field_count < 10 ? -10 : 0;
+}
 
-  if (fields.length > 10) {
-    return 0;
-  } else if (fields.length > 0) {
-    return -10;
-  } else {
-    return 0;
-  }
+function get_field_count(element) {
+  return element.querySelectorAll('input, select, button, textarea').length;
 }
 
 
@@ -600,11 +632,13 @@ function derive_form_bias(element) {
 // lists tend to have a lot of surrounding text. also note in the example page
 // that the list in question does not have any links. Using -1 might be
 // overkill.
-function derive_list_bias(element) {
-  const items = element.querySelectorAll('li, dd, dt');
-  let bias = -1 * items.length;
-  bias = Math.max(-10, bias);
-  return bias;
+function derive_list_bias(list_item_count) {
+  return Math.max(-5, -1 * list_item_count);
+}
+
+// Count the number of descendant list items
+function get_list_item_count(element) {
+  return element.querySelectorAll('li, dd, dt').length;
 }
 
 // TODO: use block.attribute_tokens instead. attribute_tokens should represent
@@ -615,14 +649,15 @@ function derive_list_bias(element) {
 
 // Look at the values of attributes of a block element to indicate whether a
 // block represents boilerplate
-function derive_attribute_bias(block) {
+function derive_attribute_bias(element) {
   // TODO: accessing attribute values by property appears to be a tiny bit
   // faster, but I am not sure if it is worth it. Should probably just revert to
   // using getAttribute in a uniform manner
+  // TODO: support role attribute
 
   const vals = [
-    block.element.id, block.element.name, block.element.className,
-    block.element.getAttribute('itemprop')
+    element.id, element.name, element.className,
+    element.getAttribute('itemprop')
   ];
 
   // It is not obvious, so note that join implicitly filters undefined values so
@@ -768,7 +803,7 @@ const token_weights = {
   entry: 10,
   fb: -5,  // facebook
   fixture: -5,
-  footer: -20,
+  footer: -40,
   furniture: -5,
   gutter: -30,
   header: -10,
