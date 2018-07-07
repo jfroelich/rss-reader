@@ -1,25 +1,19 @@
 import assert from '/src/lib/assert.js';
 import * as bp from '/src/lib/boilerplate2.js';
 
-// TODO: what if i change annotate to classify, make annotation an option,
-// and have classify yield the blocks array instead of undefined, then this
-// does iteration over the blocks array. That way I leave annotation
-// false here in production, and there is not even a need to cleanup
-// attributes or even do any dom-writes. I don't even need to query for
-// attributes I can just iterate over the blocks array.
-
-// NOT YET TESTED
+// We create our model once
+const model_evaluator = bp.create_model();
 
 export function filter_boilerplate(document) {
   assert(document);
 
-  // Classify content using default options
-  // We do not annotate because these attributes will not be used
-  const blocks = bp.classify(document, {annotate: false});
+  // Classify content using default options and model
+  const dataset = bp.classify(document, model_evaluator);
 
-  for (const block of blocks) {
-    if (block.isBoilerplate()) {
-      block.element.remove();
+  for (const row of dataset) {
+    if (row.score < bp.neutral_score) {
+      const element = bp.find_block_element(document, row);
+      element.remove();
     }
   }
 }

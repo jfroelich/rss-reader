@@ -52,7 +52,9 @@ async function bptest(url_string) {
   // innerHTML (e.g. like head elements getting merged).
   document.body.innerHTML = '';
 
-  bp.classify(doc, {annotate: true});
+  const model_evaluator = bp.create_model();
+  const dataset = bp.classify(doc, model_evaluator);
+  bp.annotate_document(doc, dataset);
 
   document.body.innerHTML = doc.body.innerHTML;
 }

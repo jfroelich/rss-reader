@@ -110,6 +110,8 @@ export const neutral_score = 50;
 // keeps it easy to analyze classification errors.
 //
 // @param document {Document} an html document, preferably inert
+// @param model {Function} a scoring function
+// @param options {Object} optional
 // @option tail-size {Number} optional, should be between 0 and 0.5. The
 // algorithm divides the document into sections of start, middle, and end.
 // The tail size is the approximate size of each of the start and end sections,
@@ -123,10 +125,9 @@ export const neutral_score = 50;
 // desktop screen. This assumes that any given document is generally viewed full
 // screen. This is used to estimate the proportional area of a block based
 // on any images it contains.
-// @option annotate {Boolean} optional, defaults to false, if true then this
-// marks up the input document
-export function classify(document, options = {}) {
-  assert(document);
+export function classify(document, evaluate_model, options = {}) {
+  assert(typeof document === 'object');
+  assert(typeof evaluate_model === 'function');
 
   const tail_size = isNaN(options.tail_size) ? 0.2 : options.tail_size;
   assert(!isNaN(tail_size));
@@ -168,6 +169,9 @@ export function classify(document, options = {}) {
     throw new Error('Calculated invalid cutoff indices');
   }
 
+  // TODO: this is the wrong grouping, front_max and end_min are options,
+  // not metadata, area is an option, and text_length is the only data point
+  // Maybe text_length should be a per block property despite being redundant
   const info = {
     text_length: document_text_length,
     front_max: front_max,
@@ -175,32 +179,92 @@ export function classify(document, options = {}) {
     area: document_area
   };
 
-  // TODO: this should all be arranged slightly differently. There are two
-  // major steps I think. One is creating the dataset. The second is analyzing
-  // and scoring the dataset. Ok maybe 3 steps, the feature extraction step
-  // in the middle
+  // Step 1: represent the document as a dataset
+  // TODO: create_block_dataset should operate on the document itself
+  const dataset = create_block_dataset(elements);
 
-  // TODO: nothing in the final step should depend on the live element property
-  // of each block. So what I kind of want to go for is multiple public steps
-  // the caller assembles, instead of one giant classify function.
+  // Step 2: extract features from each element in the dataset
+  for (const block of dataset) {
+    block.element_type = block.element.localName;
+    block.depth = get_node_depth(block.element);
+    block.text_length = get_text_length(block.element.textContent);
 
-  const blocks =
-      Array.prototype.reduce.call(elements, reduce_element_to_block, []);
-
-  for (const block of blocks) {
-    extract_block_features(block, info);
-    calc_block_score(block, info, options.annotate);
+    // TODO: these helper functions should not rely on the block, just the
+    // element, these should be generic DOM utility type functions
+    block.line_count = get_line_count(block);
+    block.anchor_text_length = get_anchor_text_length(block);
+    block.image_area = get_block_image_area(block);
+    block.attribute_tokens = get_block_attribute_tokens(block);
   }
 
-  ensure_minimum_content(blocks, info, minimum_content_threshold);
+  // Step 3: evaluate the model and save its properties
+  // TODO: the model should actually just be a single scoring function
+  for (const block of dataset) {
+    block.score = evaluate_model(block, info);
+  }
 
-  if (options.annotate) {
-    for (const block of blocks) {
-      annotate_block(block);
+  // Step 4: adjust the classification scores to avoid too much boilerplate
+  ensure_minimum_content(dataset, info, minimum_content_threshold);
+
+  return dataset;
+}
+
+// Given a scored dataset representing a document, annotate the document
+export function annotate_document(document, dataset) {
+  for (const block of dataset) {
+    if (isNaN(block.score)) {
+      console.warn('block score is nan', JSON.stringify(block));
+    }
+
+    const element = find_block_element(document, block);
+    element.setAttribute('score', block.score);
+
+    if (block.score > 74) {
+      element.setAttribute('boilerplate', 'lowest');
+    } else if (block.score > 49) {
+      // this includes neutral 50s too
+      element.setAttribute('boilerplate', 'low');
+    } else if (block.score > 24) {
+      element.setAttribute('boilerplate', 'high');
+    } else {
+      element.setAttribute('boilerplate', 'highest');
     }
   }
+}
 
-  return blocks;
+function create_block_dataset(elements) {
+  return Array.prototype.reduce.call(elements, reduce_element_to_block, []);
+}
+
+// Returns a model evaluation function that operates on a dataset, which in this
+// case is an array of Block objects. Also the model is hardcoded for now.
+export function create_model() {
+  return function evaluator(block, document_info) {
+    // TODO: nothing should depend directly on block.element
+    // TODO: finish converting bias functions to rely on extracted features
+    // instead of doing feature extraction within the functions themselves
+    // TODO: this shouldn't actually modify the block in any way whatsoever, so
+    // I need to think about how to get out the debugging information in another
+    // way.
+
+    let score = neutral_score;
+    score += derive_depth_bias(block.depth);
+    score += derive_element_type_bias(block);
+    score += derive_text_length_bias(block, document_info);
+    score += derive_line_count_bias(block);
+    score += derive_anchor_density_bias(block);
+
+    // TODO: these functions should not be able to rely on element at this point
+    score += derive_list_bias(block.element);
+    score += derive_paragraph_bias(block.element);
+    score += derive_form_bias(block.element);
+    score += derive_image_bias(block, document_info.area);
+    score += derive_position_bias(
+        block.element, block.element_index, document_info.front_max,
+        document_info.end_min);
+    score += derive_attribute_bias(block);
+    return Math.max(0, Math.min(score, 100));
+  };
 }
 
 // An element's score indicates whether it is boilerplate. A higher score means
@@ -336,24 +400,11 @@ function Block(element, element_index = -1) {
   this.attribute_bias = 0;
 }
 
-Block.prototype.isBoilerplate = function() {
-  return this.score < neutral_score;
-};
-
-// Populate other properties of a block based on the block's element. The
-// goal of feature extraction is not to do any inference, it is just to unpack
-// the latent information of the content blob into easily accessible
-// properties. This is done in a separate step from analysis so that features
-// can easily be reused by later analytical steps, and to help organize the
-// overall process into smaller steps.
-function extract_block_features(block, info) {
-  block.element_type = block.element.localName;
-  block.depth = get_node_depth(block.element);
-  block.text_length = get_text_length(block.element.textContent);
-  block.line_count = get_line_count(block);
-  block.anchor_text_length = get_anchor_text_length(block);
-  block.image_area = get_block_image_area(block);
-  block.attribute_tokens = get_block_attribute_tokens(block);
+export function find_block_element(document, block) {
+  // For now, cheat
+  assert(block.element);
+  assert(block.element.ownerDocument === document);
+  return block.element;
 }
 
 // Return the distance of the node to the owning document's root node.
@@ -395,81 +446,6 @@ function get_block_attribute_tokens(block) {
   // TODO: this should produce a distinct set, not just the full set
 }
 
-// Determine whether a block is boilerplate
-// TODO: finish converting bias functions to rely on extracted features instead
-// of doing feature extraction within the functions themselves
-function calc_block_score(block, doc_info) {
-  // Do the bias calculations and store the intermediate results
-  block.depth_bias = derive_depth_bias(block.depth);
-  block.type_bias = derive_element_type_bias(block);
-  block.text_bias = derive_text_length_bias(block, doc_info);
-  block.line_count_bias = derive_line_count_bias(block);
-  block.anchor_density_bias = derive_anchor_density_bias(block);
-  block.list_bias = derive_list_bias(block.element);
-  block.paragraph_bias = derive_paragraph_bias(block.element);
-  block.form_bias = derive_form_bias(block.element);
-  block.image_bias = derive_image_bias(block, doc_info.area);
-  block.position_bias = derive_position_bias(
-      block.element, block.element_index, doc_info.front_max, doc_info.end_min);
-  block.attribute_bias = derive_attribute_bias(block);
-
-  // Calc net score
-  let score = neutral_score;
-  score += block.depth_bias;
-  score += block.type_bias;
-  score += block.text_bias;
-  score += block.line_count_bias;
-  score += block.anchor_density_bias;
-  score += block.list_bias;
-  score += block.paragraph_bias;
-  score += block.form_bias;
-  score += block.image_bias;
-  score += block.position_bias;
-  score += block.attribute_bias;
-
-  // We tolerate the score going temporarily out of range during analysis
-  // because this avoids truncation, up until this point where we record it
-  block.score = Math.max(0, Math.min(score, 100));
-}
-
-function annotate_block(block) {
-  const element = block.element;
-
-  // TODO: also annotate extracted features
-  // TODO: use dataset setter instead?
-
-  element.setAttribute('depth-bias', block.depth_bias);
-  element.setAttribute('type-bias', block.type_bias);
-  element.setAttribute('text-bias', block.text_bias);
-  element.setAttribute('line-count-bias', block.line_count_bias);
-  element.setAttribute('anchor-density-bias', block.anchor_density_bias);
-  element.setAttribute('list-bias', block.list_bias);
-  element.setAttribute('paragraph-bias', block.paragraph_bias);
-  element.setAttribute('form-bias', block.form_bias);
-  element.setAttribute('image-bias', block.image_bias);
-  element.setAttribute('position-bias', block.position_bias);
-  element.setAttribute('attribute-bias', block.attribute_bias);
-
-  element.setAttribute('score', block.score);
-
-  if (isNaN(block.score)) {
-    console.warn('block score is nan', JSON.stringify(block));
-  }
-
-  // Also produce binned annotation
-  if (block.score > 75) {
-    element.setAttribute('boilerplate', 'lowest');
-  } else if (block.score > 50) {
-    element.setAttribute('boilerplate', 'low');
-  } else if (block.score === 50) {
-    // Leave as is. A neutral block is equivalent to a not-analyzed block.
-  } else if (block.score > 25) {
-    element.setAttribute('boilerplate', 'high');
-  } else {
-    element.setAttribute('boilerplate', 'highest');
-  }
-}
-
 // Calculates a bias that should increase or decrease an element's boilerplate
 // score based on the element's depth. The general heuristic is that the deeper
 // the node, the greater the probability it is boilerplate. There is no risk
@@ -483,7 +459,7 @@ function derive_depth_bias(depth) {
   // impact
   const slope = -4;
   let bias = slope * depth + 10;
-  bias = Math.max(-6, Math.min(6, bias));
+  bias = Math.max(-5, Math.min(5, bias));
   return bias;
 }
 
@@ -776,6 +752,7 @@ const token_weights = {
   bottom: -10,
   branding: -10,
   carousel: -10,
+  cmt: -10,
   col: -2,
   colm: -2,  // alternate abbr for column
   comment: -40,
@@ -826,6 +803,7 @@ const token_weights = {
   relate: -50,
   related: -50,
   right: -50,
+  rightcolumn: -20,
   secondary: -20,
   share: -20,
   side: -5,
@@ -904,3 +882,9 @@ const token_weights = {
 
 // TODO: penalize all next-siblings of footer elements, and all prev siblings
 // of header elements
+
+// TODO: instead of just ensuring minimum content length, what about another
+// pass that finds the highest scoring block, then ensures its ancestors all the
+// way up to the root node are not boilerplate by adjusting their scores higher?
+// or we could sort blocks by score, take the highest 3 blocks, then ensure
+// those are visible
