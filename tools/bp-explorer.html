@@ -3,6 +3,47 @@
   <script type="module" src="/tools/bp-explorer.js"></script>
   <style type="text/css">
 
+  html {
+    font-size: 100%;
+  }
+
+  body {
+    font-size: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  input#url {
+    width: 600px;
+    font-size: 14px;
+  }
+
+  button#load {
+    font-size: 20px;
+  }
+
+  section#content {
+    width: 90%;
+    padding-top: 20px;
+    padding-left: 20px;
+    padding-right: 20px;
+    max-width: 100%;
+    margin: auto;
+  }
+
+  body {
+    padding: 0;
+    margin: 0;
+  }
+
+  #boilerplate-form {
+    /*position: fixed;*/
+    width: 100%;
+    margin: 0;
+    background-color: gray;
+    padding: 30px;
+  }
+
   img {
     max-width: 90%;
     height: auto;
@@ -37,4 +78,12 @@
 
   </style>
 </head>
+<body>
+  <section id="boilerplate-form">
+<input type="text" id="url">
+<button id="load">Load</button>
+</section>
+<section id="content">
+</section>
+</body>
 </html>

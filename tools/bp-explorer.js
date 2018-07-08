@@ -12,17 +12,28 @@ import {fetch_html} from '/src/lib/net/fetch-html.js';
 
 // TODO: will filtering hidden elements help exploration?
 
+const load_button = document.getElementById('load');
+load_button.addEventListener('click', load_button_onclick);
+
+const section = document.getElementById('content');
+
+async function load_button_onclick(event) {
+  const url_input = document.getElementById('url');
+  const url_string = url_input.value;
+  await bptest(url_string);
+}
+
 async function bptest(url_string) {
-  document.body.innerHTML = 'Loading ' + url_string + ' ...';
+  section.innerHTML = 'Loading ' + url_string + ' ...';
 
   const url = new URL(url_string);
   const response = await fetch_html(url, 5000);
   const response_text = await response.text();
 
-  document.body.innerHTML = 'Parsing ' + response_text.length + ' characters';
+  section.innerHTML = 'Parsing ' + response_text.length + ' characters';
   const doc = parse_html(response_text);
 
-  document.body.innerHTML = 'Filtering document before analysis';
+  section.innerHTML = 'Filtering document before analysis';
 
   // Do some pre-analysis filtering
   filter_comments(doc);
@@ -51,7 +62,7 @@ async function bptest(url_string) {
     noscript.remove();
   }
 
-  const elements = doc.body.getElementsByTagName('*');
+  let elements = doc.body.getElementsByTagName('*');
   for (const element of elements) {
     element.removeAttribute('style');
   }
@@ -61,15 +72,23 @@ async function bptest(url_string) {
     style.remove();
   }
 
-  document.body.innerHTML = 'Analyzing boilerplate';
+  section.innerHTML = 'Analyzing boilerplate';
 
   const dataset = bp.create_block_dataset(doc);
   const model = bp.create_model();
   const scored_dataset = bp.classify(dataset, model);
   bp.annotate_document(doc, scored_dataset);
 
-  document.body.innerHTML = 'Analysis completed, rendering document view';
-  document.body.innerHTML = doc.body.innerHTML;
+  // sort of remove ids so it does not muck with form stuff
+  elements = doc.body.getElementsByTagName('*');
+  for (const element of elements) {
+    const old_id = element.getAttribute('id');
+    element.setAttribute('old-id', old_id);
+    element.removeAttribute('id');
+  }
+
+  section.innerHTML = 'Analysis completed, rendering document view';
+  section.innerHTML = doc.body.innerHTML;
 }
 
 window.bptest = bptest;

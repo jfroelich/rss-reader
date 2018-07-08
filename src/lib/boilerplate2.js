@@ -287,8 +287,8 @@ export function create_model() {
 // An element's score indicates whether it is boilerplate. A higher score means
 // less likely to be boilerplate.
 function ensure_minimum_content(
-    blocks, text_length, minimum_content_threshold) {
-  if (!text_length) {
+    blocks, document_text_length, minimum_content_threshold) {
+  if (!document_text_length) {
     return;
   }
 
@@ -307,7 +307,7 @@ function ensure_minimum_content(
   // each iteration, until we reach the minimum content threshold or give up
   // after a number of iterations.
   let content_text_length = get_visible_content_length(blocks);
-  let ratio = content_text_length / text_length;
+  let ratio = content_text_length / (document_text_length || 1);
   while (ratio < minimum_content_threshold && iterations < max_iterations) {
     // TEMP: debugging
     console.debug(
@@ -324,7 +324,7 @@ function ensure_minimum_content(
     }
 
     content_text_length = get_visible_content_length(blocks);
-    ratio = content_text_length / text_length;
+    ratio = content_text_length / document_text_length;
     iterations++;
   }
 }
