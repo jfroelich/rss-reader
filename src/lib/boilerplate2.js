@@ -31,24 +31,22 @@ export function classify(document, evaluate_model, options = {}) {
       options.minimum_content_threshold;
   minimum_content_threshold = minimum_content_threshold / 100;
 
-  if (!document.body) {
-    return [];
-  }
+  const default_max_token_length = 15;
+  let max_token_length = isNaN(options.max_token_length) ?
+      default_max_token_length :
+      options.max_token_length;
 
-  const document_text_length = get_text_length(document.body.textContent);
-  if (!document_text_length) {
-    return [];
-  }
-
-  // TODO: this calculation only belongs in evaluate_model, evaluate model
-  // should accept a document parameter maybe?
-  let num_elements = 0;
+  let document_text_length = 0;
   if (document.body) {
-    num_elements = document.body.getElementsByTagName('*').length;
+    document_text_length = get_text_length(document.body.textContent);
   }
 
   // Find the cutoff indices into the all-elements array between start-middle
   // and between middle-end. Do this once here because it is loop invariant.
+  let num_elements = 0;
+  if (document.body) {
+    num_elements = document.body.getElementsByTagName('*').length;
+  }
   const front_max = (tail_size * num_elements) | 0;
   const end_min = num_elements - front_max;
 
@@ -63,8 +61,6 @@ export function classify(document, evaluate_model, options = {}) {
   };
 
   // Step 1: represent the document as a dataset
-  // TODO: dataset should be a parameter to classify, the caller should have to
-  // compose this call explicitly with the classify call
   const dataset = create_block_dataset(document);
 
   // Step 2: extract features from each element in the dataset
@@ -72,16 +68,14 @@ export function classify(document, evaluate_model, options = {}) {
     block.element_type = block.element.localName;
     block.depth = get_node_depth(block.element);
     block.text_length = get_text_length(block.element.textContent);
+    block.anchor_text_length = get_anchor_text_length(block.element);
     block.list_item_count = get_list_item_count(block.element);
     block.paragraph_count = get_paragraph_count(block.element);
     block.field_count = get_field_count(block.element);
-
-    // TODO: these helper functions should not rely on the block, just the
-    // element, these should be generic DOM utility type functions
-    block.line_count = get_line_count(block);
-    block.anchor_text_length = get_anchor_text_length(block);
-    block.image_area = get_block_image_area(block);
-    block.attribute_tokens = get_block_attribute_tokens(block);
+    block.line_count = get_line_count(block.element, block.text_length);
+    block.image_area = get_descendant_image_area(block.element);
+    block.attribute_tokens =
+        get_attribute_tokens(block.element, max_token_length);
   }
 
   // Step 3: evaluate the model against each dataset row
@@ -231,12 +225,14 @@ export function create_model() {
       sidebar: -20,
       sign: -10,
       signup: -30,
+      skip: -5,
       social: -30,
       splash: -10,
       story: 50,
       storytxt: 50,
       stub: -10,
       subscription: -20,
+      survey: -10,
       tag: -15,
       tags: -20,
       tease: -20,
@@ -252,17 +248,6 @@ export function create_model() {
       zone: -20
     };
 
-    // Map of element names to bias values. This heavily penalizes certain
-    // elements that are indications of navigation or non-content, and remains
-    // relatively neutral or timid on other types. I include neutrals in the map
-    // to be explicit about them, even though they produce the equivalent
-    // non-bias, because I prefer to have the opinion be encoded clearly. We
-    // only care about container-type elements, as in, those elements which may
-    // contain other elements, that semantically tend to represent a unit or
-    // block of content that should be treated as a whole. We do not care about
-    // void elements or elements that contain only text (generally). This should
-    // generally align with the container-element-names array, but exact
-    // alignment is not important.
     const type_bias_map = {
       article: 10,
       blockquote: 5,
@@ -291,15 +276,13 @@ export function create_model() {
     score += derive_line_count_bias(block.text_length, block.line_count);
     score +=
         derive_anchor_density_bias(block.anchor_text_length, block.text_length);
-    score += derive_list_bias(block.list_item_count);
+    score += derive_list_bias(block.element, block.list_item_count);
     score += derive_paragraph_bias(block.paragraph_count);
     score += derive_field_bias(block.field_count);
     score += derive_image_bias(block.image_area, info.area);
     score +=
         derive_position_bias(block.element_index, info.front_max, info.end_min);
-
-    // TODO: this should not rely on element
-    score += derive_attribute_bias(block.element, token_weights);
+    score += derive_attribute_bias(block.attribute_tokens, token_weights);
 
     return Math.max(0, Math.min(score, 100));
   };
@@ -382,91 +365,25 @@ function get_visible_content_length(blocks) {
 // @param element_index {Number} the index of the block in the all-body-elements
 // array
 function Block(element, element_index = -1) {
-  // A live reference to the node in the full document. Each block tracks its
-  // represented root element to allow for deferring processing that depends
-  // on the element into later iterations over the live dom.
   this.element = element;
-
-  // index into body-elements array. This is a representation of the position
-  // of the block within the content. -1 means not set or invalid index or not
-  // present in elements array.
   this.element_index = element_index;
-
-  // index into the blocks array of the parent block. -1 indicates not set or
-  // no parent.
   this.parent_block_index = -1;
-
-  // The element's type (e.g. the tagname), all lowercase, not qualified. This
-  // is redundant with the live reference, but the live reference only exists
-  // for performance sake. This is the extracted feature out of the reference.
-  // The caller is responsible for ensuring correspondence to the element
-  // property.
-  // TODO: instead of the actual element name, I could use this to aggregate
-  // element types together into block types, and have block types such as
-  // 'container' or 'list', where it does not matter if the block is div/ul/ol
-  // or whatever anymore, just its more abstract type. Code that requires the
-  // element name can still dig into the element reference, but other code that
-  // relies on element type can just compare at the more abstract level. Another
-  // benefit is that the type-bias method would do a lookup within a smaller
-  // map. Another benefit is that it feels less wonky to have the bias-map be
-  // separate from the block-element-names array.
   this.element_type = undefined;
-
-  // The number of node hops (edge traversals or path length) to the root
-  // node (not the body node!). -1 means invalid or not set.
   this.depth = -1;
-
-  // A representation of the count of characters within the element. This is
-  // roughly equivalent to the total length of the text nodes within the element
-  // or any of its descendants. -1 is an invalid length.
   this.text_length = -1;
-
-  // A representation of the number of lines of content within the block. This
-  // does not necessarily correspond to a simple count of '\n' characters. This
-  // is more of an approximation of how many flow-breaks there are within this
-  // block of content. Many things within the block content can cause a
-  // flow-break, such as the presence of a p tag, or an h1 tag, a new table row,
-  // etc.
   this.line_count = 0;
-
-  // An approximation of the size of this element based on the size of the
-  // images contained within the element or its descendants.
   this.image_area = 0;
-
-  // A count of nested listed items (e.g. li, dl)
   this.list_item_count = 0;
-
-  // A count of nested paragraphs
   this.paragraph_count = 0;
-
-  // A count of nested form fields
   this.field_count = 0;
-
-  // A set of strings pulled from the block element's own html attributes, such
-  // as element id or class. NOTE: this is not yet fully implemented
   this.attribute_tokens = [];
 
-  // The block's content score. All blocks are initially neutral. The lower the
-  // score the more likely the content is boilerplate. Score is clamped within
-  // the range [0..100].
   this.score = neutral_score;
-
-  // Biases
-  this.depth_bias = 0;
-  this.type_bias = 0;
-  this.text_bias = 0;
-  this.line_count_bias = 0;
-  this.anchor_density_bias = 0;
-  this.list_bias = 0;
-  this.paragraph_bias = 0;
-  this.form_bias = 0;
-  this.image_bias = 0;
-  this.position_bias = 0;
-  this.attribute_bias = 0;
 }
 
 export function find_block_element(document, block) {
   // For now, cheat
+  // TODO: maybe use something like element index
   assert(block.element);
   assert(block.element.ownerDocument === document);
   return block.element;
@@ -483,32 +400,14 @@ function get_node_depth(node) {
   return depth;
 }
 
-// TODO: change to be specific to DOM elements, not specific to blocks, because
-// this is a general purpose function for dom interaction that we happen to use
-// in a particular way, this is more like an adaptation of the
-// getComputedStyle.bounds technique
-// TODO: consider generalizing to all media, such as video and audio components,
-// and not just images.
-// TODO: consider using a default width and default height of all images, that
-// when dimensions are unknown, the defaults are used, so it does not matter as
-// much if document is inert (e.g. from XMLHttpRequest or DOMParser)
-// This is a conservative approach to calculating total area from descendant
-// images. This assumes that images within the element have explicit width and
-// height attributes, and therefore have initialized width and height
-// properties.
-function get_block_image_area(block) {
-  const images = block.element.getElementsByTagName('img');
+// Get the total area of all descendant images
+function get_descendant_image_area(element) {
+  const images = element.getElementsByTagName('img');
   let area = 0;
   for (const image of images) {
     area += image.width * image.height;
   }
   return area;
-}
-
-function get_block_attribute_tokens(block) {
-  // Not yet implemented, see the todos for derive_attribute_bias
-
-  // TODO: this should produce a distinct set, not just the full set
 }
 
 // Calculates a bias that should increase or decrease an element's boilerplate
@@ -542,15 +441,13 @@ function derive_text_length_bias(block_text_length, document_text_length) {
 
   const ratio = block_text_length / document_text_length;
 
-  // should be a param from somewhere
+  // should be a param
   const max_text_bias = 5;
 
-  // Calc bias
-  let bias = (100 * ratio * max_text_bias) | 0;
-  // Cap influence to max
+  let bias = 500 * ratio;
   bias = Math.min(max_text_bias, bias);
 
-  return bias;
+  return bias | 0;
 }
 
 // Text with lots of lines and a short amount of text per line is probably
@@ -579,8 +476,7 @@ function derive_line_count_bias(text_length, line_count) {
 function derive_anchor_density_bias(anchor_text_length, text_length) {
   const ratio = anchor_text_length / (text_length || 1);
 
-  // TODO: use a coefficient and round
-
+  // TODO: use a coefficient and round instead of bin
   if (ratio > 0.9) {
     return -40;
   } else if (ratio > 0.5) {
@@ -612,10 +508,14 @@ function derive_paragraph_bias(paragraph_count) {
 
 // Counts child paragraphs (not all descendants!)
 function get_paragraph_count(element) {
+  // We actually match multiple paragraph-like items. We are actually looking
+  // for text-breaking elements related to text.
+  const names = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
+
   let count = 0;
   for (let child = element.firstElementChild; child;
        child = child.nextElementSibling) {
-    if (child.localName === 'p') {
+    if (names.includes(child.localName)) {
       count++;
     }
   }
@@ -642,16 +542,14 @@ function get_field_count(element) {
   return element.querySelectorAll('input, select, button, textarea').length;
 }
 
+// TODO: this should not depend on element, somehow, maybe use a block_type
+// that is a category of tags (e.g. list, generic-container)
+function derive_list_bias(element, list_item_count) {
+  // Do not punish lists themselves
+  if (['ol', 'ul', 'dl'].includes(element.localName)) {
+    return 0;
+  }
 
-// TODO: this incorrectly penalizes certain lists, for example see
-// https://theoutline.com/post/5208/eating-gummies-is-not-a-substitute-for-wearing-sunscreen
-// Maybe this should be excluding ol/ul/dl themselves from being analyzed, and
-// doing something like comparing it to neighboring text length. boilerplate
-// tends to have very little text outside of the list, but in-main-content-area
-// lists tend to have a lot of surrounding text. also note in the example page
-// that the list in question does not have any links. Using -1 might be
-// overkill.
-function derive_list_bias(list_item_count) {
   return Math.max(-5, -1 * list_item_count);
 }
 
@@ -660,27 +558,22 @@ function get_list_item_count(element) {
   return element.querySelectorAll('li, dd, dt').length;
 }
 
-// TODO: use block.attribute_tokens instead of tokenizing here
-
-// Look at the values of attributes of a block element to indicate whether a
-// block represents boilerplate
-function derive_attribute_bias(element, token_weights) {
+// Return a set of distinct lowercase tokens from some of the values of the
+// element's attributes
+function get_attribute_tokens(element, max_length) {
   const keys = ['id', 'name', 'class', 'itemprop', 'role'];
   const values = keys.map(key => element.getAttribute(key));
   const joined_values = values.join(' ');
   const normal_values = joined_values.toLowerCase();
   const tokens = tokenize(normal_values);
   const token_set = create_token_set(tokens);
-  const max_token_len = 15;
-  const small_token_set = token_set.filter(t => t.length <= max_token_len);
+  return max_length ? token_set.filter(t => t.length <= max_length) : token_set;
+}
 
-  let bias = 0;
-  for (const token of small_token_set) {
-    const token_bias = token_weights[token] || 0;
-    bias += token_bias;
-  }
-
-  return bias;
+function tokenize(value) {
+  const values = value.split(/[\s\-_0-9]+/g);
+  const non_empty_values = values.filter(v => v);
+  return non_empty_values;
 }
 
 function create_token_set(tokens) {
@@ -693,17 +586,22 @@ function create_token_set(tokens) {
   return set;
 }
 
-function tokenize(value) {
-  const values = value.split(/[\s\-_0-9]+/g);
-  const non_empty_values = values.filter(v => v);
-  return non_empty_values;
+// Look at the values of attributes of a block element to indicate whether a
+// block represents boilerplate
+function derive_attribute_bias(tokens, token_weights) {
+  let bias = 0;
+  for (const token of tokens) {
+    const token_bias = token_weights[token] || 0;
+    bias += token_bias;
+  }
+
+  return bias;
 }
 
 // Find the count of characters in anchors that are anywhere in the descendant
 // hierarchy of this element. This assumes anchors do not contain each other
 // (e.g. not misnested).
-function get_anchor_text_length(block) {
-  const element = block.element;
+function get_anchor_text_length(element) {
   const anchors = element.querySelectorAll('a[href]');
   let anchor_length = 0;
   for (const anchor of anchors) {
@@ -714,54 +612,29 @@ function get_anchor_text_length(block) {
 }
 
 // Returns an approximate count of the number of lines in a block of text
-function get_line_count(block) {
-  if (!block.text_length) {
+function get_line_count(element, text_length) {
+  if (!text_length) {
     return 1;
   }
 
-  // Use the number of descendant flow-breaking elements as an estimate of
-  // line length.
-
-  // The presence of these elements within an element's descendant hierarchy
-  // is a rough indication of content spanning over a new line.
-  //
-  // These do not necessarily correspond to block elements.
-  //
-  // This array is defined per call, but it is const, and I assume v8 is smart
-  // enough to hoist this invariant if this function gets hot. I think the
-  // proper style is to define a variable as local as possible without regard
-  // for optimization. I am still a bit wary of this.
-  //
-  // TODO: make this more exhaustive, look for typical flow-breaking elements,
-  // maybe consider any other container-type block. In fact maybe instead of
-  // line count I should be looking at text-to-child-blocks ratio. Maybe also
-  // include some of the other block elements as flow-breaking.
   const line_splitter_element_names = [
     'br', 'dt', 'dd', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'li',
     'menuitem', 'p', 'tr'
   ];
 
   const selector = line_splitter_element_names.join(',');
-  const elements = block.element.querySelectorAll(line_splitter_element_names);
+  const elements = element.querySelectorAll(line_splitter_element_names);
   let line_count = elements.length;
 
   // Special handling for preformatted text
-  // TODO: this is wrong, this is something that should be done per every
-  // occurence of pre/code and affect all ancestor blocks, not just whether this
-  // element itself is pre/code
   let newline_count = 0;
-  if (['pre', 'code'].includes(block.element_type)) {
-    const lines = block.element.textContent.split('\n');
+  if (['pre', 'code'].includes(element.localName)) {
+    const lines = element.textContent.split('\n');
     newline_count = lines.length;
   }
   line_count += newline_count;
 
-  // Always count the first line as a line
-  if (line_count === 0) {
-    line_count = 1;
-  }
-
-  return line_count;
+  return line_count ? line_count : 1;
 }
 
 function assert(condition, message) {
