@@ -1,9 +1,7 @@
-// Module for classifying html content as boilerplate
-
 export const neutral_score = 50;
 
-// Produce a scored dataset indicating which elements in the document are
-// boilerplate.
+// Given a dataset representing content sections of a document, produce a scored
+// dataset indicating which elements in the dataset are boilerplate.
 //
 // @option tail_size {Number} optional, should be in range [0..0.5), determines
 // what percentage of content blocks fall into header and footer sections
@@ -11,9 +9,16 @@ export const neutral_score = 50;
 // to use when determining the proportional size of content blocks
 // @option minimum_content_threshold {Number} optional, should be in range
 // 0-100, indicating minimum desired percentage of content vs. boilerplate
-export function classify(document, evaluate_model, options = {}) {
+export function classify(dataset, model, options = {}) {
+  assert(Array.isArray(dataset));
+
+  if (!dataset.length) {
+    return dataset;
+  }
+
+  const document = dataset[0].element.ownerDocument;
   assert(typeof document === 'object');
-  assert(typeof evaluate_model === 'function');
+  assert(typeof model === 'function');
 
   const tail_size = isNaN(options.tail_size) ? 0.2 : options.tail_size;
   assert(!isNaN(tail_size));
@@ -31,18 +36,11 @@ export function classify(document, evaluate_model, options = {}) {
       options.minimum_content_threshold;
   minimum_content_threshold = minimum_content_threshold / 100;
 
-  const default_max_token_length = 15;
-  let max_token_length = isNaN(options.max_token_length) ?
-      default_max_token_length :
-      options.max_token_length;
-
-  let document_text_length = 0;
+  let text_length = 0;
   if (document.body) {
-    document_text_length = get_text_length(document.body.textContent);
+    text_length = get_text_length(document.body.textContent);
   }
 
-  // Find the cutoff indices into the all-elements array between start-middle
-  // and between middle-end. Do this once here because it is loop invariant.
   let num_elements = 0;
   if (document.body) {
     num_elements = document.body.getElementsByTagName('*').length;
@@ -52,44 +50,19 @@ export function classify(document, evaluate_model, options = {}) {
 
   // TODO: this is the wrong grouping, front_max and end_min are options,
   // not metadata, area is an option, and text_length is the only data point
-  // Maybe text_length should be a per block property despite being redundant
+  // Maybe text_length should be a per block property
   const info = {
-    text_length: document_text_length,
+    text_length: text_length,
     front_max: front_max,
     end_min: end_min,
     area: document_area
   };
 
-  // Step 1: represent the document as a dataset
-  const dataset = create_block_dataset(document);
-
-  // Step 2: extract features from each element in the dataset
   for (const block of dataset) {
-    block.element_type = block.element.localName;
-    block.depth = get_node_depth(block.element);
-    block.text_length = get_text_length(block.element.textContent);
-    block.anchor_text_length = get_anchor_text_length(block.element);
-    block.list_item_count = get_list_item_count(block.element);
-    block.paragraph_count = get_paragraph_count(block.element);
-    block.field_count = get_field_count(block.element);
-    block.line_count = get_line_count(block.element, block.text_length);
-    block.image_area = get_descendant_image_area(block.element);
-    block.attribute_tokens =
-        get_attribute_tokens(block.element, max_token_length);
+    block.score = model(block, info);
   }
 
-  // Step 3: evaluate the model against each dataset row
-  for (const block of dataset) {
-    block.score = evaluate_model(block, info);
-  }
-
-  // Step 4: adjust the classification scores to avoid too much boilerplate
-  // TODO: the info object has some stamp coupling anti-pattern I think, if
-  // there is only one property used then only pass that sole property instead
-  // of the whole object
-  ensure_minimum_content(dataset, info, minimum_content_threshold);
-
-  // Expose the scored dataset
+  ensure_minimum_content(dataset, text_length, minimum_content_threshold);
   return dataset;
 }
 
@@ -115,7 +88,10 @@ export function annotate_document(document, dataset) {
   }
 }
 
-function create_block_dataset(document) {
+// Given a document, produce a dataset suitable for analysis
+// @param max_token_length the maximum number of characters per token when
+// analyzing attribute tokens
+export function create_block_dataset(document, max_token_length = 15) {
   if (!document.body) {
     return [];
   }
@@ -148,6 +124,21 @@ function create_block_dataset(document) {
     }
   }
 
+  // Extract features
+  for (const block of dataset) {
+    block.element_type = block.element.localName;
+    block.depth = get_node_depth(block.element);
+    block.text_length = get_text_length(block.element.textContent);
+    block.anchor_text_length = get_anchor_text_length(block.element);
+    block.list_item_count = get_list_item_count(block.element);
+    block.paragraph_count = get_paragraph_count(block.element);
+    block.field_count = get_field_count(block.element);
+    block.line_count = get_line_count(block.element, block.text_length);
+    block.image_area = get_descendant_image_area(block.element);
+    block.attribute_tokens =
+        get_attribute_tokens(block.element, max_token_length);
+  }
+
   return dataset;
 }
 
@@ -167,9 +158,11 @@ export function create_model() {
       bottom: -10,
       branding: -10,
       carousel: -10,
+      cit: 10,  // citation abbreviation
+      citation: 10,
       cmt: -10,
       col: -2,
-      colm: -2,  // alternate abbr for column
+      colm: -2,  // column abbreviation
       comment: -40,
       contact: -10,
       content: 20,
@@ -213,6 +206,8 @@ export function create_model() {
       recirculation: -20,
       recommend: -10,
       recommended: -10,
+      ref: 5,
+      reference: 25,
       register: -30,
       rel: -50,
       relate: -50,
@@ -231,6 +226,7 @@ export function create_model() {
       story: 50,
       storytxt: 50,
       stub: -10,
+      subscribe: -30,
       subscription: -20,
       survey: -10,
       tag: -15,
@@ -291,8 +287,8 @@ export function create_model() {
 // An element's score indicates whether it is boilerplate. A higher score means
 // less likely to be boilerplate.
 function ensure_minimum_content(
-    blocks, document_info, minimum_content_threshold) {
-  if (!document_info.text_length) {
+    blocks, text_length, minimum_content_threshold) {
+  if (!text_length) {
     return;
   }
 
@@ -311,7 +307,7 @@ function ensure_minimum_content(
   // each iteration, until we reach the minimum content threshold or give up
   // after a number of iterations.
   let content_text_length = get_visible_content_length(blocks);
-  let ratio = content_text_length / document_info.text_length;
+  let ratio = content_text_length / text_length;
   while (ratio < minimum_content_threshold && iterations < max_iterations) {
     // TEMP: debugging
     console.debug(
@@ -328,7 +324,7 @@ function ensure_minimum_content(
     }
 
     content_text_length = get_visible_content_length(blocks);
-    ratio = content_text_length / document_info.text_length;
+    ratio = content_text_length / text_length;
     iterations++;
   }
 }
@@ -567,7 +563,8 @@ function get_attribute_tokens(element, max_length) {
   const normal_values = joined_values.toLowerCase();
   const tokens = tokenize(normal_values);
   const token_set = create_token_set(tokens);
-  return max_length ? token_set.filter(t => t.length <= max_length) : token_set;
+  return max_length > 0 ? token_set.filter(t => t.length <= max_length) :
+                          token_set;
 }
 
 function tokenize(value) {
@@ -591,10 +588,8 @@ function create_token_set(tokens) {
 function derive_attribute_bias(tokens, token_weights) {
   let bias = 0;
   for (const token of tokens) {
-    const token_bias = token_weights[token] || 0;
-    bias += token_bias;
+    bias += token_weights[token] || 0;
   }
-
   return bias;
 }
 

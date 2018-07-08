@@ -2,15 +2,15 @@ import assert from '/src/lib/assert.js';
 import * as bp from '/src/lib/boilerplate2.js';
 
 // We create our model once
-const model_evaluator = bp.create_model();
+const model = bp.create_model();
 
-export function filter_boilerplate(document) {
+export function filter_boilerplate(document, options = {}) {
   assert(document);
 
-  // Classify content using default options and model
-  const dataset = bp.classify(document, model_evaluator);
+  const dataset = bp.create_block_dataset(document, options.max_token_length);
+  const scored_dataset = bp.classify(dataset, model, options);
 
-  for (const row of dataset) {
+  for (const row of scored_dataset) {
     if (row.score < bp.neutral_score) {
       const element = bp.find_block_element(document, row);
       element.remove();

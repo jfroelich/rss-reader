@@ -10,15 +10,19 @@ import {set_base_uri} from '/src/lib/html-document.js';
 import {parse_html} from '/src/lib/html.js';
 import {fetch_html} from '/src/lib/net/fetch-html.js';
 
-// TODO: should I be filtering hidden elements for testing purposes? That will
-// get me a more accurate view, right?
-
+// TODO: will filtering hidden elements help exploration?
 
 async function bptest(url_string) {
+  document.body.innerHTML = 'Loading ' + url_string + ' ...';
+
   const url = new URL(url_string);
   const response = await fetch_html(url, 5000);
   const response_text = await response.text();
+
+  document.body.innerHTML = 'Parsing ' + response_text.length + ' characters';
   const doc = parse_html(response_text);
+
+  document.body.innerHTML = 'Filtering document before analysis';
 
   // Do some pre-analysis filtering
   filter_comments(doc);
@@ -57,15 +61,14 @@ async function bptest(url_string) {
     style.remove();
   }
 
-  // Reset the view as an explicit and isolated step instead of simply replacing
-  // it later. There are some shenanigans that can happen when just replacing
-  // innerHTML (e.g. like head elements getting merged).
-  document.body.innerHTML = '';
+  document.body.innerHTML = 'Analyzing boilerplate';
 
-  const model_evaluator = bp.create_model();
-  const dataset = bp.classify(doc, model_evaluator);
-  bp.annotate_document(doc, dataset);
+  const dataset = bp.create_block_dataset(doc);
+  const model = bp.create_model();
+  const scored_dataset = bp.classify(dataset, model);
+  bp.annotate_document(doc, scored_dataset);
 
+  document.body.innerHTML = 'Analysis completed, rendering document view';
   document.body.innerHTML = doc.body.innerHTML;
 }
 
