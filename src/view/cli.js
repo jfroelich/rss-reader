@@ -34,7 +34,7 @@ async function cli_subscribe(url_string, poll = true) {
   // Do a sequential poll of the created feed
   if (poll) {
     const poll_options = {ignore_recency_check: true, notify: true};
-    await poll_feed(ma.conn, iconn, ma.channel, poll_options, feed);
+    await poll_feed(ma, iconn, poll_options, feed);
   }
 
   ma.close();

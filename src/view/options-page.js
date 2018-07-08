@@ -330,7 +330,7 @@ async function after_subscribe_poll_feed_async(feed) {
   const [ma, iconn] = await conn_promises;
   const options = {ignore_recency_check: true, notify: true};
   // TODO: should just be passing around ma
-  await poll_feed(ma.conn, iconn, ma.channel, options, feed);
+  await poll_feed(ma, iconn, options, feed);
   ma.close();
   iconn.close();
 }
