@@ -1,7 +1,7 @@
 import {image_has_source} from '/src/lib/dom/image-has-source.js';
 
 const lazy_image_attribute_names = [
-  'load-src', 'data-src', 'data-src-full16x9', 'data-src-large',
+  'big-src', 'load-src', 'data-src', 'data-src-full16x9', 'data-src-large',
   'data-original-desktop', 'data-baseurl', 'data-flickity-lazyload',
   'data-lazy', 'data-path', 'data-image-src', 'data-original',
   'data-adaptive-image', 'data-imgsrc', 'data-default-src', 'data-hi-res-src'
