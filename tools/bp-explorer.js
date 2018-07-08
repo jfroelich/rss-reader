@@ -82,9 +82,11 @@ async function bptest(url_string) {
   // sort of remove ids so it does not muck with form stuff
   elements = doc.body.getElementsByTagName('*');
   for (const element of elements) {
-    const old_id = element.getAttribute('id');
-    element.setAttribute('old-id', old_id);
-    element.removeAttribute('id');
+    const id = element.getAttribute('id');
+    if (id) {
+      element.setAttribute('old-id', id);
+      element.removeAttribute('id');
+    }
   }
 
   section.innerHTML = 'Analysis completed, rendering document view';

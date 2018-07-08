@@ -97,11 +97,13 @@ export function create_block_dataset(document, max_token_length = 15) {
   }
 
   // Distinguishable areas of content
+  // NOTE: lists (ol/ul/dl) excluded at the moment due to bad scoring
+  // NOTE: <code> excluded at the moment, maybe permanently
+
   const block_element_names = [
-    'article', 'aside',  'blockquote', 'code',    'div',  'dl',
-    'figure',  'footer', 'header',     'layer',   'main', 'mainmenu',
-    'menu',    'nav',    'ol',         'picture', 'pre',  'section',
-    'table',   'td',     'tr',         'ul'
+    'article', 'aside', 'blockquote', 'div', 'figure', 'footer', 'header',
+    'layer', 'main', 'mainmenu', 'menu', 'nav', 'picture', 'pre', 'section',
+    'table', 'td', 'tr'
   ];
 
   const elements = document.body.getElementsByTagName('*');
@@ -164,6 +166,7 @@ export function create_model() {
       col: -2,
       colm: -2,  // column abbreviation
       comment: -40,
+      comments: -50,
       contact: -10,
       content: 20,
       contentpane: 50,
@@ -175,6 +178,7 @@ export function create_model() {
       dsq: -30,  // disqus abbreviation
       entry: 10,
       fb: -5,  // facebook
+      figure: 10,
       fixture: -5,
       footer: -40,
       furniture: -5,
@@ -223,6 +227,7 @@ export function create_model() {
       skip: -5,
       social: -30,
       splash: -10,
+      sticky: -10,
       story: 50,
       storytxt: 50,
       stub: -10,
@@ -249,12 +254,14 @@ export function create_model() {
       blockquote: 5,
       section: 0,
       layer: 0,
+      cite: 10,
       code: 10,
       div: 0,
       dl: 0,
       td: 0,
       table: 0,
       header: -10,
+      figure: 5,
       footer: -10,
       ul: 0,
       aside: -5,
