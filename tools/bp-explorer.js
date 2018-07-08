@@ -77,6 +77,12 @@ async function bptest(url_string) {
   const dataset = bp.create_block_dataset(doc);
   const model = bp.create_model();
   const scored_dataset = bp.classify(dataset, model);
+
+  // TEMP: debugging why this does not align with sd-explorer
+  // for (const row of scored_dataset) {
+  //  console.debug(row);
+  //}
+
   bp.annotate_document(doc, scored_dataset);
 
   // sort of remove ids so it does not muck with form stuff

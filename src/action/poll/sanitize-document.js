@@ -40,24 +40,9 @@ import {trim_document} from '/src/lib/filters/trim-document.js';
 import * as ls from '/src/lib/ls.js';
 import {is_allowed_request} from '/src/lib/net/fetch-policy.js';
 
-// Transforms a document by removing or changing nodes for various reasons:
-// * to condense content
-// * to remove hidden content
-// * to remove junk content
-// * to remove security-risk content by removing script
-// * to accelerate content load speed
-// * to preserve privacy
-// * to make the content static, by removing script (dhtml)
-// * to improve readability, such as be reducing the use of emphasis
-// * to make the document embeddable such as by canonicalizing urls, removing
-// style information, global attribute issues such as element ids, removing
-// frames, removing script
-//
-// The document is modified in place because it is too expensive to clone.
-// The function works by applying several filters. Its value comes from how it
-// calls the filters in a programmed order.
-// It is async primarily just because of a middle step related to setting sizes
-// of images that is also async.
+// Applies several filters in a programmed order in order to clean up a
+// document's nodes, filter out script, and make the document easily embeddable
+// within another document.
 export async function sanitize_document(document) {
   deframe(document);
   ensure_document_body(document);
@@ -65,10 +50,7 @@ export async function sanitize_document(document) {
   filter_comments(document);
   filter_noscript_elements(document);
 
-  // TODO: shorten name, drop sandoc prefix
   const matte = ls.read_int('contrast_default_matte');
-
-  // TODO: lowercase
   const mcr = ls.read_float('min_contrast_ratio');
   filter_hidden_elements(document, matte, mcr);
 
@@ -83,7 +65,6 @@ export async function sanitize_document(document) {
   // TODO: maybe host-aware logic should just be a facet of the boilerplate
   // filter and this filter should be merged
   filter_by_host_template(document);
-  filter_boilerplate(document);
 
   // TODO: now that script filtering happens after boilerplate filtering, there
   // is no longer a problem with affecting the boilerplate algorithm by removing
@@ -111,6 +92,11 @@ export async function sanitize_document(document) {
 
   const image_size_fetch_timeout = ls.read_int('set_image_sizes_timeout');
   await set_image_sizes(document, image_size_fetch_timeout, is_allowed_request);
+
+  // This must run AFTER image sizes set otherwise the dimensions calculations
+  // are off and sometimes the main article gets filtered
+  filter_boilerplate(document);
+
 
   // TODO: compose into filter-images-by-size
   filter_small_images(document);

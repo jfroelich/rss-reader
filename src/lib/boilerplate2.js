@@ -202,7 +202,7 @@ export function create_model() {
       newsletter: -20,
       page: 10,
       popular: -30,
-      post: 5,
+      post: 20,
       primary: 10,
       promo: -50,
       promotion: -50,
@@ -250,7 +250,7 @@ export function create_model() {
     };
 
     const type_bias_map = {
-      article: 10,
+      article: 20,
       blockquote: 5,
       section: 0,
       layer: 0,
