@@ -6,7 +6,6 @@ import {ensure_document_body} from '/src/lib/filters/ensure-document-body.js';
 import {filter_base_elements} from '/src/lib/filters/filter-base-elements.js';
 import {filter_blacklisted_elements} from '/src/lib/filters/filter-blacklisted-elements.js';
 import {filter_brs} from '/src/lib/filters/filter-brs.js';
-import {filter_by_host_template} from '/src/lib/filters/filter-by-host-template.js';
 import {filter_comments} from '/src/lib/filters/filter-comments.js';
 import {filter_container_elements} from '/src/lib/filters/filter-container-elements.js';
 import {filter_dead_images} from '/src/lib/filters/filter-dead-images.js';
@@ -50,9 +49,9 @@ export async function sanitize_document(document) {
   filter_comments(document);
   filter_noscript_elements(document);
 
-  const matte = ls.read_int('contrast_default_matte');
-  const mcr = ls.read_float('min_contrast_ratio');
-  filter_hidden_elements(document, matte, mcr);
+  const contrast_matte = ls.read_int('contrast_default_matte');
+  const contrast_ratio = ls.read_float('min_contrast_ratio');
+  filter_hidden_elements(document, contrast_matte, contrast_ratio);
 
   const general_blacklist = [
     'applet', 'audio',  'basefont', 'bgsound', 'command',  'datalist',
@@ -62,20 +61,8 @@ export async function sanitize_document(document) {
   ];
   filter_blacklisted_elements(document, general_blacklist);
 
-  // TODO: maybe host-aware logic should just be a facet of the boilerplate
-  // filter and this filter should be merged
-  filter_by_host_template(document);
-
-  // TODO: now that script filtering happens after boilerplate filtering, there
-  // is no longer a problem with affecting the boilerplate algorithm by removing
-  // links. There is no need to remove script elements earlier, it can happen
-  // pretty much whenever. I think it makes more sense to make the script-anchor
-  // filter implicit within the script filter, and abstract it away from here.
   filter_script_elements(document);
-  filter_script_anchors(document);
 
-  const condense_copy_attrs_flag = false;
-  condense_tagnames(document, condense_copy_attrs_flag);
 
   // This should occur before setting image sizes
   // TODO: actually the above comment is no longer true, right? Reverify. If
@@ -97,10 +84,17 @@ export async function sanitize_document(document) {
   // are off and sometimes the main article gets filtered
   filter_boilerplate(document);
 
+  // This must run after boilerplate analysis because it affects the amount of
+  // anchor text in the content
+  filter_script_anchors(document);
 
   // TODO: compose into filter-images-by-size
   filter_small_images(document);
   filter_large_images(document);
+
+
+  const condense_copy_attrs_flag = false;
+  condense_tagnames(document, condense_copy_attrs_flag);
 
   filter_head_elements(document);
   filter_base_elements(document);
