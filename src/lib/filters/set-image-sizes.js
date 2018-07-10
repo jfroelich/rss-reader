@@ -142,8 +142,6 @@ async function get_image_dims(image, timeout, is_allowed_request) {
 }
 
 // Try and find image dimensions from the characters of a url
-// TODO: only process images that have a filename and have a filename extension
-// and have a known file name extension (e.g. only analyze jpg/gif/etc).
 // TODO: support "filename.w500.h500.jpg"
 // TODO: support "foo-730x420-bar.jpg"
 // TODO: support both - and _ delimiters
@@ -154,6 +152,23 @@ function find_url_dimensions(source_url) {
   if (source_url.protocol === 'data:') {
     return;
   }
+
+  const ext = get_url_extension(source_url);
+  if (!ext) {
+    return;
+  }
+
+  const supported_extensions = ['jpg', 'gif', 'svg', 'jpg', 'bmp', 'png'];
+  if (!supported_extensions.includes(ext)) {
+    // TEMP: debugging new functionality
+    console.debug('Unknown image filename extension', ext);
+
+    return;
+  }
+
+  // TODO: this code has a ton of nested blocks and is too difficult to read
+  // and modify. Rewrite. Also, it is ok to set height even if width not set,
+  // so the height stuff does not need to happen only in the width block.
 
   const named_attr_pairs =
       [{width: 'w', height: 'h'}, {width: 'width', height: 'height'}];
@@ -175,6 +190,20 @@ function find_url_dimensions(source_url) {
             return dimensions;
           }
         }
+      }
+    }
+  }
+}
+
+function get_url_extension(url) {
+  const path = url.pathname;
+
+  if (path.length > 2) {
+    const last_dot_pos_p1 = path.lastIndexOf('.') + 1;
+    if (last_dot_pos_p1 > 0 && last_dot_pos_p1 < path.length) {
+      const ext = path.substring(last_dot_pos_p1);
+      if (ext.length < 5 && string.is_alphanumeric(ext)) {
+        return ext;
       }
     }
   }
