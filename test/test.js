@@ -75,7 +75,7 @@ function find_test_by_name(name) {
 // @param timeout {Number} optional, ms, per-test timeout value
 // @param parallel {Boolean} optional, whether to run tests in parallel or
 // serial, defaults to false (serial)
-async function cli_run(name, timeout = 10000, parallel) {
+async function cli_run(name, timeout = 10000, parallel = true) {
   // Either run one test, run the named tests, or run all tests
 
   let tests;
