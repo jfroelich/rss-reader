@@ -1,4 +1,5 @@
 import assert from '/src/lib/assert.js';
+import * as string from '/src/lib/string.js';
 
 // TODO: avoid repeatedly fetching the same image. An image can appear multiple
 // times in a document. Right now this does a fetch per occurrence. Instead I
@@ -35,12 +36,12 @@ export async function set_image_sizes(document, timeout, is_allowed_request) {
   const results = await Promise.all(promises);
 
   for (const result of results) {
-    console.debug('Image dimensions:', {
-      image: result.image.outerHTML,
-      reason: result.reason,
-      width: result.width,
-      height: result.height
-    });
+    // console.debug('Image dimensions:', {
+    //  image: result.image.outerHTML,
+    //  reason: result.reason,
+    //  width: result.width,
+    //  height: result.height
+    //});
 
     // We intentionally exclude 0 here
     if (result.width && result.height) {
@@ -104,11 +105,11 @@ async function get_image_dims(image, timeout, is_allowed_request) {
     return {image: image, reason: 'badsource'};
   }
 
-  if (image.hasAttribute('src')) {
-    console.debug('Image source:', source_url.href);
-  } else {
-    console.debug('Derived image source:', source_url.href);
-  }
+  // if (image.hasAttribute('src')) {
+  // console.debug('Image source:', source_url.href);
+  //} else {
+  // console.debug('Derived image source:', source_url.href);
+  //}
 
 
   let url_dimensions = find_url_dimensions(source_url);
@@ -238,24 +239,20 @@ function find_style_dimensions(element) {
 // using the simple element.src trick, it looks like HTMLImageElement does not
 // allow me to control the request parameters and does send cookies, but I need
 // to review this more, I am still unsure.
+// @param is_allowed_request {Function} optional, is given the request method
+// and the url object, throws a policy error if the function returns false
 async function fetch_image_element(url, timeout = 0, is_allowed_request) {
   assert(url instanceof URL);
-  assert(Number.isInteger(timeout) && timeout >= 0);
 
-  // Use a specific error type to indicate this error is different than a
-  // programmer error or other kinds of fetch errors.
-  if (!is_allowed_request('get', url)) {
+  if (is_allowed_request && !is_allowed_request('get', url)) {
     throw new PolicyError('Refused to fetch ' + url.href);
   }
 
-  const fetch_promise = fetch_image_element_promise(url);
-  const contestants =
-      timeout ? [fetch_promise, sleep(timeout)] : [fetch_promise];
+  const fpromise = fetch_image_element_promise(url);
+  const contestants = timeout ? [fpromise, sleep(timeout)] : [fpromise];
   const image = await Promise.race(contestants);
 
-  // Image is undefined when the sleep promise won the race. We use a specific
-  // error type here to distinguish this kind of error from programmer error
-  // and from other kinds of fetch errors.
+  // Image is undefined when sleep won
   if (!image) {
     throw new TimeoutError('Timed out fetching ' + url.href);
   }
@@ -325,6 +322,7 @@ class TimeoutError extends Error {
 
 // Returns a promise that resolves to undefined after a given amount of
 // milliseconds.
-function sleep(ms) {
+function sleep(ms = 0) {
+  assert(Number.isInteger(ms) && ms >= 0);
   return new Promise(resolve => setTimeout(resolve, ms));
 }
