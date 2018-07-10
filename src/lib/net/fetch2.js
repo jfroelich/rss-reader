@@ -18,7 +18,7 @@ const default_options = {
 // is_allowed_url - function given method and url, return whether url is
 // fetchable, optional
 export async function fetch2(url, options = {}, is_allowed_request) {
-  if (!('href' in url)) {
+  if (typeof url !== 'object' || !url.href) {
     throw new TypeError('url is not a URL: ' + url);
   }
 
