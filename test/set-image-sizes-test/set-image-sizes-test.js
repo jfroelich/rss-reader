@@ -4,69 +4,65 @@ import {set_base_uri} from '/src/lib/html-document.js';
 import * as html from '/src/lib/html.js';
 import {register_test} from '/test/test-registry.js';
 
+// TODO: test image missing src with srcset
+// TODO: test multiple images
+// TODO: test an against-policy failure when policy is set
+// TODO: test when an image uses attributes different than natural dimensions
+// (a resized-by-attribute image), I believe the resized dimensions in this
+// case should trump the natural dimensions
+
 // Assert the ordinary case of a basic html document with an image with unknown
 // attributes
 async function set_image_sizes_basic_test() {
   const doc = await fetch_local('basic.html');
-
-  await set_sizes(doc, undefined, url => true);
-
+  await set_sizes(doc);
   const image = doc.querySelector('img');
   assert(image.width === 16);
   assert(image.height === 12);
 }
 
 // Assert that fetching an image that does not exist skips over the image
+// NOTE: unfortunately Chrome makes it impossible to suppress network errors
+// in the log in devtools, so this will still generate a log message that
+// looks like an error. However, the test still completes without error. Note
+// that due to this failure message always appearing and having no way to remove
+// it, simply glancing at the test log for errors should not be an indication
+// that a test failed, so I must always remember to ignore this error. Or, I
+// must always remember to run tests with the "Hide network errors" checkbox
+// checked in the devtools console settings.
 async function set_image_sizes_404_test() {
   const doc = await fetch_local('404.html');
-  await set_sizes(doc, undefined, url => true);
+  // This should not throw even though the image specified in the html is
+  // missing
+  await set_sizes(doc);
+
+  const image = doc.querySelector('img');
+
+  // Because the image does not have express attributes, and because this is an
+  // inert file where images are not eagerly loaded by Chrome on document load,
+  // the properties for the image should not be initialized. Also, failing to
+  // fetch or find any other indication of size should not affect these props.
+  assert(image.width === 0);
+  assert(image.height === 0);
 }
 
+// Exercise running the function on a document without any images. This should
+// not cause any kind of error (e.g. any code that assumes images always exist
+// is incorrect).
+async function set_image_sizes_text_only_test() {
+  const doc = await fetch_local('text-only.html');
+  await set_sizes(doc);
+}
 
-// TODO: test loading a 404 image, i just realized the error handling around
-// the fetch call isn't trapped, so it might look like a programmer error
-// TODO: test loading a file without any images
-// TODO: test image missing src
-// TODO: test image missing src with srcset
-// TODO: test multiple images
-// TODO: test when an image uses attributes different than natural dimensions
-// (a resized-by-attribute image), I believe the resized dimensions in this
-// case should trump the natural dimensions
-
-
-// TODO: these tests must be rewritten using new approach
-
-// TODO: move this comment somewhere, i dunno, github issue
-// TODO: research http://exercism.io/ svg loading issue
-// Actually there is now a separate issue. It's not finding any urls. Something
-// is up with parsing. Viewing source shows stuff. Actually it might even be in
-// fetching it? Yeah, it serves up garbage when I fetch it, completely
-// different. Perhaps because of no cookies or some header. So I can't test that
-// particular url until I figure out the problem ok the size was getting loaded,
-// attribute filter didn't whitelist image sizes
-
-/*
-window.test = async function(url_string) {
-  const request_url = new URL(url_string);
-  const response = await fetch_html(request_url);
-  const html = await response.text();
-  const document = html.parse_html(html);
-  const response_url = new URL(response.url);
-  set_base_uri(document, response_url);
-  await set_image_sizes(document, undefined, is_allowed_request);
-};
-
-
-window.test2 = async function() {
-  const html =
-      '<html><body><img src="http://exercism.io/icons/brand-logo.svg">' +
-      '</body></html>';
-  const document = html.parse_html(html);
-
-  set_base_uri(document, new URL('http://exercism.io'));
-  await set_image_sizes(document, undefined, is_allowed_request);
-};*/
-
+// Test that an image that is completely devoid of source information does not
+// cause an error, and does not somehow set attributes or properties.
+async function set_image_sizes_sourceless_test() {
+  const doc = await fetch_local('sourceless.html');
+  await set_sizes(doc);
+  const image = doc.querySelector('img');
+  assert(image.width === 0);
+  assert(image.height === 0);
+}
 
 // Simple private helper that abstracts away the extra params
 function set_sizes(doc) {
@@ -89,3 +85,6 @@ async function fetch_local(filename) {
 }
 
 register_test(set_image_sizes_basic_test);
+register_test(set_image_sizes_404_test);
+register_test(set_image_sizes_text_only_test);
+register_test(set_image_sizes_sourceless_test);
