@@ -120,6 +120,8 @@ export async function poll_feed(ma, iconn, options = {}, feed) {
 async function poll_entries(ma, iconn, options, entries, feed) {
   const feed_url_string = array.peek(feed.urls);
 
+
+
   console.debug(
       'Processing %d entries for feed', entries.length, feed_url_string);
 
@@ -137,12 +139,15 @@ async function poll_entries(ma, iconn, options, entries, feed) {
     }
   }
 
+  // TODO: this collection of rules should not be rebuilt per feed, so rules
+  // should be a parameter to this function
   const rewrite_rules = build_rewrite_rules();
+
   const poll_entry_promises = [];
   for (const entry of entries) {
     const promise = poll_entry(
         ma, iconn, entry, options.fetch_html_timeout,
-        options.fetch_image_timeout, rewrite_rules);
+        options.fetch_image_timeout, rewrite_rules, feed_url_string);
     const catch_promise = promise.catch(poll_entry_onerror);
     poll_entry_promises.push(catch_promise);
   }
@@ -201,14 +206,16 @@ async function handle_fetch_error(ma, error, feed, threshold) {
     return;
   }
 
-  console.debug(
-      'Incremented error count for feed', feed.title, feed.errorCount);
-
   // Init or increment
   feed.errorCount = Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;
 
+  console.debug(
+      'Incremented error count for feed', feed.title, feed.errorCount);
+  console.debug(error);
+
   // Auto-deactivate on threshold breach
   if (feed.errorCount > threshold) {
+    console.debug('Deactivating feed', array.peek(feed.urls));
     feed.active = false;
     feed.deactivationReasonText = 'fetch';
     feed.deactivationDate = new Date();
@@ -273,35 +280,61 @@ function coerce_entry(parsed_entry) {
 // the full text of the entry. Either returns the added entry id, or throws an
 // error.
 export async function poll_entry(
-    ma, iconn, entry, fetch_html_timeout, fetch_image_timeout, rewrite_rules) {
+    ma, iconn, entry, fetch_html_timeout, fetch_image_timeout, rewrite_rules,
+    feed_url_string) {
   assert(Model.is_entry(entry));
 
   // Rewrite the entry's last url and append its new url if different.
   let url = new URL(array.peek(entry.urls));
   Model.append_entry_url(entry, rewrite_url(url, rewrite_rules));
 
+  // TEMP: researching problem with fetching hacker news articles
+  // OK, the entry tail url is the desired url that came from the entry link,
+  // so something incorrect must be happening after this
+  if (feed_url_string.startsWith('https://news.ycombinator.com/rss')) {
+    console.dir(entry);
+  }
+
   // Check whether the entry exists. Note we skip over checking the original
   // url and only check the rewritten url, because we always rewrite before
   // storage, and that is sufficient to detect a duplicate. We get the
   // tail url a second time because it may have changed in rewriting.
   url = new URL(array.peek(entry.urls));
-  const get_mode = 'url', key_only = true;
-  let existing_entry = await ma.getEntry(get_mode, url, key_only);
+
+  let existing_entry = await ma.getEntry('url', url, true);
   if (existing_entry) {
+    // NOTE: this only fails this entry, throwing this error does not cause
+    // the other entries to be skipped
     throw new EntryExistsError('Entry already exists for url ' + url.href);
+  }
+
+  // TEMP: researching problem with fetching hacker news articles
+  // OK, all found here
+  if (feed_url_string.startsWith('https://news.ycombinator.com/rss')) {
+    console.debug('entry does not exist', url.href);
   }
 
   // Fetch the entry full text. Reuse the url from above since it has not
   // changed. Trap fetch errors so that we can fall back to using feed content
   let response;
   if ((url.protocol === 'http:' || url.protocol === 'https:') &&
-      sniff.classify(url) !== sniff.BINARY_CLASS &&
-      !url_is_inaccessible_content(url)) {
+      sniff.classify(url) !== sniff.BINARY_CLASS && !url_is_inaccessible(url)) {
     try {
       response = await fetch_html(url, fetch_html_timeout);
     } catch (error) {
+      console.debug(error);
     }
   }
+
+
+  // TEMP: this could be one reason why this is failing to fetch hacker news
+  // articles
+  if (feed_url_string.startsWith('https://news.ycombinator.com/rss') &&
+      !response) {
+    console.debug('no response for hacker news article', url.href);
+  }
+
+  const get_mode = 'url', key_only = true;
 
   // If we fetched and redirected, append the post-redirect response url, and
   // reapply url rewriting.
@@ -326,21 +359,23 @@ export async function poll_entry(
       response_text = await response.text();
       document = html.parse_html(response_text);
     } catch (error) {
+      console.debug(error);
     }
-
-    if (document && !entry.title) {
-      const title_element = document.querySelector('html > head > title');
-      if (title_element) {
-        entry.title = title_element.textContent;
-      }
-    }
-
   } else {
     try {
       document = html.parse_html(entry.content);
     } catch (error) {
+      console.debug(error);
       document = window.document.implementation.createHTMLDocument();
-      document.documentElement.innerHTML = 'Invalid html content';
+      document.documentElement.innerHTML =
+          '<html><body>Malformed content (unsafe to display)</body></html>';
+    }
+  }
+
+  if (document && !entry.title) {
+    const title_element = document.querySelector('html > head > title');
+    if (title_element) {
+      entry.title = title_element.textContent.trim();
     }
   }
 
@@ -351,10 +386,15 @@ export async function poll_entry(
   await sanitize_document(document);
   entry.content = document.documentElement.outerHTML;
 
-  // Cleanup the entry properties
   sanity.sanitize_entry(entry);
-  // Throw a validation error if invalid
   sanity.validate_entry(entry);
+
+  // TEMP: look at whether this pulled the full text or fell back to the
+  // original, it should have grabbed the full text
+  if (feed_url_string.startsWith('https://news.ycombinator.com/rss')) {
+    console.debug('Creating hacker news entry', entry);
+  }
+
   return ma.createEntry(entry);
 }
 
@@ -371,7 +411,7 @@ const inaccessible_content_descriptors = [
   {pattern: /foxnews.com$/i, reason: 'fake'}
 ];
 
-function url_is_inaccessible_content(url) {
+function url_is_inaccessible(url) {
   const descs = inaccessible_content_descriptors;
   for (const desc of descs) {
     if (desc.pattern && desc.pattern.test(url.hostname)) {

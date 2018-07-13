@@ -41,10 +41,13 @@ export async function fetch2(url, options = {}, is_allowed_request) {
     delete merged_options.timeout;
   }
 
+  // Even though types is only used after fetch and therefore would preferably
+  // be accessed later in this function's body, we must extract it out of the
+  // options variable prior to fetch so as to avoid passing a non-standard
+  // option to fetch
   let types;
   if (Array.isArray(merged_options.types)) {
     types = merged_options.types;
-    // do not forward to native fetch
     delete merged_options.types;
   }
 
@@ -65,8 +68,12 @@ export async function fetch2(url, options = {}, is_allowed_request) {
   }
 
   if (!response.ok) {
-    throw new FetchError(
-        'Error fetching ' + url.href + ' with status ' + response.status);
+    const error_message_parts = [
+      merged_options.method.toUpperCase(), url.href, ' failed with status',
+      response.status, response.statusText
+    ];
+
+    throw new FetchError(error_message_parts.join(' '));
   }
 
   if (types && types.length) {
