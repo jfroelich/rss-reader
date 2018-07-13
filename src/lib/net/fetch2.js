@@ -16,7 +16,7 @@ const default_options = {
 // options.timeout - specify timeout in ms
 // options.types - optional array of strings of mime types to check against
 // is_allowed_url - function given method and url, return whether url is
-// fetchable, optional
+// fetchable, optional (if undefined then no policy applied)
 export async function fetch2(url, options = {}, is_allowed_request) {
   if (typeof url !== 'object' || !url.href) {
     throw new TypeError('url is not a URL: ' + url);
@@ -26,10 +26,10 @@ export async function fetch2(url, options = {}, is_allowed_request) {
     throw new OfflineError('Failed to fetch url while offline ' + url.href);
   }
 
-  const method = options.method || 'get';
-  if (is_allowed_request && !is_allowed_request(method, url)) {
-    throw new PolicyError(
-        'Refusing to request url ' + url.href + ' with method ' + method);
+  if (is_allowed_request && !is_allowed_request(options.method, url)) {
+    const message =
+        ['Refusing to request url', url.href, 'with method', options.method];
+    throw new PolicyError(message.join(' '));
   }
 
   const merged_options = Object.assign({}, default_options, options);
@@ -59,7 +59,6 @@ export async function fetch2(url, options = {}, is_allowed_request) {
   }
 
   const fetch_promise = fetch(url.href, merged_options);
-
   const response = await (
       untimed ? fetch_promise : Promise.race([fetch_promise, sleep(timeout)]));
 

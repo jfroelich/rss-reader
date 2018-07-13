@@ -288,13 +288,6 @@ export async function poll_entry(
   let url = new URL(array.peek(entry.urls));
   Model.append_entry_url(entry, rewrite_url(url, rewrite_rules));
 
-  // TEMP: researching problem with fetching hacker news articles
-  // OK, the entry tail url is the desired url that came from the entry link,
-  // so something incorrect must be happening after this
-  if (feed_url_string.startsWith('https://news.ycombinator.com/rss')) {
-    console.dir(entry);
-  }
-
   // Check whether the entry exists. Note we skip over checking the original
   // url and only check the rewritten url, because we always rewrite before
   // storage, and that is sufficient to detect a duplicate. We get the
@@ -308,12 +301,6 @@ export async function poll_entry(
     throw new EntryExistsError('Entry already exists for url ' + url.href);
   }
 
-  // TEMP: researching problem with fetching hacker news articles
-  // OK, all found here
-  if (feed_url_string.startsWith('https://news.ycombinator.com/rss')) {
-    console.debug('entry does not exist', url.href);
-  }
-
   // Fetch the entry full text. Reuse the url from above since it has not
   // changed. Trap fetch errors so that we can fall back to using feed content
   let response;
@@ -324,14 +311,6 @@ export async function poll_entry(
     } catch (error) {
       console.debug(error);
     }
-  }
-
-
-  // TEMP: this could be one reason why this is failing to fetch hacker news
-  // articles
-  if (feed_url_string.startsWith('https://news.ycombinator.com/rss') &&
-      !response) {
-    console.debug('no response for hacker news article', url.href);
   }
 
   const get_mode = 'url', key_only = true;
@@ -388,13 +367,6 @@ export async function poll_entry(
 
   sanity.sanitize_entry(entry);
   sanity.validate_entry(entry);
-
-  // TEMP: look at whether this pulled the full text or fell back to the
-  // original, it should have grabbed the full text
-  if (feed_url_string.startsWith('https://news.ycombinator.com/rss')) {
-    console.debug('Creating hacker news entry', entry);
-  }
-
   return ma.createEntry(entry);
 }
 

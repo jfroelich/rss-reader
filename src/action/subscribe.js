@@ -66,8 +66,7 @@ export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
   if (iconn) {
     const url = favicon.create_lookup_url(feed);
     let doc = undefined;
-    const fetch = false;
-    feed.faviconURLString = await favicon.lookup(iconn, url, doc, fetch);
+    feed.faviconURLString = await favicon.lookup(iconn, url, doc, false);
   }
 
   // Prep the feed for storage. This is not baked into createFeed because not
@@ -88,7 +87,6 @@ export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
 
   // TODO: I wonder if it makes more sense to only do this subsequent operation
   // in a message handler
-
   if (should_notify) {
     const title = 'Subscribed!';
     const feed_title = feed.title || array.peek(feed.urls);

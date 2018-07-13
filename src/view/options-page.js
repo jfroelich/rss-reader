@@ -315,11 +315,16 @@ async function subscribe_form_onsubmit(event) {
   section_show_by_id('subs-list-section');
 
   // intentionally non-blocking
-  try {
-    after_subscribe_poll_feed_async(feed).catch(console.error);
-  } catch (error) {
-    console.debug(error);
-  }
+  // NOTE: we must use setTimeout or we get a 503 error for requesting the
+  // feed again too quickly
+
+  setTimeout(function() {
+    try {
+      after_subscribe_poll_feed_async(feed).catch(console.error);
+    } catch (error) {
+      console.debug(error);
+    }
+  }, 5000);
 
   return false;
 }
