@@ -34,7 +34,6 @@ export async function openModelAccess(is_channeled, name, version, timeout) {
   return ma;
 }
 
-// Provides a data access layer for interacting with the reader database
 export function ModelAccess() {
   this.conn = undefined;
   this.channel = undefined;
@@ -46,10 +45,6 @@ ModelAccess.prototype.activateFeed = async function(feed_id) {
   this.channel.postMessage({type: 'feed-activated', id: feed_id});
 };
 
-// Compacts older read entries in the database. Dispatches entry-archived
-// messages.
-// @param max_age {Number} ms, optional, defaults to two days, how old an entry
-// must be in order to archive it.
 ModelAccess.prototype.archiveEntries = async function(max_age = TWO_DAYS_MS) {
   const ids = await idbmodel.archive_entries(this.conn, max_age);
   for (const id of ids) {

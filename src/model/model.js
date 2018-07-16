@@ -1,10 +1,5 @@
 import assert from '/src/lib/assert.js';
 
-// Because we cannot read function objects from indexedDB, and serializes
-// function objects into plain objects on write, there is no way to encode type
-// information into the stored data objects. Therefore instanceof and typeof are
-// not usable for making assertions about type. Therefore, use a hidden "magic"
-// property to enable basic type checking.
 export const FEED_MAGIC = 0xfeedfeed;
 export const ENTRY_MAGIC = 0xdeadbeef;
 
@@ -21,17 +16,11 @@ export function create_entry() {
   return {magic: ENTRY_MAGIC};
 }
 
-// Function objects are not allowed, hence the duck-type check. Note that typeof
-// null === 'object'
 export function is_entry(value) {
   return value && typeof value === 'object' && value.magic === ENTRY_MAGIC &&
       is_plain_object(value);
 }
 
-// Return true only if the object is a plain object, not a function object.
-// Function objects (e.g. var f = new F()) will have a constructor name "F"
-// where as plain objects have a constructor "Object", and we know that "F"
-// cannot replace "Object".
 function is_plain_object(value) {
   return value && value.__proto__ && value.__proto__.constructor &&
       value.__proto__.constructor.name === 'Object';

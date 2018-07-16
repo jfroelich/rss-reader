@@ -3,11 +3,6 @@ import sizeof from '/src/lib/sizeof.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 
-// This module is an indexedDB specific implementation of the model access
-// layer. This does not do channeled communications. This module should not
-// be accessed directly, usually should go through model-access module, and
-// model-access should be the only module that calls this.
-
 export function activate_feed(conn, feed_id) {
   return new Promise(activate_feed_executor.bind(null, conn, feed_id));
 }
@@ -61,9 +56,8 @@ function archive_entries_executor(conn, max_age, resolve, reject) {
     if (!cursor) {
       return;
     }
-    const entry = cursor.value;
 
-    // TODO: abort the transaction? reject and return?
+    const entry = cursor.value;
     if (!Model.is_entry(entry)) {
       console.warn('Not an entry', entry);
       cursor.continue();
@@ -126,16 +120,11 @@ function compact_entry(entry) {
   return ce;
 }
 
-// TODO: now that create_entry is within this layer and we have an extra layer
-// on top of it, and we no longer care about channel message type, it might make
-// sense to reuse create and update code
 export function create_entry(conn, entry) {
   return new Promise(create_entry_executor.bind(null, conn, entry));
 }
 
 function create_entry_executor(conn, entry, resolve, reject) {
-  // Resolve on transaction completion, not request completion, to ensure the
-  // data is committed and not dishonestly report the result.
   let id;
   const txn = conn.transaction('entry', 'readwrite');
   txn.oncomplete = _ => resolve(id);
@@ -295,8 +284,6 @@ function get_entries_executor(conn, mode, offset, limit, resolve, reject) {
       return;
     }
 
-    // If an offset was specified and we did not yet advance, then seek
-    // forward. Ignore the value at the current position.
     if (offset && !advanced) {
       advanced = true;
       cursor.advance(offset);
@@ -305,7 +292,6 @@ function get_entries_executor(conn, mode, offset, limit, resolve, reject) {
 
     entries.push(cursor.value);
 
-    // Stop if limit defined and reached or surpassed limit.
     if (limit > 0 && entries.length >= limit) {
       return;
     }
@@ -387,13 +373,10 @@ function get_feed_executor(conn, mode, value, key_only, resolve, reject) {
     let feed;
     if (key_only) {
       const feed_id = request.result;
-
-      // only define if matched, otherwise leave undef
       if (Model.is_valid_feed_id(feed_id)) {
         feed = Model.create_feed();
         feed.id = feed_id;
       }
-
     } else {
       feed = request.result;
     }
@@ -431,9 +414,6 @@ function iterate_entries_executor(conn, handle_entry, resolve, reject) {
       return;
     }
 
-    // Errors thrown in a later tick do not cause rejection. Therefore it is
-    // unsafe to call this without trapping errors because we cannot rely on
-    // the caller to carefully craft the handle_entry callback.
     try {
       handle_entry(cursor);
     } catch (error) {
@@ -458,7 +438,6 @@ function mark_entry_read_executor(conn, entry_id, resolve, reject) {
   request.onsuccess = _ => {
     const entry = request.result;
 
-    // Errors thrown in a later tick do not cause rejection
     if (!Model.is_entry(entry)) {
       reject(new Error('Loaded object is not an entry ' + entry_id));
       return;
@@ -487,19 +466,13 @@ export function open(name, version, upgrade = on_upgrade_needed, timeout) {
   return indexeddb.open(name, version, upgrade, timeout);
 }
 
+// NOTE: if new db, then event.oldVersion is 0, and conn.version is the new
+// version value.
 function on_upgrade_needed(event) {
   const conn = event.target.result;
   const txn = event.target.transaction;
   let feed_store, entry_store;
   const stores = conn.objectStoreNames;
-
-  // Some simple debugging. If creating a brand new database, old_version
-  // is expected to be 0 (and not NaN/null/undefined).
-  // console.debug('Creating/upgrading database', JSON.stringify({
-  //  name: conn.name,
-  //  old_version: event.oldVersion,
-  //  new_version: conn.version
-  // }));
 
   if (event.oldVersion < 20) {
     const feed_store_props = {keyPath: 'id', autoIncrement: true};
@@ -556,7 +529,6 @@ function add_magic_to_entries(txn) {
   request.onerror = _ => console.error(request.error);
 }
 
-// TODO: use cursor over getAll for scalability
 function add_magic_to_feeds(txn) {
   const store = txn.objectStore('feed');
   const request = store.getAll();
@@ -640,19 +612,13 @@ export async function remove_untyped_objects(conn) {
     }
   }
 
-  // We plan to process more entries later in this function, so we block here
-  // to ensure entries are deleted and not re-processed later.
   const results = await Promise.all(delete_feed_promises);
-
-  // Each delete_feed promise resolves to an array of 0 or more deleted entry
-  // ids. These entries were deleted by virtue of deleting their feed.
   for (const entry_ids of results) {
     for (const id of entry_ids) {
       removed_entry_ids.push(id);
     }
   }
 
-  // But these entries are deleted without considering the feed.
   await this.iterateEntries(conn, cursor => {
     const entry = cursor.value;
     if (!Model.is_entry(entry)) {

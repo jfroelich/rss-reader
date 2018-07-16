@@ -26,13 +26,15 @@ const default_options = {
   notify: true
 };
 
-export async function poll_feeds(ma, iconn, options = {}) {
-  const get_feeds_mode = 'active', get_feeds_sort = false;
-  const feeds = await ma.getFeeds(get_feeds_mode, get_feeds_sort);
+function get_pollable_feeds(ma) {
+  const mode = 'active', sort = false;
+  return ma.getFeeds(mode, sort);
+}
 
+export async function poll_feeds(ma, iconn, options = {}) {
   options = Object.assign({}, default_options, options);
 
-  // Concurrently poll feeds, skipping individual errors
+  const feeds = await get_pollable_feeds(ma);
   const promises = [];
   for (const feed of feeds) {
     const promise = poll_feed(ma, iconn, options, feed);
@@ -57,57 +59,48 @@ export async function poll_feeds(ma, iconn, options = {}) {
   console.debug('Added %d entries', count);
 }
 
-
 // Check if a remote feed has new data and store it in the database
 export async function poll_feed(ma, iconn, options = {}, feed) {
-  const ignore_recency_check = options.ignore_recency_check;
-  const recency_period = options.recency_period;
-  const notify_flag = options.notify;
-  const threshold = options.deactivation_threshold;
-  const fetch_feed_timeout = options.fetch_feed_timeout;
-
   assert(Model.is_feed(feed));
   assert(!array.is_empty(feed.urls));
   assert(feed.active);
 
-  const tail_url = new URL(array.peek(feed.urls));
-  console.debug('Polling feed %s', tail_url.href);
+  // TODO: this collection of rules should not be rebuilt per feed, so rules
+  // should be a parameter to this function
+  const rewrite_rules = build_rewrite_rules();
 
-  // Exit if the feed was checked too recently
-  if (!ignore_recency_check && feed.dateFetched) {
+  const tail_url = new URL(array.peek(feed.urls));
+
+  if (!options.ignore_recency_check && feed.dateFetched) {
     const current_date = new Date();
-    const elapsed_ms = current_date - feed.dateFetched;
-    assert(elapsed_ms >= 0);  // feed polled in future?
-    assert(elapsed_ms >= recency_period);
+    const time_since_last_fetch = current_date - feed.dateFetched;
+    // TODO: it is wrong to use assert here, these assertions are not guarding
+    // against programmer errors
+    assert(time_since_last_fetch >= 0);
+    assert(time_since_last_fetch >= options.recency_period);
   }
 
-  // Fetch the feed
   const skip_entries = false;
   const resolve_entry_urls = true;
   let response;
   try {
     response = await fetch_feed(
-        tail_url, fetch_feed_timeout, skip_entries, resolve_entry_urls);
+        tail_url, options.fetch_feed_timeout, skip_entries, resolve_entry_urls);
   } catch (error) {
-    await handle_fetch_error(ma, error, feed, threshold);
+    await handle_fetch_error(ma, error, feed, options.deactivation_threshold);
     return 0;
   }
 
-  // Integrate the previous feed data with the new feed data
   const merged_feed = merge_feed(feed, response.feed);
-
-  // Denote the fetch was successful. This is important to counteract error
-  // counters that would lead to eventual deactivation
   handle_fetch_success(merged_feed);
-
   sanity.validate_feed(merged_feed);
   sanity.sanitize_feed(merged_feed);
   await ma.updateFeed(merged_feed);
 
-  const count =
-      await poll_entries(ma, iconn, options, response.entries, merged_feed);
+  const count = await poll_entries(
+      ma, iconn, rewrite_rules, options, response.entries, merged_feed);
 
-  if (notify_flag && count) {
+  if (options.notify && count) {
     const title = 'Added articles';
     const message =
         'Added ' + count + ' articles for feed ' + merged_feed.title;
@@ -117,31 +110,11 @@ export async function poll_feed(ma, iconn, options = {}, feed) {
   return count;
 }
 
-async function poll_entries(ma, iconn, options, entries, feed) {
+async function poll_entries(ma, iconn, rewrite_rules, options, entries, feed) {
   const feed_url_string = array.peek(feed.urls);
-
-
-
-  console.debug(
-      'Processing %d entries for feed', entries.length, feed_url_string);
-
   const coerced_entries = entries.map(coerce_entry);
   entries = dedup_entries(coerced_entries);
-
-  // Propagate feed properties to entries
-  for (const entry of entries) {
-    entry.feed = feed.id;
-    entry.feedTitle = feed.title;
-    entry.faviconURLString = feed.faviconURLString;
-
-    if (feed.datePublished && !entry.datePublished) {
-      entry.datePublished = feed.datePublished;
-    }
-  }
-
-  // TODO: this collection of rules should not be rebuilt per feed, so rules
-  // should be a parameter to this function
-  const rewrite_rules = build_rewrite_rules();
+  propagate_feed_properties(feed, entries);
 
   const poll_entry_promises = [];
   for (const entry of entries) {
@@ -164,6 +137,18 @@ function poll_entry_onerror(error) {
     // Note no difference here between programming error and typical errors
     // like fetch error, parse error
     console.warn(error);
+  }
+}
+
+function propagate_feed_properties(feed, entries) {
+  for (const entry of entries) {
+    entry.feed = feed.id;
+    entry.feedTitle = feed.title;
+    entry.faviconURLString = feed.faviconURLString;
+
+    if (feed.datePublished && !entry.datePublished) {
+      entry.datePublished = feed.datePublished;
+    }
   }
 }
 
@@ -284,20 +269,12 @@ export async function poll_entry(
     feed_url_string) {
   assert(Model.is_entry(entry));
 
-  // Rewrite the entry's last url and append its new url if different.
   let url = new URL(array.peek(entry.urls));
   Model.append_entry_url(entry, rewrite_url(url, rewrite_rules));
 
-  // Check whether the entry exists. Note we skip over checking the original
-  // url and only check the rewritten url, because we always rewrite before
-  // storage, and that is sufficient to detect a duplicate. We get the
-  // tail url a second time because it may have changed in rewriting.
   url = new URL(array.peek(entry.urls));
-
   let existing_entry = await ma.getEntry('url', url, true);
   if (existing_entry) {
-    // NOTE: this only fails this entry, throwing this error does not cause
-    // the other entries to be skipped
     throw new EntryExistsError('Entry already exists for url ' + url.href);
   }
 

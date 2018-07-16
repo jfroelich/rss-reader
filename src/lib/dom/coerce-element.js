@@ -1,22 +1,19 @@
 // Renames an element. This effectively changes the type of the element, so this
 // is named after the verb for changing types (coerce/cast).
 //
-// Child nodes are generally retained. When the new type is a known void type,
-// all child nodes are implicitly dropped.
+// Child nodes are retained unless the new type is a known void type. Event
+// listeners are not retained. See https://stackoverflow.com/questions/15408394.
 //
-// Event listeners are not retained. See
-// https://stackoverflow.com/questions/15408394.
-//
-// The state of the dom hierarchy after the change is not validated, so it is
-// entirely possible to cause misnesting and/or produce a nonsensical state.
+// This does not validate whether the new type is a valid child element of its
+// parent, or whether placing the children in the new type produced well-formed
+// html (other than for void elements).
 //
 // @param element {Element} the element to change
 // @param new_name {String} the name of the element's new type
-// @param copy_attributes_flag {Boolean} optional, if true then attributes are
+// @param copy_attributes {Boolean} optional, if true then attributes are
 // maintained, defaults to true.
-// @error if the input element is not a type of Element, such as when it is
-// undefined
-// @error if the new name seems invalid (not fully spec-compliant)
+// @throws {Error} if the input element is not an element
+// @throws {Error} if the new name seems invalid
 // @return returns the new element that replaced the old one
 export function coerce_element(element, new_name, copy_attributes = true) {
   if (!(element instanceof Element)) {
@@ -24,9 +21,8 @@ export function coerce_element(element, new_name, copy_attributes = true) {
   }
 
   // createElement is very forgiving regarding a new element's name. For
-  // example, if you pass a null value, it will create an element named "null".
-  // This is misleading because I think that should be an error. To avoid this,
-  // treat any attempt to use an invalid name as a programming error.
+  // example, createElement(null) creates an element named "null". This is
+  // misleading.
   if (!is_valid_element_name(new_name)) {
     throw new TypeError('Invalid new name ' + new_name);
   }
@@ -48,8 +44,8 @@ export function coerce_element(element, new_name, copy_attributes = true) {
     return element;
   }
 
-  // Before detaching, cache the reference so we can use for positioning the
-  // new element later.
+  // Before detaching, cache a reference to the preceding node so we can use it
+  // for positioning the new element after it.
   const next_sibling = element.nextSibling;
 
   // Detach the existing node prior to performing other dom operations so that
@@ -70,21 +66,18 @@ export function coerce_element(element, new_name, copy_attributes = true) {
   // to calling element.remove() in order to use element.ownerDocument after
   // calling element.remove().
 
-  // One additional point is that there is no point to removing a node if
-  // planning on changing ownership. Any function that can change ownership such
-  // as insertBefore or appendChild will implicitly do adoption, which
-  // implicitly involves a removal step. All calling element.remove beforehand
-  // does in that situation is make the removal explicit. This is not useful.
-  // So the fact that element.remove() is called above should be read as a
-  // signal that no adoption is expected.
+  // Additionally, there is no point to removing a node if planning on changing
+  // ownership. Any function that can change ownership such as insertBefore or
+  // appendChild will implicitly do adoption, which implicitly involves a
+  // removal step. All calling element.remove beforehand does in that situation
+  // is make the removal explicit. This is not useful. So the fact that
+  // element.remove() was called should signal no adoption.
 
-  // SECURITY: Create a new element using the document in which the existing
-  // element resides, not the document executing this function. This would
-  // otherwise be an XSS issue.
-
+  // XSS: Create a new element using the document in which the existing element
+  // resides, not the document executing this function, so as to prevent the
+  // ability to modify this script's behavior.
   // PERF: Create a new element using the document in which the existing element
-  // resides, otherwise this triggers cross-document node adoption, which would
-  // be needless overhead.
+  // resides, otherwise this triggers cross-document node adoption.
 
   const new_element = element.ownerDocument.createElement(new_name);
 
