@@ -1,27 +1,38 @@
 import * as ls from '/src/lib/ls.js';
 
 export async function open_view() {
-  const slideshow_url_string = chrome.extension.getURL('slideshow.html');
-  const new_tab_url_string = 'chrome://newtab/';
+  const url_string = chrome.extension.getURL('slideshow.html');
 
-  const slideshow_tabs = await find_tabs(slideshow_url_string);
-  if (slideshow_tabs && slideshow_tabs.length) {
-    chrome.tabs.update(slideshow_tabs[0].id, {active: true});
+  let tab = await find_tab(url_string);
+  if (tab) {
+    chrome.tabs.update(tab.id, {active: true});
     return;
   }
 
-  const new_tabs = await find_tabs(new_tab_url_string);
-  if (new_tabs && new_tabs.length) {
-    chrome.tabs.update(
-        new_tabs[0].id, {active: true, url: slideshow_url_string});
-    return;
+  const reuse_newtab = ls.read_boolean('reuse_newtab');
+  if (reuse_newtab) {
+    tab = await find_tab('chrome://newtab/');
+    if (tab) {
+      chrome.tabs.update(tab.id, {active: true, url: url_string});
+      return;
+    }
   }
 
-  chrome.tabs.create({url: slideshow_url_string});
+  chrome.tabs.create({active: true, url: url_string});
 }
 
-// Show a desktop notification. Dynamically checks if notifications are
-// supported. There is also an app setting to enable or disable notifications.
+function find_tab(url_string) {
+  return new Promise(resolve => {
+    const query = {url: url_string};
+    chrome.tabs.query(query, tabs => {
+      if (tabs && tabs.length) {
+        resolve(tabs[0]);
+      }
+      resolve();
+    });
+  });
+}
+
 export function show_notification(title, message, icon_url_string) {
   if (!ls.read_boolean('show_notifications')) {
     return;
@@ -37,18 +48,13 @@ export function show_notification(title, message, icon_url_string) {
   const default_icon = chrome.extension.getURL('/images/rss_icon_trans.gif');
   details.icon = icon_url_string || default_icon;
 
-  // Instantiation implicitly shows the notification
   const notification = new Notification(title, details);
   notification.addEventListener('click', notification_onclick);
 }
 
-function find_tabs(url_string) {
-  return new Promise(resolve => chrome.tabs.query({url: url_string}, resolve));
-}
-
+// TODO: test if this is still needed to workaround Chrome 66 error when
+// window is closed
 async function notification_onclick(event) {
-  // TODO: test if this is still needed to workaround Chrome 66 error when
-  // window is closed
   try {
     const hwnd = window.open();
     hwnd.close();
