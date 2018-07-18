@@ -1,7 +1,5 @@
 import * as ls from '/src/lib/ls.js';
 
-const default_icon = chrome.extension.getURL('/images/rss_icon_trans.gif');
-
 export async function open_view() {
   const slideshow_url_string = chrome.extension.getURL('slideshow.html');
   const new_tab_url_string = 'chrome://newtab/';
@@ -24,8 +22,7 @@ export async function open_view() {
 
 // Show a desktop notification. Dynamically checks if notifications are
 // supported. There is also an app setting to enable or disable notifications.
-export function show_notification(
-    title, message, icon_url_string = default_icon) {
+export function show_notification(title, message, icon_url_string) {
   if (!ls.read_boolean('show_notifications')) {
     return;
   }
@@ -36,7 +33,9 @@ export function show_notification(
 
   const details = {};
   details.body = message || '';
-  details.icon = icon_url_string;
+
+  const default_icon = chrome.extension.getURL('/images/rss_icon_trans.gif');
+  details.icon = icon_url_string || default_icon;
 
   // Instantiation implicitly shows the notification
   const notification = new Notification(title, details);
