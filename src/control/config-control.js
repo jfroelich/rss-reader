@@ -1,6 +1,6 @@
-import * as ls from '/src/lib/ls.js';
 import assert from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
+import * as ls from '/src/lib/ls.js';
 
 // React to the extension being installed or updated, or when chrome is updated,
 // to do ls related things. Note that this listener should be bound before
@@ -60,6 +60,7 @@ function update_config(event) {
 
 export function init_config(event) {
   // General settings
+  ls.write_boolean('reuse_newtab', true);
   ls.write_boolean('show_notifications', true);
 
   // Poll settings
