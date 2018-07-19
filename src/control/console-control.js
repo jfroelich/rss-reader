@@ -5,23 +5,7 @@ import {subscribe} from '/src/action/subscribe.js';
 import * as cron_control from '/src/control/cron-control.js';
 import {openModelAccess} from '/src/model/model-access.js';
 
-// The command-line-interface (CLI) module creates a cli object within the
-// global window object in order to make certain app functionality accessible
-// via the browser's console. This module is not intended for use by testing
-// modules or to be called by other code so it does not export anything.
-//
-// The cli exists because:
-// * it provides direct developer access to functions
-// * it is more stable than the view (for now)
-// * it leads to better design by providing a calling context other than normal
-// dom event handlers in an html view, which helps avoid view-dependent code
-// from appearing where it should not
-// * it ensures headless support
-// * hacky testing convenience
-// * another way of saying this, is that I am trying to keep separation between
-// model and view. Having a second style of view ensures that important model
-// things do not end up in the view. For a refresher review the following
-// article: http://read.humanjavascript.com/ch04-organizing-your-code.html
+// Handle commands entered into the console.
 
 async function cli_subscribe(url_string, poll = true) {
   const proms = [openModelAccess(/* channeled */ true), favicon.open()];
@@ -132,4 +116,5 @@ const cli = {
   subscribe: cli_subscribe
 };
 
-window.cli = cli;  // expose to console
+// Expose to console
+window.cli = cli;
