@@ -1,6 +1,6 @@
 import {openModelAccess} from '/src/model/model-access.js';
-import {mark_slide_read_start} from '/src/view/slideshow-page/mark-slide-read.js';
-import {get_current_slide} from '/src/view/slideshow-page/slideshow-state.js';
+import {mark_slide_read_start} from '/src/control/slideshow-page-control/mark-slide-read.js';
+import {get_current_slide} from '/src/control/slideshow-page-control/slideshow-state.js';
 
 export async function slide_onclick(event) {
   // Only intercept left clicks

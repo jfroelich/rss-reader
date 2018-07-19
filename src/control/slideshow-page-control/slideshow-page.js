@@ -1,14 +1,14 @@
-import '/src/view/slideshow-page/main-menu.js';
-import '/src/view/slideshow-page/left-panel.js';
+import '/src/control/slideshow-page-control/main-menu.js';
+import '/src/control/slideshow-page-control/left-panel.js';
 
 import * as config_control from '/src/control/config-control.js';
 import {openModelAccess} from '/src/model/model-access.js';
-import {append_slide} from '/src/view/slideshow-page/append-slide.js';
-import * as channel from '/src/view/slideshow-page/channel.js';
-import {feeds_container_append_feed} from '/src/view/slideshow-page/feeds-container.js';
-import {show_no_articles_message} from '/src/view/slideshow-page/no-articles-message.js';
-import {onkeydown} from '/src/view/slideshow-page/onkeydown.js';
-import {hide_splash, show_splash} from '/src/view/slideshow-page/splash.js';
+import {append_slide} from '/src/control/slideshow-page-control/append-slide.js';
+import * as channel from '/src/control/slideshow-page-control/channel.js';
+import {feeds_container_append_feed} from '/src/control/slideshow-page-control/feeds-container.js';
+import {show_no_articles_message} from '/src/control/slideshow-page-control/no-articles-message.js';
+import {onkeydown} from '/src/control/slideshow-page-control/onkeydown.js';
+import {hide_splash, show_splash} from '/src/control/slideshow-page-control/splash.js';
 
 // TODO: if main menu and left panel are separate from slideshow-page, then
 // it would be better to separately load them as modules in the html

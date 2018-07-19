@@ -1,10 +1,10 @@
 import * as badge from '/src/control/badge-control.js';
 import {openModelAccess} from '/src/model/model-access.js';
-import {append_slide} from '/src/view/slideshow-page/append-slide.js';
-import {count_unread_slides} from '/src/view/slideshow-page/count-unread-slides.js';
-import {mark_slide_read_end} from '/src/view/slideshow-page/mark-slide-read.js';
-import {remove_slide} from '/src/view/slideshow-page/remove-slide.js';
-import {is_current_slide} from '/src/view/slideshow-page/slideshow-state.js';
+import {append_slide} from '/src/control/slideshow-page-control/append-slide.js';
+import {count_unread_slides} from '/src/control/slideshow-page-control/count-unread-slides.js';
+import {mark_slide_read_end} from '/src/control/slideshow-page-control/mark-slide-read.js';
+import {remove_slide} from '/src/control/slideshow-page-control/remove-slide.js';
+import {is_current_slide} from '/src/control/slideshow-page-control/slideshow-state.js';
 
 let channel;
 

@@ -1,8 +1,8 @@
 import * as favicon from '/src/action/favicon/favicon.js';
 import {poll_feeds} from '/src/action/poll/poll-feeds.js';
 import {openModelAccess} from '/src/model/model-access.js';
-import {options_menu_hide, options_menu_show} from '/src/view/slideshow-page/left-panel.js';
-import {hide_no_articles_message, show_no_articles_message} from '/src/view/slideshow-page/no-articles-message.js';
+import {options_menu_hide, options_menu_show} from '/src/control/slideshow-page-control/left-panel.js';
+import {hide_no_articles_message, show_no_articles_message} from '/src/control/slideshow-page-control/no-articles-message.js';
 
 let refresh_in_progress = false;
 

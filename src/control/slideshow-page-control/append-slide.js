@@ -4,9 +4,9 @@ import assert from '/src/lib/assert.js';
 import * as html from '/src/lib/html.js';
 import {filter_publisher} from '/src/lib/nlp.js';
 import * as Model from '/src/model/model.js';
-import {hide_no_articles_message} from '/src/view/slideshow-page/no-articles-message.js';
-import {slide_onclick} from '/src/view/slideshow-page/slide-onclick.js';
-import * as slideshow_state from '/src/view/slideshow-page/slideshow-state.js';
+import {hide_no_articles_message} from '/src/control/slideshow-page-control/no-articles-message.js';
+import {slide_onclick} from '/src/control/slideshow-page-control/slide-onclick.js';
+import * as slideshow_state from '/src/control/slideshow-page-control/slideshow-state.js';
 
 // BUG: create_article_title_element is double encoding entities, so entities
 // show up in the value. I partially fixed by not escaping ampersand but that's

@@ -1,10 +1,10 @@
 import * as ls from '/src/lib/ls.js';
 import {openModelAccess} from '/src/model/model-access.js';
-import {append_slide} from '/src/view/slideshow-page/append-slide.js';
-import {count_unread_slides} from '/src/view/slideshow-page/count-unread-slides.js';
-import {mark_slide_read_start} from '/src/view/slideshow-page/mark-slide-read.js';
-import {remove_slide} from '/src/view/slideshow-page/remove-slide.js';
-import * as slideshow_state from '/src/view/slideshow-page/slideshow-state.js';
+import {append_slide} from '/src/control/slideshow-page-control/append-slide.js';
+import {count_unread_slides} from '/src/control/slideshow-page-control/count-unread-slides.js';
+import {mark_slide_read_start} from '/src/control/slideshow-page-control/mark-slide-read.js';
+import {remove_slide} from '/src/control/slideshow-page-control/remove-slide.js';
+import * as slideshow_state from '/src/control/slideshow-page-control/slideshow-state.js';
 
 export async function show_next_slide() {
   if (slideshow_state.get_active_transition_count()) {
