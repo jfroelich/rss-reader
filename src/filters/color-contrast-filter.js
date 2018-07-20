@@ -1,26 +1,13 @@
 import * as color from '/src/color.js';
 import * as css_color from '/src/css-color/css-color.js';
 
-// Elements with contrast ratios below this threshold are not perceptible. I use
-// a default value that is lower than the recommendation of 4.5, but
-// distinguishes red/green better. It screws up dark gray on black. The
-// difference in contrast ratios is basically because I am making unreliable
-// approximations and because the immediate audience is a content-filter, not a
-// person.
-export const DEFAULT_MIN_CONTRAST_RATIO = 1.2;
-export const DEFAULT_MATTE = color.WHITE;
-
-// Filters inperceptible text nodes from a document
 // The color contrast filter removes text nodes with a text-color to
 // background-color contrast ratio that is less than or equal to the given
-// minimum contrast ratio. If no contrast ratio is given then a default contrast
-// ratio is used.
-
-// The idea is that the code makes another pass over the content of an article,
-// during pre-processing, that looks at each element and makes a determination
-// as to whether an element is faint. If any element is faint, then it is a sign
-// of a malicious SEO optimization, and that the content of that element is
-// undesirable and should be filtered.
+// minimum contrast ratio. The idea is that the code makes another pass over the
+// content of an article, during pre-processing, that looks at each element and
+// makes a determination as to whether an element is hard to see. If any element
+// is faint, then it is a sign of a malicious SEO optimization, and that the
+// content of that element is undesirable and should be filtered.
 
 // While I would prefer to design a pure function that returns a new document,
 // that is too heavyweight. Therefore this mutates the document input in place
@@ -66,6 +53,19 @@ export const DEFAULT_MATTE = color.WHITE;
 // element's color, is due to security concerns over being able to see user
 // passwords or something. I eventually want to look into that.
 
+
+
+// Elements with contrast ratios below this threshold are not perceptible. I use
+// a default value that is lower than the recommendation of 4.5, but
+// distinguishes red/green better. It screws up dark gray on black. The
+// difference in contrast ratios is basically because I am making unreliable
+// approximations and because the immediate audience is a content-filter, not a
+// person.
+export const DEFAULT_MIN_CONTRAST_RATIO = 1.2;
+
+// The default matte to use unless one is specified
+export const DEFAULT_MATTE = color.WHITE;
+
 // ### Params
 // * document {Document}
 // * matte {Number} optional, the base color to use for composition
@@ -78,8 +78,7 @@ export function color_contrast_filter(
     const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
     let node = it.nextNode();
     while (node) {
-      if (!element_is_perceptible(
-              node.parentNode, DEFAULT_MATTE, min_contrast_ratio)) {
+      if (!element_is_perceptible(node.parentNode, matte, min_contrast_ratio)) {
         node.remove();
       }
       node = it.nextNode();
@@ -91,7 +90,7 @@ export function color_contrast_filter(
 // foreground and background colors. Return true if perceptible, false if not
 // perceptible. Ratio is on scale of 1 to 21, with 21 being maximum contrast.
 export function element_is_perceptible(
-    element, matte = color.WHITE,
+    element, matte = DEFAULT_MATTE,
     min_contrast_ratio = DEFAULT_MIN_CONTRAST_RATIO) {
   const fore = element_derive_text_color(element);
   const back = element_derive_background_color(element, matte);
