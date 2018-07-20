@@ -4,36 +4,19 @@ import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 
 export function activate_feed(conn, feed_id) {
-  return new Promise(activate_feed_executor.bind(null, conn, feed_id));
-}
-
-function activate_feed_executor(conn, feed_id, resolve, reject) {
-  const txn = conn.transaction('feed', 'readwrite');
-  txn.oncomplete = resolve;
-  txn.onerror = event => {
-    reject(event.target.error);
-  };
-
-  const store = txn.objectStore('feed');
-  const request = store.get(feed_id);
-  request.onsuccess = _ => {
-    const feed = request.result;
-    if (!Model.is_feed(feed)) {
-      reject(new Error('Loaded feed is not a feed ' + feed_id));
-      return;
-    }
-
+  function transition(feed) {
     if (feed.active) {
-      reject(new Error('Feed is already active ' + feed_id));
-      return;
+      throw new Error('Feed already active for id ' + feed_id);
     }
 
-    delete feed.deactivationReasonText;
-    delete feed.deactivateDate;
     feed.active = true;
+    delete feed.deactivateDate;
+    delete feed.deactivationReasonText;
     feed.dateUpdated = new Date();
-    request.source.put(feed);
-  };
+    return feed;
+  }
+
+  return update_feed(conn, {id: feed_id}, transition);
 }
 
 export function archive_entries(conn, max_age) {
@@ -641,13 +624,67 @@ function update_entry_executor(conn, entry, resolve, reject) {
   txn.objectStore('entry').put(entry);
 }
 
-export function update_feed(conn, feed) {
-  return new Promise(update_feed_executor.bind(null, conn, feed));
+// TODO: experimeting with idea of partial vs full overwrite. the thing is that
+// this is violates DRY. Really what I want to do is have two helper functions
+// that just share a transaction, one that finds a feed and one that updates.
+// Then there is no need for the is_prior_state_valid function parameter because
+// the caller would no longer need to inject intermediate logic because the
+// caller would simply call the two functions separately. But the problem is
+// that I cannot easily do this using promises, so I could not just have two
+// awaited calls, because there would be a timeout on the first await of the
+// find. Note that on the other hand, I could have callbacks, but then I lose
+// all the benefits of async/await.
+
+export function update_feed(conn, feed, transition) {
+  return new Promise(update_feed_executor.bind(null, conn, feed, transition));
 }
 
-function update_feed_executor(conn, feed, resolve, reject) {
+function update_feed_executor(conn, feed, transition, resolve, reject) {
   const txn = conn.transaction('feed', 'readwrite');
   txn.onerror = event => reject(event.target.error);
   txn.oncomplete = resolve;
-  txn.objectStore('feed').put(feed);
+
+  const store = txn.objectStore('feed');
+
+  // We are doing a simple overwrite without a transition, so there is no need
+  // to first load
+  if (!transition) {
+    store.put(feed);
+    return;
+  }
+
+  // If transitioning, then we want to only update certain properties, so we
+  // need to find and load the existing feed, transition its properties, then
+  // write it back.
+  const find_request = store.get(feed.id);
+  find_request.onsuccess = event => {
+    const old_feed = event.target.result;
+    if (!old_feed) {
+      const msg = 'Failed to find feed to update for id ' + feed.id;
+      const err = new Error(msg);
+      reject(err);
+      return;
+    }
+
+    if (!Model.is_feed(old_feed)) {
+      const msg = 'Matched object is not of type feed for id ' + feed.id;
+      const err = new Error(msg);
+      reject(err);
+      return;
+    }
+
+    // NOTE: the reason for the try/catch is that this exception otherwise
+    // occurs in a deferred setting and is not automatically converted into a
+    // rejection
+
+    let new_feed;
+    try {
+      new_feed = transition(old_feed);
+    } catch (error) {
+      reject(error);
+      return;
+    }
+
+    store.put(new_feed);
+  };
 }
