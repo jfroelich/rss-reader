@@ -166,38 +166,20 @@ function count_unread_entries_executor(conn, resolve, reject) {
 }
 
 export function deactivate_feed(conn, feed_id, reason) {
-  return new Promise(
-      deactivate_feed_executor.bind(null, conn, feed_id, reason));
-}
-
-function deactivate_feed_executor(conn, feed_id, reason, resolve, reject) {
-  const txn = conn.transaction('feed', 'readwrite');
-  txn.oncomplete = resolve;
-  txn.onerror = event => reject(event.target.error);
-
-  const store = txn.objectStore('feed');
-  const request = store.get(feed_id);
-  request.onsuccess = _ => {
-    const feed = request.result;
-
-    // Errors thrown in a later tick do not cause rejection
-    if (!Model.is_feed(feed)) {
-      reject(new Error('Loaded feed is not a feed ' + feed_id));
-      return;
+  function transition(feed) {
+    if (!feed.active) {
+      throw new Error('Cannot deactivate inactive feed with id ' + feed.id);
     }
 
-    if (feed.active !== true) {
-      reject(new Error('Cannot deactivate inactive feed ' + feed_id));
-      return;
-    }
-
-    const current_date = new Date();
+    const now = new Date();
     feed.deactivationReasonText = reason;
-    feed.deactivateDate = current_date;
+    feed.deactivateDate = now;
+    feed.dateUpdated = now;
     feed.active = false;
-    feed.dateUpdated = current_date;
-    request.source.put(feed);
-  };
+    return feed;
+  }
+
+  return update_feed(conn, {id: feed_id}, transition);
 }
 
 export function delete_entry(conn, entry_id) {
@@ -624,38 +606,24 @@ function update_entry_executor(conn, entry, resolve, reject) {
   txn.objectStore('entry').put(entry);
 }
 
-// TODO: experimeting with idea of partial vs full overwrite. the thing is that
-// this is violates DRY. Really what I want to do is have two helper functions
-// that just share a transaction, one that finds a feed and one that updates.
-// Then there is no need for the is_prior_state_valid function parameter because
-// the caller would no longer need to inject intermediate logic because the
-// caller would simply call the two functions separately. But the problem is
-// that I cannot easily do this using promises, so I could not just have two
-// awaited calls, because there would be a timeout on the first await of the
-// find. Note that on the other hand, I could have callbacks, but then I lose
-// all the benefits of async/await.
-
 export function update_feed(conn, feed, transition) {
   return new Promise(update_feed_executor.bind(null, conn, feed, transition));
 }
 
 function update_feed_executor(conn, feed, transition, resolve, reject) {
+  assert(transition === undefined || typeof transition === 'function');
+
   const txn = conn.transaction('feed', 'readwrite');
   txn.onerror = event => reject(event.target.error);
   txn.oncomplete = resolve;
-
   const store = txn.objectStore('feed');
 
-  // We are doing a simple overwrite without a transition, so there is no need
-  // to first load
   if (!transition) {
     store.put(feed);
     return;
   }
 
-  // If transitioning, then we want to only update certain properties, so we
-  // need to find and load the existing feed, transition its properties, then
-  // write it back.
+  // Read, transition, then overwrite
   const find_request = store.get(feed.id);
   find_request.onsuccess = event => {
     const old_feed = event.target.result;
@@ -682,6 +650,13 @@ function update_feed_executor(conn, feed, transition, resolve, reject) {
       new_feed = transition(old_feed);
     } catch (error) {
       reject(error);
+      return;
+    }
+
+    if (!Model.is_feed(new_feed)) {
+      reject(
+          'Transitioning feed did not produce a valid feed object for id ' +
+          feed.id);
       return;
     }
 
