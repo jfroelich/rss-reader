@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as bp from '/src/boilerplate2.js';
+import * as bp from '/src/boilerplate.js';
 
 // We create our model once
 const model = bp.create_model();

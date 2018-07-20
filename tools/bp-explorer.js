@@ -1,4 +1,4 @@
-import * as bp from '/src/boilerplate2.js';
+import * as bp from '/src/boilerplate.js';
 import {canonicalize_urls} from '/src/filters/canonicalize-urls.js';
 import {deframe} from '/src/filters/deframe.js';
 import {filter_blacklisted_elements} from '/src/filters/filter-blacklisted-elements.js';

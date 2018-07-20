@@ -1,4 +1,4 @@
-import {filter_boilerplate} from '/src/filters/boilerplate2-filter.js';
+import {filter_boilerplate} from '/src/filters/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/filters/canonicalize-urls.js';
 import {condense_tagnames} from '/src/filters/condense-tagnames.js';
 import {deframe} from '/src/filters/deframe.js';
