@@ -1,5 +1,5 @@
-import assert from '/src/lib/assert.js';
-import * as html from '/src/lib/html.js';
+import assert from '/src/assert.js';
+import * as html from '/src/html.js';
 import {register_test} from '/test/test-registry.js';
 
 async function html_truncate_test() {

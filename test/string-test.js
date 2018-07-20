@@ -1,5 +1,5 @@
-import assert from '/src/lib/assert.js';
-import {filter_unprintable_characters as f} from '/src/lib/string.js';
+import assert from '/src/assert.js';
+import {filter_unprintable_characters as f} from '/src/string.js';
 import {register_test} from '/test/test-registry.js';
 
 async function filter_unprintable_characters_test() {

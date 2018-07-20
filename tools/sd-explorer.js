@@ -1,7 +1,7 @@
-import {sanitize_document} from '/src/action/poll/sanitize-document.js';
-import {set_base_uri} from '/src/lib/html-document.js';
-import {parse_html} from '/src/lib/html.js';
-import {fetch_html} from '/src/lib/net/fetch-html.js';
+import {sanitize_document} from '/src/poll/sanitize-document.js';
+import {set_base_uri} from '/src/html-document.js';
+import {parse_html} from '/src/html.js';
+import {fetch_html} from '/src/net/fetch-html.js';
 
 // TODO: i need to be able to discover problems with sanitization here. Like
 // instead of pruning, this annotates with removal-reason or something

@@ -1,6 +1,6 @@
-import {subscribe} from '/src/action/subscribe.js';
-import assert from '/src/lib/assert.js';
-import * as indexeddb from '/src/lib/indexeddb.js';
+import {subscribe} from '/src/subscribe.js';
+import assert from '/src/assert.js';
+import * as indexeddb from '/src/indexeddb.js';
 import {openModelAccess} from '/src/model/model-access.js';
 import * as Model from '/src/model/model.js';
 import {register_test} from '/test/test-registry.js';
