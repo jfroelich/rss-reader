@@ -25,10 +25,9 @@ import {filter_leaf_nodes} from '/src/filters/filter-leaf-nodes.js';
 import {filter_lists} from '/src/filters/filter-lists.js';
 import {filter_misnested_elements} from '/src/filters/filter-misnested-elements.js';
 import {filter_node_whitespace} from '/src/filters/filter-node-whitespace.js';
-import {filter_noscript_elements} from '/src/filters/filter-noscript-elements.js';
 import {filter_responsive_images} from '/src/filters/filter-responsive-images.js';
 import {filter_script_anchors} from '/src/filters/filter-script-anchors.js';
-import {filter_script_elements} from '/src/filters/filter-script-elements.js';
+import {filter_script} from '/src/filters/filter-script.js';
 import {filter_semantic_elements} from '/src/filters/filter-semantic-elements.js';
 import {filter_small_images} from '/src/filters/filter-small-images.js';
 import {filter_tables} from '/src/filters/filter-tables.js';
@@ -47,7 +46,6 @@ export async function sanitize_document(document) {
   ensure_document_body(document);
   filter_iframes(document);
   filter_comments(document);
-  filter_noscript_elements(document);
 
   const contrast_matte = ls.read_int('contrast_default_matte');
   const contrast_ratio = ls.read_float('min_contrast_ratio');
@@ -61,7 +59,7 @@ export async function sanitize_document(document) {
   ];
   filter_blacklisted_elements(document, general_blacklist);
 
-  filter_script_elements(document);
+  filter_script(document);
 
 
   // This should occur before setting image sizes

@@ -4,7 +4,7 @@ import {deframe} from '/src/filters/deframe.js';
 import {filter_blacklisted_elements} from '/src/filters/filter-blacklisted-elements.js';
 import {filter_comments} from '/src/filters/filter-comments.js';
 import {filter_iframes} from '/src/filters/filter-iframes.js';
-import {filter_script_elements} from '/src/filters/filter-script-elements.js';
+import {filter_script} from '/src/filters/filter-script.js';
 import {set_image_sizes} from '/src/filters/set-image-sizes.js';
 import {set_base_uri} from '/src/html-document.js';
 import {parse_html} from '/src/html.js';
@@ -38,7 +38,7 @@ async function bptest(url_string) {
   // Do some pre-analysis filtering
   filter_comments(doc);
   deframe(doc);
-  filter_script_elements(doc);
+  filter_script(doc);
   filter_iframes(doc);
   filter_blacklisted_elements(doc);
   set_base_uri(doc, url);
@@ -51,15 +51,11 @@ async function bptest(url_string) {
 
   // I don't think I have a filter for this, but running into this issue
   // frequently, I need a filter that does a better job of this
+  // TODO: should probably create a filter for this
+  // TODO: also should probably review how <img src="path.svg"> is handled
   const svgs = doc.querySelectorAll('svg');
   for (const svg of svgs) {
     svg.remove();
-  }
-
-  // Not happy with the current filter behavior, so just remove
-  const noscripts = doc.querySelectorAll('noscript');
-  for (const noscript of noscripts) {
-    noscript.remove();
   }
 
   let elements = doc.body.getElementsByTagName('*');
@@ -77,11 +73,6 @@ async function bptest(url_string) {
   const dataset = bp.create_block_dataset(doc);
   const model = bp.create_model();
   const scored_dataset = bp.classify(dataset, model);
-
-  // TEMP: debugging why this does not align with sd-explorer
-  // for (const row of scored_dataset) {
-  //  console.debug(row);
-  //}
 
   bp.annotate_document(doc, scored_dataset);
 
