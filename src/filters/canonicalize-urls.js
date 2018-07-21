@@ -1,6 +1,5 @@
 import assert from '/src/assert.js';
-import {parse_srcset} from '/src/srcset/parse-srcset.js';
-import {serialize_srcset} from '/src/srcset/serialize-srcset.js';
+import * as srcset from '/src/srcset.js';
 
 const element_url_attribute_map = {
   a: 'href',
@@ -90,7 +89,7 @@ function resolve_attr(element, base_url) {
 }
 
 function resolve_srcset(element, base_url) {
-  const descriptors = parse_srcset(element.getAttribute('srcset'));
+  const descriptors = srcset.parse(element.getAttribute('srcset'));
 
   let change_count = 0;
   for (const descriptor of descriptors) {
@@ -102,7 +101,7 @@ function resolve_srcset(element, base_url) {
   }
 
   if (change_count) {
-    const new_value = serialize_srcset(descriptors);
+    const new_value = srcset.serialize(descriptors);
     if (new_value) {
       element.setAttribute('srcset', new_value);
     }
