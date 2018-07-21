@@ -29,5 +29,5 @@ export function serialize(descriptors) {
     buf.push(descriptor_string);
   }
 
-  return buf.length ? buf.join(', ') : '';
+  return buf.join(', ');
 }
