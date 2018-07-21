@@ -1,11 +1,9 @@
-import assert from '/src/assert.js';
 import * as bp from '/src/boilerplate.js';
 
 // We create our model once
 const model = bp.create_model();
 
 export function filter_boilerplate(document, options = {}) {
-  assert(document);
   const dataset = bp.create_block_dataset(document, options.max_token_length);
   const scored_dataset = bp.classify(dataset, model);
 
