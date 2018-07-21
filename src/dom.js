@@ -1,15 +1,14 @@
-// The DOM library provides some helpful functions for interacting with a
-// document object model.
+// Utilities for interacting with the dom
 
 // Renames an element. Retains child nodes unless the node is void. Event
 // listeners are not retained.
 export function coerce_element(element, new_name, copy_attributes = true) {
-  const parent_element = element.parentNode;
-  if (!parent_element) {
+  const parent = element.parentNode;
+  if (!parent) {
     return element;
   }
 
-  // Avoid things like createElement(null) producing <null>
+  // Avoid behavior such as createElement(null) producing <null>
   if (!is_valid_element_name(new_name)) {
     throw new TypeError('Invalid new name ' + new_name);
   }
@@ -24,24 +23,11 @@ export function coerce_element(element, new_name, copy_attributes = true) {
   const new_element = element.ownerDocument.createElement(new_name);
 
   if (copy_attributes) {
-    copy_element_attributes(element, new_element);
+    copy_attrs(element, new_element);
   }
 
-  if (!is_void_element(new_element)) {
-    move_child_nodes(element, new_element);
-  }
-
-  return parent_element.insertBefore(new_element, next_sibling);
-}
-
-// Move child nodes from src to destination, maintaining order
-function move_child_nodes(from_element, to_element) {
-  let node = from_element.firstChild;
-  while (node) {
-    to_element.appendChild(node);
-    // The append shifted so firstChild changed
-    node = from_element.firstChild;
-  }
+  move_child_nodes(element, new_element);
+  return parent.insertBefore(new_element, next_sibling);
 }
 
 // https://html.spec.whatwg.org/multipage/syntax.html#void-elements
@@ -50,23 +36,25 @@ const void_elements = [
   'param', 'source', 'track', 'wbr'
 ];
 
-export function is_void_element(element) {
-  return void_elements.includes(element.localName);
+function move_child_nodes(src, dst) {
+  if (!void_elements.includes(dst.localName)) {
+    for (let node = src.firstChild; node; node = src.firstChild) {
+      dst.appendChild(node);
+    }
+  }
 }
 
-// TODO: research what characters are allowed in an element's name
 function is_valid_element_name(value) {
   return value && typeof value === 'string' && !value.includes(' ');
 }
 
-export function copy_element_attributes(from_element, to_element) {
-  const names = from_element.getAttributeNames();
+export function copy_attrs(src, dst) {
+  const names = src.getAttributeNames();
   for (const name of names) {
-    to_element.setAttribute(name, from_element.getAttribute(name));
+    dst.setAttribute(name, src.getAttribute(name));
   }
 }
 
-// Duration and delay can be floats
 export function fade_element(element, duration_secs, delay_secs) {
   return new Promise((resolve, reject) => {
     if (!element) {
@@ -102,11 +90,7 @@ export function fade_element(element, duration_secs, delay_secs) {
   });
 }
 
-// Returns true if the image element has at least one source, which could be a
-// src attribute, a srcset attribute, or an associate picture element with one
-// or more source elements that has a src or srcset attribute. This does not
-// check whether the urls are syntactically correct, but this does check that an
-// attribue value is not empty after trimming.
+// Returns true if the image element has at least one source
 export function image_has_source(image) {
   if (has_attr_val(image, 'src') || has_attr_val(image, 'srcset')) {
     return true;
@@ -178,55 +162,40 @@ export function remove_image(image) {
   image.remove();
 }
 
-// Replace an element with its child nodes. Special care is taken to add
-// whitespace if the operation would result in adjacent text nodes. The element
-// should be attached (it should be a node, or a descendant of a node, that is
-// in the document).
+// Replace an element with its child nodes. If unwrapping would lead to adjacent
+// text nodes, then a space is added.
 export function unwrap_element(element) {
-  if (!(element instanceof Element)) {
-    throw new TypeError('element is not an element');
-  }
-
-  // An orphaned node is any parentless node. An orphaned node is obviously
-  // detached from the document, as all attached nodes have a parent. There is
-  // generally no benefit to unwrapping orphans.
-  //
-  // Although attempting to unwrap an orphaned node should probably represent a
-  // programming error, and so in some sense this case should never be true,
-  // just exit early. Encourage the caller to change their behavior.
+  // Encourage the caller to change their behavior, but do not error
   if (!element.parentNode) {
-    console.warn('Tried to unwrap orphaned element', element.outerHTML);
+    console.warn('Tried to unwrap orphaned element');
     return;
   }
 
+  const owner = element.ownerDocument;
+
   // Cache stuff prior to removal
-  const parent_element = element.parentNode;
+  const parent = element.parentNode;
   const psib = element.previousSibling;
   const nsib = element.nextSibling;
   const fchild = element.firstChild;
   const lchild = element.lastChild;
   const TEXT = Node.TEXT_NODE;
-  const frag = element.ownerDocument.createDocumentFragment();
+  const frag = owner.createDocumentFragment();
 
-  // Detach upfront for O(2) live dom ops, compared to O(n-children) otherwise
   element.remove();
 
-  // Add leading padding
-  if (psib && psib.nodeType === TEXT && fchild && fchild.nodeType === TEXT) {
-    frag.appendChild(element.ownerDocument.createTextNode(' '));
+  if (psib && fchild && psib.nodeType === TEXT && fchild.nodeType === TEXT) {
+    frag.appendChild(owner.createTextNode(' '));
   }
 
-  // Move children to fragment, maintaining order
   for (let node = fchild; node; node = element.firstChild) {
     frag.appendChild(node);
   }
 
-  // Add trailing padding
   if (lchild && fchild !== lchild && nsib && nsib.nodeType === TEXT &&
       lchild.nodeType === TEXT) {
-    frag.appendChild(element.ownerDocument.createTextNode(' '));
+    frag.appendChild(owner.createTextNode(' '));
   }
 
-  // If nsib is undefined then insertBefore appends
-  parent_element.insertBefore(frag, nsib);
+  parent.insertBefore(frag, nsib);
 }
