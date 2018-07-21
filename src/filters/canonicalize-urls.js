@@ -42,16 +42,9 @@ function build_resolver_selector() {
 }
 
 // Resolves all attribute values that contain urls
-// @param document {Document}
+// @throws {Error} if document.baseURI is undefined or an invalid url
 export function canonicalize_urls(document) {
-  if (!document.baseURI) {
-    throw new TypeError('document missing baseURI');
-  }
-
   const base_url = new URL(document.baseURI);
-
-  // TODO: this assert is now pointless?
-  assert(base_url instanceof URL);
 
   const src_elements = document.querySelectorAll(element_url_attr_selector);
   for (const src_element of src_elements) {
@@ -83,7 +76,7 @@ function resolve_attr(element, base_url) {
     return;
   }
 
-  if (resolved_url.href.length !== original_url_string.length) {
+  if (resolved_url.href !== original_url_string) {
     element.setAttribute(attribute_name, resolved_url.href);
   }
 }
@@ -115,7 +108,7 @@ function resolve_srcset(element, base_url) {
 function resolve_url_string(url_string, base_url) {
   // Guard against passing empty string to URL constructor as that simply
   // clones the base url
-  if (typeof url_string === 'string' && url_string && url_string.trim()) {
+  if (url_string && typeof url_string === 'string' && url_string.trim()) {
     try {
       return new URL(url_string, base_url);
     } catch (error) {
