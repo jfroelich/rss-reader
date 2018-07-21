@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {coerce_element} from '/src/dom/coerce-element.js';
+import {coerce_element} from '/src/dom.js';
 import * as html from '/src/html.js';
 import {register_test} from '/test/test-registry.js';
 

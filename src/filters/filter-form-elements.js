@@ -1,4 +1,4 @@
-import {unwrap_element} from '/src/dom/unwrap-element.js';
+import {unwrap_element} from '/src/dom.js';
 
 // Removes or changes form-related elements from the document
 export function filter_form_elements(document) {

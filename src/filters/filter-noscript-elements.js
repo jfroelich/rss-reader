@@ -1,4 +1,4 @@
-import {unwrap_element} from '/src/dom/unwrap-element.js';
+import {unwrap_element} from '/src/dom.js';
 
 // Removes noscript elements
 export function filter_noscript_elements(document) {

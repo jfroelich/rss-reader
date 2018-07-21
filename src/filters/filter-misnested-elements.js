@@ -1,4 +1,4 @@
-import {unwrap_element} from '/src/dom/unwrap-element.js';
+import {unwrap_element} from '/src/dom.js';
 
 export function filter_misnested_elements(document) {
   if (!document.body) {
