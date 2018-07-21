@@ -1,4 +1,4 @@
-import '/src/css-color/third-party/tinycolor-min.js';
+import '/third-party/tinycolor-min.js';
 import * as color from '/src/color.js';
 
 // Parses a css color value into a color.js color
