@@ -1,5 +1,6 @@
-import * as string from '/src/string.js';
 import * as mime from '/src/net/mime.js';
+import * as string from '/src/string.js';
+import * as url_utils from '/src/url-utils.js';
 
 // `classify` classifies a resource as binary, text, or unknown. The function
 // returns unknown when it is not confident in the results. The function guesses
@@ -46,7 +47,7 @@ export function classify(url) {
     return mime_type ? mime_type_is_binary(mime_type) : UNKNOWN_CLASS;
   }
 
-  const extension = url_get_extension(url);
+  const extension = url_utils.get_extension(url);
   if (extension) {
     const mime_type = EXTENSION_TYPE_MAP[extension];
     if (mime_type) {
@@ -90,23 +91,6 @@ export function find_mime_type_in_data_url(url) {
 
   const mime_type = haystack.substring(0, sc_position);
   return mime.is_mime_type(mime_type) ? mime_type : default_type;
-}
-
-export function url_get_extension(url) {
-  const minlen = 3;
-  const ext_max_len = 20;
-  const path = url.pathname;
-  const pathlen = path.length;
-
-  if (pathlen >= minlen) {
-    const last_dot_pos_p1 = path.lastIndexOf('.') + 1;
-    if (last_dot_pos_p1 > 0 && last_dot_pos_p1 < pathlen) {
-      const ext = path.substring(last_dot_pos_p1);
-      if (ext.length <= ext_max_len && string.is_alphanumeric(ext)) {
-        return ext;
-      }
-    }
-  }
 }
 
 export function mime_type_is_binary(mime_type) {

@@ -1,5 +1,6 @@
 import assert from '/src/assert.js';
 import * as sniff from '/src/net/sniff.js';
+import * as url_utils from '/src/url-utils.js';
 import {register_test} from '/test/test-registry.js';
 
 async function sniff_test() {
@@ -48,24 +49,25 @@ async function sniff_test() {
   result = sniff.classify(input);
   assert(result === sniff.BINARY_CLASS, input.href);
 
+  // TODO: these next few assertions belong in url-utils-test.js
   // expected to find typical file name extension
   input = new URL('http://www.a.com/b.html');
-  result = sniff.url_get_extension(input);
+  result = url_utils.get_extension(input);
   assert(result === 'html', input.href);
 
   // trailing period, should not find extension
   input = new URL('http://www.a.com/b.');
-  result = sniff.url_get_extension(input);
+  result = url_utils.get_extension(input);
   assert(!result, input.href);
 
   // leading period should find extension
   input = new URL('http://www.a.com/.htaccess');
-  result = sniff.url_get_extension(input);
+  result = url_utils.get_extension(input);
   assert(result === 'htaccess', input.href);
 
   // extension too long, should not find extension
   input = new URL('http://www.a.com/b.01234567890123456789asdf');
-  result = sniff.url_get_extension(input);
+  result = url_utils.get_extension(input);
   assert(!result, input.href);
 
   // expect to find mime type

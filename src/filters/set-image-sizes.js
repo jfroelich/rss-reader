@@ -1,31 +1,16 @@
 import assert from '/src/assert.js';
-import * as string from '/src/string.js';
-
-// TODO: avoid repeatedly fetching the same image. An image can appear multiple
-// times in a document. Right now this does a fetch per occurrence. Instead I
-// need a list of unique images with each having a list of its occurrences.
-// However this is problematic, because what about varying dimensions of the
-// same image, along with the goal of using those to avoid fetches. I think
-// what I want is two passes. The first pass processes those images that can
-// be processed without network requests. It builds a list of those images where
-// it cannot process them locally. Then the second step does the network
-// requests and does it based off a set of distinct urls instead of the full
-// occurrences array.
-// TODO: Write tests
-
+import * as url_utils from '/src/url-utils.js';
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this attempts to infer the
 // dimensions for each image and modifies each image element's attributes.
-//
-// Expects the document to have a valid baseURI
 export async function set_image_sizes(document, timeout, is_allowed_request) {
-  if (!document.body) {
-    return;
-  }
-
   if (!document.baseURI) {
     throw new TypeError('document missing baseURI');
+  }
+
+  if (!document.body) {
+    return;
   }
 
   const images = document.body.getElementsByTagName('img');
@@ -36,19 +21,7 @@ export async function set_image_sizes(document, timeout, is_allowed_request) {
   const results = await Promise.all(promises);
 
   for (const result of results) {
-    // console.debug('Image dimensions:', {
-    //  image: result.image.outerHTML,
-    //  reason: result.reason,
-    //  width: result.width,
-    //  height: result.height
-    //});
-
-    // We intentionally exclude 0 here
     if (result.width && result.height) {
-      // We set attribute, rather than property, so that the information is
-      // persisted when the document is serialized, or is left inert. Setting
-      // the attributes will set the properties as a side effect, but setting
-      // the properties may not set the attributes as a side effect.
       result.image.setAttribute('width', result.width);
       result.image.setAttribute('height', result.height);
     }
@@ -92,25 +65,16 @@ async function get_image_dims(image, timeout, is_allowed_request) {
     };
   }
 
-  // Assumes document.baseURI is set and valid
   if (!image.src) {
     return {image: image, reason: 'sourceless'};
   }
 
-  // Assumes document.baseURI is set and valid
   let source_url;
   try {
     source_url = new URL(image.src);
   } catch (error) {
     return {image: image, reason: 'badsource'};
   }
-
-  // if (image.hasAttribute('src')) {
-  // console.debug('Image source:', source_url.href);
-  //} else {
-  // console.debug('Derived image source:', source_url.href);
-  //}
-
 
   let url_dimensions = find_url_dimensions(source_url);
   if (url_dimensions) {
@@ -143,27 +107,18 @@ async function get_image_dims(image, timeout, is_allowed_request) {
 }
 
 // Try and find image dimensions from the characters of a url
-// TODO: support "filename.w500.h500.jpg"
-// TODO: support "foo-730x420-bar.jpg"
-// TODO: support both - and _ delimiters
-// TODO: always return dimensions, just return 0s on failure, so that caller
-// no longer cares if defined or not
 function find_url_dimensions(source_url) {
-  // Ignore data urls, data urls can be fetched without a network penalty
   if (source_url.protocol === 'data:') {
     return;
   }
 
-  const ext = get_url_extension(source_url);
+  const ext = url_utils.get_extension(source_url);
   if (!ext) {
     return;
   }
 
   const supported_extensions = ['jpg', 'gif', 'svg', 'jpg', 'bmp', 'png'];
   if (!supported_extensions.includes(ext)) {
-    // TEMP: debugging new functionality
-    console.debug('Unknown image filename extension', ext);
-
     return;
   }
 
@@ -191,20 +146,6 @@ function find_url_dimensions(source_url) {
             return dimensions;
           }
         }
-      }
-    }
-  }
-}
-
-function get_url_extension(url) {
-  const path = url.pathname;
-
-  if (path.length > 2) {
-    const last_dot_pos_p1 = path.lastIndexOf('.') + 1;
-    if (last_dot_pos_p1 > 0 && last_dot_pos_p1 < path.length) {
-      const ext = path.substring(last_dot_pos_p1);
-      if (ext.length < 5 && string.is_alphanumeric(ext)) {
-        return ext;
       }
     }
   }
