@@ -1,23 +1,7 @@
 import * as config_control from '/src/config.js';
 import {export_opml} from '/src/export-opml.js';
-import {import_opml} from '/src/import-opml.js';
+import {import_opml_prompt} from '/src/import-opml.js';
 import * as ls from '/src/ls.js';
-import {openModelAccess} from '/src/model/model-access.js';
-
-function import_opml_button_onclick(event) {
-  const uploader_input = document.createElement('input');
-  uploader_input.setAttribute('type', 'file');
-  uploader_input.setAttribute('accept', 'text/xml');
-  uploader_input.onchange = uploader_input_onchange;
-  uploader_input.click();
-}
-
-// Fired when user submits file browser dialog
-async function uploader_input_onchange(event) {
-  const ma = await openModelAccess(/* channeled */ true);
-  await import_opml(ma, event.target.files);
-  ma.close();
-}
 
 export function options_menu_show() {
   const menu_options = document.getElementById('left-panel');
@@ -49,7 +33,7 @@ function options_menu_onclick(event) {
       alert('Not yet implemented, subscribe using options page');
       break;
     case 'menu-option-import':
-      import_opml_button_onclick(event);
+      import_opml_prompt();
       break;
     case 'menu-option-export':
       export_opml();

@@ -1,5 +1,5 @@
-import {import_opml} from '/src/import-opml.js';
 import assert from '/src/assert.js';
+import {import_opml} from '/src/import-opml.js';
 import * as indexeddb from '/src/indexeddb.js';
 import {openModelAccess} from '/src/model/model-access.js';
 import * as Model from '/src/model/model.js';
