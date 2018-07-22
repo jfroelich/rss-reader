@@ -1,9 +1,7 @@
-import * as favicon from '/src/favicon/favicon.js';
-import {import_opml} from '/src/import-opml.js';
 import * as config_control from '/src/config.js';
-import * as array from '/src/array.js';
+import {export_opml} from '/src/export-opml.js';
+import {import_opml} from '/src/import-opml.js';
 import * as ls from '/src/ls.js';
-import {create_opml_document} from '/src/opml-document.js';
 import {openModelAccess} from '/src/model/model-access.js';
 
 function import_opml_button_onclick(event) {
@@ -19,64 +17,6 @@ async function uploader_input_onchange(event) {
   const ma = await openModelAccess(/* channeled */ true);
   await import_opml(ma, event.target.files);
   ma.close();
-}
-
-async function export_button_onclick(event) {
-  const ma = await openModelAccess(/* channeled */ false);
-  const feeds = await ma.getFeeds('all', false);
-  ma.close();
-
-  const title = 'Subscriptions';
-  const filename = 'subscriptions.xml';
-
-  const outlines = feeds.map(create_outline).filter(outline_has_xml_url);
-  const opml_document = create_opml_document(outlines, title);
-
-  // TODO: revert to anchor strategy now that it looks like chrome fixed
-  download_blob_using_chrome_api(
-      opml_document_to_blob(opml_document), filename);
-}
-
-function outline_has_xml_url(outline) {
-  return !!outline.xml_url;
-}
-
-// Convert a feed format into an outline object
-function create_outline(feed) {
-  const outline = {};
-  outline.type = feed.type;
-  if (!array.is_empty(feed.urls)) {
-    outline.xml_url = array.peek(feed.urls);
-  }
-
-  outline.title = feed.title;
-  outline.description = feed.description;
-  outline.html_url = feed.link;
-  return outline;
-}
-
-function opml_document_to_blob(opml_document) {
-  const serializer = new XMLSerializer();
-  const xml_string = serializer.serializeToString(opml_document);
-  return new Blob([xml_string], {type: 'application/xml'});
-}
-
-function download_blob_using_anchor(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.setAttribute('download', filename);
-  anchor.href = url;
-  anchor.click();
-  URL.revokeObjectURL();
-}
-
-// An alternative to download_blob_using_anchor that avoids the issue introduced
-// in Chrome 65 with cross-origin download urls (see Issue #532)
-function download_blob_using_chrome_api(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const options = {url: url, filename: filename};
-  chrome.downloads.download(options);
-  URL.revokeObjectURL(url);
 }
 
 export function options_menu_show() {
@@ -112,7 +52,7 @@ function options_menu_onclick(event) {
       import_opml_button_onclick(event);
       break;
     case 'menu-option-export':
-      export_button_onclick(event);
+      export_opml();
       break;
     case 'menu-option-header-font':
       break;
