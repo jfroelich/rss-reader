@@ -53,19 +53,15 @@ export function filter_whitespace(value) {
   return value.replace(/\s+/g, '');
 }
 
-// is_alphanumeric returns whether the value is an alphanumeric string. Counter
-// intuitively, this works by testing for the presence of any non-alphanumeric
-// character. The empty string is true, null/undefined are true.
-//
-// Notes:
-// * Does not throw when the value is not a string. This is for caller
-// convenience
-// * Behavior when calling on strings containing non-English characters is
-// undefined
-//
-// References:
-// * https://stackoverflow.com/questions/4434076
-// * https://stackoverflow.com/questions/336210
+// Returns whether the value is an alphanumeric string. null, undefined, and the
+// empty string yield true. Multilingual.
 export function is_alphanumeric(value) {
-  return /^[a-zA-Z0-9]*$/.test(value);
+  // /u flag enables \p
+  // See https://github.com/tc39/proposal-regexp-unicode-property-escapes
+  // note this is not supported by all browsers
+  // \p{L} means match any letter in any language in either case
+  // \d means [0-9]
+  // ^ means any character not in the set
+  // Essentially, if any non-alphanumeric character is found, return false.
+  return !/[^\p{L}\d]/u.test(value);
 }
