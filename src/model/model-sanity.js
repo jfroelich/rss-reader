@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
 import * as html from '/src/html.js';
-import * as string from '/src/string.js';
 import * as Model from '/src/model/model.js';
+import * as string from '/src/string.js';
 
 export function validate_entry(entry) {
   assert(Model.is_entry(entry));
@@ -107,7 +107,7 @@ export function sanitize_entry(
 
   if (entry.content) {
     let content = entry.content;
-    content = string.filter_unprintable_characters(content);
+    content = string.filter_control_characters(content);
     content = html.truncate_html(content, content_max_length);
     entry.content = content;
   }
