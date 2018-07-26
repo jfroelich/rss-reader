@@ -40,7 +40,10 @@ async function bptest(url_string) {
   deframe(doc);
   filter_script(doc);
   filter_iframes(doc);
-  filter_blacklisted_elements(doc);
+
+  const custom_blacklist = ['svg', 'style'];
+  filter_blacklisted_elements(doc, custom_blacklist);
+
   set_base_uri(doc, url);
   canonicalize_urls(doc);
 
@@ -49,23 +52,10 @@ async function bptest(url_string) {
   // indefinitely).
   await set_image_sizes(doc, undefined, request => true);
 
-  // I don't think I have a filter for this, but running into this issue
-  // frequently, I need a filter that does a better job of this
-  // TODO: should probably create a filter for this
-  // TODO: also should probably review how <img src="path.svg"> is handled
-  const svgs = doc.querySelectorAll('svg');
-  for (const svg of svgs) {
-    svg.remove();
-  }
 
   let elements = doc.body.getElementsByTagName('*');
   for (const element of elements) {
     element.removeAttribute('style');
-  }
-
-  const styles = doc.querySelectorAll('style');
-  for (const style of styles) {
-    style.remove();
   }
 
   section.innerHTML = 'Analyzing boilerplate';
