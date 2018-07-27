@@ -1,6 +1,6 @@
 import * as config_control from '/src/config.js';
 import {export_opml} from '/src/export-opml.js';
-import {import_opml_prompt} from '/src/import-opml.js';
+import * as import_opml from '/src/import-opml.js';
 import * as ls from '/src/ls.js';
 
 export function options_menu_show() {
@@ -33,7 +33,7 @@ function options_menu_onclick(event) {
       alert('Not yet implemented, subscribe using options page');
       break;
     case 'menu-option-import':
-      import_opml_prompt();
+      import_opml.prompt();
       break;
     case 'menu-option-export':
       export_opml();

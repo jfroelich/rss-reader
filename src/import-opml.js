@@ -2,7 +2,7 @@ import {openModelAccess} from '/src/model/model-access.js';
 import * as Model from '/src/model/model.js';
 import * as string from '/src/string.js';
 
-export function import_opml_prompt() {
+export function prompt() {
   const input = document.createElement('input');
   input.setAttribute('type', 'file');
   input.setAttribute('accept', 'application/xml');
@@ -13,11 +13,11 @@ export function import_opml_prompt() {
 async function input_onchange(event) {
   const channeled = true;
   const ma = await openModelAccess(channeled);
-  await import_opml(ma, event.target.files);
+  await import_files(ma, event.target.files);
   ma.close();
 }
 
-export async function import_opml(ma, files) {
+export async function import_files(ma, files) {
   const read_files_results = await read_files(files);
   const url_array = flatten_file_urls(read_files_results);
   const url_array_set = dedup_urls(url_array);
