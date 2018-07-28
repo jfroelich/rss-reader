@@ -21,6 +21,7 @@ import '/test/nlp-test.js';
 import '/test/import-opml-test.js';
 import '/test/parse-feed-test.js';
 import '/test/rewrite-url-test.js';
+import '/test/unwrap-element-test.js';
 import {get_registry} from '/test/test-registry.js';
 
 // Wrap a call to a test function with some extra log messages. Impose an

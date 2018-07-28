@@ -162,18 +162,20 @@ export function remove_image(image) {
   image.remove();
 }
 
-// Replace an element with its child nodes. If unwrapping would lead to adjacent
-// text nodes, then a space is added.
-export function unwrap_element(element) {
-  // Encourage the caller to change their behavior, but do not error
+// Replace |element| with its child nodes. If |nag| is true then warn when
+// unwrapping an orphaned node. |nag| is optional, defaults to true.
+export function unwrap_element(element, nag = true) {
+  // Unwrapping an orphaned node is pointless. Rather than error, just exit
+  // early for caller convenience.
   if (!element.parentNode) {
-    console.warn('Tried to unwrap orphaned element');
+    // Encourage the caller to change their behavior
+    if (nag) {
+      console.warn('Tried to unwrap orphaned element', element.outerHTML);
+    }
     return;
   }
 
   const owner = element.ownerDocument;
-
-  // Cache stuff prior to removal
   const parent = element.parentNode;
   const psib = element.previousSibling;
   const nsib = element.nextSibling;
@@ -184,6 +186,10 @@ export function unwrap_element(element) {
 
   element.remove();
 
+  // TODO: what if the preceding text ends in whitespace, or the trailing text
+  // starts with whitespace? should unwrap not append in that case? or what
+  // if the text within the element starts or ends in whitespace?
+
   if (psib && fchild && psib.nodeType === TEXT && fchild.nodeType === TEXT) {
     frag.appendChild(owner.createTextNode(' '));
   }
@@ -192,8 +198,15 @@ export function unwrap_element(element) {
     frag.appendChild(node);
   }
 
-  if (lchild && fchild !== lchild && nsib && nsib.nodeType === TEXT &&
-      lchild.nodeType === TEXT) {
+  if (lchild && nsib && nsib.nodeType === TEXT && lchild.nodeType === TEXT) {
+    frag.appendChild(owner.createTextNode(' '));
+  }
+
+  // Create one trailing space if the element was empty between two text nodes.
+  // If an element is empty then its firstChild is falsy (and its lastChild is
+  // also falsy).
+  if (!fchild && psib && nsib && psib.nodeType === TEXT &&
+      nsib.nodeType === TEXT) {
     frag.appendChild(owner.createTextNode(' '));
   }
 
