@@ -5,7 +5,7 @@ import {register_test} from '/test/test-registry.js';
 
 export function unwrap_element_test() {
   // Assert the typical case of a simple straightforward unwrap call completes
-  // without error
+  // as expected
   let doc =
       parse_html('<html><head></head><body><div>hello</div></body></html>');
   let element = doc.querySelector('div');
@@ -25,7 +25,7 @@ export function unwrap_element_test() {
   assert(unwrap_null_error);
 
   // Assert that unwrapping an element that has no parent node does not trigger
-  // an exception and leaves the document in its expected state
+  // an exception and leaves the document in its expected state (untouched)
   doc = parse_html('<html><head></head><body><div>hello</div></body></html>');
   element = doc.querySelector('div');
   element.remove();
@@ -35,15 +35,10 @@ export function unwrap_element_test() {
   after_state = doc.documentElement.outerHTML;
   assert(before_state === after_state);
 
-  // TODO: do some tests regarding whitespace
-  // 1) neither left nor right space should be added
-  // 2) left space should be added and not right space
-  // 3) right space should be added and not left space
-  // 4) both left and right space should be added
-
   // Assert that no space is added when the node is not adjacent to text nodes
   doc = parse_html(
-      '<html><head></head><body><p>before</p><a>hello</a><p>after</p></body></html>');
+      '<html><head></head><body><p>before</p>' +
+      '<a>hello</a><p>after</p></body></html>');
   element = doc.querySelector('a');
   unwrap_element(element);
   after_state = doc.documentElement.outerHTML;
