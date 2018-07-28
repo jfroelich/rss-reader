@@ -180,12 +180,13 @@ function find_style_dimensions(element) {
 // using the simple element.src trick, it looks like HTMLImageElement does not
 // allow me to control the request parameters and does send cookies, but I need
 // to review this more, I am still unsure.
-// @param is_allowed_request {Function} optional, is given the request method
-// and the url object, throws a policy error if the function returns false
+// @param is_allowed_request {Function} optional, is given a request-like
+// object, throws a policy error if the function returns false
 async function fetch_image_element(url, timeout = 0, is_allowed_request) {
   assert(url instanceof URL);
 
-  if (is_allowed_request && !is_allowed_request('get', url)) {
+  const request_data = {method: 'GET', url: url};
+  if (is_allowed_request && !is_allowed_request(request_data)) {
     throw new PolicyError('Refused to fetch ' + url.href);
   }
 

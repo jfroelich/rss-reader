@@ -26,7 +26,8 @@ export async function fetch2(url, options = {}, is_allowed_request) {
     throw new OfflineError('Failed to fetch url while offline ' + url.href);
   }
 
-  if (is_allowed_request && !is_allowed_request(options.method, url)) {
+  const request_data = {method: options.method, url: url};
+  if (is_allowed_request && !is_allowed_request(request_data)) {
     const message =
         ['Refusing to request url', url.href, 'with method', options.method];
     throw new PolicyError(message.join(' '));

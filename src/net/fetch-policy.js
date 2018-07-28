@@ -1,13 +1,17 @@
-// Return whether the url is fetchable based on app-policy. This hardcodes
-// the app policy.
+// Return whether the url is fetchable based on app-policy. This hardcodes a
+// basic policy that presents itself as the app's default policy.
 //
-// When checking against localhost values, this ignores things like punycode,
-// IPv6, host manipulation, local domain manipulation, etc.
+// This policy is rudimentary and should not be considered highly secure. When
+// checking against localhost values, this ignores things like punycode, IPv6,
+// host manipulation, local domain manipulation, etc.
 //
 // When checking for username/pass, prevent fetches of urls containing
 // credentials. Although fetch implicitly throws in this case, I prefer to
 // explicit.
-export function is_allowed_request(method = 'GET', url) {
+export function is_allowed_request(request) {
+  const method = request.method || 'GET';
+  const url = request.url;
+
   const allowed_protocols = ['data', 'http', 'https'];
   const allowed_methods = ['GET', 'HEAD'];
 
