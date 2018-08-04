@@ -21,8 +21,10 @@ async function refresh_feed_icon(ma, iconn, feed) {
     return;
   }
 
+  let doc = undefined;
+  let lookup_should_fetch = true;
   const icon_url_string =
-      await lookup(iconn, lookup_url, /* doc */ undefined, /* fetch */ true);
+      await lookup(iconn, lookup_url, doc, lookup_should_fetch);
 
   if (feed.faviconURLString !== icon_url_string) {
     if (icon_url_string) {

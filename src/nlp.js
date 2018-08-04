@@ -1,8 +1,3 @@
-// TODO: review handling of html entities
-// TODO: support other whitespace than space around delims
-
-// The nlp module provides various text processing utilities
-
 // Returns a new string where the publisher information has been stripped, such
 // as the string "Your Florida news" in the string "Florida man shoots self -
 // Your Florida News". The algorithm identifies the publisher by looking for a

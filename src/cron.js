@@ -1,8 +1,8 @@
 import * as favicon from '/src/favicon/favicon.js';
-import {poll_feeds} from '/src/poll/poll-feeds.js';
-import {refresh_feed_icons} from '/src/refresh-feed-icons.js';
 import * as ls from '/src/ls.js';
 import {openModelAccess} from '/src/model/model-access.js';
+import {poll_feeds} from '/src/poll/poll-feeds.js';
+import {refresh_feed_icons} from '/src/refresh-feed-icons.js';
 
 // Appropriately modify alarm settings when the extension is installed or
 // updated
@@ -72,7 +72,7 @@ export async function alarm_listener(alarm) {
   }
 }
 
-// TODO: switch to cross browser idle state query, see
+// TODO: switch to cross platform idle state query, see
 // https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/idle/queryState
 
 function query_idle_state(idle_secs) {

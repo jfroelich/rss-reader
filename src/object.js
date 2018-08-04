@@ -5,14 +5,7 @@ export function filter_empty_properties(value) {
     for (const key in value) {
       if (has_own.call(value, key)) {
         const pv = value[key];
-
-        // Most properties have values. This leads to fewer operations on
-        // average. I think.
-        if (pv) {
-          continue;
-        }
-
-        if (pv === null || pv === '' || typeof pv === 'undefined') {
+        if (pv === null || pv === '' || pv === undefined) {
           delete value[key];
         }
       }

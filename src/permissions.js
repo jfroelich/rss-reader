@@ -1,4 +1,3 @@
-// Simple module that makes permissions calls use promises.
 export function has(perm) {
   return new Promise(
       resolve => chrome.permissions.contains({permissions: [perm]}, resolve));

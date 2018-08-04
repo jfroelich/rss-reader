@@ -1,4 +1,11 @@
-// Simple type-aware localStorage wrapper lib
+export function has_key(key) {
+  return typeof localStorage[key] !== 'undefined';
+}
+
+export function read_array(key) {
+  const value = localStorage[key];
+  return value ? JSON.parse(value) : [];
+}
 
 export function remove(key) {
   delete localStorage[key];
@@ -10,18 +17,8 @@ export function remove_all(keys) {
   }
 }
 
-export function has_key(key) {
-  // We don't care about value, cannot use simple truthy test
-  return typeof localStorage[key] !== 'undefined';
-}
-
 export function write_array(key, value) {
   localStorage[key] = JSON.stringify(value);
-}
-
-export function read_array(key) {
-  const value = localStorage[key];
-  return value ? JSON.parse(value) : [];
 }
 
 export function write_int(key, value) {

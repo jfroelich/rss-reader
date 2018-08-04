@@ -1,15 +1,8 @@
-import assert from '/src/assert.js';
-
-// TODO: learn and consider cssom
-
 // Returns true if an element is hidden according to its inline style
 export function element_is_hidden_inline(element) {
-  // It is an error to call this on something other than an element
-  assert(element instanceof Element);
-  // offset width and height are unreliable in an inert document so this must
-  // rely on style. style may be undefined for elements such as <math>, in which
-  // case elements are presumed visible. style.length is 0 when no inline
-  // properties set.
+  // * offset width and height are unreliable in an inert document
+  // * style may be undefined for elements such as <math>
+  // * style.length is 0 when no inline properties set
   const style = element.style;
   return style && style.length &&
       (style.display === 'none' || style.visibility === 'hidden' ||
@@ -17,7 +10,6 @@ export function element_is_hidden_inline(element) {
 }
 
 // Returns true if the element's opacity is too close to 0
-// Throws error is style is undefined
 function element_is_near_transparent(style) {
   if (style.opacity) {
     const visibility_threshold = 0.3;

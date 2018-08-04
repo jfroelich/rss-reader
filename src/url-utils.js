@@ -1,8 +1,5 @@
 import * as string from '/src/string.js';
 
-// TODO: update the other caller, i think telemtry? to also use this
-// TODO: write tests
-
 export function get_extension(url) {
   const path = url.pathname;
 

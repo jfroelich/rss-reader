@@ -98,7 +98,7 @@ export function sanitize_entry(
 
   if (entry.author) {
     let author = entry.author;
-    author = string.filter_control_characters(author);
+    author = string.filter_controls(author);
     author = html.replace_tags(author, '');
     author = string.condense_whitespace(author);
     author = html.truncate_html(author, author_max_length);
@@ -107,14 +107,14 @@ export function sanitize_entry(
 
   if (entry.content) {
     let content = entry.content;
-    content = string.filter_control_characters(content);
+    content = string.filter_controls(content);
     content = html.truncate_html(content, content_max_length);
     entry.content = content;
   }
 
   if (entry.title) {
     let title = entry.title;
-    title = string.filter_control_characters(title);
+    title = string.filter_controls(title);
     title = html.replace_tags(title, '');
     title = string.condense_whitespace(title);
     title = html.truncate_html(title, title_max_length);
@@ -138,7 +138,7 @@ export function sanitize_feed(feed, title_max_len, desc_max_len) {
 
   if (feed.title) {
     let title = feed.title;
-    title = string.filter_control_characters(title);
+    title = string.filter_controls(title);
     title = html.replace_tags(title, html_tag_replacement);
     title = string.condense_whitespace(title);
     title = html.truncate_html(title, title_max_len, repl_suffix);
@@ -147,7 +147,7 @@ export function sanitize_feed(feed, title_max_len, desc_max_len) {
 
   if (feed.description) {
     let desc = feed.description;
-    desc = string.filter_control_characters(desc);
+    desc = string.filter_controls(desc);
     desc = html.replace_tags(desc, html_tag_replacement);
     desc = string.condense_whitespace(desc);
     desc = html.truncate_html(desc, desc_max_len, repl_suffix);

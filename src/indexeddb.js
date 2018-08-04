@@ -52,8 +52,6 @@ export async function open(name, version, upgrade_listener, timeout) {
   return conn;
 }
 
-
-
 function create_timeout_promise(context) {
   return new Promise(resolve => {
     context.timer = setTimeout(resolve, context.timeout);

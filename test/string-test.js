@@ -3,10 +3,10 @@ import * as string from '/src/string.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: this test needs to be updated now that filter_unprintable_characters
-// has been deprecated and replaced by filter_control_characters
+// has been deprecated and replaced by filter_controls
 
 async function filter_unprintable_characters_test() {
-  const f = string.filter_control_characters;
+  const f = string.filter_controls;
 
   for (let i = 0; i < 9; i++) {
     assert(f(String.fromCharCode(i)).length === 0);

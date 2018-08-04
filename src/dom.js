@@ -1,5 +1,3 @@
-// Utilities for interacting with the dom
-
 // Renames an element. Retains child nodes unless the node is void. Event
 // listeners are not retained.
 export function coerce_element(element, new_name, copy_attributes = true) {

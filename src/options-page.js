@@ -9,7 +9,6 @@ import * as perm from '/src/permissions.js';
 import {poll_feed} from '/src/poll/poll-feeds.js';
 import {subscribe, unsubscribe} from '/src/subscribe.js';
 
-// View state
 let current_menu_item;
 let current_section;
 
@@ -363,7 +362,6 @@ async function feed_list_init() {
   }
 }
 
-// @param feed_id {Number}
 function feed_list_remove_feed_by_id(feed_id) {
   const feed_element =
       document.querySelector(`#feedlist li[feed="${feed_id}"]`);
@@ -454,8 +452,6 @@ async function enable_bg_processing_checkbox_init() {
   checkbox.onclick = enable_bg_processing_checkbox_onclick;
   checkbox.checked = await perm.has('background');
 }
-
-
 
 function bg_image_menu_onchange(event) {
   const path = event.target.value;
