@@ -27,6 +27,7 @@ Third-party code license information:
 
 * tinycolor.js - MIT License
 * parse-srcset.js - MIT License
+* he.js - MIT License
 
 Font license information:
 

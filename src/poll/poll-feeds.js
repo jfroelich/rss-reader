@@ -1,20 +1,20 @@
-import * as favicon from '/src/favicon/favicon.js';
-import {build_rewrite_rules} from '/src/poll/rewrite-rules.js';
-import {sanitize_document} from '/src/poll/sanitize-document.js';
 import * as app from '/src/app.js';
-import * as array from '/src/array.js';
-import assert from '/src/assert.js';
-import {set_base_uri} from '/src/html-document.js';
-import * as html from '/src/html.js';
-import * as ls from '/src/ls.js';
-import {fetch_feed} from '/src/net/fetch-feed.js';
-import {fetch_html} from '/src/net/fetch-html.js';
-import {OfflineError, TimeoutError} from '/src/net/fetch2.js';
-import * as sniff from '/src/net/sniff.js';
-import {url_did_change} from '/src/net/url-did-change.js';
-import {rewrite_url} from '/src/rewrite-url.js';
+import * as favicon from '/src/favicon/favicon.js';
+import * as array from '/src/lib/array.js';
+import assert from '/src/lib/assert.js';
+import {set_base_uri} from '/src/lib/html-document.js';
+import * as html from '/src/lib/html.js';
+import * as ls from '/src/lib/ls.js';
+import {rewrite_url} from '/src/lib/rewrite-url.js';
 import * as sanity from '/src/model/model-sanity.js';
 import * as Model from '/src/model/model.js';
+import {fetch_feed} from '/src/lib/fetch-feed.js';
+import {fetch_html} from '/src/lib/fetch-html.js';
+import {OfflineError, TimeoutError} from '/src/lib/fetch2.js';
+import * as sniff from '/src/lib/sniff.js';
+import {url_did_change} from '/src/lib/url-did-change.js';
+import {build_rewrite_rules} from '/src/poll/rewrite-rules.js';
+import {sanitize_document} from '/src/poll/sanitize-document.js';
 
 const default_options = {
   ignore_recency_check: false,

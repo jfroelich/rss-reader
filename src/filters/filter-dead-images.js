@@ -1,4 +1,4 @@
-import * as dom_utils from '/src/dom.js';
+import * as dom_utils from '/src/lib/dom.js';
 
 // An image is 'dead' if it is unfetchable. One reason that an image is
 // unfetchable is when an image does not have an associated url.

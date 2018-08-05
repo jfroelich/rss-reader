@@ -1,5 +1,5 @@
-import assert from '/src/assert.js';
-import * as srcset from '/src/srcset.js';
+import assert from '/src/lib/assert.js';
+import * as srcset from '/src/lib/srcset.js';
 
 const element_url_attribute_map = {
   a: 'href',

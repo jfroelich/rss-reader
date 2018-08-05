@@ -35,8 +35,8 @@ import {filter_unknown_attrs} from '/src/filters/filter-unknown-attrs.js';
 import {lonestar_filter} from '/src/filters/lonestar-filter.js';
 import {set_image_sizes} from '/src/filters/set-image-sizes.js';
 import {trim_document} from '/src/filters/trim-document.js';
-import * as ls from '/src/ls.js';
-import {is_allowed_request} from '/src/net/fetch-policy.js';
+import * as ls from '/src/lib/ls.js';
+import {is_allowed_request} from '/src/lib/fetch-policy.js';
 
 // Applies several filters in a programmed order in order to clean up a
 // document's nodes, filter out script, and make the document easily embeddable

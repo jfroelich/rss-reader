@@ -1,5 +1,5 @@
 import * as favicon from '/src/favicon/favicon.js';
-import * as ls from '/src/ls.js';
+import * as ls from '/src/lib/ls.js';
 import {openModelAccess} from '/src/model/model-access.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {refresh_feed_icons} from '/src/refresh-feed-icons.js';

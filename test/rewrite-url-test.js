@@ -1,5 +1,5 @@
-import assert from '/src/assert.js';
-import {rewrite_url} from '/src/rewrite-url.js';
+import assert from '/src/lib/assert.js';
+import {rewrite_url} from '/src/lib/rewrite-url.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: I've temporarily copied over the rules here for testing, but ideally

@@ -1,4 +1,4 @@
-import * as mime from '/src/net/mime.js';
+import * as mime from '/src/lib/mime.js';
 
 const default_options = {
   credentials: 'omit',

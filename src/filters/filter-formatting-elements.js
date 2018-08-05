@@ -1,4 +1,4 @@
-import {unwrap_element} from '/src/dom.js';
+import {unwrap_element} from '/src/lib/dom.js';
 
 const formatting_elements_selector = [
   'abbr', 'acronym', 'center', 'data', 'details', 'help', 'insert', 'legend',

@@ -1,4 +1,4 @@
-import {unwrap_element} from '/src/dom.js';
+import {unwrap_element} from '/src/lib/dom.js';
 import {is_leaf_node} from '/src/filters/node-is-leaf.js';
 
 // Filters certain table elements from document content

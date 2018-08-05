@@ -1,5 +1,5 @@
-import assert from '/src/assert.js';
-import {fetch_html} from '/src/net/fetch-html.js';
+import assert from '/src/lib/assert.js';
+import {fetch_html} from '/src/lib/fetch-html.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: run on a local resource

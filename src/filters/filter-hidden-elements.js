@@ -1,6 +1,6 @@
-import {unwrap_element} from '/src/dom.js';
+import {unwrap_element} from '/src/lib/dom.js';
 import {color_contrast_filter} from '/src/filters/color-contrast-filter.js';
-import {element_is_hidden_inline} from '/src/visibility.js';
+import {element_is_hidden_inline} from '/src/lib/visibility.js';
 
 // Removes hidden elements from a document. This filter is impure in that it
 // mutates the input document due to the prohibitive cost of cloning.

@@ -1,6 +1,6 @@
-import * as mime from '/src/net/mime.js';
-import * as string from '/src/string.js';
-import * as url_utils from '/src/url-utils.js';
+import * as mime from '/src/lib/mime.js';
+import * as string from '/src/lib/string.js';
+import * as url_utils from '/src/lib/url-utils.js';
 
 // `classify` classifies a resource as binary, text, or unknown. The function
 // returns unknown when it is not confident in the results. The function guesses

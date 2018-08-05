@@ -1,4 +1,4 @@
-import assert from '/src/assert.js';
+import assert from '/src/lib/assert.js';
 
 // Set the baseURI property of a document. baseURI is readonly. However, its
 // value is derived from base elements, which are manipulable. Therefore baseURI

@@ -1,6 +1,6 @@
 import {openModelAccess} from '/src/model/model-access.js';
 import * as Model from '/src/model/model.js';
-import * as string from '/src/string.js';
+import * as string from '/src/lib/string.js';
 
 export function prompt() {
   const input = document.createElement('input');

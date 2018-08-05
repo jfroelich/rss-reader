@@ -1,5 +1,5 @@
-import assert from '/src/assert.js';
-import * as url_utils from '/src/url-utils.js';
+import assert from '/src/lib/assert.js';
+import * as url_utils from '/src/lib/url-utils.js';
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this attempts to infer the

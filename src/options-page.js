@@ -1,11 +1,11 @@
-import * as array from '/src/array.js';
+import * as array from '/src/lib/array.js';
 import * as badge from '/src/badge.js';
-import {fade_element} from '/src/dom.js';
+import {fade_element} from '/src/lib/dom.js';
 import * as favicon from '/src/favicon/favicon.js';
-import * as html from '/src/html.js';
-import * as ls from '/src/ls.js';
+import * as html from '/src/lib/html.js';
+import * as ls from '/src/lib/ls.js';
 import {openModelAccess} from '/src/model/model-access.js';
-import * as perm from '/src/permissions.js';
+import * as perm from '/src/lib/permissions.js';
 import {poll_feed} from '/src/poll/poll-feeds.js';
 import {subscribe, unsubscribe} from '/src/subscribe.js';
 

@@ -1,4 +1,4 @@
-import * as ls from '/src/ls.js';
+import * as ls from '/src/lib/ls.js';
 import {openModelAccess} from '/src/model/model-access.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';

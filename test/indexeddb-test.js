@@ -1,5 +1,5 @@
-import assert from '/src/assert.js';
-import * as indexeddb from '/src/indexeddb.js';
+import assert from '/src/lib/assert.js';
+import * as indexeddb from '/src/lib/indexeddb.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: test upgrade handler specified vs not specified and assert that

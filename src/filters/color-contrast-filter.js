@@ -1,5 +1,5 @@
-import * as color from '/src/color.js';
-import * as css_color from '/src/css-color.js';
+import * as css_color from '/src/lib/css-color.js';
+import * as color from '/src/lib/color.js';
 
 // The color contrast filter removes text nodes with a text-color to
 // background-color contrast ratio that is less than or equal to the given

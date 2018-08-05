@@ -1,5 +1,5 @@
-import {is_allowed_request} from '/src/net/fetch-policy.js';
-import {fetch2} from '/src/net/fetch2.js';
+import {is_allowed_request} from '/src/lib/fetch-policy.js';
+import {fetch2} from '/src/lib/fetch2.js';
 
 export function fetch_html(url, timeout, allow_text) {
   const html_mime_types = ['text/html'];

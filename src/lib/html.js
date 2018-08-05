@@ -1,5 +1,5 @@
-import assert from '/src/assert.js';
-import * as string from '/src/string.js';
+import assert from '/src/lib/assert.js';
+import * as string from '/src/lib/string.js';
 
 // Returns a new string where certain 'unsafe' characters in the input string
 // have been replaced with html entities. If input is not a string returns

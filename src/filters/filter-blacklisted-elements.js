@@ -1,4 +1,4 @@
-import assert from '/src/assert.js';
+import assert from '/src/lib/assert.js';
 
 // Filters blacklisted elements from document content.
 // @param blacklist {Array} an array of names of elements, each name should be

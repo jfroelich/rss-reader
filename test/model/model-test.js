@@ -1,4 +1,4 @@
-import assert from '/src/assert.js';
+import assert from '/src/lib/assert.js';
 import * as Model from '/src/model/model.js';
 import {register_test} from '/test/test-registry.js';
 

@@ -1,4 +1,4 @@
-import * as string from '/src/string.js';
+import * as string from '/src/lib/string.js';
 
 export function get_extension(url) {
   const path = url.pathname;

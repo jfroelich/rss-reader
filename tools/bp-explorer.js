@@ -1,4 +1,3 @@
-import * as bp from '/src/boilerplate.js';
 import {canonicalize_urls} from '/src/filters/canonicalize-urls.js';
 import {deframe} from '/src/filters/deframe.js';
 import {filter_blacklisted_elements} from '/src/filters/filter-blacklisted-elements.js';
@@ -6,9 +5,10 @@ import {filter_comments} from '/src/filters/filter-comments.js';
 import {filter_iframes} from '/src/filters/filter-iframes.js';
 import {filter_script} from '/src/filters/filter-script.js';
 import {set_image_sizes} from '/src/filters/set-image-sizes.js';
-import {set_base_uri} from '/src/html-document.js';
-import {parse_html} from '/src/html.js';
-import {fetch_html} from '/src/net/fetch-html.js';
+import * as bp from '/src/lib/boilerplate.js';
+import {set_base_uri} from '/src/lib/html-document.js';
+import {parse_html} from '/src/lib/html.js';
+import {fetch_html} from '/src/lib/fetch-html.js';
 
 // TODO: will filtering hidden elements help exploration?
 

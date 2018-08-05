@@ -1,4 +1,4 @@
-import * as string from '/src/string.js';
+import * as string from '/src/lib/string.js';
 
 // From this module's point of view, a mime-type is a specialized type of
 // string. Therefore, there is no explicit data type, just helpers that work

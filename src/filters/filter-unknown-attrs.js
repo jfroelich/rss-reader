@@ -1,4 +1,4 @@
-import assert from '/src/assert.js';
+import assert from '/src/lib/assert.js';
 
 // Removes certain attributes from all elements in a document.
 // This applies to the whole document, not just body.

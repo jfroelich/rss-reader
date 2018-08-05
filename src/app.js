@@ -1,4 +1,4 @@
-import * as ls from '/src/ls.js';
+import * as ls from '/src/lib/ls.js';
 
 export async function open_view() {
   const url_string = chrome.extension.getURL('slideshow.html');

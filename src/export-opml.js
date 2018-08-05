@@ -1,4 +1,4 @@
-import * as array from '/src/array.js';
+import * as array from '/src/lib/array.js';
 import {openModelAccess} from '/src/model/model-access.js';
 
 // Creates and triggers the download of an OPML document containing feeds from

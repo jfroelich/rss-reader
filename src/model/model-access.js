@@ -1,5 +1,5 @@
-import assert from '/src/assert.js';
-import * as object from '/src/object.js';
+import assert from '/src/lib/assert.js';
+import * as object from '/src/lib/object.js';
 import * as idbmodel from '/src/model/idb-model.js';
 import * as Model from '/src/model/model.js';
 

@@ -1,4 +1,4 @@
-import * as bp from '/src/boilerplate.js';
+import * as bp from '/src/lib/boilerplate.js';
 
 // We create our model once
 const model = bp.create_model();

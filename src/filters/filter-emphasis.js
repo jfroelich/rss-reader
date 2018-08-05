@@ -1,5 +1,5 @@
-import assert from '/src/assert.js';
-import {unwrap_element} from '/src/dom.js';
+import assert from '/src/lib/assert.js';
+import {unwrap_element} from '/src/lib/dom.js';
 
 export function filter_emphasis(document, text_length_max) {
   assert(Number.isInteger(text_length_max) && text_length_max > 0);

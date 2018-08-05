@@ -1,7 +1,7 @@
 import '/third-party/tinycolor-min.js';
-import * as color from '/src/color.js';
+import * as color from '/src/lib/color.js';
 
-// Parses a css color value into a color.js color
+// Parses a css color value into a color
 export function parse(value) {
   if (typeof value === 'string' && value.length) {
     const tc = new tinycolor(value);

@@ -1,4 +1,4 @@
-import ExtensionLock from '/src/extension-lock.js';
+import ExtensionLock from '/src/lib/extension-lock.js';
 import {openModelAccess} from '/src/model/model-access.js';
 
 export function install_listener(event) {
