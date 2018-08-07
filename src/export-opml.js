@@ -1,10 +1,9 @@
-import * as array from '/src/lib/array.js';
 import {openModelAccess} from '/src/model/model-access.js';
 
 // Creates and triggers the download of an OPML document containing feeds from
 // the database
 export async function export_opml() {
-  // Load feeds
+  // Load feeds from storage
   const use_channel = false, sort_feeds = false, mode = 'all';
   const ma = await openModelAccess(use_channel);
   const feeds = await ma.getFeeds(mode, sort_feeds);
