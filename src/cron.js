@@ -4,6 +4,23 @@ import {openModelAccess} from '/src/model/model-access.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {refresh_feed_icons} from '/src/refresh-feed-icons.js';
 
+// Periods are in minutes to easily align with Chrome createAlarm param
+const PERIOD_HALF_DAY = 60 * 12;
+const PERIOD_ONE_WEEK = 60 * 24 * 7;
+
+const alarms = [
+  {name: 'cleanup-refresh-badge-lock', period: PERIOD_HALF_DAY},
+  {name: 'archive', period: PERIOD_HALF_DAY},
+  {name: 'remove-entries-missing-urls', period: PERIOD_ONE_WEEK},
+  {name: 'poll', period: PERIOD_ONE_WEEK},
+  {name: 'remove-orphaned-entries', period: PERIOD_ONE_WEEK},
+  {name: 'remove-untyped-objects', period: PERIOD_ONE_WEEK},
+  {name: 'refresh-feed-icons', period: PERIOD_ONE_WEEK * 2},
+  {name: 'compact-favicon-db', period: PERIOD_ONE_WEEK},
+  {name: 'test-install-binding-alarms', deprecated: true},
+  {name: 'db-remove-orphaned-entries', deprecated: true}
+];
+
 // Appropriately modify alarm settings when the extension is installed or
 // updated
 export function install_listener(event) {
@@ -79,34 +96,22 @@ function query_idle_state(idle_secs) {
   return new Promise(res => chrome.idle.queryState(idle_secs, res));
 }
 
+// TODO: should this check for configuration changes and delete-create changed
+// alarms? or just overwrite everytime?
 export function update_alarms(prev_version_string) {
-  remove_legacy_alarms(prev_version_string);
-
-  // currently does not do much else, but probably will in the future
+  for (const alarm of alarms) {
+    if (alarm.deprecated) {
+      chrome.alarms.clear(
+          alarm.name, cleared => on_remove_alarm.bind(null, alarm.name));
+    }
+  }
 }
 
 export function create_alarms() {
-  chrome.alarms.create(
-      'cleanup-refresh-badge-lock', {periodInMinutes: 60 * 12});
-  chrome.alarms.create('archive', {periodInMinutes: 60 * 12});
-  chrome.alarms.create('poll', {periodInMinutes: 60});
-  chrome.alarms.create(
-      'remove-entries-missing-urls', {periodInMinutes: 60 * 24 * 7});
-  chrome.alarms.create(
-      'remove-orphaned-entries', {periodInMinutes: 60 * 24 * 7});
-  chrome.alarms.create(
-      'remove-untyped-objects', {periodInMinutes: 60 * 24 * 7});
-  chrome.alarms.create(
-      'refresh-feed-icons', {periodInMinutes: 60 * 24 * 7 * 2});
-  chrome.alarms.create('compact-favicon-db', {periodInMinutes: 60 * 24 * 7});
-}
-
-export function remove_legacy_alarms(previous_version) {
-  const legacy_alarm_names =
-      ['test-install-binding-alarms', 'db-remove-orphaned-entries'];
-  // See https://developer.chrome.com/extensions/alarms#method-clear
-  for (const alarm_name of legacy_alarm_names) {
-    chrome.alarms.clear(alarm_name, on_remove_alarm.bind(null, alarm_name));
+  for (const alarm of alarms) {
+    if (!alarm.deprecated) {
+      chrome.alarms.create(alarm.name, {periodInMinutes: alarm.period});
+    }
   }
 }
 
