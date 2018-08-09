@@ -1,0 +1,2 @@
+Entomology is "the branch of zoology concerned with the study of insects." The idea is to reproduce errors in this folder that I find, then fix them, then confirm the bug is fixed. Some of these will then get converted into tests so as to ensure there is no regression. The difference between these and tests is that
+I will not try and update these as the code changes, whereas tests must be continually updated as the code changes. These will only be valid around the time they are created. They will serve as a history of bugs found and fixed.
