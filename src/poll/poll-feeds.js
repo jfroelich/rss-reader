@@ -2,17 +2,17 @@ import * as app from '/src/app.js';
 import * as favicon from '/src/favicon/favicon.js';
 import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
+import {fetch_feed} from '/src/lib/fetch-feed.js';
+import {fetch_html} from '/src/lib/fetch-html.js';
+import {OfflineError, TimeoutError} from '/src/lib/fetch2.js';
 import {set_base_uri} from '/src/lib/html-document.js';
 import * as html from '/src/lib/html.js';
 import * as ls from '/src/lib/ls.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
-import * as sanity from '/src/model/model-sanity.js';
-import * as Model from '/src/model/model.js';
-import {fetch_feed} from '/src/lib/fetch-feed.js';
-import {fetch_html} from '/src/lib/fetch-html.js';
-import {OfflineError, TimeoutError} from '/src/lib/fetch2.js';
 import * as sniff from '/src/lib/sniff.js';
 import {url_did_change} from '/src/lib/url-did-change.js';
+import * as sanity from '/src/model/model-sanity.js';
+import * as Model from '/src/model/model.js';
 import {build_rewrite_rules} from '/src/poll/rewrite-rules.js';
 import {sanitize_document} from '/src/poll/sanitize-document.js';
 
@@ -338,8 +338,17 @@ export async function poll_entry(
   assert(document);
 
   await update_entry_icon(iconn, entry, document);
+
   set_base_uri(document, url);
-  await sanitize_document(document);
+
+  const sd_opts = {};
+  sd_opts.contrast_matte = ls.read_int('contrast_default_matte');
+  sd_opts.contrast_ratio = ls.read_float('min_contrast_ratio');
+  sd_opts.image_size_timeout = ls.read_int('set_image_sizes_timeout');
+  sd_opts.table_scan_max_rows = ls.read_int('table_scan_max_rows');
+  sd_opts.emphasis_max_length = ls.read_int('emphasis_max_length');
+  await sanitize_document(document, sd_opts);
+
   entry.content = document.documentElement.outerHTML;
 
   sanity.sanitize_entry(entry);

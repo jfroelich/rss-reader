@@ -35,21 +35,19 @@ import {filter_unknown_attrs} from '/src/filters/filter-unknown-attrs.js';
 import {lonestar_filter} from '/src/filters/lonestar-filter.js';
 import {set_image_sizes} from '/src/filters/set-image-sizes.js';
 import {trim_document} from '/src/filters/trim-document.js';
-import * as ls from '/src/lib/ls.js';
 import {is_allowed_request} from '/src/lib/fetch-policy.js';
 
 // Applies several filters in a programmed order in order to clean up a
 // document's nodes, filter out script, and make the document easily embeddable
 // within another document.
-export async function sanitize_document(document) {
+export async function sanitize_document(document, options = {}) {
   deframe(document);
   ensure_document_body(document);
   filter_iframes(document);
   filter_comments(document);
 
-  const contrast_matte = ls.read_int('contrast_default_matte');
-  const contrast_ratio = ls.read_float('min_contrast_ratio');
-  filter_hidden_elements(document, contrast_matte, contrast_ratio);
+  filter_hidden_elements(
+      document, options.contrast_matte, options.contrast_ratio);
 
   const general_blacklist = [
     'applet', 'audio',  'basefont', 'bgsound', 'command',  'datalist',
@@ -60,7 +58,6 @@ export async function sanitize_document(document) {
   filter_blacklisted_elements(document, general_blacklist);
 
   filter_script(document);
-
 
   // This should occur before setting image sizes
   // TODO: actually the above comment is no longer true, right? Reverify. If
@@ -75,8 +72,8 @@ export async function sanitize_document(document) {
   lonestar_filter(document);
   filter_dead_images(document);
 
-  const image_size_fetch_timeout = ls.read_int('set_image_sizes_timeout');
-  await set_image_sizes(document, image_size_fetch_timeout, is_allowed_request);
+  await set_image_sizes(
+      document, options.image_size_timeout, is_allowed_request);
 
   // This must run AFTER image sizes set otherwise the dimensions calculations
   // are off and sometimes the main article gets filtered
@@ -90,9 +87,8 @@ export async function sanitize_document(document) {
   filter_small_images(document);
   filter_large_images(document);
 
-
-  const condense_copy_attrs_flag = false;
-  condense_tagnames(document, condense_copy_attrs_flag);
+  const copy_attrs_flag = false;
+  condense_tagnames(document, copy_attrs_flag);
 
   filter_head_elements(document);
   filter_base_elements(document);
@@ -108,11 +104,8 @@ export async function sanitize_document(document) {
   filter_container_elements(document);
   filter_lists(document);
 
-  const table_scan_max_rows = ls.read_int('table_scan_max_rows');
-  filter_tables(document, table_scan_max_rows);
-
-  const emphasis_max_length = ls.read_int('emphasis_max_length');
-  filter_emphasis(document, emphasis_max_length);
+  filter_tables(document, options.table_scan_max_rows);
+  filter_emphasis(document, options.emphasis_max_length);
   filter_node_whitespace(document);
 
   filter_leaf_nodes(document);

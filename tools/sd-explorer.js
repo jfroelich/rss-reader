@@ -1,6 +1,6 @@
+import {fetch_html} from '/src/lib/fetch-html.js';
 import {set_base_uri} from '/src/lib/html-document.js';
 import {parse_html} from '/src/lib/html.js';
-import {fetch_html} from '/src/lib/fetch-html.js';
 import {sanitize_document} from '/src/poll/sanitize-document.js';
 
 // TODO: i need to be able to discover problems with sanitization here. Like
@@ -15,7 +15,10 @@ async function explore(url_string) {
   const doc = parse_html(response_text);
   document.body.innerHTML = 'Filtering document';
   set_base_uri(doc, new URL(response.url));
-  await sanitize_document(doc);
+
+  const sdopts = {};
+  await sanitize_document(doc, sdopts);
+
   document.body.innerHTML = 'Rendering';
   document.body.innerHTML = doc.body.innerHTML;
 }
