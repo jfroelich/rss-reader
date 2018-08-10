@@ -10,12 +10,12 @@ import {set_base_uri} from '/src/lib/html-document.js';
 import * as html from '/src/lib/html.js';
 import * as ls from '/src/lib/ls.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
+import {sanitize_document} from '/src/lib/sandoc/sandoc.js';
 import * as sniff from '/src/lib/sniff.js';
 import {url_did_change} from '/src/lib/url-did-change.js';
 import * as sanity from '/src/model/model-sanity.js';
 import * as Model from '/src/model/model.js';
 import {build_rewrite_rules} from '/src/poll/rewrite-rules.js';
-import {sanitize_document} from '/src/poll/sanitize-document.js';
 
 const default_options = {
   ignore_recency_check: false,
