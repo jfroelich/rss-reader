@@ -1,5 +1,5 @@
 import * as css_color from '/src/lib/css-color.js';
-import * as ccf from '/src/filters/color-contrast-filter.js';
+import * as ccf from '/src/lib/sandoc/color-contrast-filter.js';
 import assert from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
 import * as ls from '/src/lib/ls.js';

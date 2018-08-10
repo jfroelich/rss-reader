@@ -1,4 +1,4 @@
-import {is_leaf_node} from '/src/filters/node-is-leaf.js';
+import {is_leaf_node} from '/src/lib/sandoc/node-is-leaf.js';
 
 export function filter_leaf_nodes(document) {
   if (document.body) {

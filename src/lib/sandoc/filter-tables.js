@@ -1,5 +1,5 @@
 import {unwrap_element} from '/src/lib/dom.js';
-import {is_leaf_node} from '/src/filters/node-is-leaf.js';
+import {is_leaf_node} from '/src/lib/sandoc/node-is-leaf.js';
 
 // Filters certain table elements from document content
 export function filter_tables(document, table_row_scan_max) {

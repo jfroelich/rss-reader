@@ -1,5 +1,5 @@
-import {filter_dead_images} from '/src/filters/filter-dead-images.js';
-import {filter_lazy_images} from '/src/filters/filter-lazy-images.js';
+import {filter_dead_images} from '/src/lib/sandoc/filter-dead-images.js';
+import {filter_lazy_images} from '/src/lib/sandoc/filter-lazy-images.js';
 import assert from '/src/lib/assert.js';
 import * as html from '/src/lib/html.js';
 import {fetch_html} from '/src/lib/fetch-html.js';
