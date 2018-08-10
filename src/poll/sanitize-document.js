@@ -35,7 +35,6 @@ import {filter_unknown_attrs} from '/src/filters/filter-unknown-attrs.js';
 import {lonestar_filter} from '/src/filters/lonestar-filter.js';
 import {set_image_sizes} from '/src/filters/set-image-sizes.js';
 import {trim_document} from '/src/filters/trim-document.js';
-import {is_allowed_request} from '/src/lib/fetch-policy.js';
 
 // Applies several filters in a programmed order in order to clean up a
 // document's nodes, filter out script, and make the document easily embeddable
@@ -73,10 +72,9 @@ export async function sanitize_document(document, options = {}) {
   filter_dead_images(document);
 
   await set_image_sizes(
-      document, options.image_size_timeout, is_allowed_request);
+      document, options.image_size_timeout, options.is_allowed_request);
 
-  // This must run AFTER image sizes set otherwise the dimensions calculations
-  // are off and sometimes the main article gets filtered
+  // This should occur after setting image sizes for higher accuracy
   filter_boilerplate(document);
 
   // This must run after boilerplate analysis because it affects the amount of

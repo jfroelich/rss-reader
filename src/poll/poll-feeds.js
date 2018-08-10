@@ -4,6 +4,7 @@ import * as array from '/src/lib/array.js';
 import assert from '/src/lib/assert.js';
 import {fetch_feed} from '/src/lib/fetch-feed.js';
 import {fetch_html} from '/src/lib/fetch-html.js';
+import {is_allowed_request} from '/src/lib/fetch-policy.js';
 import {OfflineError, TimeoutError} from '/src/lib/fetch2.js';
 import {set_base_uri} from '/src/lib/html-document.js';
 import * as html from '/src/lib/html.js';
@@ -347,6 +348,8 @@ export async function poll_entry(
   sd_opts.image_size_timeout = ls.read_int('set_image_sizes_timeout');
   sd_opts.table_scan_max_rows = ls.read_int('table_scan_max_rows');
   sd_opts.emphasis_max_length = ls.read_int('emphasis_max_length');
+  sd_opts.is_allowed_request = is_allowed_request;
+
   await sanitize_document(document, sd_opts);
 
   entry.content = document.documentElement.outerHTML;
