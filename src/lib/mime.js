@@ -1,45 +1,56 @@
 import * as string from '/src/lib/string.js';
 
-// From this module's point of view, a mime-type is a specialized type of
-// string. Therefore, there is no explicit data type, just helpers that work
-// with strings that purport to be mime types.
+// A mime-type is a specialized type of string. This module provides helpers for
+// interacting with purported mime-type values.
 
 export const MIME_TYPE_MIN_LENGTH = 7;
 export const MIME_TYPE_MAX_LENGTH = 100;
 
-// Extracts the mime type of an HTTP Content-Type header. Rather than throw when
-// input is invalid, this simply returns undefined, for convenience.
-export function parse_content_type(content_type) {
-  if (typeof content_type !== 'string') {
+// Tries to get the mime type corresponding to an HTTP Content-Type header
+// value. Returns undefined on any failure.
+export function parse_content_type(value) {
+  // For convenience, allow the caller to call this without checking the header
+  // value
+  if (typeof value !== 'string') {
     return;
   }
 
-  if (content_type.length < MIME_TYPE_MIN_LENGTH) {
+  // Try and avoid the cost of trim
+  // TODO: profile whether this is worth it, may be premature optimization
+  if (value.length < MIME_TYPE_MIN_LENGTH) {
     return;
   }
 
-  content_type = content_type.trim();
-  if (content_type.length < MIME_TYPE_MIN_LENGTH) {
+  value = value.trim();
+
+  // Try and avoid the cost of search
+  // TODO: profile whether this is worth it, may be premature optimization
+  if (value.length < MIME_TYPE_MIN_LENGTH) {
     return;
   }
 
-  const scpos = content_type.indexOf(';');
-  let mime_type = scpos > -1 ? content_type.substring(0, scpos) : content_type;
-  if (mime_type.length >= MIME_TYPE_MIN_LENGTH) {
-    mime_type = normalize(mime_type);
-    if (is_mime_type(mime_type)) {
-      return mime_type;
-    }
+  // Chop of the trailing encoding, if it exists
+  const scpos = value.indexOf(';');
+  let mime_type = scpos > -1 ? value.substring(0, scpos) : value;
+
+  // Try and avoid the cost of normalization
+  // TODO: profile, may be premature optimization
+  if (mime_type.length < MIME_TYPE_MIN_LENGTH) {
+    return;
   }
+
+  // Normalize the value
+  mime_type = string.filter_whitespace(mime_type).toLowerCase();
+
+  // Provide minimal guarantee the output is valid
+  if (!is_mime_type(mime_type)) {
+    return;
+  }
+
+  return mime_type;
 }
 
-function normalize(mime_type) {
-  return string.filter_whitespace(mime_type).toLowerCase();
-}
-
-
-// Returns whether a string represents a mime type. This is inaccurate. This
-// only provides a loose guarantee that a string looks like a mime type.
+// Returns whether a string loosely approximates a mime type
 export function is_mime_type(value) {
   return typeof value === 'string' && value.length > MIME_TYPE_MIN_LENGTH &&
       value.length < MIME_TYPE_MAX_LENGTH && value.includes('/') &&
