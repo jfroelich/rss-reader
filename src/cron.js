@@ -1,4 +1,4 @@
-import * as favicon from '/src/favicon/favicon.js';
+import * as favicon from '/src/favicon.js';
 import * as ls from '/src/lib/ls.js';
 import {openModelAccess} from '/src/model/model-access.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';

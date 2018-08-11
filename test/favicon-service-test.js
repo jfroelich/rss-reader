@@ -1,4 +1,4 @@
-import {FaviconService} from '/src/favicon/favicon-service.js';
+import {FaviconService} from '/src/favicon-service.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
 import {register_test} from '/test/test-registry.js';

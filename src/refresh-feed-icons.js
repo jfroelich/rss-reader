@@ -1,4 +1,4 @@
-import {create_lookup_url, lookup} from '/src/favicon/favicon.js';
+import * as favicon from '/src/favicon.js';
 
 // Update the favicon for each of the active feeds in the database
 export async function refresh_feed_icons(ma, iconn) {
@@ -16,15 +16,15 @@ async function refresh_feed_icon(ma, iconn, feed) {
     return;
   }
 
-  const lookup_url = create_lookup_url(feed);
+  const lookup_url = favicon.create_lookup_url(feed);
   if (!lookup_url) {
     return;
   }
 
   let doc = undefined;
-  let lookup_should_fetch = true;
+  let fetch_flag = true;
   const icon_url_string =
-      await lookup(iconn, lookup_url, doc, lookup_should_fetch);
+      await favicon.lookup(iconn, lookup_url, doc, fetch_flag);
 
   if (feed.faviconURLString !== icon_url_string) {
     if (icon_url_string) {
