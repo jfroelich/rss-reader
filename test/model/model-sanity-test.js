@@ -13,17 +13,15 @@ async function sanitize_entry_content_test() {
   sanity.sanitize_entry(entry);
   assert(entry.content === content);
 
-  // BUG: this is currently failing because sanitize_entry internally calls
-  // filter_controls, which strips line breaks. line breaks should not be
-  // filtered from content. therefore sanitize_entry's behavior is incorrect
+  // Test that line breaks are not filtered from content. This was previously
+  // the source of a bug, where filter_controls was used in place of
+  // filter_unprintables, where filter_controls matches \n and such, but
+  // filter_unprintables does not
   content = '<html><head></head><body>hello\nworld</body></html>';
   entry.content = content;
   sanity.sanitize_entry(entry);
   let expected = '<html><head></head><body>hello\nworld</body></html>';
-  assert(
-      entry.content === expected,
-      'unexpected output: expected ' + expected + ' but received ' +
-          entry.content);
+  assert(entry.content === expected, entry.content);
 }
 
 register_test(sanitize_entry_content_test);
