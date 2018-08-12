@@ -15,7 +15,7 @@ import * as sniff from '/src/lib/sniff.js';
 import {url_did_change} from '/src/lib/url-did-change.js';
 import * as sanity from '/src/model/model-sanity.js';
 import * as Model from '/src/model/model.js';
-import {build_rewrite_rules} from '/src/poll/rewrite-rules.js';
+import {build_rewrite_rules} from '/src/rewrite-rules.js';
 
 const default_options = {
   ignore_recency_check: false,

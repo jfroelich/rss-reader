@@ -1,7 +1,7 @@
 import * as favicon from '/src/favicon.js';
 import * as ls from '/src/lib/ls.js';
 import {openModelAccess} from '/src/model/model-access.js';
-import {poll_feeds} from '/src/poll/poll-feeds.js';
+import {poll_feeds} from '/src/poll-feeds.js';
 import {refresh_feed_icons} from '/src/refresh-feed-icons.js';
 
 // Periods are in minutes to easily align with Chrome createAlarm param
