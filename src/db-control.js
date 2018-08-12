@@ -1,4 +1,4 @@
-import {openModelAccess} from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model-access.js';
 
 export async function install_listener(event) {
   if (event.reason === 'install') {

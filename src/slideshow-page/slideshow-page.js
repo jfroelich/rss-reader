@@ -2,7 +2,7 @@ import '/src/slideshow-page/main-menu.js';
 import '/src/slideshow-page/left-panel.js';
 
 import * as config_control from '/src/config.js';
-import {openModelAccess} from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model-access.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import * as channel from '/src/slideshow-page/channel.js';
 import {feeds_container_append_feed} from '/src/slideshow-page/feeds-container.js';

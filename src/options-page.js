@@ -5,7 +5,7 @@ import {fade_element} from '/src/lib/dom.js';
 import * as html from '/src/lib/html.js';
 import * as ls from '/src/lib/ls.js';
 import * as perm from '/src/lib/permissions.js';
-import {openModelAccess} from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model-access.js';
 import {poll_feed} from '/src/poll-feeds.js';
 import {subscribe, unsubscribe} from '/src/subscribe.js';
 

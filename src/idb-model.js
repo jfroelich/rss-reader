@@ -1,4 +1,4 @@
-import * as Model from '/src/model/model.js';
+import * as Model from '/src/model.js';
 import sizeof from '/src/lib/sizeof.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';

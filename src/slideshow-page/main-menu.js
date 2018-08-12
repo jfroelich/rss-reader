@@ -1,5 +1,5 @@
 import * as favicon from '/src/favicon.js';
-import {openModelAccess} from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model-access.js';
 import {poll_feeds} from '/src/poll-feeds.js';
 import {options_menu_hide, options_menu_show} from '/src/slideshow-page/left-panel.js';
 import {hide_no_articles_message, show_no_articles_message} from '/src/slideshow-page/no-articles-message.js';

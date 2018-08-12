@@ -13,8 +13,8 @@ import {rewrite_url} from '/src/lib/rewrite-url.js';
 import {sanitize_document} from '/src/lib/sandoc/sandoc.js';
 import * as sniff from '/src/lib/sniff.js';
 import {url_did_change} from '/src/lib/url-did-change.js';
-import * as sanity from '/src/model/model-sanity.js';
-import * as Model from '/src/model/model.js';
+import * as sanity from '/src/model-sanity.js';
+import * as Model from '/src/model.js';
 import {build_rewrite_rules} from '/src/rewrite-rules.js';
 
 const default_options = {

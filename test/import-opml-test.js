@@ -1,8 +1,8 @@
 import assert from '/src/lib/assert.js';
 import * as import_opml from '/src/import-opml.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
-import {openModelAccess} from '/src/model/model-access.js';
-import * as Model from '/src/model/model.js';
+import {openModelAccess} from '/src/model-access.js';
+import * as Model from '/src/model.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: test multiple files

@@ -1,7 +1,7 @@
+import * as idbmodel from '/src/idb-model.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
-import * as idbmodel from '/src/model/idb-model.js';
-import * as Model from '/src/model/model.js';
+import * as Model from '/src/model.js';
 import {register_test} from '/test/test-registry.js';
 
 async function activate_feed_test() {

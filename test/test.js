@@ -1,8 +1,8 @@
-import '/test/model/idb-model-test.js';
+import '/test/idb-model-test.js';
 import '/test/subscribe-test.js';
 import '/test/color-test.js';
-import '/test/model/model-test.js';
-import '/test/model/model-sanity-test.js';
+import '/test/model-test.js';
+import '/test/model-sanity-test.js';
 import '/test/coerce-element-test.js';
 import '/test/html-document-test.js';
 import '/test/favicon-service-test.js';

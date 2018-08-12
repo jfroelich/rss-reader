@@ -1,6 +1,6 @@
 import * as cron_control from '/src/cron.js';
 import * as favicon from '/src/favicon.js';
-import {openModelAccess} from '/src/model/model-access.js';
+import {openModelAccess} from '/src/model-access.js';
 import {poll_feed, poll_feeds} from '/src/poll-feeds.js';
 import {refresh_feed_icons} from '/src/refresh-feed-icons.js';
 import {subscribe} from '/src/subscribe.js';
