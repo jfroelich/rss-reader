@@ -1,10 +1,9 @@
 import assert from '/src/lib/assert.js';
+import {fetch_html} from '/src/lib/fetch-html.js';
+import {fetch2, response_is_redirect} from '/src/lib/fetch2.js';
 import * as html from '/src/lib/html.js';
 import * as indexeddb from '/src/lib/indexeddb.js';
-import {fetch_html} from '/src/lib/fetch-html.js';
-import {fetch2} from '/src/lib/fetch2.js';
 import * as mime from '/src/lib/mime.js';
-import {url_did_change} from '/src/lib/url-did-change.js';
 
 export function FaviconService() {
   this.name = 'favicon-cache';
@@ -81,7 +80,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   let response_url;
   if (response && response.ok && response.url) {
     response_url = new URL(response.url);
-    if (url_did_change(url, response_url)) {
+    if (response_is_redirect(url, response)) {
       if (response_url.origin !== url.origin) {
         origin_url = new URL(response_url.origin);
       }

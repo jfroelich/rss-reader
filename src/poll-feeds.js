@@ -5,14 +5,13 @@ import assert from '/src/lib/assert.js';
 import {fetch_feed} from '/src/lib/fetch-feed.js';
 import {fetch_html} from '/src/lib/fetch-html.js';
 import {is_allowed_request} from '/src/lib/fetch-policy.js';
-import {OfflineError, TimeoutError} from '/src/lib/fetch2.js';
+import {OfflineError, response_is_redirect, TimeoutError} from '/src/lib/fetch2.js';
 import {set_base_uri} from '/src/lib/html-document.js';
 import * as html from '/src/lib/html.js';
 import * as ls from '/src/lib/ls.js';
 import {rewrite_url} from '/src/lib/rewrite-url.js';
 import {sanitize_document} from '/src/lib/sandoc/sandoc.js';
 import * as sniff from '/src/lib/sniff.js';
-import {url_did_change} from '/src/lib/url-did-change.js';
 import * as sanity from '/src/model-sanity.js';
 import * as Model from '/src/model.js';
 import {build_rewrite_rules} from '/src/rewrite-rules.js';
@@ -299,7 +298,7 @@ export async function poll_entry(
   if (response) {
     let url_changed = false;
     const response_url = new URL(response.url);
-    if (url_did_change(url, response_url)) {
+    if (response_is_redirect(url, response)) {
       url_changed = true;
       Model.append_entry_url(entry, response_url);
       Model.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
