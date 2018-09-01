@@ -1,4 +1,4 @@
-import * as favicon from '/src/favicon.js';
+import * as favicon from '/src/iconsvc/favicon.js';
 
 export async function install_listener(event) {
   if (event.reason === 'install') {

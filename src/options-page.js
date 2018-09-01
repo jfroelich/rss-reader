@@ -1,5 +1,5 @@
 import * as badge from '/src/badge.js';
-import * as favicon from '/src/favicon.js';
+import * as favicon from '/src/iconsvc/favicon.js';
 import * as array from '/src/lib/array.js';
 import {fade_element} from '/src/lib/dom.js';
 import * as html from '/src/lib/html.js';

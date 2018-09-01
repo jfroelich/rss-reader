@@ -1,4 +1,4 @@
-import * as favicon from '/src/favicon.js';
+import * as favicon from '/src/iconsvc/favicon.js';
 
 // Update the favicon for each of the active feeds in the database
 export async function refresh_feed_icons(ma, iconn) {
