@@ -1,5 +1,5 @@
-import * as idbmodel from '/src/idb-model/idb-model/model.js';
 import assert from '/src/assert/assert.js';
+import * as idbmodel from '/src/idb-model/idb-model.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import * as Model from '/src/model/model.js';
 import {register_test} from '/test/test-registry.js';

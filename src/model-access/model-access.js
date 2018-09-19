@@ -4,7 +4,7 @@
 // the caller here by name
 
 import assert from '/src/assert/assert.js';
-import * as idbmodel from '/src/idb-model/idb-model/model.js';
+import * as idbmodel from '/src/idb-model/idb-model.js';
 import * as Model from '/src/model/model.js';
 import * as object from '/src/object/object.js';
 
