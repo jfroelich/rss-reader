@@ -1,4 +1,4 @@
-import '/third-party/tinycolor-min.js';
+import '/src/css-color/third-party/tinycolor-min.js';
 import * as color from '/src/color/color.js';
 
 // Parses a css color value into a color
@@ -13,7 +13,7 @@ export function parse(value) {
 
 function tinycolor_to_color(tiny_color) {
   const o = tiny_color.toRgb();
-  return color.pack(o.r, o.g, o.b, o.a * 255 | 0);
+  return color.pack(o.r, o.g, o.b, (o.a * 255) | 0);
 }
 
 export function format(value) {
