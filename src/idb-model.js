@@ -1,7 +1,7 @@
 import * as Model from '/src/model.js';
-import sizeof from '/src/lib/sizeof.js';
-import assert from '/src/lib/assert.js';
-import * as indexeddb from '/src/lib/indexeddb.js';
+import sizeof from '/src/sizeof/sizeof.js';
+import assert from '/src/assert/assert.js';
+import * as indexeddb from '/src/indexeddb/indexeddb.js';
 
 export function activate_feed(conn, feed_id) {
   function transition(feed) {

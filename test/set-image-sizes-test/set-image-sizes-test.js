@@ -1,7 +1,7 @@
-import assert from '/src/lib/assert.js';
-import {set_image_sizes} from '/src/lib/sandoc/set-image-sizes.js';
-import {set_base_uri} from '/src/lib/html-document.js';
-import * as html from '/src/lib/html.js';
+import assert from '/src/assert/assert.js';
+import {set_image_sizes} from '/src/sandoc/set-image-sizes.js';
+import {set_base_uri} from '/src/html-document/html-document.js';
+import * as html from '/src/html/html.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: test image missing src with srcset

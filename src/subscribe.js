@@ -1,8 +1,8 @@
 import * as app from '/src/app.js';
 import * as favicon from '/src/iconsvc/favicon.js';
-import * as array from '/src/lib/array.js';
-import {fetch_feed} from '/src/lib/fetch-feed.js';
-import {response_is_redirect} from '/src/lib/fetch2.js';
+import * as array from '/src/array/array.js';
+import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
+import {response_is_redirect} from '/src/fetch2/fetch2.js';
 import * as sanity from '/src/model-sanity.js';
 
 // Subscribe to a feed.  Entries are excluded because it takes too long to

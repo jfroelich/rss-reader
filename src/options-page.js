@@ -1,10 +1,10 @@
 import * as badge from '/src/badge.js';
 import * as favicon from '/src/iconsvc/favicon.js';
-import * as array from '/src/lib/array.js';
-import {fade_element} from '/src/lib/dom.js';
-import * as html from '/src/lib/html.js';
-import * as ls from '/src/lib/ls.js';
-import * as perm from '/src/lib/permissions.js';
+import * as array from '/src/array/array.js';
+import {fade_element} from '/src/dom/dom.js';
+import * as html from '/src/html/html.js';
+import * as ls from '/src/ls/ls.js';
+import * as perm from '/src/permissions/permissions.js';
 import {openModelAccess} from '/src/model-access.js';
 import {poll_feed} from '/src/poll-feeds.js';
 import {subscribe, unsubscribe} from '/src/subscribe.js';

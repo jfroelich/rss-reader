@@ -1,6 +1,6 @@
 import {FaviconService} from '/src/iconsvc/favicon-service.js';
-import assert from '/src/lib/assert.js';
-import * as indexeddb from '/src/lib/indexeddb.js';
+import assert from '/src/assert/assert.js';
+import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: this needs to be implemented using local files

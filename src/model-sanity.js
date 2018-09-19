@@ -1,6 +1,6 @@
-import assert from '/src/lib/assert.js';
-import * as html from '/src/lib/html.js';
-import * as string from '/src/lib/string.js';
+import assert from '/src/assert/assert.js';
+import * as html from '/src/html/html.js';
+import * as string from '/src/string/string.js';
 import * as Model from '/src/model.js';
 
 export function validate_entry(entry) {

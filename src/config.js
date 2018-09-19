@@ -1,6 +1,6 @@
-import assert from '/src/lib/assert.js';
-import * as color from '/src/lib/color.js';
-import * as ls from '/src/lib/ls.js';
+import assert from '/src/assert/assert.js';
+import * as color from '/src/color/color.js';
+import * as ls from '/src/ls/ls.js';
 
 // React to the extension being installed or updated, or when chrome is updated,
 // to do ls related things. Note that this listener should be bound before

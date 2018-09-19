@@ -23,7 +23,7 @@
 // being implemented. so this service-oriented approach feels really awkward
 // and just plain incorrect and makes me want to stop and revisit the primary
 // design. I want the favicon service to be standalone, but at the same time,
-// I don't want to reimplement common things like assert.js and indexeddb.js
+// I don't want to reimplement common things like assert/assert.js and indexeddb.js
 // because it just feels dumb.
 
 // there is a second and related issue regarding the

@@ -1,6 +1,6 @@
-import assert from '/src/lib/assert.js';
-import {unwrap_element} from '/src/lib/dom.js';
-import {parse_html} from '/src/lib/html.js';
+import assert from '/src/assert/assert.js';
+import {unwrap_element} from '/src/dom/dom.js';
+import {parse_html} from '/src/html/html.js';
 import {register_test} from '/test/test-registry.js';
 
 export function unwrap_element_test() {

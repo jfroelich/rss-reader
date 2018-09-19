@@ -1,8 +1,8 @@
-import * as ls from '/src/lib/ls.js';
-import * as array from '/src/lib/array.js';
-import assert from '/src/lib/assert.js';
-import * as html from '/src/lib/html.js';
-import {filter_publisher} from '/src/lib/nlp.js';
+import * as ls from '/src/ls/ls.js';
+import * as array from '/src/array/array.js';
+import assert from '/src/assert/assert.js';
+import * as html from '/src/html/html.js';
+import {filter_publisher} from '/src/nlp/nlp.js';
 import * as Model from '/src/model.js';
 import {hide_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
 import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';

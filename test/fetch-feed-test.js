@@ -1,5 +1,5 @@
-import assert from '/src/lib/assert.js';
-import {fetch_feed} from '/src/lib/fetch-feed.js';
+import assert from '/src/assert/assert.js';
+import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: this should be run on a local resource

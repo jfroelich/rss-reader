@@ -1,7 +1,7 @@
-import {fetch_html} from '/src/lib/fetch-html.js';
-import {set_base_uri} from '/src/lib/html-document.js';
-import {parse_html} from '/src/lib/html.js';
-import {sanitize_document} from '/src/lib/sandoc/sandoc.js';
+import {fetch_html} from '/src/fetch-html/fetch-html.js';
+import {set_base_uri} from '/src/html-document/html-document.js';
+import {parse_html} from '/src/html/html.js';
+import {sanitize_document} from '/src/sandoc/sandoc.js';
 
 // TODO: i need to be able to discover problems with sanitization here. Like
 // instead of pruning, this annotates with removal-reason or something

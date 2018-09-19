@@ -1,9 +1,9 @@
-import assert from '/src/lib/assert.js';
-import {fetch_html} from '/src/lib/fetch-html.js';
-import {fetch2, response_is_redirect} from '/src/lib/fetch2.js';
-import * as html from '/src/lib/html.js';
-import * as indexeddb from '/src/lib/indexeddb.js';
-import * as mime from '/src/lib/mime.js';
+import assert from '/src/assert/assert.js';
+import {fetch_html} from '/src/fetch-html/fetch-html.js';
+import {fetch2, response_is_redirect} from '/src/fetch2/fetch2.js';
+import * as html from '/src/html/html.js';
+import * as indexeddb from '/src/indexeddb/indexeddb.js';
+import * as mime from '/src/mime/mime.js';
 
 export function FaviconService() {
   this.name = 'favicon-cache';

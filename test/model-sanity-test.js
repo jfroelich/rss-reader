@@ -1,4 +1,4 @@
-import assert from '/src/lib/assert.js';
+import assert from '/src/assert/assert.js';
 import * as sanity from '/src/model-sanity.js';
 import * as model from '/src/model.js';
 import {register_test} from '/test/test-registry.js';

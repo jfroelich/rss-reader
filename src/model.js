@@ -1,4 +1,4 @@
-import assert from '/src/lib/assert.js';
+import assert from '/src/assert/assert.js';
 
 export const FEED_MAGIC = 0xfeedfeed;
 export const ENTRY_MAGIC = 0xdeadbeef;

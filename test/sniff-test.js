@@ -1,6 +1,6 @@
-import assert from '/src/lib/assert.js';
-import * as sniff from '/src/lib/sniff.js';
-import * as url_utils from '/src/lib/url-utils.js';
+import assert from '/src/assert/assert.js';
+import * as sniff from '/src/sniff/sniff.js';
+import * as url_utils from '/src/url-utils/url-utils.js';
 import {register_test} from '/test/test-registry.js';
 
 async function sniff_test() {

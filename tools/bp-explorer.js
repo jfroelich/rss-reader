@@ -1,14 +1,14 @@
-import {canonicalize_urls} from '/src/lib/sandoc/canonicalize-urls.js';
-import {deframe} from '/src/lib/sandoc/deframe.js';
-import {filter_blacklisted_elements} from '/src/lib/sandoc/filter-blacklisted-elements.js';
-import {filter_comments} from '/src/lib/sandoc/filter-comments.js';
-import {filter_iframes} from '/src/lib/sandoc/filter-iframes.js';
-import {filter_script} from '/src/lib/sandoc/filter-script.js';
-import {set_image_sizes} from '/src/lib/sandoc/set-image-sizes.js';
-import * as bp from '/src/lib/boilerplate.js';
-import {set_base_uri} from '/src/lib/html-document.js';
-import {parse_html} from '/src/lib/html.js';
-import {fetch_html} from '/src/lib/fetch-html.js';
+import {canonicalize_urls} from '/src/sandoc/canonicalize-urls.js';
+import {deframe} from '/src/sandoc/deframe.js';
+import {filter_blacklisted_elements} from '/src/sandoc/filter-blacklisted-elements.js';
+import {filter_comments} from '/src/sandoc/filter-comments.js';
+import {filter_iframes} from '/src/sandoc/filter-iframes.js';
+import {filter_script} from '/src/sandoc/filter-script.js';
+import {set_image_sizes} from '/src/sandoc/set-image-sizes.js';
+import * as bp from '/src/boilerplate/boilerplate.js';
+import {set_base_uri} from '/src/html-document/html-document.js';
+import {parse_html} from '/src/html/html.js';
+import {fetch_html} from '/src/fetch-html/fetch-html.js';
 
 // TODO: will filtering hidden elements help exploration?
 
