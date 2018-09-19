@@ -1,4 +1,4 @@
-import * as Model from '/src/model.js';
+import * as Model from '/src/model/model.js';
 import {is_allowed_request} from '/src/fetch-policy/fetch-policy.js';
 import {fetch2} from '/src/fetch2/fetch2.js';
 import {parse_feed} from '/src/parse-feed/parse-feed.js';

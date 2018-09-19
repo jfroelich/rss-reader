@@ -1,5 +1,5 @@
-import {openModelAccess} from '/src/model-access.js';
-import * as Model from '/src/model.js';
+import {openModelAccess} from '/src/model-access/model-access.js';
+import * as Model from '/src/model/model.js';
 import * as string from '/src/string/string.js';
 
 export function prompt() {

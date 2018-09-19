@@ -1,4 +1,4 @@
-import {openModelAccess} from '/src/model-access.js';
+import {openModelAccess} from '/src/model-access/model-access.js';
 
 // Creates and triggers the download of an OPML document containing feeds from
 // the database

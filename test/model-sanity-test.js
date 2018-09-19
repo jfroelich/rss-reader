@@ -1,6 +1,6 @@
 import assert from '/src/assert/assert.js';
-import * as sanity from '/src/model-sanity.js';
-import * as model from '/src/model.js';
+import * as sanity from '/src/model-sanity/model-sanity.js';
+import * as model from '/src/model/model.js';
 import {register_test} from '/test/test-registry.js';
 
 async function sanitize_entry_content_test() {

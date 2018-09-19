@@ -1,8 +1,8 @@
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/ls/ls.js';
-import {openModelAccess} from '/src/model-access.js';
-import {poll_feeds} from '/src/poll-feeds.js';
-import {refresh_feed_icons} from '/src/refresh-feed-icons.js';
+import {openModelAccess} from '/src/model-access/model-access.js';
+import {poll_feeds} from '/src/poll-feeds/poll-feeds.js';
+import {refresh_feed_icons} from '/src/refresh-feed-icons/refresh-feed-icons.js';
 
 // Periods are in minutes to easily align with Chrome createAlarm param
 const PERIOD_HALF_DAY = 60 * 12;

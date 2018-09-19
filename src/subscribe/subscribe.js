@@ -1,9 +1,9 @@
-import * as app from '/src/app.js';
+import * as app from '/src/app/app.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as array from '/src/array/array.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {response_is_redirect} from '/src/fetch2/fetch2.js';
-import * as sanity from '/src/model-sanity.js';
+import * as sanity from '/src/model-sanity/model-sanity.js';
 
 // Subscribe to a feed.  Entries are excluded because it takes too long to
 // process them on initial subscribe.

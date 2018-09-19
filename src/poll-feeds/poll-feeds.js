@@ -1,4 +1,4 @@
-import * as app from '/src/app.js';
+import * as app from '/src/app/app.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as array from '/src/array/array.js';
 import assert from '/src/assert/assert.js';
@@ -12,9 +12,9 @@ import * as ls from '/src/ls/ls.js';
 import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
 import {sanitize_document} from '/src/sandoc/sandoc.js';
 import * as sniff from '/src/sniff/sniff.js';
-import * as sanity from '/src/model-sanity.js';
-import * as Model from '/src/model.js';
-import {build_rewrite_rules} from '/src/rewrite-rules.js';
+import * as sanity from '/src/model-sanity/model-sanity.js';
+import * as Model from '/src/model/model.js';
+import {build_rewrite_rules} from '/src/rewrite-rules/rewrite-rules.js';
 
 const default_options = {
   ignore_recency_check: false,

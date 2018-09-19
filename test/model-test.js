@@ -1,5 +1,5 @@
 import assert from '/src/assert/assert.js';
-import * as Model from '/src/model.js';
+import * as Model from '/src/model/model.js';
 import {register_test} from '/test/test-registry.js';
 
 export async function is_feed_test() {

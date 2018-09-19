@@ -1,6 +1,6 @@
-import * as config_control from '/src/config.js';
-import {export_opml} from '/src/export-opml.js';
-import * as import_opml from '/src/import-opml.js';
+import * as config_control from '/src/config/config.js';
+import {export_opml} from '/src/export-opml/export-opml.js';
+import * as import_opml from '/src/import-opml/import-opml.js';
 import * as ls from '/src/ls/ls.js';
 
 export function options_menu_show() {

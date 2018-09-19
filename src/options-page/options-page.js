@@ -1,13 +1,13 @@
-import * as badge from '/src/badge.js';
+import * as badge from '/src/badge/badge.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as array from '/src/array/array.js';
 import {fade_element} from '/src/dom/dom.js';
 import * as html from '/src/html/html.js';
 import * as ls from '/src/ls/ls.js';
 import * as perm from '/src/permissions/permissions.js';
-import {openModelAccess} from '/src/model-access.js';
-import {poll_feed} from '/src/poll-feeds.js';
-import {subscribe, unsubscribe} from '/src/subscribe.js';
+import {openModelAccess} from '/src/model-access/model-access.js';
+import {poll_feed} from '/src/poll-feeds/poll-feeds.js';
+import {subscribe, unsubscribe} from '/src/subscribe/subscribe.js';
 
 let current_menu_item;
 let current_section;

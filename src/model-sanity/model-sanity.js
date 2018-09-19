@@ -1,7 +1,7 @@
 import assert from '/src/assert/assert.js';
 import * as html from '/src/html/html.js';
 import * as string from '/src/string/string.js';
-import * as Model from '/src/model.js';
+import * as Model from '/src/model/model.js';
 
 export function validate_entry(entry) {
   assert(Model.is_entry(entry));

@@ -1,9 +1,9 @@
-import * as cron_control from '/src/cron.js';
+import * as cron_control from '/src/cron/cron.js';
 import * as favicon from '/src/iconsvc/favicon.js';
-import {openModelAccess} from '/src/model-access.js';
-import {poll_feed, poll_feeds} from '/src/poll-feeds.js';
-import {refresh_feed_icons} from '/src/refresh-feed-icons.js';
-import {subscribe} from '/src/subscribe.js';
+import {openModelAccess} from '/src/model-access/model-access.js';
+import {poll_feed, poll_feeds} from '/src/poll-feeds/poll-feeds.js';
+import {refresh_feed_icons} from '/src/refresh-feed-icons/refresh-feed-icons.js';
+import {subscribe} from '/src/subscribe/subscribe.js';
 
 // Handle commands entered into the console.
 

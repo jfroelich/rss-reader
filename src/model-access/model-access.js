@@ -1,7 +1,12 @@
-import * as idbmodel from '/src/idb-model.js';
+// TODO: rename the function openModelAccess to open. the thing being opened
+// is implicit in the module name. the caller should optionally prefix it or
+// access by namespace-like-thing or whatever, but it should not be forced upon
+// the caller here by name
+
 import assert from '/src/assert/assert.js';
+import * as idbmodel from '/src/idb-model/idb-model/model.js';
+import * as Model from '/src/model/model.js';
 import * as object from '/src/object/object.js';
-import * as Model from '/src/model.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 

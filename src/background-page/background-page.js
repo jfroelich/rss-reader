@@ -1,8 +1,8 @@
-import * as app from '/src/app.js';
-import * as badge_control from '/src/badge.js';
-import * as config_control from '/src/config.js';
-import * as cron_control from '/src/cron.js';
-import * as db_control from '/src/db-control.js';
+import * as app from '/src/app/app.js';
+import * as badge_control from '/src/badge/badge.js';
+import * as config_control from '/src/config/config.js';
+import * as cron_control from '/src/cron/cron.js';
+import * as db_control from '/src/db-control/db-control.js';
 
 // Ensure the badge is refreshed when only the background page is loaded
 async function channel_onmessage(event) {
