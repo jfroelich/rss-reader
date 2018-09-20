@@ -1,6 +1,6 @@
-import * as css_color from '/src/css-color/css-color.js';
-import * as ccf from '/src/sandoc/color-contrast-filter.js';
 import assert from '/src/assert/assert.js';
+import * as ccf from '/src/color-contrast-filter/color-contrast-filter.js';
+import * as css_color from '/src/color-contrast-filter/css-color.js';
 import * as color from '/src/color/color.js';
 import * as ls from '/src/ls/ls.js';
 import {register_test} from '/test/test-registry.js';

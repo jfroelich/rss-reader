@@ -1,4 +1,4 @@
-import * as css_color from '/src/css-color/css-color.js';
+import * as css_color from '/src/color-contrast-filter/css-color.js';
 import * as color from '/src/color/color.js';
 
 // The color contrast filter removes text nodes with a text-color to
