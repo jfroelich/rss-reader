@@ -4,7 +4,7 @@ import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/ls/ls.js';
 import {openModelAccess} from '/src/model-access/model-access.js';
-import * as perm from '/src/permissions/permissions.js';
+import * as permissions from '/src/options-page/permissions.js';
 import {poll_feed} from '/src/poll-feeds/poll-feeds.js';
 import {subscribe, unsubscribe} from '/src/subscribe/subscribe.js';
 
@@ -444,9 +444,9 @@ function enable_notifications_checkbox_onclick(event) {
 
 function enable_bg_processing_checkbox_onclick(event) {
   if (event.target.checked) {
-    perm.request('background');
+    permissions.request('background');
   } else {
-    perm.remove('background');
+    permissions.remove('background');
   }
 }
 
@@ -455,7 +455,7 @@ function enable_bg_processing_checkbox_onclick(event) {
 async function enable_bg_processing_checkbox_init() {
   const checkbox = document.getElementById('enable-background');
   checkbox.onclick = enable_bg_processing_checkbox_onclick;
-  checkbox.checked = await perm.has('background');
+  checkbox.checked = await permissions.has('background');
 }
 
 function bg_image_menu_onchange(event) {
