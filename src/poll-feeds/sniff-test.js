@@ -1,5 +1,5 @@
 import assert from '/src/assert/assert.js';
-import * as sniff from '/src/sniff/sniff.js';
+import * as sniff from '/src/poll-feeds/sniff.js';
 import * as url_utils from '/src/url-utils/url-utils.js';
 import {register_test} from '/test/test-registry.js';
 

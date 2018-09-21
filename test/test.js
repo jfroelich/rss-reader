@@ -1,5 +1,5 @@
 import '/src/color-contrast-filter/color-contrast-filter-test.js';
-import '/src/sniff/sniff-test.js';
+import '/src/poll-feeds/sniff-test.js';
 import '/test/idb-model-test.js';
 import '/test/subscribe-test.js';
 import '/test/color-test.js';

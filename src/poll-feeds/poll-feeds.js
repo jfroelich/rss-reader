@@ -10,10 +10,10 @@ import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/ls/ls.js';
 import * as sanity from '/src/model-sanity/model-sanity.js';
 import * as Model from '/src/model/model.js';
+import * as sniff from '/src/poll-feeds/sniff.js';
 import {build_rewrite_rules} from '/src/rewrite-rules/rewrite-rules.js';
 import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
 import {sanitize_document} from '/src/sandoc/sandoc.js';
-import * as sniff from '/src/sniff/sniff.js';
 
 const default_options = {
   ignore_recency_check: false,
