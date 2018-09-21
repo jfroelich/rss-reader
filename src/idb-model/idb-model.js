@@ -1,5 +1,5 @@
 import * as Model from '/src/model/model.js';
-import sizeof from '/src/sizeof/sizeof.js';
+import sizeof from '/src/idb-model/sizeof.js';
 import assert from '/src/assert/assert.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 
