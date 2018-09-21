@@ -1,6 +1,7 @@
-// TODO: if this module is only in use by one other module, this should be
-// just a helper file located within that module, or even just a function
-// embedded within that other module's file
+// TODO: look into getOwnProperties or whatever it is called
+// NOTE: value is returned to keep some legacy compat, but now this filters in
+// place, there is no need to use ret val
+// TODO: this no longer clones! double check caller
 
 const has_own = Object.prototype.hasOwnProperty;
 

@@ -5,8 +5,8 @@
 
 import assert from '/src/assert/assert.js';
 import * as idbmodel from '/src/idb-model/idb-model.js';
+import * as object from '/src/model-access/object.js';
 import * as Model from '/src/model/model.js';
-import * as object from '/src/object/object.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
