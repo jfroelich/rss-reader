@@ -1,9 +1,8 @@
-import * as ls from '/src/ls/ls.js';
-import * as array from '/src/array/array.js';
 import assert from '/src/assert/assert.js';
 import * as html from '/src/html/html.js';
-import {filter_publisher} from '/src/nlp/nlp.js';
+import * as ls from '/src/ls/ls.js';
 import * as Model from '/src/model/model.js';
+import {filter_publisher} from '/src/nlp/nlp.js';
 import {hide_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
 import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
 import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
@@ -38,7 +37,8 @@ export function append_slide(entry) {
 
 function create_slide(entry) {
   assert(Model.is_entry(entry));
-  assert(!array.is_empty(entry.urls));
+  assert(Array.isArray(entry.urls));
+  assert(entry.urls.length > 0);
 
   const slide = document.createElement('slide');
   slide.setAttribute('entry', entry.id);
@@ -57,7 +57,7 @@ function create_slide(entry) {
 
 function create_article_title_element(entry) {
   const title_element = document.createElement('a');
-  title_element.setAttribute('href', array.peek(entry.urls));
+  title_element.setAttribute('href', entry.urls[entry.urls.length - 1]);
   title_element.setAttribute('class', 'entry-title');
   title_element.setAttribute('rel', 'noreferrer');
 

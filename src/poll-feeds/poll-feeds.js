@@ -1,6 +1,4 @@
 import * as app from '/src/app/app.js';
-import * as favicon from '/src/iconsvc/favicon.js';
-import * as array from '/src/array/array.js';
 import assert from '/src/assert/assert.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
@@ -8,13 +6,14 @@ import {is_allowed_request} from '/src/fetch-policy/fetch-policy.js';
 import {OfflineError, response_is_redirect, TimeoutError} from '/src/fetch2/fetch2.js';
 import {set_base_uri} from '/src/html-document/html-document.js';
 import * as html from '/src/html/html.js';
+import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/ls/ls.js';
-import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
-import {sanitize_document} from '/src/sandoc/sandoc.js';
-import * as sniff from '/src/sniff/sniff.js';
 import * as sanity from '/src/model-sanity/model-sanity.js';
 import * as Model from '/src/model/model.js';
 import {build_rewrite_rules} from '/src/rewrite-rules/rewrite-rules.js';
+import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
+import {sanitize_document} from '/src/sandoc/sandoc.js';
+import * as sniff from '/src/sniff/sniff.js';
 
 const default_options = {
   ignore_recency_check: false,
@@ -62,14 +61,15 @@ export async function poll_feeds(ma, iconn, options = {}) {
 // Check if a remote feed has new data and store it in the database
 export async function poll_feed(ma, iconn, options = {}, feed) {
   assert(Model.is_feed(feed));
-  assert(!array.is_empty(feed.urls));
+  assert(Array.isArray(feed.urls));
+  assert(feed.urls.length > 0);
   assert(feed.active);
 
   // TODO: this collection of rules should not be rebuilt per feed, so rules
   // should be a parameter to this function
   const rewrite_rules = build_rewrite_rules();
 
-  const tail_url = new URL(array.peek(feed.urls));
+  const tail_url = new URL(feed.urls[feed.urls.length - 1]);
 
   if (!options.ignore_recency_check && feed.dateFetched) {
     const current_date = new Date();
@@ -111,7 +111,7 @@ export async function poll_feed(ma, iconn, options = {}, feed) {
 }
 
 async function poll_entries(ma, iconn, rewrite_rules, options, entries, feed) {
-  const feed_url_string = array.peek(feed.urls);
+  const feed_url_string = feed.urls[feed.urls.length - 1];
   const coerced_entries = entries.map(coerce_entry);
   entries = dedup_entries(coerced_entries);
   propagate_feed_properties(feed, entries);
@@ -200,7 +200,7 @@ async function handle_fetch_error(ma, error, feed, threshold) {
 
   // Auto-deactivate on threshold breach
   if (feed.errorCount > threshold) {
-    console.debug('Deactivating feed', array.peek(feed.urls));
+    console.debug('Deactivating feed', feed.urls[feed.urls.length - 1]);
     feed.active = false;
     feed.deactivationReasonText = 'fetch';
     feed.deactivationDate = new Date();
@@ -215,7 +215,7 @@ function dedup_entries(entries) {
   const seen_url_strings = [];
 
   for (const entry of entries) {
-    if (array.is_empty(entry.urls)) {
+    if (!entry.urls || entry.length.length < 1) {
       distinct_entries.push(entry);
       continue;
     }
@@ -269,10 +269,10 @@ export async function poll_entry(
     feed_url_string) {
   assert(Model.is_entry(entry));
 
-  let url = new URL(array.peek(entry.urls));
+  let url = new URL(entry.urls[entry.urls.length - 1]);
   Model.append_entry_url(entry, rewrite_url(url, rewrite_rules));
 
-  url = new URL(array.peek(entry.urls));
+  url = new URL(entry.urls[entry.urls.length - 1]);
   let existing_entry = await ma.getEntry('url', url, true);
   if (existing_entry) {
     throw new EntryExistsError('Entry already exists for url ' + url.href);
@@ -302,7 +302,7 @@ export async function poll_entry(
       url_changed = true;
       Model.append_entry_url(entry, response_url);
       Model.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
-      url = new URL(array.peek(entry.urls));
+      url = new URL(entry.urls[entry.urls.length - 1]);
       existing_entry = await ma.getEntry(get_mode, url, key_only);
       if (existing_entry) {
         throw new EntryExistsError(
@@ -382,7 +382,7 @@ function url_is_inaccessible(url) {
 }
 
 async function update_entry_icon(iconn, entry, document) {
-  const lookup_url = new URL(array.peek(entry.urls));
+  const lookup_url = new URL(entry.urls[entry.urls.length - 1]);
   const fetch = false;
   const icon_url_string =
       await favicon.lookup(iconn, lookup_url, document, fetch);

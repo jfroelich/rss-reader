@@ -1,5 +1,3 @@
-import * as array from '/src/array/array.js';
-
 export function feeds_container_append_feed(feed) {
   const feeds_container = document.getElementById('feeds-container');
   const feed_element = document.createElement('div');
@@ -47,7 +45,7 @@ export function feeds_container_append_feed(feed) {
   col.textContent = 'URL';
   row.appendChild(col);
   col = document.createElement('td');
-  col.textContent = array.peek(feed.urls);
+  col.textContent = feed.urls[feed.urls.length - 1];
   row.appendChild(col);
   feed_info_element.appendChild(row);
 

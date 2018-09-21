@@ -1,9 +1,9 @@
 import * as app from '/src/app/app.js';
-import * as favicon from '/src/iconsvc/favicon.js';
-import * as array from '/src/array/array.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {response_is_redirect} from '/src/fetch2/fetch2.js';
+import * as favicon from '/src/iconsvc/favicon.js';
 import * as sanity from '/src/model-sanity/model-sanity.js';
+
 
 // Subscribe to a feed.  Entries are excluded because it takes too long to
 // process them on initial subscribe.
@@ -21,7 +21,7 @@ export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
 
   const feed = await fetch_feed_without_entries(url, fetch_timeout);
 
-  const res_url = new URL(array.peek(feed.urls));
+  const res_url = new URL(feed.urls[feed.urls.length - 1]);
 
   // TODO: response_is_redirect now accepts a response object, not a response
   // url. Therefore, this needs to be able to access the response object, so
@@ -47,7 +47,7 @@ export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
 function send_subscribe_notification(feed, should_notify) {
   if (should_notify) {
     const title = 'Subscribed!';
-    const feed_title = feed.title || array.peek(feed.urls);
+    const feed_title = feed.title || feed.urls[feed.urls.length - 1];
     const message = 'Subscribed to ' + feed_title;
     app.show_notification(title, message, feed.faviconURLString);
   }

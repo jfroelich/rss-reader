@@ -1,11 +1,10 @@
 import * as badge from '/src/badge/badge.js';
-import * as favicon from '/src/iconsvc/favicon.js';
-import * as array from '/src/array/array.js';
 import {fade_element} from '/src/dom/dom.js';
 import * as html from '/src/html/html.js';
+import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/ls/ls.js';
-import * as perm from '/src/permissions/permissions.js';
 import {openModelAccess} from '/src/model-access/model-access.js';
+import * as perm from '/src/permissions/permissions.js';
 import {poll_feed} from '/src/poll-feeds/poll-feeds.js';
 import {subscribe, unsubscribe} from '/src/subscribe/subscribe.js';
 
@@ -246,7 +245,10 @@ async function feed_list_item_onclick(event) {
   }
 
   const feed_url_element = document.getElementById('details-feed-url');
-  feed_url_element.textContent = array.peek(feed.urls);
+  if (feed.urls && feed.urls.length) {
+    feed_url_element.textContent = feed.urls[feed.urls.length - 1];
+  }
+
   const feed_link_element = document.getElementById('details-feed-link');
   feed_link_element.textContent = feed.link || '';
 
@@ -309,7 +311,10 @@ async function subscribe_form_onsubmit(event) {
   iconn.close();
 
   feed_list_append_feed(feed);
-  subscription_monitor_append_message('Subscribed to ' + array.peek(feed.urls));
+
+  const final_url_string = feed.urls[feed.urls.length - 1];
+  subscription_monitor_append_message('Subscribed to ' + final_url_string);
+
   subscription_monitor_hide();
   section_show_by_id('subs-list-section');
 
