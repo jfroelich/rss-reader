@@ -1,6 +1,6 @@
 // TODO: break up this module, it should not exist, it doesn't really fit
 
-import * as ls from '/src/ls/ls.js';
+import * as ls from '/src/localstorage/localstorage.js';
 
 export async function open_view() {
   const url_string = chrome.extension.getURL('slideshow.html');

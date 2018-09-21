@@ -2,7 +2,7 @@ import assert from '/src/assert/assert.js';
 import * as ccf from '/src/color-contrast-filter/color-contrast-filter.js';
 import * as css_color from '/src/color-contrast-filter/css-color.js';
 import * as color from '/src/color/color.js';
-import * as ls from '/src/ls/ls.js';
+import * as ls from '/src/localstorage/localstorage.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: these tests were written to work off a live document. Instead, create

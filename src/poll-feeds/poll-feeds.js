@@ -7,7 +7,7 @@ import {OfflineError, response_is_redirect, TimeoutError} from '/src/fetch2/fetc
 import {set_base_uri} from '/src/html-document/html-document.js';
 import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
-import * as ls from '/src/ls/ls.js';
+import * as ls from '/src/localstorage/localstorage.js';
 import * as sanity from '/src/model-sanity/model-sanity.js';
 import * as Model from '/src/model/model.js';
 import * as sniff from '/src/poll-feeds/sniff.js';

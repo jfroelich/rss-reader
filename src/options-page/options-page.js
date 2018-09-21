@@ -2,7 +2,7 @@ import * as badge from '/src/badge/badge.js';
 import {fade_element} from '/src/dom/dom.js';
 import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
-import * as ls from '/src/ls/ls.js';
+import * as ls from '/src/localstorage/localstorage.js';
 import {openModelAccess} from '/src/model-access/model-access.js';
 import * as permissions from '/src/options-page/permissions.js';
 import {poll_feed} from '/src/poll-feeds/poll-feeds.js';

@@ -1,6 +1,6 @@
 import assert from '/src/assert/assert.js';
 import * as html from '/src/html/html.js';
-import * as ls from '/src/ls/ls.js';
+import * as ls from '/src/localstorage/localstorage.js';
 import * as Model from '/src/model/model.js';
 import {filter_publisher} from '/src/nlp/nlp.js';
 import {hide_no_articles_message} from '/src/slideshow-page/no-articles-message.js';

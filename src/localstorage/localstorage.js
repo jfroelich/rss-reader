@@ -1,6 +1,3 @@
-// TODO: ls is a non-descriptive acronym. use a fuller name for this module
-// so that its purpose is readily discernable
-
 export function has_key(key) {
   return typeof localStorage[key] !== 'undefined';
 }

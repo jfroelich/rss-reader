@@ -1,7 +1,7 @@
 import * as config_control from '/src/config/config.js';
 import {export_opml} from '/src/export-opml/export-opml.js';
 import * as import_opml from '/src/import-opml/import-opml.js';
-import * as ls from '/src/ls/ls.js';
+import * as ls from '/src/localstorage/localstorage.js';
 
 export function options_menu_show() {
   const menu_options = document.getElementById('left-panel');
