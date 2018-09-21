@@ -1,4 +1,5 @@
 import '/src/color-contrast-filter/color-contrast-filter-test.js';
+import '/src/sniff/sniff-test.js';
 import '/test/idb-model-test.js';
 import '/test/subscribe-test.js';
 import '/test/color-test.js';
@@ -17,7 +18,6 @@ import '/test/fetch-feed-test.js';
 import '/test/fetch-html-test.js';
 import '/test/fetch2-test.js';
 import '/test/mime-test.js';
-import '/test/sniff-test.js';
 import '/test/nlp-test.js';
 import '/test/import-opml-test.js';
 import '/test/parse-feed-test.js';
