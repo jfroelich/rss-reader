@@ -1,6 +1,7 @@
 import '/src/color-contrast-filter/color-contrast-filter-test.js';
-import '/src/poll-feeds/sniff-test.js';
 import '/src/nlp/nlp-test.js';
+import '/src/poll-feeds/sniff-test.js';
+import '/src/rewrite-url/rewrite-url-test.js';
 import '/test/idb-model-test.js';
 import '/test/subscribe-test.js';
 import '/test/color-test.js';
@@ -19,10 +20,8 @@ import '/test/fetch-feed-test.js';
 import '/test/fetch-html-test.js';
 import '/test/fetch2-test.js';
 import '/test/mime-test.js';
-
 import '/test/import-opml-test.js';
 import '/test/parse-feed-test.js';
-import '/test/rewrite-url-test.js';
 import '/test/unwrap-element-test.js';
 import {get_registry} from '/test/test-registry.js';
 
