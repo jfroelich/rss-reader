@@ -1,13 +1,8 @@
-// Return whether the url is fetchable based on app-policy. This hardcodes a
-// basic policy that presents itself as the app's default policy.
-//
-// This policy is rudimentary and should not be considered highly secure. When
-// checking against localhost values, this ignores things like punycode, IPv6,
-// host manipulation, local domain manipulation, etc.
-//
-// When checking for username/pass, prevent fetches of urls containing
-// credentials. Although fetch implicitly throws in this case, I prefer to
-// explicit.
+// Returns whether a given request is fetchable according to the app's policy.
+// This hardcodes the app's policy into a function. In general, only
+// http-related fetches are permitted, and not against local host. This also
+// disallows embedded credentials explicitly despite that being an implicit
+// constraint imposed by the native fetch.
 export function is_allowed_request(request) {
   const method = request.method || 'GET';
   const url = request.url;
