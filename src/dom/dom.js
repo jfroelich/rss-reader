@@ -22,25 +22,6 @@ function has_attr_val(element, attr_name) {
   return (value && value.trim()) ? true : false;
 }
 
-// https://github.com/kangax/html-minifier/issues/63
-const attr_names = [
-  'allowfullscreen', 'async',          'autofocus',     'autoplay',
-  'checked',         'compact',        'controls',      'declare',
-  'default',         'defaultchecked', 'defaultmuted',  'defaultselected',
-  'defer',           'disabled',       'draggable',     'enabled',
-  'formnovalidate',  'hidden',         'indeterminate', 'inert',
-  'ismap',           'itemscope',      'loop',          'multiple',
-  'muted',           'nohref',         'noresize',      'noshade',
-  'novalidate',      'nowrap',         'open',          'pauseonexit',
-  'readonly',        'required',       'reversed',      'scoped',
-  'seamless',        'selected',       'sortable',      'spellcheck',
-  'translate',       'truespeed',      'typemustmatch', 'visible'
-];
-
-export function is_boolean_attribute(element, attribute_name) {
-  return attr_names.includes(attribute_name);
-}
-
 // Detach an image along with some of its dependencies
 export function remove_image(image) {
   if (!image.parentNode) {
