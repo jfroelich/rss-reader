@@ -9,7 +9,3 @@ export function filter_controls(value) {
 export function filter_whitespace(value) {
   return value.replace(/\s+/g, '');
 }
-
-export function is_alphanumeric(value) {
-  return !/[^\p{L}\d]/u.test(value);
-}
