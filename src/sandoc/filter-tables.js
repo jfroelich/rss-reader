@@ -1,4 +1,4 @@
-import {unwrap_element} from '/src/dom/dom.js';
+import {unwrap_element} from '/src/unwrap-element/unwrap-element.js
 import {is_leaf_node} from '/src/sandoc/node-is-leaf.js';
 
 // Filters certain table elements from document content

@@ -1,10 +1,8 @@
-import {unwrap_element} from '/src/dom/dom.js';
+import {unwrap_element} from '/src/unwrap-element/unwrap-element.js
 
-export function filter_container_elements(document) {
-  if (document.body) {
+    export function filter_container_elements(document) {if (document.body) {
     const elements = document.body.querySelectorAll('div, ilayer, layer');
     for (const element of elements) {
       unwrap_element(element);
     }
-  }
-}
+    }}

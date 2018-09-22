@@ -1,4 +1,4 @@
-import {unwrap_element} from '/src/dom/dom.js';
+import {unwrap_element} from '/src/unwrap-element/unwrap-element.js
 
 export function filter_figures(document) {
   if (document.body) {
