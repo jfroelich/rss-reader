@@ -4,7 +4,8 @@ import {unwrap_element} from '/src/dom/dom.js';
 export function filter_emphasis(document, text_length_max) {
   assert(Number.isInteger(text_length_max) && text_length_max > 0);
   if (document.body) {
-    const elements = document.body.querySelectorAll('b, big, em, i, strong');
+    const elements =
+        document.body.querySelectorAll('b, big, em, i, strong, mark');
     for (const element of elements) {
       if (get_emphasis_length(element) > text_length_max) {
         unwrap_element(element);
