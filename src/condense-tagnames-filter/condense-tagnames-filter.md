@@ -14,6 +14,7 @@ The cost of persisting a large amount of html is greater than the cost of doing 
 * This filter does not affect document structure that much in comparison to other filters that remove elements entirely, so it should probably be located later in the sequence of applied filters, so as to minimize the amount of elements it considers.
 * Analysis is restricted to tags within the body element. Given html soup and the high variance is browser behavior, the behavior of this filter on tags located outside of the body element is undefined.
 * This pays no attention to imperfect situations that arise as a result of the transformations. For example, if input is strong then b, and strong is renamed to b, this leads to b b, which ideally would be one b, but this leaves it as two.
+* This filter pays no attention to css issues that arise as a result of the transformations. For example, a css rule that applies to strong elements will stop working as desired because all strong elements are replaced with b elements.
 
 ## Params
 * document {Document}
@@ -29,3 +30,6 @@ Note that this uses querySelectorAll over getElementsByTagName because of how mu
 
 ## Todos
 * read about the rationale behind why they added &lt;strong> when &lt;b> sufficed. I kind of want a clear explanation. My guess is that strong is clearer on its face, at first glance, than b.
+* implement condense-tagnames-filter-test.js
+* think of what other tags can be shorted, e.g. maybe layer to div?
+* review https://blog.usejournal.com/of-svg-minification-and-gzip-21cd26a5d007 and consider whether this actually hurts compression within indexedDB
