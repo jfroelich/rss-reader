@@ -3,7 +3,7 @@ import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
 import {is_allowed_request} from '/src/fetch-policy/fetch-policy.js';
 import {OfflineError, response_is_redirect, TimeoutError} from '/src/fetch2/fetch2.js';
-import {set_base_uri} from '/src/html-document/html-document.js';
+import {set_base_uri} from '/src/base-uri/base-uri.js';
 import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';

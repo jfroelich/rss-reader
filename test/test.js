@@ -1,4 +1,7 @@
+import '/src/base-uri/base-uri-test.js';
 import '/src/color-contrast-filter/color-contrast-filter-test.js';
+import '/src/condense-tagnames-filter/coerce-element-test.js';
+import '/src/empty-attrs-filter/filter-empty-attrs-test.js';
 import '/src/nlp/nlp-test.js';
 import '/src/poll-feeds/sniff-test.js';
 import '/src/rewrite-url/rewrite-url-test.js';
@@ -7,10 +10,7 @@ import '/test/subscribe-test.js';
 import '/test/color-test.js';
 import '/test/model-test.js';
 import '/test/model-sanity-test.js';
-import '/src/condense-tagnames-filter/coerce-element-test.js';
-import '/test/html-document-test.js';
 import '/test/favicon-service-test.js';
-import '/src/empty-attrs-filter/filter-empty-attrs-test.js';
 import '/test/filter-lazy-images-test.js';
 import '/test/set-image-sizes-test/set-image-sizes-test.js';
 import '/test/html-test.js';

@@ -1,5 +1,5 @@
 import assert from '/src/assert/assert.js';
-import {set_base_uri} from '/src/html-document/html-document.js';
+import {set_base_uri} from '/src/base-uri/base-uri.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: actually run the test. I should be running the test before checkin

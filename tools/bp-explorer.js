@@ -6,7 +6,7 @@ import {filter_iframes} from '/src/sandoc/filter-iframes.js';
 import {filter_script} from '/src/sandoc/filter-script.js';
 import {set_image_sizes} from '/src/sandoc/set-image-sizes.js';
 import * as bp from '/src/boilerplate/boilerplate.js';
-import {set_base_uri} from '/src/html-document/html-document.js';
+import {set_base_uri} from '/src/base-uri/base-uri.js';
 import {parse_html} from '/src/html/html.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
 

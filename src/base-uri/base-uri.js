@@ -1,7 +1,3 @@
-// TODO: this is too general of a module name. rename the module to base-uri
-// so as to properly represent that this module is specific to dealing with
-// base uris.
-
 import assert from '/src/assert/assert.js';
 
 // Set the baseURI property of a document. baseURI is readonly. However, its

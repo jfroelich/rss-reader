@@ -1,5 +1,5 @@
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
-import {set_base_uri} from '/src/html-document/html-document.js';
+import {set_base_uri} from '/src/base-uri/base-uri.js';
 import {parse_html} from '/src/html/html.js';
 import {sanitize_document} from '/src/sandoc/sandoc.js';
 
