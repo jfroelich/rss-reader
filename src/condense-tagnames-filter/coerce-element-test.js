@@ -1,5 +1,5 @@
 import assert from '/src/assert/assert.js';
-import {coerce_element} from '/src/coerce-element/coerce-element.js';
+import {coerce_element} from '/src/condense-tagnames-filter/coerce-element.js';
 import * as html from '/src/html/html.js';
 import {register_test} from '/test/test-registry.js';
 

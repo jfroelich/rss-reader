@@ -7,7 +7,7 @@ import '/test/subscribe-test.js';
 import '/test/color-test.js';
 import '/test/model-test.js';
 import '/test/model-sanity-test.js';
-import '/src/coerce-element/coerce-element-test.js';
+import '/src/condense-tagnames-filter/coerce-element-test.js';
 import '/test/html-document-test.js';
 import '/test/favicon-service-test.js';
 import '/test/empty-attribute-filter-test.js';
