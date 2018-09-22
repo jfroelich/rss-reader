@@ -1,4 +1,4 @@
-import {image_has_source} from '/src/dom/dom.js';
+import {image_has_source} from '/src/image-element-utils/image-element-utils.js';
 
 const lazy_image_attribute_names = [
   'big-src', 'load-src', 'data-src', 'data-src-full16x9', 'data-src-large',

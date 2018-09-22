@@ -1,4 +1,4 @@
-import {remove_image} from '/src/dom/dom.js';
+import {remove_image} from '/src/image-element-utils/image-element-utils.js';
 
 export function filter_small_images(document) {
   if (document.body) {
