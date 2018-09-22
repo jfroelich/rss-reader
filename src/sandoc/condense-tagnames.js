@@ -1,4 +1,4 @@
-import {coerce_element} from '/src/dom/dom.js';
+import {coerce_element} from '/src/coerce-element/coerce-element.js';
 
 // Replace certain elements with alternative elements that have names with
 // fewer characters. This helps reduce the number of characters in the document
