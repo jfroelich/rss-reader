@@ -1,8 +1,10 @@
 import {openModelAccess} from '/src/model-access/model-access.js';
 
+// TODO: implement tests
+
 // Creates and triggers the download of an OPML document containing feeds from
 // the database
-export async function export_opml() {
+export async function export_opml(document_title) {
   // Load feeds from storage
   const use_channel = false, sort_feeds = false, mode = 'all';
   const ma = await openModelAccess(use_channel);
@@ -26,8 +28,7 @@ export async function export_opml() {
   }
 
   // Create an opml document
-  const title = 'Subscriptions';
-  const opml_document = create_opml_template(title);
+  const opml_document = create_opml_template(document_title);
 
   // Append the outlines to the document. This uses querySelector instead of
   // document.body because that shortcut is not available for xml-flagged
@@ -45,34 +46,19 @@ export async function export_opml() {
     body_element.appendChild(elm);
   }
 
-  // Generate a file (files implement the Blob interface)
-  const serializer = new XMLSerializer();
-  const xml_string = serializer.serializeToString(opml_document);
-  const blob = new Blob([xml_string], {type: 'application/xml'});
-
-  // Download the file by simulating an anchor click
-  // NOTE: this was broken in Chrome 65 and then fixed. For Chrome 65, using
-  // the chrome.downloads technique worked as an alternative, but now that also
-  // no longer works, and this anchor strategy works again
-  const anchor = document.createElement('a');
-  const filename = 'subscriptions.xml';
-  anchor.setAttribute('download', filename);
-  const url = URL.createObjectURL(blob);
-  anchor.setAttribute('href', url);
-  anchor.click();
-  URL.revokeObjectURL(url);
+  return opml_document;
 }
 
-function create_opml_template(title) {
+function create_opml_template(document_title) {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
 
   const head_element = doc.createElement('head');
   doc.documentElement.appendChild(head_element);
 
-  if (title) {
+  if (document_title) {
     const title_element = doc.createElement('title');
-    title_element.textContent = title;
+    title_element.textContent = document_title;
   }
 
   const current_date = new Date();

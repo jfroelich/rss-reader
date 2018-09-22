@@ -22,7 +22,7 @@ export function options_menu_hide() {
 // TODO: handling all clicks and then forwarding them to click handler seems
 // dumb. I should be ignoring clicks on such buttons. Let them continue
 // progation. The buttons should instead have their own handlers.
-function options_menu_onclick(event) {
+async function options_menu_onclick(event) {
   const option = event.target;
   if (option.localName !== 'li') {
     return;
@@ -36,7 +36,10 @@ function options_menu_onclick(event) {
       import_opml.prompt();
       break;
     case 'menu-option-export':
-      export_opml();
+      const document_title = 'Subscriptions';
+      const opml_document = await export_opml(document_title);
+      const file_name = 'subscriptions.xml';
+      download_opml_document(opml_document, file_name);
       break;
     case 'menu-option-header-font':
       break;
@@ -46,6 +49,27 @@ function options_menu_onclick(event) {
       console.warn('Unhandled menu option click', option.id);
       break;
   }
+}
+
+// Given an opml document, converts it into a file and then triggers the
+// download of that file in the browser.
+function download_opml_document(opml_document, file_name = 'subs.xml') {
+  // Generate a file. Files implement the Blob interface so we really just
+  // generate a blob.
+  const serializer = new XMLSerializer();
+  const xml_string = serializer.serializeToString(opml_document);
+  const blob = new Blob([xml_string], {type: 'application/xml'});
+
+  // Download the blob file by simulating an anchor click
+  // NOTE: this was broken in Chrome 65 and then fixed. For Chrome 65, using
+  // the chrome.downloads technique worked as an alternative, but now that also
+  // no longer works, and this anchor strategy works again
+  const anchor = document.createElement('a');
+  anchor.setAttribute('download', file_name);
+  const url = URL.createObjectURL(blob);
+  anchor.setAttribute('href', url);
+  anchor.click();
+  URL.revokeObjectURL(url);
 }
 
 function header_font_menu_init(fonts) {
