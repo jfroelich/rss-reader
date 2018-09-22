@@ -19,12 +19,14 @@ import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
 
 // TODO: the default duration should come from localStorage, and be stored
 // in localStorage instead of maintained here in module scope, and should be
-// accessed using config module io operations
+// accessed using config module io operations. Duration should be a configurable
+// option customizable by the user, because slide animation speed can be a real
+// tactile encumbrance
 
 
 // Slide animation speed (smaller is faster). This is stored in module scope,
 // and is modifiable after module load via an exported setter function.
-let duration = 0.25;
+let duration = 0.16;
 
 export function append_slide(entry) {
   // Now that we know there will be at least one visible article, ensure the
