@@ -1,9 +1,8 @@
-import * as app from '/src/app/app.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {response_is_redirect} from '/src/fetch2/fetch2.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as sanity from '/src/model-sanity/model-sanity.js';
-
+import * as notification from '/src/notification/notification.js';
 
 // Subscribe to a feed.  Entries are excluded because it takes too long to
 // process them on initial subscribe.
@@ -49,7 +48,7 @@ function send_subscribe_notification(feed, should_notify) {
     const title = 'Subscribed!';
     const feed_title = feed.title || feed.urls[feed.urls.length - 1];
     const message = 'Subscribed to ' + feed_title;
-    app.show_notification(title, message, feed.faviconURLString);
+    notification.show(title, message, feed.faviconURLString);
   }
 }
 

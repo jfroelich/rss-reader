@@ -1,4 +1,3 @@
-import * as app from '/src/app/app.js';
 import assert from '/src/assert/assert.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
@@ -10,6 +9,7 @@ import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
 import * as sanity from '/src/model-sanity/model-sanity.js';
 import * as Model from '/src/model/model.js';
+import * as notification from '/src/notification/notification.js';
 import * as sniff from '/src/poll-feeds/sniff.js';
 import {build_rewrite_rules} from '/src/rewrite-rules/rewrite-rules.js';
 import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
@@ -52,7 +52,7 @@ export async function poll_feeds(ma, iconn, options = {}) {
   if (count) {
     const title = 'Added articles';
     const message = 'Added articles';
-    app.show_notification(title, message);
+    notification.show(title, message);
   }
 
   console.debug('Added %d entries', count);
@@ -104,7 +104,7 @@ export async function poll_feed(ma, iconn, options = {}, feed) {
     const title = 'Added articles';
     const message =
         'Added ' + count + ' articles for feed ' + merged_feed.title;
-    app.show_notification(title, message);
+    notification.show(title, message);
   }
 
   return count;

@@ -1,4 +1,4 @@
-import * as app from '/src/app/app.js';
+import * as extension_tab from '/src/extension-tab/extension-tab.js';
 import * as badge_control from '/src/badge/badge.js';
 import * as config_control from '/src/config/config.js';
 import * as cron_control from '/src/cron/cron.js';
@@ -22,4 +22,4 @@ chrome.runtime.onInstalled.addListener(config_control.install_listener);
 chrome.runtime.onInstalled.addListener(db_control.install_listener);
 chrome.runtime.onInstalled.addListener(cron_control.install_listener);
 chrome.runtime.onInstalled.addListener(badge_control.install_listener);
-chrome.browserAction.onClicked.addListener(app.open_view);
+chrome.browserAction.onClicked.addListener(extension_tab.open_view);
