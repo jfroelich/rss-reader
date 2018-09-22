@@ -1,4 +1,5 @@
 import {condense_tagnames_filter} from '/src/condense-tagnames-filter/condense-tagnames-filter.js';
+import {filter_empty_attrs} from '/src/empty-attrs-filter/filter-empty-attrs.js';
 import {filter_boilerplate} from '/src/sandoc/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/sandoc/canonicalize-urls.js';
 import {deframe} from '/src/sandoc/deframe.js';
@@ -10,7 +11,6 @@ import {filter_comments} from '/src/sandoc/filter-comments.js';
 import {filter_container_elements} from '/src/sandoc/filter-container-elements.js';
 import {filter_dead_images} from '/src/sandoc/filter-dead-images.js';
 import {filter_emphasis} from '/src/sandoc/filter-emphasis.js';
-import {filter_empty_attrs} from '/src/sandoc/filter-empty-attrs.js';
 import {filter_figures} from '/src/sandoc/filter-figures.js';
 import {filter_form_elements} from '/src/sandoc/filter-form-elements.js';
 import {filter_formatting_anchors} from '/src/sandoc/filter-formatting-anchors.js';

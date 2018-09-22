@@ -1,5 +1,5 @@
 import assert from '/src/assert/assert.js';
-import {filter_empty_attrs} from '/src/sandoc/filter-empty-attrs.js';
+import {filter_empty_attrs} from '/src/empty-attrs-filter/filter-empty-attrs.js';
 import * as html from '/src/html/html.js';
 import {register_test} from '/test/test-registry.js';
 

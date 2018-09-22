@@ -10,7 +10,7 @@ import '/test/model-sanity-test.js';
 import '/src/condense-tagnames-filter/coerce-element-test.js';
 import '/test/html-document-test.js';
 import '/test/favicon-service-test.js';
-import '/test/empty-attribute-filter-test.js';
+import '/src/empty-attrs-filter/filter-empty-attrs-test.js';
 import '/test/filter-lazy-images-test.js';
 import '/test/set-image-sizes-test/set-image-sizes-test.js';
 import '/test/html-test.js';
