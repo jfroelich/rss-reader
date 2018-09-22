@@ -20,7 +20,7 @@ import {coerce_element} from '/src/coerce-element/coerce-element.js';
 // Throws an error if document is not a document.
 //
 // @param copy_attrs_flag {Boolean} optional, if true then copy attributes
-export function condense_tagnames(document, copy_attrs_flag) {
+export function condense_tagnames_filter(document, copy_attrs_flag) {
   // Analysis is restricted to body.
   if (!document.body) {
     return;

@@ -1,6 +1,6 @@
+import {condense_tagnames_filter} from '/src/condense-tagnames-filter/condense-tagnames-filter.js';
 import {filter_boilerplate} from '/src/sandoc/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/sandoc/canonicalize-urls.js';
-import {condense_tagnames} from '/src/sandoc/condense-tagnames.js';
 import {deframe} from '/src/sandoc/deframe.js';
 import {ensure_document_body} from '/src/sandoc/ensure-document-body.js';
 import {filter_base_elements} from '/src/sandoc/filter-base-elements.js';
@@ -86,7 +86,7 @@ export async function sanitize_document(document, options = {}) {
   filter_large_images(document);
 
   const copy_attrs_flag = false;
-  condense_tagnames(document, copy_attrs_flag);
+  condense_tagnames_filter(document, copy_attrs_flag);
 
   filter_head_elements(document);
   filter_base_elements(document);
