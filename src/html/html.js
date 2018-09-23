@@ -20,39 +20,6 @@ export function parse_html(html_string) {
   return document;
 }
 
-// Replaces tags in the input string with the replacement. If a replacement is
-// not specified, then this removes the tags.
-export function replace_tags(html_string, replacement) {
-  assert(typeof html_string === 'string');
-  const typeof_replacement = typeof replacement;
-  assert(typeof_replacement === 'undefined' || typeof_replacement === 'string');
-
-  // Fast case for empty strings
-  if (!html_string) {
-    return html_string;
-  }
-
-  let document;
-  try {
-    document = parse_html(html_string);
-  } catch (error) {
-    console.debug(error);
-    return 'Unsafe html';
-  }
-
-  if (!replacement) {
-    return document.body.textContent;
-  }
-
-  const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
-  const node_values = [];
-  for (let node = it.nextNode(); node; node = it.nextNode()) {
-    node_values.push(node.nodeValue);
-  }
-
-  return node_values.join(replacement);
-}
-
 // Similar to string truncation, but takes care not to truncate a string within
 // the middle of an html tag or entity. The position is the position within the
 // string in which to truncate. This position is based on the pure text offset
