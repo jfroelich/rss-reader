@@ -1,4 +1,4 @@
-export function build_rewrite_rules() {
+export function build() {
   const rules = [];
   rules.push(google_news_rule);
   rules.push(techcrunch_rule);
