@@ -11,8 +11,8 @@ import * as sanity from '/src/model-sanity/model-sanity.js';
 import * as Model from '/src/model/model.js';
 import * as notification from '/src/notification/notification.js';
 import {build as build_rewrite_rules} from '/src/poll-feeds/rewrite-rules.js';
+import {rewrite_url} from '/src/poll-feeds/rewrite-url.js';
 import * as sniff from '/src/poll-feeds/sniff.js';
-import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
 import {sanitize_document} from '/src/sandoc/sandoc.js';
 
 const default_options = {
