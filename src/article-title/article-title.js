@@ -1,12 +1,3 @@
-// TODO: rename, this module's name is too abstract, rename to something like
-// document-title-utils
-
-// Returns a new string where the publisher information has been stripped, such
-// as the string "Your Florida news" in the string "Florida man shoots self -
-// Your Florida News". The algorithm identifies the publisher by looking for a
-// delimiter and comparing the word count before and after it. If there is any
-// problem, then the original title is returned.
-//
 // @param title {String}
 // @param delims {Array} array of strings, delimiters (currently including
 // spaces between the delimiter and other words)

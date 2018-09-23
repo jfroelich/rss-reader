@@ -1,11 +1,15 @@
+import {filter_publisher} from '/src/article-title/article-title.js';
 import assert from '/src/assert/assert.js';
-import {filter_publisher as f} from '/src/nlp/nlp.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: test using additional parameters where other parameters are not the
 // default values
 
 async function filter_publisher_test() {
+  // alias, i just prefer it here over module import, it is local to this
+  // function and colocated with otherwise confusing function name
+  const f = filter_publisher;
+
   // no delimiters found
   assert(f('Hello World') === 'Hello World');
 

@@ -2,7 +2,7 @@ import '/src/base-uri/base-uri-test.js';
 import '/src/color-contrast-filter/color-contrast-filter-test.js';
 import '/src/condense-tagnames-filter/coerce-element-test.js';
 import '/src/empty-attrs-filter/filter-empty-attrs-test.js';
-import '/src/nlp/nlp-test.js';
+import '/src/article-title/article-title-test.js';
 import '/src/poll-feeds/sniff-test.js';
 import '/src/poll-feeds/rewrite-url-test.js';
 import '/test/idb-model-test.js';
