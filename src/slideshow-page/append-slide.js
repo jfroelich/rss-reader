@@ -3,6 +3,7 @@ import assert from '/src/assert/assert.js';
 import * as html from '/src/html/html.js';
 import * as ls from '/src/localstorage/localstorage.js';
 import * as Model from '/src/model/model.js';
+import {escape_html} from '/src/slideshow-page/escape-html.js';
 import {hide_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
 import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
 import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
@@ -65,7 +66,7 @@ function create_article_title_element(entry) {
 
   if (entry.title) {
     let title = entry.title;
-    title = html.escape_html(title);
+    title = escape_html(title);
     title_element.setAttribute('title', title);
 
     title = filter_publisher(title);
