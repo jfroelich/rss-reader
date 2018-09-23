@@ -1,17 +1,17 @@
 import assert from '/src/assert/assert.js';
+import {set_base_uri} from '/src/base-uri/base-uri.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
 import {is_allowed_request} from '/src/fetch-policy/fetch-policy.js';
 import {OfflineError, response_is_redirect, TimeoutError} from '/src/fetch2/fetch2.js';
-import {set_base_uri} from '/src/base-uri/base-uri.js';
 import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
 import * as sanity from '/src/model-sanity/model-sanity.js';
 import * as Model from '/src/model/model.js';
 import * as notification from '/src/notification/notification.js';
+import {build_rewrite_rules} from '/src/poll-feeds/rewrite-rules.js';
 import * as sniff from '/src/poll-feeds/sniff.js';
-import {build_rewrite_rules} from '/src/rewrite-rules/rewrite-rules.js';
 import {rewrite_url} from '/src/rewrite-url/rewrite-url.js';
 import {sanitize_document} from '/src/sandoc/sandoc.js';
 
