@@ -1,5 +1,3 @@
-// Renames an element. Retains child nodes unless the node is void. Event
-// listeners are not retained.
 export function coerce_element(element, new_name, copy_attributes = true) {
   const parent = element.parentNode;
   if (!parent) {
@@ -28,13 +26,13 @@ export function coerce_element(element, new_name, copy_attributes = true) {
   return parent.insertBefore(new_element, next_sibling);
 }
 
-
 // https://html.spec.whatwg.org/multipage/syntax.html#void-elements
 const void_elements = [
   'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta',
   'param', 'source', 'track', 'wbr'
 ];
 
+// TODO: implement using a document fragment?
 function move_child_nodes(src, dst) {
   if (!void_elements.includes(dst.localName)) {
     for (let node = src.firstChild; node; node = src.firstChild) {
@@ -43,6 +41,7 @@ function move_child_nodes(src, dst) {
   }
 }
 
+// TODO: increase accuracy, research what actual characters are allowed
 function is_valid_element_name(value) {
   return value && typeof value === 'string' && !value.includes(' ');
 }
