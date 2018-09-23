@@ -1,6 +1,3 @@
-// TODO: now that this module only has a couple functions, it should be renamed
-// to something more specific to these functions, like image-utils
-
 import {unwrap_element} from '/src/unwrap-element/unwrap-element.js';
 
 // Returns true if the image element has at least one source
