@@ -1,4 +1,4 @@
-import {unwrap_element} from '/src/unwrap-element/unwrap-element.js
+import {unwrap_element} from '/src/unwrap-element/unwrap-element.js';
 
 // For a url string to have the script protocol it must be longer than this
 // 'javascript:'.length
