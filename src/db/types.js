@@ -27,10 +27,9 @@ export const FEED_MAGIC = 0xfeedfeed;
 // against null, because typeof null is 'object'.
 
 export function is_entry(value) {
-  return value && typeof value === 'object' &&
-      value.magic === types.ENTRY_MAGIC;
+  return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
 }
 
 export function is_feed(value) {
-  return value && typeof value === 'object' && value.magic === types.FEED_MAGIC;
+  return value && typeof value === 'object' && value.magic === FEED_MAGIC;
 }
