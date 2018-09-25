@@ -1,16 +1,11 @@
 import assert from '/src/assert/assert.js';
+import * as types from '/src/db/types.js';
 
 // TODO: decouple from assert
 // TODO: inline append_url_common (artifact of old model.js)
 
-export const FEED_MAGIC = 0xfeedfeed;
-
 export function create_feed() {
-  return {magic: FEED_MAGIC};
-}
-
-export function is_feed(value) {
-  return value && typeof value === 'object' && value.magic === FEED_MAGIC;
+  return {magic: types.FEED_MAGIC};
 }
 
 export function is_valid_feed_id(id) {
@@ -18,7 +13,7 @@ export function is_valid_feed_id(id) {
 }
 
 export function append_feed_url(feed, url) {
-  assert(is_feed(feed));
+  assert(types.is_feed(feed));
   return append_url_common(feed, url);
 }
 

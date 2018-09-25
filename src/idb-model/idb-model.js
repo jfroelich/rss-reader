@@ -3,6 +3,7 @@ import assert from '/src/assert/assert.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
+import * as types from '/src/db/types.js';
 
 export function activate_feed(conn, feed_id) {
   function transition(feed) {
@@ -43,7 +44,7 @@ function archive_entries_executor(conn, max_age, resolve, reject) {
     }
 
     const entry = cursor.value;
-    if (!entry_utils.is_entry(entry)) {
+    if (!types.is_entry(entry)) {
       console.warn('Not an entry', entry);
       cursor.continue();
       return;
@@ -406,7 +407,7 @@ function mark_entry_read_executor(conn, entry_id, resolve, reject) {
   request.onsuccess = _ => {
     const entry = request.result;
 
-    if (!entry_utils.is_entry(entry)) {
+    if (!types.is_entry(entry)) {
       reject(new Error('Loaded object is not an entry ' + entry_id));
       return;
     }
@@ -488,7 +489,7 @@ function add_magic_to_entries(txn) {
     if (cursor) {
       const entry = cursor.value;
       if (!('magic' in entry)) {
-        entry.magic = entry_utils.ENTRY_MAGIC;
+        entry.magic = types.ENTRY_MAGIC;
         entry.dateUpdated = new Date();
         cursor.update(entry);
       }
@@ -504,7 +505,7 @@ function add_magic_to_feeds(txn) {
   request.onsuccess = function(event) {
     const feeds = event.target.result;
     for (const feed of feeds) {
-      feed.magic = feed_utils.FEED_MAGIC;
+      feed.magic = types.FEED_MAGIC;
       feed.dateUpdated = new Date();
       store.put(feed);
     }
@@ -546,7 +547,7 @@ export async function remove_orphaned_entries(conn) {
   await iterate_entries(conn, cursor => {
     const entry = cursor.value;
 
-    if (!entry_utils.is_entry(entry)) {
+    if (!types.is_entry(entry)) {
       console.warn('Loaded entry is not an entry ' + JSON.stringify(entry));
       return;
     }
@@ -573,7 +574,7 @@ export async function remove_untyped_objects(conn) {
   const feeds = get_feeds(conn);
   const delete_feed_promises = [];
   for (const feed of feeds) {
-    if (!feed_utils.is_feed(feed)) {
+    if (!types.is_feed(feed)) {
       removed_feed_ids.push(feed.id);
       const promise = delete_feed(conn, feed.id);
       delete_feed_promises.push(promise);
@@ -589,7 +590,7 @@ export async function remove_untyped_objects(conn) {
 
   await this.iterateEntries(conn, cursor => {
     const entry = cursor.value;
-    if (!entry_utils.is_entry(entry)) {
+    if (!types.is_entry(entry)) {
       removed_entry_ids.push(entry.id);
       cursor.delete();
     }
@@ -637,7 +638,7 @@ function update_feed_executor(conn, feed, transition, resolve, reject) {
       return;
     }
 
-    if (!feed_utils.is_feed(old_feed)) {
+    if (!types.is_feed(old_feed)) {
       const msg = 'Matched object is not of type feed for id ' + feed.id;
       const err = new Error(msg);
       reject(err);
@@ -656,7 +657,7 @@ function update_feed_executor(conn, feed, transition, resolve, reject) {
       return;
     }
 
-    if (!feed_utils.is_feed(new_feed)) {
+    if (!types.is_feed(new_feed)) {
       reject(
           'Transitioning feed did not produce a valid feed object for id ' +
           feed.id);

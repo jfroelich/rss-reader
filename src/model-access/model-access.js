@@ -1,6 +1,7 @@
 import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
+import * as types from '/src/db/types.js';
 import * as idbmodel from '/src/idb-model/idb-model.js';
 import * as object from '/src/model-access/object.js';
 
@@ -61,7 +62,7 @@ ModelAccess.prototype.close = function() {
 };
 
 ModelAccess.prototype.createEntry = async function(entry) {
-  assert(entry_utils.is_entry(entry));
+  assert(types.is_entry(entry));
   assert(entry.id === undefined);
 
   if (entry.readState === undefined) {
@@ -84,7 +85,7 @@ ModelAccess.prototype.createEntry = async function(entry) {
 };
 
 ModelAccess.prototype.createFeed = async function(feed) {
-  assert(feed_utils.is_feed(feed));
+  assert(types.is_feed(feed));
   assert(feed.urls && feed.urls.length);
   object.filter_empty_properties(feed);
 
@@ -102,7 +103,7 @@ ModelAccess.prototype.createFeed = async function(feed) {
 
 ModelAccess.prototype.createFeeds = async function(feeds) {
   for (const feed of feeds) {
-    assert(feed_utils.is_feed(feed));
+    assert(types.is_feed(feed));
     assert(feed.urls && feed.urls.length);
 
     object.filter_empty_properties(feed);
@@ -245,7 +246,7 @@ ModelAccess.prototype.removeUntypedObjects = async function() {
 };
 
 ModelAccess.prototype.updateEntry = async function(entry) {
-  assert(entry_utils.is_entry(entry));
+  assert(types.is_entry(entry));
   assert(entry_utils.is_valid_entry_id(entry.id));
 
   // TODO: should this be asserting entry.urls similar to updateFeed?
@@ -258,7 +259,7 @@ ModelAccess.prototype.updateEntry = async function(entry) {
 };
 
 ModelAccess.prototype.updateFeed = async function(feed) {
-  assert(feed_utils.is_feed(feed));
+  assert(types.is_feed(feed));
   assert(feed.urls && feed.urls.length);
   assert(feed_utils.is_valid_feed_id(feed.id));
 

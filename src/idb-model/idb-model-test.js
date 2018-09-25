@@ -1,6 +1,7 @@
 import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
+import * as types from '/src/db/types.js';
 import * as idbmodel from '/src/idb-model/idb-model.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {register_test} from '/test/test-registry.js';
@@ -15,7 +16,7 @@ async function activate_feed_test() {
   await idbmodel.activate_feed(conn, id);
   const stored_feed = await idbmodel.get_feed(conn, 'id', id);
 
-  assert(feed_utils.is_feed(stored_feed));
+  assert(types.is_feed(stored_feed));
   assert(stored_feed.active === true);
   assert(stored_feed.deactivateDate === undefined);
   assert(stored_feed.deactivationReasonText === undefined);
@@ -51,7 +52,7 @@ async function create_entry_test() {
   const stored_entry = await idbmodel.get_entry(conn, 'id', id);
 
   assert(stored_entry);
-  assert(entry_utils.is_entry(stored_entry));
+  assert(types.is_entry(stored_entry));
   assert(stored_entry.id === id);
 
   conn.close();
@@ -66,9 +67,9 @@ async function create_feed_test() {
   const stored_feed_id = await idbmodel.create_feed(conn, feed);
   assert(feed_utils.is_valid_feed_id(stored_feed_id));
   let stored_feed = await idbmodel.get_feed(conn, 'url', feed_url, true);
-  assert(feed_utils.is_feed(stored_feed));
+  assert(types.is_feed(stored_feed));
   stored_feed = await idbmodel.get_feed(conn, 'id', stored_feed_id, false);
-  assert(feed_utils.is_feed(stored_feed));
+  assert(types.is_feed(stored_feed));
   conn.close();
   await indexeddb.remove(conn.name);
 }
@@ -120,7 +121,7 @@ async function create_feeds_test() {
   const get_proms = ids.map(id => idbmodel.get_feed(conn, 'id', id));
   const feeds_by_id = await Promise.all(get_proms);
   for (const feed of feeds_by_id) {
-    assert(feed_utils.is_feed(feed));
+    assert(types.is_feed(feed));
     assert(feed_utils.is_valid_feed_id(feed.id));
   }
 

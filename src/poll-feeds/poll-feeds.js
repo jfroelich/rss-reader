@@ -2,6 +2,7 @@ import assert from '/src/assert/assert.js';
 import {set_base_uri} from '/src/base-uri/base-uri.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
+import * as types from '/src/db/types.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
 import {is_allowed_request} from '/src/fetch-policy/fetch-policy.js';
@@ -61,7 +62,7 @@ export async function poll_feeds(ma, iconn, options = {}) {
 
 // Check if a remote feed has new data and store it in the database
 export async function poll_feed(ma, iconn, options = {}, feed) {
-  assert(feed_utils.is_feed(feed));
+  assert(types.is_feed(feed));
   assert(Array.isArray(feed.urls));
   assert(feed.urls.length > 0);
   assert(feed.active);
@@ -269,7 +270,7 @@ function coerce_entry(parsed_entry) {
 export async function poll_entry(
     ma, iconn, entry, fetch_html_timeout, fetch_image_timeout, rewrite_rules,
     feed_url_string) {
-  assert(entry_utils.is_entry(entry));
+  assert(types.is_entry(entry));
 
   let url = new URL(entry.urls[entry.urls.length - 1]);
   entry_utils.append_entry_url(entry, rewrite_url(url, rewrite_rules));

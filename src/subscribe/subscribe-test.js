@@ -1,5 +1,6 @@
 import assert from '/src/assert/assert.js';
 import * as feed_utils from '/src/db/feed-utils.js';
+import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {openModelAccess} from '/src/model-access/model-access.js';
 import {subscribe} from '/src/subscribe/subscribe.js';
@@ -26,7 +27,7 @@ async function subscribe_test() {
 
   // Test the subscription produced the desired result
   assert(feed);
-  assert(feed_utils.is_feed(feed));
+  assert(types.is_feed(feed));
   assert(feed_utils.is_valid_feed_id(feed.id));
 
   // Length may be 1 or 2 (may have redirected and captured new url)

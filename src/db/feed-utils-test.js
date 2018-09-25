@@ -1,15 +1,16 @@
 import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
+import * as types from '/src/db/types.js';
 import {register_test} from '/test/test-registry.js';
 
 export async function is_feed_test() {
   const fcorrect = feed_utils.create_feed();
-  assert(feed_utils.is_feed(fcorrect));
-  assert(!entry_utils.is_entry(fcorrect));
+  assert(types.is_feed(fcorrect));
+  assert(!types.is_entry(fcorrect));
 
   const nomagic = {};
-  assert(!feed_utils.is_feed(nomagic));
+  assert(!types.is_feed(nomagic));
 }
 
 export async function append_feed_url_test() {
@@ -34,7 +35,7 @@ export async function append_feed_url_test() {
   assert(feed.urls.length === 2);
 
   // After appends, feed should still be a feed
-  assert(feed_utils.is_feed(feed));
+  assert(types.is_feed(feed));
 }
 
 register_test(is_feed_test);

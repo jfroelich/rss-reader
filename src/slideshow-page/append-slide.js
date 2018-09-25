@@ -1,6 +1,7 @@
 import {filter_publisher} from '/src/article-title/article-title.js';
 import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
+import * as types from '/src/db/types.js';
 import * as html from '/src/html/html.js';
 import * as ls from '/src/localstorage/localstorage.js';
 import {escape_html} from '/src/slideshow-page/escape-html.js';
@@ -39,7 +40,7 @@ export function append_slide(entry) {
 }
 
 function create_slide(entry) {
-  assert(entry_utils.is_entry(entry));
+  assert(types.is_entry(entry));
   assert(Array.isArray(entry.urls));
   assert(entry.urls.length > 0);
 

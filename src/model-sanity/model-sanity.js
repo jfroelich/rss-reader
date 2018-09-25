@@ -1,13 +1,14 @@
 import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
+import * as types from '/src/db/types.js';
 import * as html from '/src/html/html.js';
 import {filter_unprintables} from '/src/model-sanity/filter-unprintables.js';
 import {replace_tags} from '/src/model-sanity/replace-tags.js';
 import * as string from '/src/string/string.js';
 
 export function validate_entry(entry) {
-  assert(entry_utils.is_entry(entry));
+  assert(types.is_entry(entry));
   const now = new Date();
 
   vassert(entry.id === undefined || entry_utils.is_valid_entry_id(entry.id));
@@ -59,7 +60,7 @@ function validate_enclosure(enc) {
 }
 
 export function validate_feed(feed) {
-  assert(feed_utils.is_feed(feed));
+  assert(types.is_feed(feed));
   const now = new Date();
 
   vassert(feed.id === undefined || feed_utils.is_valid_feed_id(feed.id));
@@ -97,7 +98,7 @@ export function validate_feed(feed) {
 export function sanitize_entry(
     entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {
-  assert(entry_utils.is_entry(entry));
+  assert(types.is_entry(entry));
 
   if (entry.author) {
     let author = entry.author;
@@ -128,7 +129,7 @@ export function sanitize_entry(
 }
 
 export function sanitize_feed(feed, title_max_len, desc_max_len) {
-  assert(feed_utils.is_feed(feed));
+  assert(types.is_feed(feed));
 
   if (isNaN(title_max_len)) {
     title_max_len = 1024;
