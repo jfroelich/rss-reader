@@ -1,8 +1,8 @@
-import {filter_dead_images} from '/src/sandoc/filter-dead-images.js';
-import {filter_lazy_images} from '/src/sandoc/filter-lazy-images.js';
 import assert from '/src/assert/assert.js';
-import * as html from '/src/html/html.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
+import * as html from '/src/html/html.js';
+import {filter_lazy_images} from '/src/lazy-image-filter/filter-lazy-images.js';
+import {filter_dead_images} from '/src/sandoc/filter-dead-images.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: rewrite in new test format

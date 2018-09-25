@@ -11,7 +11,7 @@ import '/src/color/color-test.js';
 import '/src/model/model-test.js';
 import '/src/model-sanity/model-sanity-test.js';
 import '/src/iconsvc/favicon-service-test.js';
-import '/test/filter-lazy-images-test.js';
+import '/src/lazy-image-filter/filter-lazy-images-test.js';
 import '/src/image-size-filter/image-size-filter-test.js';
 import '/src/html/html-truncate-test.js';
 import '/src/indexeddb/indexeddb-test.js';

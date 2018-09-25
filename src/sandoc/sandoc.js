@@ -1,6 +1,7 @@
 import {condense_tagnames_filter} from '/src/condense-tagnames-filter/condense-tagnames-filter.js';
 import {filter_empty_attrs} from '/src/empty-attrs-filter/filter-empty-attrs.js';
 import {set_image_sizes} from '/src/image-size-filter/image-size-filter.js';
+import {filter_lazy_images} from '/src/lazy-image-filter/filter-lazy-images.js';
 import {filter_boilerplate} from '/src/sandoc/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/sandoc/canonicalize-urls.js';
 import {deframe} from '/src/sandoc/deframe.js';
@@ -21,7 +22,6 @@ import {filter_hrs} from '/src/sandoc/filter-hrs.js';
 import {filter_iframes} from '/src/sandoc/filter-iframes.js';
 import {filter_invalid_anchors} from '/src/sandoc/filter-invalid-anchors.js';
 import {filter_large_images} from '/src/sandoc/filter-large-images.js';
-import {filter_lazy_images} from '/src/sandoc/filter-lazy-images.js';
 import {filter_leaf_nodes} from '/src/sandoc/filter-leaf-nodes.js';
 import {filter_lists} from '/src/sandoc/filter-lists.js';
 import {filter_misnested_elements} from '/src/sandoc/filter-misnested-elements.js';
