@@ -14,12 +14,11 @@ Not all images have a known size after parsing. However, some other functionalit
 * TODO: always return dimensions, just return 0s on failure, so that caller no longer cares if defined or not
 
 ## unorganized test notes and todos
-* need to test against local resource
-* in order to test against local resource, i need to investigate how to load
-a local resource
-* another idea, maybe host the local files on github and access the raw file
-somehow
-* also need a freely licensed small image
+
+* test image missing src with srcset
+* test multiple images
+* test an against-policy failure when policy is set
+* test when an image uses attributes different than natural dimensions (a resized-by-attribute image), I believe the resized dimensions in this case should trump the natural dimensions
 
 TODO: move this comment somewhere, i dunno, github issue
 TODO: research http://exercism.io/ svg loading issue

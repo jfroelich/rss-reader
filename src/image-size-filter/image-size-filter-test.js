@@ -4,13 +4,6 @@ import * as html from '/src/html/html.js';
 import {set_image_sizes} from '/src/image-size-filter/image-size-filter.js';
 import {register_test} from '/test/test-registry.js';
 
-// TODO: test image missing src with srcset
-// TODO: test multiple images
-// TODO: test an against-policy failure when policy is set
-// TODO: test when an image uses attributes different than natural dimensions
-// (a resized-by-attribute image), I believe the resized dimensions in this
-// case should trump the natural dimensions
-
 // Assert the ordinary case of a basic html document with an image with unknown
 // attributes
 async function set_image_sizes_basic_test() {
@@ -29,7 +22,9 @@ async function set_image_sizes_basic_test() {
 // it, simply glancing at the test log for errors should not be an indication
 // that a test failed, so I must always remember to ignore this error. Or, I
 // must always remember to run tests with the "Hide network errors" checkbox
-// checked in the devtools console settings.
+// checked in the devtools console settings. Or, what I should do is create a
+// fake Response object with 404 status... but I somehow need to be able to
+// inject the fetching into the module itself
 async function set_image_sizes_404_test() {
   const doc = await fetch_local('404.html');
   // This should not throw even though the image specified in the html is
