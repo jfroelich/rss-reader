@@ -1,5 +1,6 @@
 import {condense_tagnames_filter} from '/src/condense-tagnames-filter/condense-tagnames-filter.js';
 import {filter_empty_attrs} from '/src/empty-attrs-filter/filter-empty-attrs.js';
+import {set_image_sizes} from '/src/image-size-filter/image-size-filter.js';
 import {filter_boilerplate} from '/src/sandoc/boilerplate-filter.js';
 import {canonicalize_urls} from '/src/sandoc/canonicalize-urls.js';
 import {deframe} from '/src/sandoc/deframe.js';
@@ -33,7 +34,6 @@ import {filter_small_images} from '/src/sandoc/filter-small-images.js';
 import {filter_tables} from '/src/sandoc/filter-tables.js';
 import {filter_unknown_attrs} from '/src/sandoc/filter-unknown-attrs.js';
 import {lonestar_filter} from '/src/sandoc/lonestar-filter.js';
-import {set_image_sizes} from '/src/sandoc/set-image-sizes.js';
 import {trim_document} from '/src/sandoc/trim-document.js';
 
 // Applies several filters in a programmed order in order to clean up a

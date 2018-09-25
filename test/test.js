@@ -12,7 +12,7 @@ import '/src/model/model-test.js';
 import '/src/model-sanity/model-sanity-test.js';
 import '/src/iconsvc/favicon-service-test.js';
 import '/test/filter-lazy-images-test.js';
-import '/test/set-image-sizes-test/set-image-sizes-test.js';
+import '/src/image-size-filter/image-size-filter-test/image-size-filter-test.js';
 import '/src/html/html-truncate-test.js';
 import '/src/indexeddb/indexeddb-test.js';
 import '/src/model-sanity/filter-unprintables-test.js';

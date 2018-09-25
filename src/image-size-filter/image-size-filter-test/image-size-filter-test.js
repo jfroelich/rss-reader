@@ -1,7 +1,7 @@
 import assert from '/src/assert/assert.js';
-import {set_image_sizes} from '/src/sandoc/set-image-sizes.js';
 import {set_base_uri} from '/src/base-uri/base-uri.js';
 import * as html from '/src/html/html.js';
+import {set_image_sizes} from '/src/image-size-filter/image-size-filter.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: test image missing src with srcset
@@ -72,14 +72,16 @@ function set_sizes(doc) {
 // Simple private helper that loads a local html file, parses it, and sets its
 // base uri
 async function fetch_local(filename) {
-  const path = '/test/set-image-sizes-test/' + filename;
+  const base_path = '/src/image-size-filter/image-size-filter-test/';
+
+  const path = base_path + filename;
   const url_string = chrome.extension.getURL(path);
   const response = await fetch(url_string);
   const text = await response.text();
   const doc = html.parse_html(text);
-  const base_path = '/test/set-image-sizes-test/';
-  const base_url_string = chrome.extension.getURL(base_path);
-  const base_url = new URL(base_url_string);
+
+  const canonical_base_url_string = chrome.extension.getURL(base_path);
+  const base_url = new URL(canonical_base_url_string);
   set_base_uri(doc, base_url);
   return doc;
 }
