@@ -72,7 +72,7 @@ function set_sizes(doc) {
 // Simple private helper that loads a local html file, parses it, and sets its
 // base uri
 async function fetch_local(filename) {
-  const base_path = '/src/image-size-filter/image-size-filter-test/';
+  const base_path = '/src/image-size-filter/';
 
   const path = base_path + filename;
   const url_string = chrome.extension.getURL(path);

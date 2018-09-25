@@ -12,3 +12,20 @@ Not all images have a known size after parsing. However, some other functionalit
 * TODO: support "foo-730x420-bar.jpg"
 * TODO: support both - and _ delimiters
 * TODO: always return dimensions, just return 0s on failure, so that caller no longer cares if defined or not
+
+## unorganized test notes and todos
+* need to test against local resource
+* in order to test against local resource, i need to investigate how to load
+a local resource
+* another idea, maybe host the local files on github and access the raw file
+somehow
+* also need a freely licensed small image
+
+TODO: move this comment somewhere, i dunno, github issue
+TODO: research http://exercism.io/ svg loading issue
+Actually there is now a separate issue. It's not finding any urls. Something
+is up with parsing. Viewing source shows stuff. Actually it might even be in
+fetching it? Yeah, it serves up garbage when I fetch it, completely
+different. Perhaps because of no cookies or some header. So I can't test that
+particular url until I figure out the problem ok the size was getting loaded,
+attribute filter didn't whitelist image sizes
