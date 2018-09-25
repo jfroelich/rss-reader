@@ -1,8 +1,8 @@
 import assert from '/src/assert/assert.js';
+import * as feed_utils from '/src/db/feed-utils.js';
 import * as import_opml from '/src/import-opml/import-opml.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {openModelAccess} from '/src/model-access/model-access.js';
-import * as Model from '/src/model/model.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: test multiple files
@@ -27,7 +27,7 @@ async function import_opml_test() {
   const results = await import_opml.import_files(ma, [file]);
   assert(results);
   assert(results.length === 1);
-  assert(Model.is_valid_feed_id(results[0]));
+  assert(feed_utils.is_valid_feed_id(results[0]));
 
   assert(messages.length === 1);
   assert(messages[0].type === 'feed-created');

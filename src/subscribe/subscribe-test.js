@@ -1,8 +1,8 @@
-import {subscribe} from '/src/subscribe/subscribe.js';
 import assert from '/src/assert/assert.js';
+import * as feed_utils from '/src/db/feed-utils.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {openModelAccess} from '/src/model-access/model-access.js';
-import * as Model from '/src/model/model.js';
+import {subscribe} from '/src/subscribe/subscribe.js';
 import {register_test} from '/test/test-registry.js';
 
 // TODO: it is wrong to ping google, implement something that tests a local
@@ -26,8 +26,8 @@ async function subscribe_test() {
 
   // Test the subscription produced the desired result
   assert(feed);
-  assert(Model.is_feed(feed));
-  assert(Model.is_valid_feed_id(feed.id));
+  assert(feed_utils.is_feed(feed));
+  assert(feed_utils.is_valid_feed_id(feed.id));
 
   // Length may be 1 or 2 (may have redirected and captured new url)
   assert(feed.urls.length);

@@ -1,0 +1,41 @@
+import assert from '/src/assert/assert.js';
+import * as entry_utils from '/src/db/entry-utils.js';
+import * as feed_utils from '/src/db/feed-utils.js';
+import {register_test} from '/test/test-registry.js';
+
+export async function is_feed_test() {
+  const fcorrect = feed_utils.create_feed();
+  assert(feed_utils.is_feed(fcorrect));
+  assert(!entry_utils.is_entry(fcorrect));
+
+  const nomagic = {};
+  assert(!feed_utils.is_feed(nomagic));
+}
+
+export async function append_feed_url_test() {
+  const feed = feed_utils.create_feed();
+
+  // precondition, in case create_feed changes its behavior
+  assert(feed.urls === undefined || feed.urls.length === 0);
+
+  // Appending the first url should lazily init urls list and increment the
+  // urls count
+  feed_utils.append_feed_url(feed, new URL('a://b.c1'));
+  assert(feed.urls);
+  assert(feed.urls.length === 1);
+
+  // Appending a distinct url should increase url count
+  const url2 = new URL('a://b.c2');
+  feed_utils.append_feed_url(feed, url2);
+  assert(feed.urls.length === 2);
+
+  // Appending a duplicate url should not increase url count
+  feed_utils.append_feed_url(feed, url2);
+  assert(feed.urls.length === 2);
+
+  // After appends, feed should still be a feed
+  assert(feed_utils.is_feed(feed));
+}
+
+register_test(is_feed_test);
+register_test(append_feed_url_test);

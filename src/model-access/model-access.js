@@ -1,12 +1,8 @@
-// TODO: rename the function openModelAccess to open. the thing being opened
-// is implicit in the module name. the caller should optionally prefix it or
-// access by namespace-like-thing or whatever, but it should not be forced upon
-// the caller here by name
-
 import assert from '/src/assert/assert.js';
+import * as entry_utils from '/src/db/entry-utils.js';
+import * as feed_utils from '/src/db/feed-utils.js';
 import * as idbmodel from '/src/idb-model/idb-model.js';
 import * as object from '/src/model-access/object.js';
-import * as Model from '/src/model/model.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
@@ -45,7 +41,7 @@ export function ModelAccess() {
 }
 
 ModelAccess.prototype.activateFeed = async function(feed_id) {
-  assert(Model.is_valid_feed_id(feed_id));
+  assert(feed_utils.is_valid_feed_id(feed_id));
   await idbmodel.activate_feed(this.conn, feed_id);
   this.channel.postMessage({type: 'feed-activated', id: feed_id});
 };
@@ -65,15 +61,15 @@ ModelAccess.prototype.close = function() {
 };
 
 ModelAccess.prototype.createEntry = async function(entry) {
-  assert(Model.is_entry(entry));
+  assert(entry_utils.is_entry(entry));
   assert(entry.id === undefined);
 
   if (entry.readState === undefined) {
-    entry.readState = Model.ENTRY_STATE_UNREAD;
+    entry.readState = entry_utils.ENTRY_STATE_UNREAD;
   }
 
   if (entry.archiveState === undefined) {
-    entry.archiveState = Model.ENTRY_STATE_UNARCHIVED;
+    entry.archiveState = entry_utils.ENTRY_STATE_UNARCHIVED;
   }
 
   if (entry.dateCreated === undefined) {
@@ -88,7 +84,7 @@ ModelAccess.prototype.createEntry = async function(entry) {
 };
 
 ModelAccess.prototype.createFeed = async function(feed) {
-  assert(Model.is_feed(feed));
+  assert(feed_utils.is_feed(feed));
   assert(feed.urls && feed.urls.length);
   object.filter_empty_properties(feed);
 
@@ -106,7 +102,7 @@ ModelAccess.prototype.createFeed = async function(feed) {
 
 ModelAccess.prototype.createFeeds = async function(feeds) {
   for (const feed of feeds) {
-    assert(Model.is_feed(feed));
+    assert(feed_utils.is_feed(feed));
     assert(feed.urls && feed.urls.length);
 
     object.filter_empty_properties(feed);
@@ -134,19 +130,19 @@ ModelAccess.prototype.countUnreadEntries = function() {
 };
 
 ModelAccess.prototype.deactivateFeed = async function(feed_id, reason) {
-  assert(Model.is_valid_feed_id(feed_id));
+  assert(feed_utils.is_valid_feed_id(feed_id));
   await idbmodel.deactivate_feed(this.conn, feed_id, reason);
   this.channel.postMessage({type: 'feed-deactivated', id: feed_id});
 };
 
 ModelAccess.prototype.deleteEntry = async function(id, reason) {
-  assert(Model.is_valid_entry_id(id));
+  assert(entry_utils.is_valid_entry_id(id));
   await idbmodel.delete_entry(this.conn, id);
   this.channel.postMessage({type: 'entry-deleted', id: id, reason: reason});
 };
 
 ModelAccess.prototype.deleteFeed = async function(feed_id, reason) {
-  assert(Model.is_valid_feed_id(feed_id));
+  assert(feed_utils.is_valid_feed_id(feed_id));
   const entry_ids = await idbmodel.delete_feed(this.conn, feed_id);
 
   this.channel.postMessage({type: 'feed-deleted', id: feed_id, reason: reason});
@@ -168,7 +164,7 @@ ModelAccess.prototype.getEntries = function(mode = 'all', offset, limit) {
 };
 
 ModelAccess.prototype.getEntry = function(mode = 'id', value, key_only) {
-  assert(mode !== 'id' || Model.is_valid_entry_id(value));
+  assert(mode !== 'id' || entry_utils.is_valid_entry_id(value));
   assert(mode !== 'id' || !key_only);
   return idbmodel.get_entry(this.conn, mode, value, key_only);
 };
@@ -179,7 +175,7 @@ ModelAccess.prototype.getFeedIds = function() {
 
 ModelAccess.prototype.getFeed = function(mode = 'id', value, key_only) {
   assert(mode !== 'url' || (value && typeof value.href === 'string'));
-  assert(mode !== 'id' || Model.is_valid_feed_id(value));
+  assert(mode !== 'id' || feed_utils.is_valid_feed_id(value));
   assert(mode !== 'id' || !key_only);
 
   return idbmodel.get_feed(this.conn, mode, value, key_only);
@@ -211,7 +207,7 @@ ModelAccess.prototype.iterateEntries = function(handle_entry) {
 };
 
 ModelAccess.prototype.markEntryRead = async function(entry_id) {
-  assert(Model.is_valid_entry_id(entry_id));
+  assert(entry_utils.is_valid_entry_id(entry_id));
   await idbmodel.mark_entry_read(this.conn, entry_id);
   this.channel.postMessage({type: 'entry-read', id: entry_id});
 };
@@ -249,8 +245,8 @@ ModelAccess.prototype.removeUntypedObjects = async function() {
 };
 
 ModelAccess.prototype.updateEntry = async function(entry) {
-  assert(Model.is_entry(entry));
-  assert(Model.is_valid_entry_id(entry.id));
+  assert(entry_utils.is_entry(entry));
+  assert(entry_utils.is_valid_entry_id(entry.id));
 
   // TODO: should this be asserting entry.urls similar to updateFeed?
 
@@ -262,9 +258,9 @@ ModelAccess.prototype.updateEntry = async function(entry) {
 };
 
 ModelAccess.prototype.updateFeed = async function(feed) {
-  assert(Model.is_feed(feed));
+  assert(feed_utils.is_feed(feed));
   assert(feed.urls && feed.urls.length);
-  assert(Model.is_valid_feed_id(feed.id));
+  assert(feed_utils.is_valid_feed_id(feed.id));
 
   object.filter_empty_properties(feed);
   feed.dateUpdated = new Date();

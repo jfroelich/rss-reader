@@ -1,5 +1,5 @@
+import * as feed_utils from '/src/db/feed-utils.js';
 import {openModelAccess} from '/src/model-access/model-access.js';
-import * as Model from '/src/model/model.js';
 import * as string from '/src/string/string.js';
 
 export function prompt() {
@@ -23,8 +23,8 @@ export async function import_files(ma, files) {
   const url_array_set = dedup_urls(url_array);
 
   const feeds = url_array_set.map(url => {
-    const feed = Model.create_feed();
-    Model.append_feed_url(feed, url);
+    const feed = feed_utils.create_feed();
+    feed_utils.append_feed_url(feed, url);
     return feed;
   });
 

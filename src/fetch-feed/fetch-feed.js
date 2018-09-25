@@ -1,4 +1,4 @@
-import * as Model from '/src/model/model.js';
+import * as feed_utils from '/src/db/feed-utils.js';
 import {is_allowed_request} from '/src/fetch-policy/fetch-policy.js';
 import {fetch2} from '/src/fetch2/fetch2.js';
 import {parse_feed} from '/src/parse-feed/parse-feed.js';
@@ -24,7 +24,7 @@ export async function fetch_feed(
   const parsed_feed = parse_feed(res_text, skip_entries, resolve_entry_urls);
 
   // Convert the feed from the parse format to the storage format
-  const feed = Model.create_feed();
+  const feed = feed_utils.create_feed();
   feed.type = parsed_feed.type;
 
   if (parsed_feed.link) {
@@ -43,8 +43,8 @@ export async function fetch_feed(
   feed.description = parsed_feed.description;
   feed.datePublished = parsed_feed.date_published || new Date();
 
-  Model.append_feed_url(feed, url);
-  Model.append_feed_url(feed, new URL(response.url));
+  feed_utils.append_feed_url(feed, url);
+  feed_utils.append_feed_url(feed, new URL(response.url));
 
   // Set the last modified date based on the response
   const last_modified_string = response.headers.get('Last-Modified');

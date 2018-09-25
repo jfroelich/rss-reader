@@ -1,7 +1,8 @@
-import * as Model from '/src/model/model.js';
 import sizeof from '/src/idb-model/sizeof.js';
 import assert from '/src/assert/assert.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
+import * as entry_utils from '/src/db/entry-utils.js';
+import * as feed_utils from '/src/db/feed-utils.js';
 
 export function activate_feed(conn, feed_id) {
   function transition(feed) {
@@ -31,7 +32,8 @@ function archive_entries_executor(conn, max_age, resolve, reject) {
 
   const store = txn.objectStore('entry');
   const index = store.index('archiveState-readState');
-  const key_path = [Model.ENTRY_STATE_UNARCHIVED, Model.ENTRY_STATE_READ];
+  const key_path =
+      [entry_utils.ENTRY_STATE_UNARCHIVED, entry_utils.ENTRY_STATE_READ];
   const request = index.openCursor(key_path);
 
   request.onsuccess = event => {
@@ -41,7 +43,7 @@ function archive_entries_executor(conn, max_age, resolve, reject) {
     }
 
     const entry = cursor.value;
-    if (!Model.is_entry(entry)) {
+    if (!entry_utils.is_entry(entry)) {
       console.warn('Not an entry', entry);
       cursor.continue();
       return;
@@ -81,7 +83,7 @@ function archive_entry(entry) {
     console.warn('Entry increased size', entry);
   }
 
-  ce.archiveState = Model.ENTRY_STATE_ARCHIVED;
+  ce.archiveState = entry_utils.ENTRY_STATE_ARCHIVED;
   const current_date = new Date();
   ce.dateArchived = current_date;
   ce.dateUpdated = current_date;
@@ -89,7 +91,7 @@ function archive_entry(entry) {
 }
 
 function compact_entry(entry) {
-  const ce = Model.create_entry();
+  const ce = entry_utils.create_entry();
   ce.dateCreated = entry.dateCreated;
 
   if (entry.dateRead) {
@@ -160,7 +162,7 @@ function count_unread_entries_executor(conn, resolve, reject) {
   const txn = conn.transaction('entry');
   const store = txn.objectStore('entry');
   const index = store.index('readState');
-  const request = index.count(Model.ENTRY_STATE_UNREAD);
+  const request = index.count(entry_utils.ENTRY_STATE_UNREAD);
   request.onsuccess = _ => resolve(request.result);
   request.onerror = _ => reject(request.error);
 }
@@ -235,7 +237,8 @@ function get_entries_executor(conn, mode, offset, limit, resolve, reject) {
   let request;
   if (mode === 'viewable') {
     const index = store.index('archiveState-readState');
-    const path = [Model.ENTRY_STATE_UNARCHIVED, Model.ENTRY_STATE_UNREAD];
+    const path =
+        [entry_utils.ENTRY_STATE_UNARCHIVED, entry_utils.ENTRY_STATE_UNREAD];
     request = index.openCursor(path);
   } else if (mode === 'all') {
     request = store.openCursor();
@@ -290,8 +293,8 @@ function get_entry_executor(conn, mode, value, key_only, resolve, reject) {
     let entry;
     if (key_only) {
       const entry_id = request.result;
-      if (Model.is_valid_entry_id(entry_id)) {
-        entry = Model.create_entry();
+      if (entry_utils.is_valid_entry_id(entry_id)) {
+        entry = entry_utils.create_entry();
         entry.id = entry_id;
       }
     } else {
@@ -338,8 +341,8 @@ function get_feed_executor(conn, mode, value, key_only, resolve, reject) {
     let feed;
     if (key_only) {
       const feed_id = request.result;
-      if (Model.is_valid_feed_id(feed_id)) {
-        feed = Model.create_feed();
+      if (feed_utils.is_valid_feed_id(feed_id)) {
+        feed = feed_utils.create_feed();
         feed.id = feed_id;
       }
     } else {
@@ -403,22 +406,22 @@ function mark_entry_read_executor(conn, entry_id, resolve, reject) {
   request.onsuccess = _ => {
     const entry = request.result;
 
-    if (!Model.is_entry(entry)) {
+    if (!entry_utils.is_entry(entry)) {
       reject(new Error('Loaded object is not an entry ' + entry_id));
       return;
     }
 
-    if (entry.archiveState === Model.ENTRY_STATE_ARCHIVED) {
+    if (entry.archiveState === entry_utils.ENTRY_STATE_ARCHIVED) {
       reject(new Error('Cannot mark archived entry as read ' + entry_id));
       return;
     }
 
-    if (entry.readState === Model.ENTRY_STATE_READ) {
+    if (entry.readState === entry_utils.ENTRY_STATE_READ) {
       reject(new Error('Cannot mark read entry as read ' + entry_id));
       return;
     }
 
-    entry.readState = Model.ENTRY_STATE_READ;
+    entry.readState = entry_utils.ENTRY_STATE_READ;
     const currentDate = new Date();
     entry.dateUpdated = currentDate;
     entry.dateRead = currentDate;
@@ -485,7 +488,7 @@ function add_magic_to_entries(txn) {
     if (cursor) {
       const entry = cursor.value;
       if (!('magic' in entry)) {
-        entry.magic = Model.ENTRY_MAGIC;
+        entry.magic = entry_utils.ENTRY_MAGIC;
         entry.dateUpdated = new Date();
         cursor.update(entry);
       }
@@ -501,7 +504,7 @@ function add_magic_to_feeds(txn) {
   request.onsuccess = function(event) {
     const feeds = event.target.result;
     for (const feed of feeds) {
-      feed.magic = Model.FEED_MAGIC;
+      feed.magic = feed_utils.FEED_MAGIC;
       feed.dateUpdated = new Date();
       store.put(feed);
     }
@@ -543,12 +546,12 @@ export async function remove_orphaned_entries(conn) {
   await iterate_entries(conn, cursor => {
     const entry = cursor.value;
 
-    if (!Model.is_entry(entry)) {
+    if (!entry_utils.is_entry(entry)) {
       console.warn('Loaded entry is not an entry ' + JSON.stringify(entry));
       return;
     }
 
-    if (Model.is_valid_feed_id(entry.feed)) {
+    if (feed_utils.is_valid_feed_id(entry.feed)) {
       return;
     }
 
@@ -570,7 +573,7 @@ export async function remove_untyped_objects(conn) {
   const feeds = get_feeds(conn);
   const delete_feed_promises = [];
   for (const feed of feeds) {
-    if (!Model.is_feed(feed)) {
+    if (!feed_utils.is_feed(feed)) {
       removed_feed_ids.push(feed.id);
       const promise = delete_feed(conn, feed.id);
       delete_feed_promises.push(promise);
@@ -586,7 +589,7 @@ export async function remove_untyped_objects(conn) {
 
   await this.iterateEntries(conn, cursor => {
     const entry = cursor.value;
-    if (!Model.is_entry(entry)) {
+    if (!entry_utils.is_entry(entry)) {
       removed_entry_ids.push(entry.id);
       cursor.delete();
     }
@@ -634,7 +637,7 @@ function update_feed_executor(conn, feed, transition, resolve, reject) {
       return;
     }
 
-    if (!Model.is_feed(old_feed)) {
+    if (!feed_utils.is_feed(old_feed)) {
       const msg = 'Matched object is not of type feed for id ' + feed.id;
       const err = new Error(msg);
       reject(err);
@@ -653,7 +656,7 @@ function update_feed_executor(conn, feed, transition, resolve, reject) {
       return;
     }
 
-    if (!Model.is_feed(new_feed)) {
+    if (!feed_utils.is_feed(new_feed)) {
       reject(
           'Transitioning feed did not produce a valid feed object for id ' +
           feed.id);

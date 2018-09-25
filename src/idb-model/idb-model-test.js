@@ -1,20 +1,21 @@
 import assert from '/src/assert/assert.js';
+import * as entry_utils from '/src/db/entry-utils.js';
+import * as feed_utils from '/src/db/feed-utils.js';
 import * as idbmodel from '/src/idb-model/idb-model.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
-import * as Model from '/src/model/model.js';
 import {register_test} from '/test/test-registry.js';
 
 async function activate_feed_test() {
-  const feed = Model.create_feed();
+  const feed = feed_utils.create_feed();
   feed.active = false;
-  Model.append_feed_url(feed, new URL('a://b.c'));
+  feed_utils.append_feed_url(feed, new URL('a://b.c'));
 
   const conn = await idbmodel.open('activate-feed-test');
   const id = await idbmodel.create_feed(conn, feed);
   await idbmodel.activate_feed(conn, id);
   const stored_feed = await idbmodel.get_feed(conn, 'id', id);
 
-  assert(Model.is_feed(stored_feed));
+  assert(feed_utils.is_feed(stored_feed));
   assert(stored_feed.active === true);
   assert(stored_feed.deactivateDate === undefined);
   assert(stored_feed.deactivationReasonText === undefined);
@@ -45,12 +46,12 @@ async function archive_entries_test() {
 
 async function create_entry_test() {
   const conn = await idbmodel.open('create-entry-test');
-  const entry = Model.create_entry();
+  const entry = entry_utils.create_entry();
   const id = await idbmodel.create_entry(conn, entry);
   const stored_entry = await idbmodel.get_entry(conn, 'id', id);
 
   assert(stored_entry);
-  assert(Model.is_entry(stored_entry));
+  assert(entry_utils.is_entry(stored_entry));
   assert(stored_entry.id === id);
 
   conn.close();
@@ -58,16 +59,16 @@ async function create_entry_test() {
 }
 
 async function create_feed_test() {
-  const feed = Model.create_feed();
+  const feed = feed_utils.create_feed();
   const feed_url = new URL('http://www.example.com/example.rss');
-  Model.append_feed_url(feed, feed_url);
+  feed_utils.append_feed_url(feed, feed_url);
   const conn = await idbmodel.open('create-feed-test');
   const stored_feed_id = await idbmodel.create_feed(conn, feed);
-  assert(Model.is_valid_feed_id(stored_feed_id));
+  assert(feed_utils.is_valid_feed_id(stored_feed_id));
   let stored_feed = await idbmodel.get_feed(conn, 'url', feed_url, true);
-  assert(Model.is_feed(stored_feed));
+  assert(feed_utils.is_feed(stored_feed));
   stored_feed = await idbmodel.get_feed(conn, 'id', stored_feed_id, false);
-  assert(Model.is_feed(stored_feed));
+  assert(feed_utils.is_feed(stored_feed));
   conn.close();
   await indexeddb.remove(conn.name);
 }
@@ -77,12 +78,14 @@ async function create_feed_test() {
 // one key does not satisfy the uniqueness requirements."
 async function create_feed_url_constraint_test() {
   const conn = await idbmodel.open('create-feed-url-constraint-test');
-  const feed1 = Model.create_feed();
-  Model.append_feed_url(feed1, new URL('http://www.example.com/example.rss'));
+  const feed1 = feed_utils.create_feed();
+  feed_utils.append_feed_url(
+      feed1, new URL('http://www.example.com/example.rss'));
   await idbmodel.create_feed(conn, feed1);
 
-  const feed2 = Model.create_feed();
-  Model.append_feed_url(feed2, new URL('http://www.example.com/example.rss'));
+  const feed2 = feed_utils.create_feed();
+  feed_utils.append_feed_url(
+      feed2, new URL('http://www.example.com/example.rss'));
 
   let create_error;
   try {
@@ -102,8 +105,8 @@ async function create_feeds_test() {
   const num_feeds = 3;
   const feeds = [];
   for (let i = 0; i < num_feeds; i++) {
-    const feed = Model.create_feed();
-    Model.append_feed_url(feed, new URL('a://b.c' + i));
+    const feed = feed_utils.create_feed();
+    feed_utils.append_feed_url(feed, new URL('a://b.c' + i));
     feeds.push(feed);
   }
 
@@ -117,8 +120,8 @@ async function create_feeds_test() {
   const get_proms = ids.map(id => idbmodel.get_feed(conn, 'id', id));
   const feeds_by_id = await Promise.all(get_proms);
   for (const feed of feeds_by_id) {
-    assert(Model.is_feed(feed));
-    assert(Model.is_valid_feed_id(feed.id));
+    assert(feed_utils.is_feed(feed));
+    assert(feed_utils.is_valid_feed_id(feed.id));
   }
 
   conn.close();
@@ -133,17 +136,17 @@ async function count_unread_entries_test() {
   const insert_unread_count = 3;
   const entries_to_insert = [];
   for (let i = 0; i < insert_unread_count; i++) {
-    const entry = Model.create_entry();
-    entry.readState = Model.ENTRY_STATE_UNREAD;
-    Model.append_entry_url(entry, new URL('a://b.c' + i));
+    const entry = entry_utils.create_entry();
+    entry.readState = entry_utils.ENTRY_STATE_UNREAD;
+    entry_utils.append_entry_url(entry, new URL('a://b.c' + i));
     entries_to_insert.push(entry);
   }
 
   const insert_read_count = 5;
   for (let i = 0; i < insert_read_count; i++) {
-    const entry = Model.create_entry();
-    entry.readState = Model.ENTRY_STATE_READ;
-    Model.append_entry_url(entry, new URL('d://e.f' + i));
+    const entry = entry_utils.create_entry();
+    entry.readState = entry_utils.ENTRY_STATE_READ;
+    entry_utils.append_entry_url(entry, new URL('d://e.f' + i));
     entries_to_insert.push(entry);
   }
 

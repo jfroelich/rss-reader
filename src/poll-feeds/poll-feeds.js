@@ -1,5 +1,7 @@
 import assert from '/src/assert/assert.js';
 import {set_base_uri} from '/src/base-uri/base-uri.js';
+import * as entry_utils from '/src/db/entry-utils.js';
+import * as feed_utils from '/src/db/feed-utils.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
 import {is_allowed_request} from '/src/fetch-policy/fetch-policy.js';
@@ -8,7 +10,6 @@ import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
 import * as sanity from '/src/model-sanity/model-sanity.js';
-import * as Model from '/src/model/model.js';
 import * as notification from '/src/notification/notification.js';
 import {build as build_rewrite_rules} from '/src/poll-feeds/rewrite-rules.js';
 import {rewrite_url} from '/src/poll-feeds/rewrite-url.js';
@@ -60,7 +61,7 @@ export async function poll_feeds(ma, iconn, options = {}) {
 
 // Check if a remote feed has new data and store it in the database
 export async function poll_feed(ma, iconn, options = {}, feed) {
-  assert(Model.is_feed(feed));
+  assert(feed_utils.is_feed(feed));
   assert(Array.isArray(feed.urls));
   assert(feed.urls.length > 0);
   assert(feed.active);
@@ -160,11 +161,12 @@ function propagate_feed_properties(feed, entries) {
 // needs to be fixed. First copy over the old feed's urls, then try and append
 // each new feed url.
 function merge_feed(old_feed, new_feed) {
-  const merged_feed = Object.assign(Model.create_feed(), old_feed, new_feed);
+  const merged_feed =
+      Object.assign(feed_utils.create_feed(), old_feed, new_feed);
   merged_feed.urls = [...old_feed.urls];
   if (new_feed.urls) {
     for (const url_string of new_feed.urls) {
-      Model.append_feed_url(merged_feed, new URL(url_string));
+      feed_utils.append_feed_url(merged_feed, new URL(url_string));
     }
   }
 
@@ -244,7 +246,7 @@ function dedup_entries(entries) {
 // format. This is a cross-cutting concern so it belongs in the place where the
 // concerns meet.
 function coerce_entry(parsed_entry) {
-  const blank_entry = Model.create_entry();
+  const blank_entry = entry_utils.create_entry();
 
   // Copy over everything
   const clone = Object.assign(blank_entry, parsed_entry);
@@ -253,7 +255,7 @@ function coerce_entry(parsed_entry) {
   delete clone.link;
   if (parsed_entry.link) {
     try {
-      Model.append_entry_url(clone, new URL(parsed_entry.link));
+      entry_utils.append_entry_url(clone, new URL(parsed_entry.link));
     } catch (error) {
     }
   }
@@ -267,10 +269,10 @@ function coerce_entry(parsed_entry) {
 export async function poll_entry(
     ma, iconn, entry, fetch_html_timeout, fetch_image_timeout, rewrite_rules,
     feed_url_string) {
-  assert(Model.is_entry(entry));
+  assert(entry_utils.is_entry(entry));
 
   let url = new URL(entry.urls[entry.urls.length - 1]);
-  Model.append_entry_url(entry, rewrite_url(url, rewrite_rules));
+  entry_utils.append_entry_url(entry, rewrite_url(url, rewrite_rules));
 
   url = new URL(entry.urls[entry.urls.length - 1]);
   let existing_entry = await ma.getEntry('url', url, true);
@@ -300,8 +302,9 @@ export async function poll_entry(
     const response_url = new URL(response.url);
     if (response_is_redirect(url, response)) {
       url_changed = true;
-      Model.append_entry_url(entry, response_url);
-      Model.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
+      entry_utils.append_entry_url(entry, response_url);
+      entry_utils.append_entry_url(
+          entry, rewrite_url(response_url, rewrite_rules));
       url = new URL(entry.urls[entry.urls.length - 1]);
       existing_entry = await ma.getEntry(get_mode, url, key_only);
       if (existing_entry) {
