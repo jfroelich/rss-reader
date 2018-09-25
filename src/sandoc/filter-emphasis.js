@@ -5,7 +5,7 @@ export function filter_emphasis(document, text_length_max) {
   assert(Number.isInteger(text_length_max) && text_length_max > 0);
   if (document.body) {
     const elements =
-        document.body.querySelectorAll('b, big, em, i, strong, mark');
+        document.body.querySelectorAll('b, big, em, i, strong, mark, u');
     for (const element of elements) {
       if (get_emphasis_length(element) > text_length_max) {
         unwrap_element(element);
