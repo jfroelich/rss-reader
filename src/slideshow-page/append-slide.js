@@ -1,4 +1,4 @@
-import {filter_publisher} from '/src/article-title/article-title.js';
+import {filter_publisher} from '/src/slideshow-page/article-title/article-title.js';
 import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as types from '/src/db/types.js';
