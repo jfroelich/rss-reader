@@ -1,7 +1,7 @@
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {response_is_redirect} from '/src/fetch2/fetch2.js';
 import * as favicon from '/src/iconsvc/favicon.js';
-import * as sanity from '/src/model-sanity/model-sanity.js';
+import * as sanity from '/src/db/sanity/model-sanity.js';
 import * as notification from '/src/notification/notification.js';
 
 // Subscribe to a feed.  Entries are excluded because it takes too long to

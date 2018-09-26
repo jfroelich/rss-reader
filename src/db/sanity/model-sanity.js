@@ -3,8 +3,8 @@ import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import * as types from '/src/db/types.js';
 import * as html from '/src/html/html.js';
-import {filter_unprintables} from '/src/model-sanity/filter-unprintables.js';
-import {replace_tags} from '/src/model-sanity/replace-tags.js';
+import {filter_unprintables} from '/src/db/sanity/filter-unprintables.js';
+import {replace_tags} from '/src/db/sanity/replace-tags.js';
 import * as string from '/src/string/string.js';
 
 export function validate_entry(entry) {

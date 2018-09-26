@@ -10,7 +10,7 @@ import {OfflineError, response_is_redirect, TimeoutError} from '/src/fetch2/fetc
 import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
-import * as sanity from '/src/model-sanity/model-sanity.js';
+import * as sanity from '/src/db/sanity/model-sanity.js';
 import * as notification from '/src/notification/notification.js';
 import {build as build_rewrite_rules} from '/src/poll-feeds/rewrite-rules.js';
 import {rewrite_url} from '/src/poll-feeds/rewrite-url.js';
