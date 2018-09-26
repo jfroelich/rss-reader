@@ -1,4 +1,4 @@
-import sizeof from '/src/idb-model/sizeof.js';
+import sizeof from '/src/db/sizeof.js';
 import assert from '/src/assert/assert.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import * as entry_utils from '/src/db/entry-utils.js';

@@ -3,7 +3,7 @@ import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import * as object from '/src/db/object-utils.js';
 import * as types from '/src/db/types.js';
-import * as idbmodel from '/src/idb-model/idb-model.js';
+import * as idbmodel from '/src/db/idb-model.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
