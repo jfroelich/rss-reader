@@ -1,6 +1,6 @@
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
-import {openModelAccess} from '/src/model-access/model-access.js';
+import {openModelAccess} from '/src/db/model-access.js';
 import {poll_feeds} from '/src/poll-feeds/poll-feeds.js';
 import {refresh_feed_icons} from '/src/refresh-feed-icons/refresh-feed-icons.js';
 

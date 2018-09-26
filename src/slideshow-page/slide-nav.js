@@ -1,5 +1,5 @@
 import * as ls from '/src/localstorage/localstorage.js';
-import {openModelAccess} from '/src/model-access/model-access.js';
+import {openModelAccess} from '/src/db/model-access.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';

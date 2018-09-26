@@ -2,7 +2,7 @@ import assert from '/src/assert/assert.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
-import {openModelAccess} from '/src/model-access/model-access.js';
+import {openModelAccess} from '/src/db/model-access.js';
 import {subscribe} from '/src/subscribe/subscribe.js';
 import {register_test} from '/test/test-registry.js';
 

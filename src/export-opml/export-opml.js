@@ -1,4 +1,4 @@
-import {openModelAccess} from '/src/model-access/model-access.js';
+import {openModelAccess} from '/src/db/model-access.js';
 
 // TODO: implement tests
 

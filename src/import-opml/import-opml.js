@@ -1,5 +1,5 @@
 import * as feed_utils from '/src/db/feed-utils.js';
-import {openModelAccess} from '/src/model-access/model-access.js';
+import {openModelAccess} from '/src/db/model-access.js';
 import * as string from '/src/string/string.js';
 
 export function prompt() {

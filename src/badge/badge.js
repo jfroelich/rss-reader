@@ -1,5 +1,5 @@
 import ExtensionLock from '/src/badge/extension-lock.js';
-import {openModelAccess} from '/src/model-access/model-access.js';
+import {openModelAccess} from '/src/db/model-access.js';
 
 export function install_listener(event) {
   console.debug('Install listener received event, refreshing badge');
