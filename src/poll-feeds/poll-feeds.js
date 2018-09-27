@@ -2,6 +2,8 @@ import assert from '/src/assert/assert.js';
 import {set_base_uri} from '/src/base-uri/base-uri.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
+import {create_entry} from '/src/db/op/create-entry.js';
+import * as sanity from '/src/db/sanity/model-sanity.js';
 import * as types from '/src/db/types.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
@@ -10,7 +12,6 @@ import {OfflineError, response_is_redirect, TimeoutError} from '/src/fetch2/fetc
 import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
-import * as sanity from '/src/db/sanity/model-sanity.js';
 import * as notification from '/src/notification/notification.js';
 import {build as build_rewrite_rules} from '/src/poll-feeds/rewrite-rules.js';
 import {rewrite_url} from '/src/poll-feeds/rewrite-url.js';
@@ -359,7 +360,7 @@ export async function poll_entry(
 
   sanity.sanitize_entry(entry);
   sanity.validate_entry(entry);
-  return ma.createEntry(entry);
+  return create_entry(ma.conn, ma.channel, entry);
 }
 
 // TODO: somehow store in configuration instead of here, look into

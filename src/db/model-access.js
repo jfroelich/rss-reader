@@ -5,7 +5,6 @@ import * as idbmodel from '/src/db/idb-model.js';
 import * as object from '/src/db/object-utils.js';
 import * as types from '/src/db/types.js';
 
-
 // Connects to the model. Instantiates and returns a wrapper class that serves
 // as a data access layer for reading from and writing to app persistent storage
 //
@@ -47,28 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-ModelAccess.prototype.createEntry = async function(entry) {
-  assert(types.is_entry(entry));
-  assert(entry.id === undefined);
-
-  if (entry.readState === undefined) {
-    entry.readState = entry_utils.ENTRY_STATE_UNREAD;
-  }
-
-  if (entry.archiveState === undefined) {
-    entry.archiveState = entry_utils.ENTRY_STATE_UNARCHIVED;
-  }
-
-  if (entry.dateCreated === undefined) {
-    entry.dateCreated = new Date();
-  }
-
-  delete entry.dateUpdated;
-  object.filter_empty_properties(entry);
-
-  const id = await idbmodel.create_entry(this.conn, entry);
-  this.channel.postMessage({type: 'entry-created', id: id});
-};
 
 ModelAccess.prototype.createFeed = async function(feed) {
   assert(types.is_feed(feed));

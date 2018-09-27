@@ -6,20 +6,6 @@ import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {register_test} from '/test/test-registry.js';
 
-async function create_entry_test() {
-  const conn = await idbmodel.open('create-entry-test');
-  const entry = entry_utils.create_entry();
-  const id = await idbmodel.create_entry(conn, entry);
-  const stored_entry = await idbmodel.get_entry(conn, 'id', id);
-
-  assert(stored_entry);
-  assert(types.is_entry(stored_entry));
-  assert(stored_entry.id === id);
-
-  conn.close();
-  await indexeddb.remove(conn.name);
-}
-
 async function create_feed_test() {
   const feed = feed_utils.create_feed();
   const feed_url = new URL('http://www.example.com/example.rss');
@@ -126,7 +112,6 @@ async function count_unread_entries_test() {
   await indexeddb.remove(conn.name);
 }
 
-register_test(create_entry_test);
 register_test(create_feed_test);
 register_test(create_feed_url_constraint_test);
 register_test(create_feeds_test);
