@@ -7,34 +7,6 @@ import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {register_test} from '/test/test-registry.js';
 
-async function activate_feed_test() {
-  const feed = feed_utils.create_feed();
-  feed.active = false;
-  feed_utils.append_feed_url(feed, new URL('a://b.c'));
-
-  const conn = await idbmodel.open('activate-feed-test');
-  const id = await idbmodel.create_feed(conn, feed);
-  await activate_feed(conn, undefined, id);
-  const stored_feed = await idbmodel.get_feed(conn, 'id', id);
-
-  assert(types.is_feed(stored_feed));
-  assert(stored_feed.active === true);
-  assert(stored_feed.deactivateDate === undefined);
-  assert(stored_feed.deactivationReasonText === undefined);
-
-  // Activating a feed that is already active should fail
-  let activation_error;
-  try {
-    await activate_feed(conn, undefined, id);
-  } catch (error) {
-    activation_error = error;
-  }
-  assert(activation_error);
-
-  conn.close();
-  await indexeddb.remove(conn.name);
-}
-
 async function archive_entries_test() {
   // TODO: insert archivable data, non-archivable data, and then assert the
   // archivable data was archived, and that the non-archivable data was not
@@ -166,7 +138,6 @@ async function count_unread_entries_test() {
   await indexeddb.remove(conn.name);
 }
 
-register_test(activate_feed_test);
 register_test(archive_entries_test);
 register_test(create_entry_test);
 register_test(create_feed_test);
