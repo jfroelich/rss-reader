@@ -5,7 +5,6 @@ import * as idbmodel from '/src/db/idb-model.js';
 import * as object from '/src/db/object-utils.js';
 import * as types from '/src/db/types.js';
 
-const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
 // Connects to the model. Instantiates and returns a wrapper class that serves
 // as a data access layer for reading from and writing to app persistent storage
@@ -40,13 +39,6 @@ export function ModelAccess() {
   this.conn = undefined;
   this.channel = undefined;
 }
-
-ModelAccess.prototype.archiveEntries = async function(max_age = TWO_DAYS_MS) {
-  const ids = await idbmodel.archive_entries(this.conn, max_age);
-  for (const id of ids) {
-    this.channel.postMessage({type: 'entry-archived', id: id});
-  }
-};
 
 ModelAccess.prototype.close = function() {
   if (this.channel) {

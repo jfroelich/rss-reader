@@ -1,6 +1,7 @@
+import {openModelAccess} from '/src/db/model-access.js';
+import {archive_entries} from '/src/db/op/archive-entries.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
-import {openModelAccess} from '/src/db/model-access.js';
 import {poll_feeds} from '/src/poll-feeds/poll-feeds.js';
 import {refresh_feed_icons} from '/src/refresh-feed-icons/refresh-feed-icons.js';
 
@@ -41,7 +42,7 @@ export async function alarm_listener(alarm) {
 
   if (alarm.name === 'archive') {
     const ma = await openModelAccess(/* writable*/ true);
-    await ma.archiveEntries();
+    await archive_entries(ma.conn, ma.channel, undefined);
     ma.close();
   } else if (alarm.name === 'poll') {
     if (ls.read_boolean('only_poll_if_idle')) {

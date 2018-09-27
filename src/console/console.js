@@ -1,6 +1,7 @@
 import * as cron_control from '/src/cron/cron.js';
-import * as favicon from '/src/iconsvc/favicon.js';
 import {openModelAccess} from '/src/db/model-access.js';
+import {archive_entries} from '/src/db/op/archive-entries.js';
+import * as favicon from '/src/iconsvc/favicon.js';
 import {poll_feed, poll_feeds} from '/src/poll-feeds/poll-feeds.js';
 import {refresh_feed_icons} from '/src/refresh-feed-icons/refresh-feed-icons.js';
 import {subscribe} from '/src/subscribe/subscribe.js';
@@ -25,9 +26,9 @@ async function cli_subscribe(url_string, poll = true) {
   iconn.close();
 }
 
-async function cli_archive_entries() {
+async function cli_archive_entries(max_age) {
   const ma = await openModelAccess(/* channeled */ true);
-  await ma.archiveEntries();
+  await archive_entries(ma.conn, ma.channel, max_age);
   ma.close();
 }
 

@@ -2,21 +2,9 @@ import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import * as idbmodel from '/src/db/idb-model.js';
-import {activate_feed} from '/src/db/op/activate-feed.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {register_test} from '/test/test-registry.js';
-
-async function archive_entries_test() {
-  // TODO: insert archivable data, non-archivable data, and then assert the
-  // archivable data was archived, and that the non-archivable data was not
-  // archived
-  const conn = await idbmodel.open('archive-entries-test');
-  const max_age = 100;
-  const ids = await idbmodel.archive_entries(conn, max_age);
-  conn.close();
-  await indexeddb.remove(conn.name);
-}
 
 async function create_entry_test() {
   const conn = await idbmodel.open('create-entry-test');
@@ -138,7 +126,6 @@ async function count_unread_entries_test() {
   await indexeddb.remove(conn.name);
 }
 
-register_test(archive_entries_test);
 register_test(create_entry_test);
 register_test(create_feed_test);
 register_test(create_feed_url_constraint_test);
