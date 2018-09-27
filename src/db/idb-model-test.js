@@ -1,8 +1,9 @@
 import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
-import * as types from '/src/db/types.js';
 import * as idbmodel from '/src/db/idb-model.js';
+import {activate_feed} from '/src/db/op/activate-feed.js';
+import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {register_test} from '/test/test-registry.js';
 
@@ -13,7 +14,7 @@ async function activate_feed_test() {
 
   const conn = await idbmodel.open('activate-feed-test');
   const id = await idbmodel.create_feed(conn, feed);
-  await idbmodel.activate_feed(conn, id);
+  await activate_feed(conn, undefined, id);
   const stored_feed = await idbmodel.get_feed(conn, 'id', id);
 
   assert(types.is_feed(stored_feed));
@@ -24,7 +25,7 @@ async function activate_feed_test() {
   // Activating a feed that is already active should fail
   let activation_error;
   try {
-    await idbmodel.activate_feed(conn, id);
+    await activate_feed(conn, undefined, id);
   } catch (error) {
     activation_error = error;
   }

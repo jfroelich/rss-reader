@@ -1,8 +1,9 @@
 import * as badge from '/src/badge/badge.js';
+import {openModelAccess} from '/src/db/model-access.js';
+import {activate_feed} from '/src/db/op/activate-feed.js';
 import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
-import {openModelAccess} from '/src/db/model-access.js';
 import {fade_element} from '/src/options-page/fade-element.js';
 import * as permissions from '/src/options-page/permissions.js';
 import {poll_feed} from '/src/poll-feeds/poll-feeds.js';
@@ -401,7 +402,7 @@ async function unsubscribe_button_onclick(event) {
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const ma = await openModelAccess(/* channeled */ true);
-  await ma.activateFeed(feed_id);
+  await activate_feed(ma.conn, ma.channel, feed_id);
   ma.close();
 
   // TODO: handling the event here may be wrong, it should be done in the

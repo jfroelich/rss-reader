@@ -5,21 +5,7 @@ import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import * as types from '/src/db/types.js';
 
-export function activate_feed(conn, feed_id) {
-  function transition(feed) {
-    if (feed.active) {
-      throw new Error('Feed already active for id ' + feed_id);
-    }
 
-    feed.active = true;
-    delete feed.deactivateDate;
-    delete feed.deactivationReasonText;
-    feed.dateUpdated = new Date();
-    return feed;
-  }
-
-  return update_feed(conn, {id: feed_id}, transition);
-}
 
 export function archive_entries(conn, max_age) {
   return new Promise(archive_entries_executor.bind(null, conn, max_age));

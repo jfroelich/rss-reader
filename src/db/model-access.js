@@ -1,9 +1,9 @@
 import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
+import * as idbmodel from '/src/db/idb-model.js';
 import * as object from '/src/db/object-utils.js';
 import * as types from '/src/db/types.js';
-import * as idbmodel from '/src/db/idb-model.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
@@ -40,12 +40,6 @@ export function ModelAccess() {
   this.conn = undefined;
   this.channel = undefined;
 }
-
-ModelAccess.prototype.activateFeed = async function(feed_id) {
-  assert(feed_utils.is_valid_feed_id(feed_id));
-  await idbmodel.activate_feed(this.conn, feed_id);
-  this.channel.postMessage({type: 'feed-activated', id: feed_id});
-};
 
 ModelAccess.prototype.archiveEntries = async function(max_age = TWO_DAYS_MS) {
   const ids = await idbmodel.archive_entries(this.conn, max_age);
