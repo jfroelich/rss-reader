@@ -2,6 +2,7 @@ import assert from '/src/assert/assert.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import * as idbmodel from '/src/db/idb-model.js';
 import {activate_feed} from '/src/db/op/activate-feed.js';
+import {create_feed} from '/src/db/op/create-feed.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {register_test} from '/test/test-registry.js';
@@ -14,7 +15,7 @@ async function activate_feed_test() {
   feed_utils.append_feed_url(feed, new URL('a://b.c'));
 
   const conn = await idbmodel.open('activate-feed-test');
-  const id = await idbmodel.create_feed(conn, feed);
+  const id = await create_feed(conn, undefined, feed);
 
   // Run the primary operation of this test. This should succeed without error.
   await activate_feed(conn, undefined, id);

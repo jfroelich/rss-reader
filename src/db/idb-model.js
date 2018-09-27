@@ -4,20 +4,6 @@ import * as feed_utils from '/src/db/feed-utils.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 
-export function create_feed(conn, feed) {
-  return new Promise(create_feed_executor.bind(null, conn, feed));
-}
-
-function create_feed_executor(conn, feed, resolve, reject) {
-  let id = 0;
-  const txn = conn.transaction('feed', 'readwrite');
-  txn.onerror = event => reject(event.target.error);
-  txn.oncomplete = _ => resolve(id);
-  const store = txn.objectStore('feed');
-  const request = store.put(feed);
-  request.onsuccess = _ => id = request.result;
-}
-
 export function create_feeds(conn, feeds) {
   return new Promise(create_feeds_executor.bind(null, conn, feeds));
 }

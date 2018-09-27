@@ -47,23 +47,6 @@ ModelAccess.prototype.close = function() {
 };
 
 
-ModelAccess.prototype.createFeed = async function(feed) {
-  assert(types.is_feed(feed));
-  assert(feed.urls && feed.urls.length);
-  object.filter_empty_properties(feed);
-
-  if (feed.active === undefined) {
-    feed.active = true;
-  }
-
-  feed.dateCreated = new Date();
-  delete feed.dateUpdated;
-
-  const id = await idbmodel.create_feed(this.conn, feed);
-  this.channel.postMessage({type: 'feed-created', id: id});
-  return id;
-};
-
 ModelAccess.prototype.createFeeds = async function(feeds) {
   for (const feed of feeds) {
     assert(types.is_feed(feed));

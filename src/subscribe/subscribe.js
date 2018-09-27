@@ -1,7 +1,8 @@
+import {create_feed} from '/src/db/op/create-feed.js';
+import * as sanity from '/src/db/sanity/model-sanity.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {response_is_redirect} from '/src/fetch2/fetch2.js';
 import * as favicon from '/src/iconsvc/favicon.js';
-import * as sanity from '/src/db/sanity/model-sanity.js';
 import * as notification from '/src/notification/notification.js';
 
 // Subscribe to a feed.  Entries are excluded because it takes too long to
@@ -38,7 +39,7 @@ export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
   await set_feed_favicon(iconn, feed);
   sanity.validate_feed(feed);
   sanity.sanitize_feed(feed);
-  feed.id = await ma.createFeed(feed);
+  feed.id = await create_feed(ma.conn, ma.channel, feed);
   send_subscribe_notification(feed, should_notify);
   return feed;
 }
