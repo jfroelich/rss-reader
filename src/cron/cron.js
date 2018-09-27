@@ -41,8 +41,10 @@ export async function alarm_listener(alarm) {
   ls.write_string('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
+    // TODO: read max age from config instead of defaulting
+    let max_age;
     const ma = await openModelAccess(/* writable*/ true);
-    await archive_entries(ma.conn, ma.channel, undefined);
+    await archive_entries(ma.conn, ma.channel, max_age);
     ma.close();
   } else if (alarm.name === 'poll') {
     if (ls.read_boolean('only_poll_if_idle')) {

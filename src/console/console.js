@@ -27,6 +27,9 @@ async function cli_subscribe(url_string, poll = true) {
 }
 
 async function cli_archive_entries(max_age) {
+  // TODO: if max_age parameter is not set, try reading in the config value
+  // next
+
   const ma = await openModelAccess(/* channeled */ true);
   await archive_entries(ma.conn, ma.channel, max_age);
   ma.close();
