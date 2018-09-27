@@ -1,5 +1,6 @@
 import * as feed_utils from '/src/db/feed-utils.js';
 import {openModelAccess} from '/src/db/model-access.js';
+import {create_feeds} from '/src/db/op/create-feeds.js';
 import * as string from '/src/string/string.js';
 
 export function prompt() {
@@ -28,7 +29,7 @@ export async function import_files(ma, files) {
     return feed;
   });
 
-  return ma.createFeeds(feeds);
+  return create_feeds(ma.conn, ma.channel, feeds);
 }
 
 function read_files(files) {

@@ -33,35 +33,6 @@ async function create_feed_url_constraint_test() {
   await indexeddb.remove(conn.name);
 }
 
-async function create_feeds_test() {
-  const conn = await idbmodel.open('create-feeds-test');
-
-  const num_feeds = 3;
-  const feeds = [];
-  for (let i = 0; i < num_feeds; i++) {
-    const feed = feed_utils.create_feed();
-    feed_utils.append_feed_url(feed, new URL('a://b.c' + i));
-    feeds.push(feed);
-  }
-
-  const ids = await idbmodel.create_feeds(conn, feeds);
-  assert(ids.length === num_feeds, '' + ids);
-
-  const stored_feeds = await idbmodel.get_feeds(conn, 'all');
-  assert(stored_feeds.length === num_feeds);
-
-  // Exercise the id check
-  const get_proms = ids.map(id => idbmodel.get_feed(conn, 'id', id));
-  const feeds_by_id = await Promise.all(get_proms);
-  for (const feed of feeds_by_id) {
-    assert(types.is_feed(feed));
-    assert(feed_utils.is_valid_feed_id(feed.id));
-  }
-
-  conn.close();
-  await indexeddb.remove(conn.name);
-}
-
 async function count_unread_entries_test() {
   const conn = await idbmodel.open('count-unread-entries-test');
   let count = await idbmodel.count_unread_entries(conn);
@@ -99,5 +70,4 @@ async function count_unread_entries_test() {
 }
 
 register_test(create_feed_url_constraint_test);
-register_test(create_feeds_test);
 register_test(count_unread_entries_test);

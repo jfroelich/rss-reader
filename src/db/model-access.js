@@ -46,32 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-
-ModelAccess.prototype.createFeeds = async function(feeds) {
-  for (const feed of feeds) {
-    assert(types.is_feed(feed));
-    assert(feed.urls && feed.urls.length);
-
-    object.filter_empty_properties(feed);
-
-    if (feed.active === undefined) {
-      feed.active = true;
-    }
-
-    feed.dateCreated = new Date();
-    delete feed.dateUpdated;
-  }
-
-  const ids = await idbmodel.create_feeds(this.conn, feeds);
-  for (const id of ids) {
-    this.channel.postMessage({type: 'feed-created', id: id});
-  }
-
-  // NOTE: this was previously a bug, this must return the set of new ids, not
-  // undefined, null, or an array of feed objects
-  return ids;
-};
-
 ModelAccess.prototype.countUnreadEntries = function() {
   return idbmodel.count_unread_entries(this.conn);
 };

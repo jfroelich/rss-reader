@@ -4,27 +4,6 @@ import * as feed_utils from '/src/db/feed-utils.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 
-export function create_feeds(conn, feeds) {
-  return new Promise(create_feeds_executor.bind(null, conn, feeds));
-}
-
-function create_feeds_executor(conn, feeds, resolve, reject) {
-  const ids = [];
-  const txn = conn.transaction('feed', 'readwrite');
-  txn.onerror = event => reject(event.target.error);
-  txn.oncomplete = _ => resolve(ids);
-
-  function request_onsuccess(event) {
-    ids.push(event.target.result);
-  }
-
-  const store = txn.objectStore('feed');
-  for (const feed of feeds) {
-    const request = store.put(feed);
-    request.onsuccess = request_onsuccess;
-  }
-}
-
 export function count_unread_entries(conn) {
   return new Promise(count_unread_entries_executor.bind(null, conn));
 }
