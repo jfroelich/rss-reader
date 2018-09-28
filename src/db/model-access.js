@@ -46,10 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-ModelAccess.prototype.countUnreadEntries = function() {
-  return idbmodel.count_unread_entries(this.conn);
-};
-
 ModelAccess.prototype.deactivateFeed = async function(feed_id, reason) {
   assert(feed_utils.is_valid_feed_id(feed_id));
   await idbmodel.deactivate_feed(this.conn, feed_id, reason);

@@ -3,6 +3,7 @@ import '/src/color-contrast-filter/color-contrast-filter-test.js';
 import '/src/condense-tagnames-filter/coerce-element-test.js';
 import '/src/db/op/activate-feed-test.js';
 import '/src/db/op/archive-entries-test.js';
+import '/src/db/op/count-unread-entries-test.js';
 import '/src/db/op/create-entry-test.js';
 import '/src/db/op/create-feed-test.js';
 import '/src/db/op/create-feeds.js';

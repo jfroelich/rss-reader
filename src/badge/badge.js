@@ -1,5 +1,6 @@
 import ExtensionLock from '/src/badge/extension-lock.js';
 import {openModelAccess} from '/src/db/model-access.js';
+import {count_unread_entries} from '/src/db/op/count-unread-entries.js';
 
 export function install_listener(event) {
   console.debug('Install listener received event, refreshing badge');
@@ -25,7 +26,7 @@ export async function refresh(lock_value) {
     lock.acquire(/* unlock_deadline */ 5000);
 
     const ma = await openModelAccess(/* channeled */ false);
-    const count = await ma.countUnreadEntries();
+    const count = await count_unread_entries(ma.conn);
     ma.close();
 
     const text = count > 999 ? '1k+' : '' + count;
