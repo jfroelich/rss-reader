@@ -215,11 +215,21 @@ async function handle_fetch_error(ma, error, feed, threshold) {
 }
 
 function dedup_entries(entries) {
+  if (!entries) {
+    console.warn('entries is not defined but should be');
+    return [];
+  }
+
   const distinct_entries = [];
   const seen_url_strings = [];
 
   for (const entry of entries) {
-    if (!entry.urls || entry.length.length < 1) {
+    if (!entry) {
+      console.warn('undefined entry in entries list');
+      continue;
+    }
+
+    if (!entry.urls || entry.urls.length < 1) {
       distinct_entries.push(entry);
       continue;
     }
