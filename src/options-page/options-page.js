@@ -1,6 +1,7 @@
 import * as badge from '/src/badge/badge.js';
 import {openModelAccess} from '/src/db/model-access.js';
 import {activate_feed} from '/src/db/op/activate-feed.js';
+import {deactivate_feed} from '/src/db/op/deactivate-feed.js';
 import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
@@ -422,7 +423,7 @@ async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
   const ma = await openModelAccess(/* channeled */ true);
   const reason = 'manual';
-  await ma.deactivateFeed(feed_id, reason);
+  await deactivate_feed(ma.conn, ma.channel, feed_id, reason);
   ma.close();
 
   // Deactivate the corresponding element in the view

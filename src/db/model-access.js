@@ -46,12 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-ModelAccess.prototype.deactivateFeed = async function(feed_id, reason) {
-  assert(feed_utils.is_valid_feed_id(feed_id));
-  await idbmodel.deactivate_feed(this.conn, feed_id, reason);
-  this.channel.postMessage({type: 'feed-deactivated', id: feed_id});
-};
-
 ModelAccess.prototype.deleteEntry = async function(id, reason) {
   assert(entry_utils.is_valid_entry_id(id));
   await idbmodel.delete_entry(this.conn, id);

@@ -4,22 +4,6 @@ import * as feed_utils from '/src/db/feed-utils.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 
-export function deactivate_feed(conn, feed_id, reason) {
-  function transition(feed) {
-    if (!feed.active) {
-      throw new Error('Cannot deactivate inactive feed with id ' + feed.id);
-    }
-
-    const now = new Date();
-    feed.deactivationReasonText = reason;
-    feed.deactivateDate = now;
-    feed.dateUpdated = now;
-    feed.active = false;
-    return feed;
-  }
-
-  return update_feed(conn, {id: feed_id}, transition);
-}
 
 export function delete_entry(conn, entry_id) {
   return new Promise(delete_entry_executor.bind(null, conn, entry_id));
