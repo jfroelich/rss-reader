@@ -35,3 +35,4 @@ Font license information:
 * Fanwood https://www.theleagueofmoveabletype.com/
 * League Mono Regular https://www.theleagueofmoveabletype.com/
 * League Spartan https://www.theleagueofmoveabletype.com/
+* Merriweather OFL

@@ -1,3 +1,4 @@
+import * as config from '/src/config/config.js';
 import * as cron_control from '/src/cron/cron.js';
 import {openModelAccess} from '/src/db/model-access.js';
 import {archive_entries} from '/src/db/op/archive-entries.js';
@@ -105,6 +106,10 @@ function cli_compact_icons() {
   return favicon.compact();
 }
 
+function cli_install_fonts() {
+  config.install_fonts();
+}
+
 const cli = {
   create_alarms: cli_create_alarms,
   clear_alarms: cli_clear_alarms,
@@ -112,6 +117,7 @@ const cli = {
   archive: cli_archive_entries,
   clear_icons: cli_clear_icons,
   compact_icons: cli_compact_icons,
+  install_fonts: cli_install_fonts,
   remove_orphaned_entries: cli_remove_orphans,
   remove_lost_entries: cli_remove_lost_entries,
   lookup_favicon: cli_lookup_favicon,

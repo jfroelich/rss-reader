@@ -1,4 +1,9 @@
 @font-face {
+  font-family: Merriweather Regular;
+  src: url('/fonts/Merriweather-Regular.ttf') format('truetype');
+}
+
+@font-face {
   font-family: Edward Tufte Roman;
   src: url('/fonts/et-book-roman-line-figures.ttf') format('truetype');
 }

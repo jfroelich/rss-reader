@@ -2,6 +2,9 @@ import assert from '/src/assert/assert.js';
 import * as color from '/src/color/color.js';
 import * as ls from '/src/localstorage/localstorage.js';
 
+// TODO: turns out adding a font is difficult, this needs to be changed so that
+// I can add a font and it gets stored in local storage
+
 // React to the extension being installed or updated, or when chrome is updated,
 // to do ls related things. Note that this listener should be bound before
 // other listeners that depend on configuration setup.
@@ -112,6 +115,10 @@ export function init_config(event) {
   // clang-format on
   ls.write_array('background_images', background_images);
 
+  install_fonts();
+}
+
+export function install_fonts() {
   // Install default fonts
   // clang-format off
   const fonts = [
@@ -125,6 +132,7 @@ export function init_config(event) {
     'Georgia',
     'League Mono Regular',
     'League Spartan',
+    'Merriweather Regular',
     'Montserrat',
     'Noto Sans',
     'Open Sans Regular',
