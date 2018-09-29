@@ -3,6 +3,7 @@ import {set_base_uri} from '/src/base-uri/base-uri.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import {create_entry} from '/src/db/op/create-entry.js';
+import {get_entry} from '/src/db/op/get-entry.js';
 import * as sanity from '/src/db/sanity/model-sanity.js';
 import * as types from '/src/db/types.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
@@ -287,7 +288,7 @@ export async function poll_entry(
   entry_utils.append_entry_url(entry, rewrite_url(url, rewrite_rules));
 
   url = new URL(entry.urls[entry.urls.length - 1]);
-  let existing_entry = await ma.getEntry('url', url, true);
+  let existing_entry = await get_entry(ma.conn, 'url', url, true);
   if (existing_entry) {
     throw new EntryExistsError('Entry already exists for url ' + url.href);
   }
@@ -304,8 +305,6 @@ export async function poll_entry(
     }
   }
 
-  const get_mode = 'url', key_only = true;
-
   // If we fetched and redirected, append the post-redirect response url, and
   // reapply url rewriting.
   let document;
@@ -318,7 +317,7 @@ export async function poll_entry(
       entry_utils.append_entry_url(
           entry, rewrite_url(response_url, rewrite_rules));
       url = new URL(entry.urls[entry.urls.length - 1]);
-      existing_entry = await ma.getEntry(get_mode, url, key_only);
+      existing_entry = await get_entry(ma.conn, 'url', url, true);
       if (existing_entry) {
         throw new EntryExistsError(
             'Entry exists for redirected url ' + url.href);

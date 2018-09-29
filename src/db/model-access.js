@@ -47,12 +47,6 @@ ModelAccess.prototype.close = function() {
 };
 
 
-ModelAccess.prototype.getEntry = function(mode = 'id', value, key_only) {
-  assert(mode !== 'id' || entry_utils.is_valid_entry_id(value));
-  assert(mode !== 'id' || !key_only);
-  return idbmodel.get_entry(this.conn, mode, value, key_only);
-};
-
 ModelAccess.prototype.getFeedIds = function() {
   return idbmodel.get_feed_ids(this.conn);
 };
