@@ -3,6 +3,7 @@ import * as feed_utils from '/src/db/feed-utils.js';
 import * as idbmodel from '/src/db/idb-model.js';
 import {activate_feed} from '/src/db/op/activate-feed.js';
 import {create_feed} from '/src/db/op/create-feed.js';
+import {get_feed} from '/src/db/op/get-feed.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {register_test} from '/src/test/test-registry.js';
@@ -20,7 +21,7 @@ async function activate_feed_test() {
   // Run the primary operation of this test. This should succeed without error.
   await activate_feed(conn, undefined, id);
 
-  const stored_feed = await idbmodel.get_feed(conn, 'id', id);
+  const stored_feed = await get_feed(conn, 'id', id, false);
 
   // Activation should not have somehow destroyed type info
   assert(types.is_feed(stored_feed));

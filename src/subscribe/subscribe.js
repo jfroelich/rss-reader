@@ -1,11 +1,11 @@
 import {create_feed} from '/src/db/op/create-feed.js';
 import {delete_feed} from '/src/db/op/delete-feed.js';
+import {get_feed} from '/src/db/op/get-feed.js';
 import * as sanity from '/src/db/sanity/model-sanity.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {response_is_redirect} from '/src/fetch2/fetch2.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as notification from '/src/notification/notification.js';
-
 
 // Subscribe to a feed.  Entries are excluded because it takes too long to
 // process them on initial subscribe.
@@ -77,7 +77,7 @@ async function fetch_feed_without_entries(url, timeout) {
 
 async function model_has_feed_url(ma, url) {
   const key_only = true;
-  const feed = await ma.getFeed('url', url, key_only);
+  const feed = await get_feed(ma.conn, 'url', url, key_only);
   return feed ? true : false;
 }
 

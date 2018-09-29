@@ -46,14 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-ModelAccess.prototype.getFeed = function(mode = 'id', value, key_only) {
-  assert(mode !== 'url' || (value && typeof value.href === 'string'));
-  assert(mode !== 'id' || feed_utils.is_valid_feed_id(value));
-  assert(mode !== 'id' || !key_only);
-
-  return idbmodel.get_feed(this.conn, mode, value, key_only);
-};
-
 ModelAccess.prototype.getFeeds = async function(mode = 'all', sort = false) {
   let feeds = await idbmodel.get_feeds(this.conn);
 

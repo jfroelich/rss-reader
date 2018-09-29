@@ -2,6 +2,7 @@ import assert from '/src/assert/assert.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import * as idbmodel from '/src/db/idb-model.js';
 import {create_feeds} from '/src/db/op/create-feeds.js';
+import {get_feed} from '/src/db/op/get-feed.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {register_test} from '/src/test/test-registry.js';
@@ -24,7 +25,7 @@ async function create_feeds_test() {
   assert(stored_feeds.length === num_feeds);
 
   // Exercise the id check
-  const get_proms = ids.map(id => idbmodel.get_feed(conn, 'id', id));
+  const get_proms = ids.map(id => get_feed(conn, 'id', id, false));
   const feeds_by_id = await Promise.all(get_proms);
   for (const feed of feeds_by_id) {
     assert(types.is_feed(feed));

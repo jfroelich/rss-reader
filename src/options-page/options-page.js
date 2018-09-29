@@ -2,6 +2,7 @@ import * as badge from '/src/badge/badge.js';
 import {openModelAccess} from '/src/db/model-access.js';
 import {activate_feed} from '/src/db/op/activate-feed.js';
 import {deactivate_feed} from '/src/db/op/deactivate-feed.js';
+import {get_feed} from '/src/db/op/get-feed.js';
 import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
@@ -226,7 +227,7 @@ async function feed_list_item_onclick(event) {
   const feed_id = parseInt(feed_id_string, 10);
 
   const ma = await openModelAccess(/* channeled */ false);
-  const feed = await ma.getFeed('id', feed_id);
+  const feed = await get_feed(ma.conn, 'id', feed_id, false);
   ma.close();
 
   const title_element = document.getElementById('details-title');
