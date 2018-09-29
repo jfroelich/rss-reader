@@ -5,16 +5,6 @@ import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 
 
-export function delete_entry(conn, entry_id) {
-  return new Promise(delete_entry_executor.bind(null, conn, entry_id));
-}
-
-function delete_entry_executor(conn, entry_id, resolve, reject) {
-  const txn = conn.transaction('entry', 'readwrite');
-  txn.oncomplete = resolve;
-  txn.onerror = event => reject(event.target.error);
-  txn.objectStore('entry').delete(entry_id);
-}
 
 export function delete_feed(conn, feed_id) {
   return new Promise(delete_feed_executor.bind(null, conn, feed_id));

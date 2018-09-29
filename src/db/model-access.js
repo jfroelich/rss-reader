@@ -46,11 +46,7 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-ModelAccess.prototype.deleteEntry = async function(id, reason) {
-  assert(entry_utils.is_valid_entry_id(id));
-  await idbmodel.delete_entry(this.conn, id);
-  this.channel.postMessage({type: 'entry-deleted', id: id, reason: reason});
-};
+
 
 ModelAccess.prototype.deleteFeed = async function(feed_id, reason) {
   assert(feed_utils.is_valid_feed_id(feed_id));
