@@ -1,5 +1,4 @@
 import assert from '/src/assert/assert.js';
-import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import * as idbmodel from '/src/db/idb-model.js';
 import * as object from '/src/db/object-utils.js';
@@ -46,18 +45,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-ModelAccess.prototype.updateEntry = async function(entry) {
-  assert(types.is_entry(entry));
-  assert(entry_utils.is_valid_entry_id(entry.id));
-
-  // TODO: should this be asserting entry.urls similar to updateFeed?
-
-  entry.dateUpdated = new Date();
-  object.filter_empty_properties(entry);
-
-  await idbmodel.update_entry(this.conn, entry);
-  this.channel.postMessage({type: 'entry-updated', id: entry.id});
-};
 
 ModelAccess.prototype.updateFeed = async function(feed) {
   assert(types.is_feed(feed));

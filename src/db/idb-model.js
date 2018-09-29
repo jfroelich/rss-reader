@@ -96,19 +96,6 @@ function add_active_field_to_feeds(store) {
   };
 }
 
-
-
-export function update_entry(conn, entry) {
-  return new Promise(update_entry_executor.bind(null, conn, entry));
-}
-
-function update_entry_executor(conn, entry, resolve, reject) {
-  const txn = conn.transaction('entry', 'readwrite');
-  txn.oncomplete = resolve;
-  txn.onerror = event => reject(event.target.error);
-  txn.objectStore('entry').put(entry);
-}
-
 export function update_feed(conn, feed, transition) {
   return new Promise(update_feed_executor.bind(null, conn, feed, transition));
 }
