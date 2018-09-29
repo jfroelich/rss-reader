@@ -46,10 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-ModelAccess.prototype.iterateEntries = function(handle_entry) {
-  assert(typeof handle_entry === 'function');
-  return idbmodel.iterate_entries(this.conn, handle_entry);
-};
 
 ModelAccess.prototype.markEntryRead = async function(entry_id) {
   assert(entry_utils.is_valid_entry_id(entry_id));

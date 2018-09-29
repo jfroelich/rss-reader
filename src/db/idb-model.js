@@ -4,35 +4,9 @@ import * as feed_utils from '/src/db/feed-utils.js';
 import {delete_feed} from '/src/db/op/delete-feed.js';
 import {get_feed_ids} from '/src/db/op/get-feed-ids.js';
 import {get_feeds} from '/src/db/op/get-feeds.js';
+import {iterate_entries} from '/src/db/op/iterate-entries.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
-
-export function iterate_entries(conn, handle_entry) {
-  return new Promise(iterate_entries_executor.bind(null, conn, handle_entry));
-}
-
-function iterate_entries_executor(conn, handle_entry, resolve, reject) {
-  const txn = conn.transaction('entry', 'readwrite');
-  txn.oncomplete = resolve;
-  txn.onerror = event => reject(event.target.error);
-  const store = txn.objectStore('entry');
-  const request = store.openCursor();
-
-  request.onsuccess = _ => {
-    const cursor = request.result;
-    if (!cursor) {
-      return;
-    }
-
-    try {
-      handle_entry(cursor);
-    } catch (error) {
-      console.warn(error);
-    }
-
-    cursor.continue();
-  };
-}
 
 export function mark_entry_read(conn, entry_id) {
   return new Promise(mark_entry_read_executor.bind(null, conn, entry_id));
@@ -229,7 +203,7 @@ export async function remove_untyped_objects(conn) {
     }
   }
 
-  await this.iterateEntries(conn, cursor => {
+  await iterate_entries(conn, cursor => {
     const entry = cursor.value;
     if (!types.is_entry(entry)) {
       removed_entry_ids.push(entry.id);
