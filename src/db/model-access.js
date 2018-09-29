@@ -44,16 +44,3 @@ ModelAccess.prototype.close = function() {
   }
   this.conn.close();
 };
-
-
-ModelAccess.prototype.updateFeed = async function(feed) {
-  assert(types.is_feed(feed));
-  assert(feed.urls && feed.urls.length);
-  assert(feed_utils.is_valid_feed_id(feed.id));
-
-  object.filter_empty_properties(feed);
-  feed.dateUpdated = new Date();
-
-  await idbmodel.update_feed(this.conn, feed);
-  this.channel.postMessage({type: 'feed-updated', id: feed.id});
-};

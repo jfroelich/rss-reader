@@ -1,4 +1,5 @@
 import {get_feeds} from '/src/db/op/get-feeds.js';
+import {update_feed} from '/src/db/op/update-feed.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 
 // Update the favicon for each of the active feeds in the database
@@ -34,6 +35,6 @@ async function refresh_feed_icon(ma, iconn, feed) {
       delete feed.faviconURLString;
     }
 
-    await ma.updateFeed(feed);
+    await update_feed(ma.conn, ma.channel, feed);
   }
 }

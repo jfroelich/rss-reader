@@ -5,6 +5,7 @@ import * as feed_utils from '/src/db/feed-utils.js';
 import {create_entry} from '/src/db/op/create-entry.js';
 import {get_entry} from '/src/db/op/get-entry.js';
 import {get_feeds} from '/src/db/op/get-feeds.js';
+import {update_feed} from '/src/db/op/update-feed.js';
 import * as sanity from '/src/db/sanity/model-sanity.js';
 import * as types from '/src/db/types.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
@@ -19,6 +20,7 @@ import {build as build_rewrite_rules} from '/src/poll-feeds/rewrite-rules.js';
 import {rewrite_url} from '/src/poll-feeds/rewrite-url.js';
 import * as sniff from '/src/poll-feeds/sniff.js';
 import {sanitize_document} from '/src/sandoc/sandoc.js';
+
 
 const default_options = {
   ignore_recency_check: false,
@@ -100,7 +102,7 @@ export async function poll_feed(ma, iconn, options = {}, feed) {
   handle_fetch_success(merged_feed);
   sanity.validate_feed(merged_feed);
   sanity.sanitize_feed(merged_feed);
-  await ma.updateFeed(merged_feed);
+  await update_feed(ma.conn, ma.channel, merged_feed);
 
   const count = await poll_entries(
       ma, iconn, rewrite_rules, options, response.entries, merged_feed);
@@ -213,7 +215,7 @@ async function handle_fetch_error(ma, error, feed, threshold) {
   }
 
   // No need to validate/sanitize, we've had control for the entire lifetime
-  await ma.updateFeed(feed);
+  await update_feed(ma.conn, ma.channel, feed);
 }
 
 function dedup_entries(entries) {
