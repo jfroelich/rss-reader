@@ -46,19 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-
-
-ModelAccess.prototype.deleteFeed = async function(feed_id, reason) {
-  assert(feed_utils.is_valid_feed_id(feed_id));
-  const entry_ids = await idbmodel.delete_feed(this.conn, feed_id);
-
-  this.channel.postMessage({type: 'feed-deleted', id: feed_id, reason: reason});
-  for (const id of entry_ids) {
-    this.channel.postMessage(
-        {type: 'entry-deleted', id: id, reason: reason, feed_id: feed_id});
-  }
-};
-
 ModelAccess.prototype.getEntries = function(mode = 'all', offset, limit) {
   assert(
       offset === null || offset === undefined || offset === NaN ||

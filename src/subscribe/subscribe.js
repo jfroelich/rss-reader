@@ -1,9 +1,11 @@
 import {create_feed} from '/src/db/op/create-feed.js';
+import {delete_feed} from '/src/db/op/delete-feed.js';
 import * as sanity from '/src/db/sanity/model-sanity.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {response_is_redirect} from '/src/fetch2/fetch2.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as notification from '/src/notification/notification.js';
+
 
 // Subscribe to a feed.  Entries are excluded because it takes too long to
 // process them on initial subscribe.
@@ -80,7 +82,7 @@ async function model_has_feed_url(ma, url) {
 }
 
 export function unsubscribe(ma, feed_id) {
-  return ma.deleteFeed(feed_id, 'unsubscribe');
+  return delete_feed(ma.conn, ma.channel, feed_id, 'unsubscribe');
 }
 
 export class ConstraintError extends Error {
