@@ -1,10 +1,10 @@
 import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 
-export function get_entry(conn, mode = 'id', value, key_only) {
+export function get_entry(session, mode = 'id', value, key_only) {
   assert(mode !== 'id' || entry_utils.is_valid_entry_id(value));
   assert(mode !== 'id' || !key_only);
-  return get_entry_internal(conn, mode, value, key_only);
+  return get_entry_internal(session.conn, mode, value, key_only);
 }
 
 function get_entry_internal(conn, mode, value, key_only) {

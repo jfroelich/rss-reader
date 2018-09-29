@@ -49,7 +49,7 @@ export async function alarm_listener(alarm) {
     // TODO: read max age from config instead of defaulting
     let max_age;
     const session = await db.open_with_channel();
-    await archive_entries(session.conn, session.channel, max_age);
+    await archive_entries(session, max_age);
     session.close();
   } else if (alarm.name === 'poll') {
     if (ls.read_boolean('only_poll_if_idle')) {
@@ -69,15 +69,15 @@ export async function alarm_listener(alarm) {
     iconn.close();
   } else if (alarm.name === 'remove-entries-missing-urls') {
     const session = await db.open_with_channel();
-    await remove_lost_entries(session.conn, session.channel);
+    await remove_lost_entries(session);
     session.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
     const session = await db.open_with_channel();
-    await remove_orphaned_entries(session.conn, session.channel);
+    await remove_orphaned_entries(session);
     session.close();
   } else if (alarm.name === 'remove-untyped-objects') {
     const session = await db.open_with_channel();
-    await remove_untyped_objects(session.conn, session.channel);
+    await remove_untyped_objects(session);
     session.close();
   } else if (alarm.name === 'refresh-feed-icons') {
     const proms = [await db.open_with_channel(), favicon.open()];

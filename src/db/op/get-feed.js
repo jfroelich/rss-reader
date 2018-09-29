@@ -1,12 +1,12 @@
 import assert from '/src/assert/assert.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 
-export function get_feed(conn, mode = 'id', value, key_only) {
+export function get_feed(session, mode = 'id', value, key_only) {
   assert(mode !== 'url' || (value && typeof value.href === 'string'));
   assert(mode !== 'id' || feed_utils.is_valid_feed_id(value));
   assert(mode !== 'id' || !key_only);
 
-  return get_feed_internal(conn, mode, value, key_only);
+  return get_feed_internal(session.conn, mode, value, key_only);
 }
 
 function get_feed_internal(conn, mode, value, key_only) {

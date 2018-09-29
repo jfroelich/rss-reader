@@ -1,5 +1,5 @@
-export function get_feed_ids(conn) {
-  return new Promise(get_feed_ids_executor.bind(null, conn));
+export function get_feed_ids(session) {
+  return new Promise(get_feed_ids_executor.bind(null, session.conn));
 }
 
 function get_feed_ids_executor(conn, resolve, reject) {

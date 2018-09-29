@@ -26,17 +26,17 @@ async function create_feed_test() {
   const feed = feed_utils.create_feed();
   const feed_url = new URL('http://www.example.com/example.rss');
   feed_utils.append_feed_url(feed, feed_url);
-  const stored_feed_id = await create_feed(session.conn, session.channel, feed);
+  const stored_feed_id = await create_feed(session, feed);
 
   // Verify the generated id looks valid
   assert(feed_utils.is_valid_feed_id(stored_feed_id));
 
   // Verify the feed is findable by url
-  let stored_feed = await get_feed(session.conn, 'url', feed_url, true);
+  let stored_feed = await get_feed(session, 'url', feed_url, true);
   assert(types.is_feed(stored_feed));
 
   // Verify the feed is findable by id
-  stored_feed = await get_feed(session.conn, 'id', stored_feed_id, false);
+  stored_feed = await get_feed(session, 'id', stored_feed_id, false);
   assert(types.is_feed(stored_feed));
 
   // Test teardown
@@ -58,7 +58,7 @@ async function create_feed_url_constraint_test() {
   const feed1 = feed_utils.create_feed();
   feed_utils.append_feed_url(
       feed1, new URL('http://www.example.com/example.rss'));
-  await create_feed(session.conn, session.channel, feed1);
+  await create_feed(session, feed1);
 
   // Generate and store a second feed with the same url
   const feed2 = feed_utils.create_feed();
@@ -68,7 +68,7 @@ async function create_feed_url_constraint_test() {
   // Call and trap the error. This should fail.
   let create_error;
   try {
-    await create_feed(session.conn, session.channel, feed2);
+    await create_feed(session, feed2);
   } catch (error) {
     create_error = error;
   }

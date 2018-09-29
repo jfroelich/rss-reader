@@ -15,7 +15,7 @@ async function archive_entries_test() {
   const db_name = 'archive-entries-test';
   const session = await db.open(db_name);
   const max_age = 100;
-  const ids = await archive_entries(session.conn, session.channel, max_age);
+  const ids = await archive_entries(session, max_age);
   session.close();
   await db.remove(db_name);
 }

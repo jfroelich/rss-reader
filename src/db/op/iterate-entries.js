@@ -1,8 +1,8 @@
 import assert from '/src/assert/assert.js';
 
-export function iterate_entries(conn, handle_entry) {
+export function iterate_entries(session, handle_entry) {
   assert(typeof handle_entry === 'function');
-  return iterate_entries_internal(conn, handle_entry);
+  return iterate_entries_internal(session.conn, handle_entry);
 }
 
 // TODO: inline, this is temporary form during transition away from older design

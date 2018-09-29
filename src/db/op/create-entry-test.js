@@ -14,11 +14,11 @@ async function create_entry_test() {
   // TODO: if I impose urls constraint on create-entry then I will need to
   // append a dummy url here
   const entry = entry_utils.create_entry();
-  const id = await create_entry(session.conn, session.channel, entry);
+  const id = await create_entry(session, entry);
 
   // Load the entry from the database corresponding to the generated id and
   // verify the state of its properties
-  const stored_entry = await get_entry(session.conn, 'id', id, false);
+  const stored_entry = await get_entry(session, 'id', id, false);
 
   // We should have matched an object
   assert(stored_entry);

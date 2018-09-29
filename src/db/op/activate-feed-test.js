@@ -12,19 +12,20 @@ import {register_test} from '/src/test/test-registry.js';
 
 // Verify the activate-feed function works as expected
 async function activate_feed_test() {
-  // Create a database and store an inactive feed within it.
+  // Test setup
+  const db_name = 'activate-feed-test';
+  const session = await db.open(db_name);
+
+  // Create an inactive feed and store it
   const feed = feed_utils.create_feed();
   feed.active = false;
   feed_utils.append_feed_url(feed, new URL('a://b.c'));
-
-  const session = await db.open('activate-feed-test');
-
-  const id = await create_feed(session.conn, session.channel, feed);
+  const id = await create_feed(session, feed);
 
   // Run the primary operation of this test. This should succeed without error.
-  await activate_feed(session.conn, session.channel, id);
+  await activate_feed(session, id);
 
-  const stored_feed = await get_feed(session.conn, 'id', id, false);
+  const stored_feed = await get_feed(session, 'id', id, false);
 
   // Activation should not have somehow destroyed type info
   assert(types.is_feed(stored_feed));
@@ -44,14 +45,13 @@ async function activate_feed_test() {
   // a different type of error is occurring
   let activation_error;
   try {
-    await activate_feed(session.conn, session.channel, id);
+    await activate_feed(session, id);
   } catch (error) {
     activation_error = error;
   }
   assert(activation_error);
 
-
-  const db_name = session.conn.name;
+  // Test teardown
   session.close();
   await db.remove(db_name);
 }

@@ -1,5 +1,5 @@
-export async function get_feeds(conn, mode = 'all', sort = false) {
-  let feeds = await get_feeds_internal(conn);
+export async function get_feeds(session, mode = 'all', sort = false) {
+  let feeds = await get_feeds_internal(session.conn);
 
   if (mode === 'active') {
     feeds = feeds.filter(feed => feed.active);

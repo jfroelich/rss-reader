@@ -32,7 +32,7 @@ export async function mark_slide_read_start(session, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  await mark_entry_read(session.conn, session.channel, entry_id);
+  await mark_entry_read(session, entry_id);
 }
 
 // This should be called once the view acknowledges it has received the message

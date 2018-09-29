@@ -1,26 +1,24 @@
 import {iterate_entries} from '/src/db/op/iterate-entries.js';
 
-export async function remove_lost_entries(conn, channel) {
-  const ids = await remove_lost_entries_internal(conn);
+export async function remove_lost_entries(session) {
+  const ids = [];
+  const handle_entry_bound = handle_entry.bind(null, ids);
+  await iterate_entries(session, handle_entry_bound);
 
-  if (channel) {
+  if (session.channel) {
     for (const id of ids) {
-      channel.postMessage({type: 'entry-deleted', id: id, reason: 'lost'});
+      const message = {type: 'entry-deleted', id: id, reason: 'lost'};
+      session.channel.postMessage(message);
     }
   }
 
   return ids;
 }
 
-// TODO: inline
-async function remove_lost_entries_internal(conn) {
-  const deleted_ids = [];
-  await iterate_entries(conn, cursor => {
-    const entry = cursor.value;
-    if (!entry.urls || !entry.urls.length) {
-      cursor.delete();
-      deleted_ids.push(entry.id);
-    }
-  });
-  return deleted_ids;
+function handle_entry(ids, cursor) {
+  const entry = cursor.value;
+  if (!entry.urls || !entry.urls.length) {
+    cursor.delete();
+    ids.push(entry.id);
+  }
 }

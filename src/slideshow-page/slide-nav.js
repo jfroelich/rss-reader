@@ -25,7 +25,7 @@ export async function show_next_slide() {
   if (slide_unread_count < 3) {
     const limit = ls.read_int('initial_entry_load_limit');
     const mode = 'viewable';
-    entries = await get_entries(session.conn, mode, slide_unread_count, limit);
+    entries = await get_entries(session, mode, slide_unread_count, limit);
   }
   session.close();
 

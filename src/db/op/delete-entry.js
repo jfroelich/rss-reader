@@ -1,14 +1,13 @@
 import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 
-// TODO: is this even in use?
-
-export async function delete_entry(conn, channel, id, reason) {
+export async function delete_entry(session, id, reason) {
   assert(entry_utils.is_valid_entry_id(id));
-  await delete_entry_internal(conn, id);
+  await delete_entry_internal(session.conn, id);
 
-  if (channel) {
-    channel.postMessage({type: 'entry-deleted', id: id, reason: reason});
+  if (session.channel) {
+    const message = {type: 'entry-deleted', id: id, reason: reason};
+    session.channel.postMessage(message);
   }
 }
 

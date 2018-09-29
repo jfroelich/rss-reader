@@ -31,7 +31,7 @@ export async function import_files(session, files) {
     return feed;
   });
 
-  return create_feeds(session.conn, session.channel, feeds);
+  return create_feeds(session, feeds);
 }
 
 function read_files(files) {

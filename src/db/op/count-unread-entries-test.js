@@ -10,7 +10,7 @@ async function count_unread_entries_test() {
   const session = await db.open(db_name);
 
   // Assert that the count of an empty database is in fact 0
-  let count = await count_unread_entries(session.conn);
+  let count = await count_unread_entries(session);
   assert(count === 0);
 
   // Generate some unread entries
@@ -35,14 +35,14 @@ async function count_unread_entries_test() {
   // Store both the read and unread entries
   const insert_promises = [];
   for (const entry of entries_to_insert) {
-    const promise = create_entry(session.conn, session.channel, entry);
+    const promise = create_entry(session, entry);
     insert_promises.push(promise);
   }
   await Promise.all(insert_promises);
 
   // Assert the count of unread entries is equal to the number of inserted
   // unread entries.
-  count = await count_unread_entries(session.conn);
+  count = await count_unread_entries(session);
   assert(count === insert_unread_count);
 
   // Test teardown

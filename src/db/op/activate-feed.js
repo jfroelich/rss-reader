@@ -2,34 +2,17 @@ import assert from '/src/assert/assert.js';
 import {is_valid_feed_id} from '/src/db/feed-utils.js';
 import {update_feed} from '/src/db/op/update-feed.js';
 
-// TODO: in hindsight, i think this should be decoupled from update_feed even
-// though it requires more code and repetition. I feel like the nested
-// transition function is wonky. i like the idea of having ops be separate. but
-// i am on the fence right now, and focused more on moving back to separate ops.
-// TODO: consider having the open-db function return an object, let's call it
-// 'session', that has properties conn and channel. then change this to accept
-// a session instead of a conn and channel.
-// TODO: use more specific error types, because js requires errors be part of
-// control flow logic and the caller may want to differentiate between kinds of
-// database errors. For example, an 'already-active' or 'invalid-state' error
-// is quite different than the database being unreadable or the channel being
-// in a closed state.
-// TODO: make a markdown document for documentation
-
-// TODO: this broadcasts two messages, is that what i want?
-
-export async function activate_feed(conn, channel, feed_id) {
+export async function activate_feed(session, feed_id) {
   assert(is_valid_feed_id(feed_id));
-  await activate_feed_internal(conn, channel, feed_id);
+  await activate_feed_internal(session, feed_id);
 
-  // TODO: make channel non-optional again? require a stub?
-  if (channel) {
+  if (session.channel) {
     const message = {type: 'feed-activated', id: feed_id};
-    channel.postMessage(message);
+    session.channel.postMessage(message);
   }
 }
 
-function activate_feed_internal(conn, channel, feed_id) {
+function activate_feed_internal(session, feed_id) {
   function transition(feed) {
     if (feed.active) {
       throw new Error('Feed already active for id ' + feed_id);
@@ -42,5 +25,7 @@ function activate_feed_internal(conn, channel, feed_id) {
     return feed;
   }
 
-  return update_feed(conn, channel, {id: feed_id}, transition);
+  // TODO: use a real feed, this does not work because update_feed asserts
+  // feed.type
+  return update_feed(session, {id: feed_id}, transition);
 }

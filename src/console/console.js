@@ -35,7 +35,7 @@ async function cli_subscribe(url_string, poll = true) {
 async function cli_archive_entries(max_age) {
   // TODO: if max_age parameter is not set, try reading in the config value?
   const session = await db.open_with_channel();
-  await archive_entries(session.conn, session.channel, max_age);
+  await archive_entries(session, max_age);
   session.close();
 }
 
@@ -50,10 +50,6 @@ async function cli_refresh_icons() {
 async function cli_poll_feeds() {
   const proms = [db.open_with_channel(), favicon.open()];
   const [session, iconn] = await Promise.all(proms);
-
-  // TODO: poll-feeds need to use db-session instead of model-access, probably
-  // going to forget in this refactoring pass
-
   const poll_options = {ignore_recency_check: true};
   await poll_feeds(session, iconn, poll_options);
   session.close();
@@ -62,13 +58,13 @@ async function cli_poll_feeds() {
 
 async function cli_remove_lost_entries() {
   const session = await db.open_with_channel();
-  await remove_lost_entries(session.conn, session.channel);
+  await remove_lost_entries(session);
   session.close();
 }
 
 async function cli_remove_orphans() {
   const session = await db.open_with_channel();
-  await remove_orphaned_entries(session.conn, session.channel);
+  await remove_orphaned_entries(session);
   session.close();
 }
 

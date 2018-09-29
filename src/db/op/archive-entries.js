@@ -4,11 +4,12 @@ import sizeof from '/src/db/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
-export async function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
-  const ids = await archive_entries_internal(conn, max_age);
-  if (channel) {
+export async function archive_entries(session, max_age = TWO_DAYS_MS) {
+  const ids = await archive_entries_internal(session.conn, max_age);
+  if (session.channel) {
     for (const id of ids) {
-      channel.postMessage({type: 'entry-archived', id: id});
+      const message = {type: 'entry-archived', id: id};
+      session.channel.postMessage(message);
     }
   }
 }
@@ -29,6 +30,7 @@ function archive_entries_executor(conn, max_age, resolve, reject) {
       [entry_utils.ENTRY_STATE_UNARCHIVED, entry_utils.ENTRY_STATE_READ];
   const request = index.openCursor(key_path);
 
+  // TODO: do not nest, increase readability
   request.onsuccess = event => {
     const cursor = event.target.result;
     if (!cursor) {

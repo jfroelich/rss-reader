@@ -3,24 +3,36 @@ import * as feed_utils from '/src/db/feed-utils.js';
 import * as object from '/src/db/object-utils.js';
 import * as types from '/src/db/types.js';
 
-export async function update_feed(conn, channel, feed, transition) {
-  assert(types.is_feed(feed));
+// TODO: do away with the transition parameter. The design is overly complicated
+// and causes subtle peculiarities. Case in point, the issue with asserting the
+// type of the feed parameter. Fortunately I think there are only one or two
+// places that use this feature. I think the redundant idb code is better
+// because the benefit outweighs the cost.
+
+export async function update_feed(session, feed, transition) {
+  // TODO: I have temporarily disabled this assertion. The issue is that callers
+  // use fake feed objects in a few places and that needs to work at the moment.
+  // So until the callers use real feed objects this cannot exist.
+  // assert(types.is_feed(feed));
+
   assert(feed_utils.is_valid_feed_id(feed.id));
+
+  // TODO: define has-url in feed-utils, use that here instead
   assert(feed.urls && feed.urls.length);
+
   assert(transition === undefined || typeof transition === 'function');
 
   object.filter_empty_properties(feed);
   feed.dateUpdated = new Date();
 
-  await update_feed_internal(conn, feed, transition);
+  const ufeb = update_feed_executor.bind(null, session.conn, feed, transition);
+  const ufp = new Promise(ufeb);
+  await ufp;
 
-  if (channel) {
-    channel.postMessage({type: 'feed-updated', id: feed.id});
+  if (session.channel) {
+    const message = {type: 'feed-updated', id: feed.id};
+    session.channel.postMessage(message);
   }
-}
-
-function update_feed_internal(conn, feed, transition) {
-  return new Promise(update_feed_executor.bind(null, conn, feed, transition));
 }
 
 function update_feed_executor(conn, feed, transition, resolve, reject) {

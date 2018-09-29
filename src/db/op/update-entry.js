@@ -5,7 +5,7 @@ import * as types from '/src/db/types.js';
 
 // TODO: is this even in use? doesn't seem like it. why did I implement?
 
-export async function update_entry(conn, channel, entry) {
+export async function update_entry(session, entry) {
   assert(types.is_entry(entry));
   assert(entry_utils.is_valid_entry_id(entry.id));
 
@@ -13,18 +13,17 @@ export async function update_entry(conn, channel, entry) {
   entry.dateUpdated = new Date();
   object.filter_empty_properties(entry);
 
-  await update_entry_internal(conn, entry);
+  const put_bound = put_entry.bind(undefined, session.conn, entry);
+  const promise = new Promise(put_bound);
+  await promise;
 
-  if (channel) {
-    channel.postMessage({type: 'entry-updated', id: entry.id});
+  if (session.channel) {
+    const message = {type: 'entry-updated', id: entry.id};
+    session.channel.postMessage(message);
   }
 }
 
-function update_entry_internal(conn, entry) {
-  return new Promise(update_entry_executor.bind(null, conn, entry));
-}
-
-function update_entry_executor(conn, entry, resolve, reject) {
+function put_entry(conn, entry, resolve, reject) {
   const txn = conn.transaction('entry', 'readwrite');
   txn.oncomplete = resolve;
   txn.onerror = event => reject(event.target.error);

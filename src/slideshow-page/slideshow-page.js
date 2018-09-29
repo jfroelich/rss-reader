@@ -19,8 +19,8 @@ async function load_view() {
   show_splash();
 
   const session = await db.open();
-  const get_entries_promise = get_entries(session.conn, 'viewable', 0, 6);
-  const get_feeds_promise = get_feeds(session.conn, 'all', true);
+  const get_entries_promise = get_entries(session, 'viewable', 0, 6);
+  const get_feeds_promise = get_feeds(session, 'all', true);
   session.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)

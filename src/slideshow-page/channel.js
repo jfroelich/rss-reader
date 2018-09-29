@@ -94,8 +94,7 @@ async function onmessage(event) {
 
     let limit = undefined;
     const session = await db.open();
-    const entries =
-        await get_entries(session.conn, 'viewable', unread_count, limit);
+    const entries = await get_entries(session, 'viewable', unread_count, limit);
     session.close();
 
     for (const entry of entries) {

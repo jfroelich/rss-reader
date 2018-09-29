@@ -2,12 +2,13 @@ import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as types from '/src/db/types.js';
 
-export async function mark_entry_read(conn, channel, entry_id) {
+export async function mark_entry_read(session, entry_id) {
   assert(entry_utils.is_valid_entry_id(entry_id));
-  await mark_entry_read_internal(conn, entry_id);
+  await mark_entry_read_internal(session.conn, entry_id);
 
-  if (channel) {
-    channel.postMessage({type: 'entry-read', id: entry_id});
+  if (session.channel) {
+    const message = {type: 'entry-read', id: entry_id};
+    session.channel.postMessage(message);
   }
 }
 

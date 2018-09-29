@@ -24,16 +24,16 @@ async function create_feeds_test() {
   }
 
   // Exercise the tested function
-  const ids = await create_feeds(session.conn, session.channel, feeds);
+  const ids = await create_feeds(session, feeds);
 
   // Verify the number of results is as expected
   assert(ids.length === num_feeds);
 
-  const stored_feeds = await get_feeds(session.conn, 'all', false);
+  const stored_feeds = await get_feeds(session, 'all', false);
   assert(stored_feeds.length === num_feeds);
 
   // Exercise the id check
-  const get_proms = ids.map(id => get_feed(session.conn, 'id', id, false));
+  const get_proms = ids.map(id => get_feed(session, 'id', id, false));
   const feeds_by_id = await Promise.all(get_proms);
   for (const feed of feeds_by_id) {
     assert(types.is_feed(feed));

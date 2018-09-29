@@ -31,7 +31,7 @@ export async function refresh(lock_value) {
     lock.acquire(unlock_deadline);
 
     const session = await db.open();
-    const count = await count_unread_entries(session.conn);
+    const count = await count_unread_entries(session);
     session.close();
 
     const text = count > 999 ? '1k+' : '' + count;

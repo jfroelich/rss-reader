@@ -9,6 +9,10 @@ export const ENTRY_STATE_READ = 1;
 export const ENTRY_STATE_UNARCHIVED = 0;
 export const ENTRY_STATE_ARCHIVED = 1;
 
+// A sentinel value for entry ids. This shares the same type as a real entry
+// id, but is outside the range.
+export const INVALID_ENTRY_ID = 0;
+
 export function create_entry() {
   return {magic: types.ENTRY_MAGIC};
 }

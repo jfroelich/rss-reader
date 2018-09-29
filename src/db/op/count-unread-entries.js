@@ -1,7 +1,7 @@
 import * as entry_utils from '/src/db/entry-utils.js';
 
-export function count_unread_entries(conn) {
-  return new Promise(count_unread_entries_executor.bind(null, conn));
+export function count_unread_entries(session) {
+  return new Promise(count_unread_entries_executor.bind(null, session.conn));
 }
 
 function count_unread_entries_executor(conn, resolve, reject) {

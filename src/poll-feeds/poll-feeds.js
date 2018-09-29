@@ -33,8 +33,7 @@ const default_options = {
 };
 
 function get_pollable_feeds(session) {
-  const mode = 'active', sort = false;
-  return get_feeds(session.conn, mode, sort);
+  return get_feeds(session, 'active', false);
 }
 
 export async function poll_feeds(session, iconn, options = {}) {
@@ -103,7 +102,7 @@ export async function poll_feed(session, iconn, options = {}, feed) {
   handle_fetch_success(merged_feed);
   sanity.validate_feed(merged_feed);
   sanity.sanitize_feed(merged_feed);
-  await update_feed(session.conn, session.channel, merged_feed);
+  await update_feed(session, merged_feed);
 
   const count = await poll_entries(
       session, iconn, rewrite_rules, options, response.entries, merged_feed);
@@ -217,7 +216,7 @@ async function handle_fetch_error(session, error, feed, threshold) {
   }
 
   // No need to validate/sanitize, we've had control for the entire lifetime
-  await update_feed(session.conn, session.channel, feed);
+  await update_feed(session, feed);
 }
 
 function dedup_entries(entries) {
@@ -293,7 +292,7 @@ export async function poll_entry(
   entry_utils.append_entry_url(entry, rewrite_url(url, rewrite_rules));
 
   url = new URL(entry.urls[entry.urls.length - 1]);
-  let existing_entry = await get_entry(session.conn, 'url', url, true);
+  let existing_entry = await get_entry(session, 'url', url, true);
   if (existing_entry) {
     throw new EntryExistsError('Entry already exists for url ' + url.href);
   }
@@ -322,7 +321,7 @@ export async function poll_entry(
       entry_utils.append_entry_url(
           entry, rewrite_url(response_url, rewrite_rules));
       url = new URL(entry.urls[entry.urls.length - 1]);
-      existing_entry = await get_entry(session.conn, 'url', url, true);
+      existing_entry = await get_entry(session, 'url', url, true);
       if (existing_entry) {
         throw new EntryExistsError(
             'Entry exists for redirected url ' + url.href);
@@ -374,7 +373,7 @@ export async function poll_entry(
 
   sanity.sanitize_entry(entry);
   sanity.validate_entry(entry);
-  return create_entry(session.conn, session.channel, entry);
+  return create_entry(session, entry);
 }
 
 // TODO: somehow store in configuration instead of here, look into

@@ -42,7 +42,7 @@ export async function subscribe(
   await set_feed_favicon(iconn, feed);
   sanity.validate_feed(feed);
   sanity.sanitize_feed(feed);
-  feed.id = await create_feed(session.conn, session.channel, feed);
+  feed.id = await create_feed(session, feed);
   send_subscribe_notification(feed, should_notify);
   return feed;
 }
@@ -78,12 +78,12 @@ async function fetch_feed_without_entries(url, timeout) {
 
 async function model_has_feed_url(session, url) {
   const key_only = true;
-  const feed = await get_feed(session.conn, 'url', url, key_only);
+  const feed = await get_feed(session, 'url', url, key_only);
   return feed ? true : false;
 }
 
 export function unsubscribe(session, feed_id) {
-  return delete_feed(session.conn, session.channel, feed_id, 'unsubscribe');
+  return delete_feed(session, feed_id, 'unsubscribe');
 }
 
 export class ConstraintError extends Error {

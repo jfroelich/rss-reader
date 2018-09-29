@@ -2,14 +2,12 @@ import assert from '/src/assert/assert.js';
 import * as object from '/src/db/object-utils.js';
 import * as types from '/src/db/types.js';
 
-export async function create_feed(conn, channel, feed) {
+export async function create_feed(session, feed) {
   assert(types.is_feed(feed));
-  assert(Array.isArray(feed.urls));
-  assert(feed.urls.length);
+  assert(feed_has_url(feed));
 
-  object.filter_empty_properties(feed);
-
-  // Allow for explicit 'false'
+  // If feed.active is true, then leave as true. If false, leave as false. But
+  // if undefined, impute true. This allows the caller to create inactive feeds
   if (feed.active === undefined) {
     feed.active = true;
   }
@@ -17,20 +15,29 @@ export async function create_feed(conn, channel, feed) {
   feed.dateCreated = new Date();
   delete feed.dateUpdated;
 
-  const id = await create_feed_internal(conn, feed);
+  object.filter_empty_properties(feed);
 
-  if (channel) {
-    channel.postMessage({type: 'feed-created', id: id});
+  const put_promise = new Promise(put_feed.bind(null, session.conn, feed));
+  const id = await put_promise;
+
+  if (session.channel) {
+    const message = {type: 'feed-created', id: id};
+    session.channel.postMessage(message);
   }
 
   return id;
 }
 
-function create_feed_internal(conn, feed) {
-  return new Promise(create_feed_executor.bind(null, conn, feed));
+// Return true if the feed has at least one url. Note this does not validate
+// the url value, just that it is a non-empty string.
+function feed_has_url(feed) {
+  const urls = feed.urls;
+  return Array.isArray(urls) && urls.length && typeof urls[0] === 'string' &&
+      urls[0].length;
 }
 
-function create_feed_executor(conn, feed, resolve, reject) {
+// By design, this does not settle until the transaction completes
+function put_feed(conn, feed, resolve, reject) {
   let id = 0;
   const txn = conn.transaction('feed', 'readwrite');
   txn.onerror = event => reject(event.target.error);
