@@ -46,11 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-
-ModelAccess.prototype.getFeedIds = function() {
-  return idbmodel.get_feed_ids(this.conn);
-};
-
 ModelAccess.prototype.getFeed = function(mode = 'id', value, key_only) {
   assert(mode !== 'url' || (value && typeof value.href === 'string'));
   assert(mode !== 'id' || feed_utils.is_valid_feed_id(value));

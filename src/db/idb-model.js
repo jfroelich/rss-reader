@@ -2,20 +2,9 @@ import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import {delete_feed} from '/src/db/op/delete-feed.js';
+import {get_feed_ids} from '/src/db/op/get-feed-ids.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
-
-export function get_feed_ids(conn) {
-  return new Promise(get_feed_ids_executor.bind(null, conn));
-}
-
-function get_feed_ids_executor(conn, resolve, reject) {
-  const txn = conn.transaction('feed');
-  txn.onerror = event => reject(event.target.error);
-  const store = txn.objectStore('feed');
-  const request = store.getAllKeys();
-  request.onsuccess = _ => resolve(request.result);
-}
 
 export function get_feed(conn, mode, value, key_only) {
   return new Promise(get_feed_executor.bind(null, conn, mode, value, key_only));
