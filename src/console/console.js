@@ -3,6 +3,7 @@ import * as cron_control from '/src/cron/cron.js';
 import {openModelAccess} from '/src/db/model-access.js';
 import {archive_entries} from '/src/db/op/archive-entries.js';
 import {remove_lost_entries} from '/src/db/op/remove-lost-entries.js';
+import {remove_orphaned_entries} from '/src/db/op/remove-orphaned-entries.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import {poll_feed, poll_feeds} from '/src/poll-feeds/poll-feeds.js';
 import {refresh_feed_icons} from '/src/refresh-feed-icons/refresh-feed-icons.js';
@@ -61,7 +62,7 @@ async function cli_remove_lost_entries() {
 
 async function cli_remove_orphans() {
   const ma = await openModelAccess(/* channeled */ true);
-  await ma.removeOrphanedEntries();
+  await remove_orphaned_entries(ma.conn, ma.channel);
   ma.close();
 }
 

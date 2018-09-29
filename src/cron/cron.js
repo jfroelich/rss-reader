@@ -1,6 +1,7 @@
 import {openModelAccess} from '/src/db/model-access.js';
 import {archive_entries} from '/src/db/op/archive-entries.js';
 import {remove_lost_entries} from '/src/db/op/remove-lost-entries.js';
+import {remove_orphaned_entries} from '/src/db/op/remove-orphaned-entries.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
 import {poll_feeds} from '/src/poll-feeds/poll-feeds.js';
@@ -68,7 +69,7 @@ export async function alarm_listener(alarm) {
     ma.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
     const ma = await openModelAccess(/* channeled */ true);
-    await ma.removeOrphanedEntries();
+    await remove_orphaned_entries(ma.conn, ma.channel);
     ma.close();
   } else if (alarm.name === 'remove-untyped-objects') {
     const ma = await openModelAccess(/* channeled */ true);

@@ -2,7 +2,6 @@ import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import {delete_feed} from '/src/db/op/delete-feed.js';
-import {get_feed_ids} from '/src/db/op/get-feed-ids.js';
 import {get_feeds} from '/src/db/op/get-feeds.js';
 import {iterate_entries} from '/src/db/op/iterate-entries.js';
 import * as types from '/src/db/types.js';
@@ -102,35 +101,6 @@ function add_active_field_to_feeds(store) {
   };
 }
 
-export async function remove_orphaned_entries(conn) {
-  const entry_ids = [];
-  const feed_ids = await get_feed_ids(conn);
-  if (!feed_ids.length) {
-    return entry_ids;
-  }
-
-  await iterate_entries(conn, cursor => {
-    const entry = cursor.value;
-
-    if (!types.is_entry(entry)) {
-      console.warn('Loaded entry is not an entry ' + JSON.stringify(entry));
-      return;
-    }
-
-    if (feed_utils.is_valid_feed_id(entry.feed)) {
-      return;
-    }
-
-    if (feed_ids.includes(entry.feed)) {
-      return;
-    }
-
-    entry_ids.push(entry.id);
-    cursor.delete();
-  });
-
-  return entry_ids;
-}
 
 export async function remove_untyped_objects(conn) {
   const removed_feed_ids = [];

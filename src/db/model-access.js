@@ -46,14 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-// Scans the database for entries not linked to a feed and deletes them
-ModelAccess.prototype.removeOrphanedEntries = async function() {
-  const ids = await idbmodel.remove_orphaned_entries(this.conn);
-  for (const id of entry_ids) {
-    this.channel.postMessage({type: 'entry-deleted', id: id, reason: 'orphan'});
-  }
-};
-
 // Scan the feed store and the entry store and delete any objects missing their
 // hidden magic property. This is not 'thread-safe' because this uses multiple
 // write transactions.
