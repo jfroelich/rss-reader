@@ -1,7 +1,7 @@
 import assert from '/src/assert/assert.js';
 import {filter_empty_attrs} from '/src/empty-attrs-filter/filter-empty-attrs.js';
 import * as html from '/src/html/html.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 async function empty_attribute_filter_test() {
   // Simple empty non-boolean attribute in body

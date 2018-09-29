@@ -5,7 +5,7 @@ import {activate_feed} from '/src/db/op/activate-feed.js';
 import {create_feed} from '/src/db/op/create-feed.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 // Verify the activate-feed function works as expected
 async function activate_feed_test() {

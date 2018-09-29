@@ -31,7 +31,7 @@ import '/src/mime/mime-test.js';
 import '/src/import-opml/import-opml-test.js';
 import '/src/parse-feed/parse-feed-test.js';
 import '/src/unwrap-element/unwrap-element-test.js';
-import {get_registry} from '/test/test-registry.js';
+import {get_registry} from '/src/test/test-registry.js';
 
 // Wrap a call to a test function with some extra log messages. Impose an
 // optional deadline for the test to complete by specifying a timeout.

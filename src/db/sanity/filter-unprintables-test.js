@@ -1,6 +1,6 @@
 import assert from '/src/assert/assert.js';
 import * as string from '/src/string/string.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 // TODO: this test needs to be updated now that filter_unprintable_characters
 // has been deprecated and replaced by filter_controls. The test currently

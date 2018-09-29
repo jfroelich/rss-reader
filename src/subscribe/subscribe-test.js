@@ -4,7 +4,7 @@ import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {openModelAccess} from '/src/db/model-access.js';
 import {subscribe} from '/src/subscribe/subscribe.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 // TODO: it is wrong to ping google, implement something that tests a local
 // file somehow (e.g. a feed that exists within the extension folder)

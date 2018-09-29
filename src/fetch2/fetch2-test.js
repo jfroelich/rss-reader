@@ -1,6 +1,6 @@
 import assert from '/src/assert/assert.js';
 import {fetch2} from '/src/fetch2/fetch2.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 // TODO: implement
 

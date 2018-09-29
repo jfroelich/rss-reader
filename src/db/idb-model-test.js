@@ -5,7 +5,7 @@ import * as idbmodel from '/src/db/idb-model.js';
 import {create_feed} from '/src/db/op/create-feed.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 // Test that double url insert fails, it is expected to throw a
 // DOMException like the following: "Unable to add key to index 'urls': at least

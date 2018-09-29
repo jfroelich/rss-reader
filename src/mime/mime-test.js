@@ -1,6 +1,6 @@
 import assert from '/src/assert/assert.js';
 import * as mime from '/src/mime/mime.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 async function mime_test() {
   const a = assert;

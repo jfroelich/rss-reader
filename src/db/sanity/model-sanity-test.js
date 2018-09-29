@@ -1,7 +1,7 @@
 import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as sanity from '/src/db/sanity/model-sanity.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 async function sanitize_entry_content_test() {
   // TODO: validate truncation behavior?

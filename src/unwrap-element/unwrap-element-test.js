@@ -1,7 +1,7 @@
 import assert from '/src/assert/assert.js';
 import {parse_html} from '/src/html/html.js';
 import {unwrap_element} from '/src/unwrap-element/unwrap-element.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 export function unwrap_element_test() {
   // Assert the typical case of a simple straightforward unwrap call completes

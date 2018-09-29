@@ -1,6 +1,6 @@
 import assert from '/src/assert/assert.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 // TODO: run on a local resource
 // TODO: cannot accept param

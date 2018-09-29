@@ -4,7 +4,7 @@ import * as idbmodel from '/src/db/idb-model.js';
 import {create_feed} from '/src/db/op/create-feed.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 async function create_feed_test() {
   const feed = feed_utils.create_feed();

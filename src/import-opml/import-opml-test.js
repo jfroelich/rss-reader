@@ -3,7 +3,7 @@ import * as feed_utils from '/src/db/feed-utils.js';
 import * as import_opml from '/src/import-opml/import-opml.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {openModelAccess} from '/src/db/model-access.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 // TODO: test multiple files
 // TODO: test multiple feeds per file

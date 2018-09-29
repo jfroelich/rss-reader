@@ -1,6 +1,6 @@
 import assert from '/src/assert/assert.js';
 import * as html from '/src/html/html.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 async function html_truncate_test() {
   const truncate = html.truncate_html;

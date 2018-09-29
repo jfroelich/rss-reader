@@ -1,6 +1,6 @@
 import assert from '/src/assert/assert.js';
 import {rewrite_url} from '/src/poll-feeds/rewrite-url.js';
-import {register_test} from '/test/test-registry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 // TODO: I've temporarily copied over the rules here for testing, but ideally
 // this should import the rules from somewhere, or, define local rules and test
