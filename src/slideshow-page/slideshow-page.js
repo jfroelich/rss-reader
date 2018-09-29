@@ -3,6 +3,7 @@ import '/src/slideshow-page/left-panel.js';
 
 import * as config_control from '/src/config/config.js';
 import {openModelAccess} from '/src/db/model-access.js';
+import {get_entries} from '/src/db/op/get-entries.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import * as channel from '/src/slideshow-page/channel.js';
 import {feeds_container_append_feed} from '/src/slideshow-page/feeds-container.js';
@@ -17,7 +18,7 @@ async function load_view() {
   show_splash();
 
   const ma = await openModelAccess(/* channeled */ false);
-  const get_entries_promise = ma.getEntries('viewable', 0, 6);
+  const get_entries_promise = get_entries(ma.conn, 'viewable', 0, 6);
   const get_feeds_promise = ma.getFeeds('all', true);
   ma.close();
 

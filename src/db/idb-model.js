@@ -5,54 +5,6 @@ import {delete_feed} from '/src/db/op/delete-feed.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 
-export function get_entries(conn, mode, offset, limit) {
-  return new Promise(
-      get_entries_executor.bind(null, conn, mode, offset, limit));
-}
-
-function get_entries_executor(conn, mode, offset, limit, resolve, reject) {
-  const entries = [];
-  let advanced = false;
-
-  const txn = conn.transaction('entry');
-  txn.oncomplete = _ => resolve(entries);
-  txn.onerror = event => reject(event.target.error);
-  const store = txn.objectStore('entry');
-
-  let request;
-  if (mode === 'viewable') {
-    const index = store.index('archiveState-readState');
-    const path =
-        [entry_utils.ENTRY_STATE_UNARCHIVED, entry_utils.ENTRY_STATE_UNREAD];
-    request = index.openCursor(path);
-  } else if (mode === 'all') {
-    request = store.openCursor();
-  } else {
-    throw new TypeError('Invalid mode ' + mode);
-  }
-
-  request.onsuccess = _ => {
-    const cursor = request.result;
-    if (!cursor) {
-      return;
-    }
-
-    if (offset && !advanced) {
-      advanced = true;
-      cursor.advance(offset);
-      return;
-    }
-
-    entries.push(cursor.value);
-
-    if (limit > 0 && entries.length >= limit) {
-      return;
-    }
-
-    cursor.continue();
-  };
-}
-
 export function get_entry(conn, mode, value, key_only) {
   return new Promise(
       get_entry_executor.bind(null, conn, mode, value, key_only));

@@ -46,16 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-ModelAccess.prototype.getEntries = function(mode = 'all', offset, limit) {
-  assert(
-      offset === null || offset === undefined || offset === NaN ||
-      (Number.isInteger(offset) && offset >= 0));
-  assert(
-      limit === null || limit === undefined || limit === NaN ||
-      (Number.isInteger(limit) && limit >= 0));
-
-  return idbmodel.get_entries(this.conn, mode, offset, limit);
-};
 
 ModelAccess.prototype.getEntry = function(mode = 'id', value, key_only) {
   assert(mode !== 'id' || entry_utils.is_valid_entry_id(value));

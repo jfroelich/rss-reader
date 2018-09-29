@@ -1,5 +1,6 @@
-import * as ls from '/src/localstorage/localstorage.js';
 import {openModelAccess} from '/src/db/model-access.js';
+import {get_entries} from '/src/db/op/get-entries.js';
+import * as ls from '/src/localstorage/localstorage.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
 import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';
@@ -24,7 +25,7 @@ export async function show_next_slide() {
   if (slide_unread_count < 3) {
     const limit = ls.read_int('initial_entry_load_limit');
     const mode = 'viewable';
-    entries = await ma.getEntries(mode, slide_unread_count, limit);
+    entries = await get_entries(ma.conn, mode, slide_unread_count, limit);
   }
   ma.close();
 
