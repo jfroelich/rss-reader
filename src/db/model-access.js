@@ -46,13 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-
-ModelAccess.prototype.markEntryRead = async function(entry_id) {
-  assert(entry_utils.is_valid_entry_id(entry_id));
-  await idbmodel.mark_entry_read(this.conn, entry_id);
-  this.channel.postMessage({type: 'entry-read', id: entry_id});
-};
-
 ModelAccess.prototype.removeLostEntries = async function() {
   const ids = await idbmodel.remove_lost_entries(this.conn);
   for (const id of ids) {

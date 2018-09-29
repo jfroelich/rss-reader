@@ -8,44 +8,6 @@ import {iterate_entries} from '/src/db/op/iterate-entries.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 
-export function mark_entry_read(conn, entry_id) {
-  return new Promise(mark_entry_read_executor.bind(null, conn, entry_id));
-}
-
-function mark_entry_read_executor(conn, entry_id, resolve, reject) {
-  const txn = conn.transaction('entry', 'readwrite');
-  txn.onerror = event => reject(event.target.error);
-  txn.oncomplete = resolve;
-
-  const store = txn.objectStore('entry');
-  const request = store.get(entry_id);
-  request.onsuccess = _ => {
-    const entry = request.result;
-
-    if (!types.is_entry(entry)) {
-      reject(new Error('Loaded object is not an entry ' + entry_id));
-      return;
-    }
-
-    if (entry.archiveState === entry_utils.ENTRY_STATE_ARCHIVED) {
-      reject(new Error('Cannot mark archived entry as read ' + entry_id));
-      return;
-    }
-
-    if (entry.readState === entry_utils.ENTRY_STATE_READ) {
-      reject(new Error('Cannot mark read entry as read ' + entry_id));
-      return;
-    }
-
-    entry.readState = entry_utils.ENTRY_STATE_READ;
-    const currentDate = new Date();
-    entry.dateUpdated = currentDate;
-    entry.dateRead = currentDate;
-
-    request.source.put(entry);
-  };
-}
-
 export function open(name, version, upgrade = on_upgrade_needed, timeout) {
   return indexeddb.open(name, version, upgrade, timeout);
 }
