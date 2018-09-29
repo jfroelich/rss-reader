@@ -1,4 +1,4 @@
-import {openModelAccess} from '/src/db/model-access.js';
+import * as db from '/src/db/db.js';
 import {archive_entries} from '/src/db/op/archive-entries.js';
 import {remove_lost_entries} from '/src/db/op/remove-lost-entries.js';
 import {remove_orphaned_entries} from '/src/db/op/remove-orphaned-entries.js';
@@ -43,12 +43,14 @@ export async function alarm_listener(alarm) {
   console.debug('Alarm wokeup:', alarm.name);
   ls.write_string('last_alarm', alarm.name);
 
+  // TODO: these branches could probably all share the session open and close?
+
   if (alarm.name === 'archive') {
     // TODO: read max age from config instead of defaulting
     let max_age;
-    const ma = await openModelAccess(/* writable*/ true);
-    await archive_entries(ma.conn, ma.channel, max_age);
-    ma.close();
+    const session = await db.open_with_channel();
+    await archive_entries(session.conn, session.channel, max_age);
+    session.close();
   } else if (alarm.name === 'poll') {
     if (ls.read_boolean('only_poll_if_idle')) {
       // TODO: this value should come from local storage
@@ -59,28 +61,29 @@ export async function alarm_listener(alarm) {
       }
     }
 
-    const promises = [openModelAccess(/* channeled */ true), favicon.open()];
-    const [ma, iconn] = await Promise.all(promises);
-    await poll_feeds(ma, iconn, {ignore_recency_check: false, notify: true});
-    ma.close();
+    const promises = [db.open_with_channel(), favicon.open()];
+    const [session, iconn] = await Promise.all(promises);
+    const poll_options = {ignore_recency_check: false, notify: true};
+    await poll_feeds(session, iconn, poll_options);
+    session.close();
     iconn.close();
   } else if (alarm.name === 'remove-entries-missing-urls') {
-    const ma = await openModelAccess(/* channeled */ true);
-    await remove_lost_entries(ma.conn, ma.channel);
-    ma.close();
+    const session = await db.open_with_channel();
+    await remove_lost_entries(session.conn, session.channel);
+    session.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
-    const ma = await openModelAccess(/* channeled */ true);
-    await remove_orphaned_entries(ma.conn, ma.channel);
-    ma.close();
+    const session = await db.open_with_channel();
+    await remove_orphaned_entries(session.conn, session.channel);
+    session.close();
   } else if (alarm.name === 'remove-untyped-objects') {
-    const ma = await openModelAccess(/* channeled */ true);
-    await remove_untyped_objects(ma.conn, ma.channel);
-    ma.close();
+    const session = await db.open_with_channel();
+    await remove_untyped_objects(session.conn, session.channel);
+    session.close();
   } else if (alarm.name === 'refresh-feed-icons') {
-    const proms = [await openModelAccess(/* channeled */ true), favicon.open()];
-    const [ma, iconn] = await Promise.all(proms);
-    await refresh_feed_icons(ma, iconn);
-    ma.close();
+    const proms = [await db.open_with_channel(), favicon.open()];
+    const [session, iconn] = await Promise.all(proms);
+    await refresh_feed_icons(session, iconn);
+    session.close();
     iconn.close();
   } else if (alarm.name === 'compact-favicon-db') {
     await favicon.compact();

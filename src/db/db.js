@@ -1,18 +1,59 @@
-import assert from '/src/assert/assert.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 
-export function open(name, version, upgrade = on_upgrade_needed, timeout) {
-  return indexeddb.open(name, version, upgrade, timeout);
+// TODO: ops should receive session param instead of conn + channel params
+
+// Return a session without a channel
+export async function open(name = 'reader', version = 24, timeout = 500) {
+  const session = new DbSession();
+  session.conn =
+      await indexeddb.open(name, version, on_upgrade_needed, timeout);
+  return session;
 }
 
-// NOTE: if new db, then event.oldVersion is 0, and conn.version is the new
-// version value.
+// Return a session with a channel
+export async function open_with_channel(
+    name, version, timeout, channel_name = 'reader') {
+  const session = await open(name, version, timeout);
+  session.channel = new BroadcastChannel(channel_name);
+  return session;
+}
+
+export function remove(name) {
+  return indexeddb.remove(name);
+}
+
+class DbSession {
+  constructor() {
+    this.conn = undefined;
+    this.channel = undefined;
+  }
+
+  close() {
+    if (this.channel) {
+      this.channel.close();
+    }
+
+
+    if (this.conn) {
+      this.conn.close();
+    }
+
+    // 'Nullify' the props to force errors in places that use props incorrectly
+    // Set to undefined instead of delete to maintain v8 object shape
+    this.channel = undefined;
+    this.conn = undefined;
+  }
+}
+
 function on_upgrade_needed(event) {
   const conn = event.target.result;
   const txn = event.target.transaction;
   let feed_store, entry_store;
   const stores = conn.objectStoreNames;
+
+  // NOTE: event.oldVersion is 0 when the database is being created
+  // NOTE: use conn.version to get the current version being created/updated
 
   if (event.oldVersion < 20) {
     const feed_store_props = {keyPath: 'id', autoIncrement: true};
@@ -33,21 +74,21 @@ function on_upgrade_needed(event) {
     entry_store = txn.objectStore('entry');
   }
 
-  if (event.oldVersion < 21) {
+  if (event.oldVersion && event.oldVersion < 21) {
     add_magic_to_entries(txn);
   }
 
-  if (event.oldVersion < 22) {
+  if (event.oldVersion && event.oldVersion < 22) {
     add_magic_to_feeds(txn);
   }
 
-  if (event.oldVersion < 23) {
+  if (event.oldVersion && event.oldVersion < 23) {
     if (feed_store.indexNames.contains('title')) {
       feed_store.deleteIndex('title');
     }
   }
 
-  if (event.oldVersion < 24) {
+  if (event.oldVersion && event.oldVersion < 24) {
     add_active_field_to_feeds(feed_store);
   }
 }
@@ -55,6 +96,7 @@ function on_upgrade_needed(event) {
 function add_magic_to_entries(txn) {
   const store = txn.objectStore('entry');
   const request = store.openCursor();
+  request.onerror = _ => console.error(request.error);
   request.onsuccess = function() {
     const cursor = request.result;
     if (cursor) {
@@ -66,7 +108,6 @@ function add_magic_to_entries(txn) {
       }
     }
   };
-  request.onerror = _ => console.error(request.error);
 }
 
 function add_magic_to_feeds(txn) {

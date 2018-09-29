@@ -6,9 +6,6 @@ import {update_feed} from '/src/db/op/update-feed.js';
 // though it requires more code and repetition. I feel like the nested
 // transition function is wonky. i like the idea of having ops be separate. but
 // i am on the fence right now, and focused more on moving back to separate ops.
-// TODO: this should have its own test file. right now there is some helper
-// test stuff in idb-model-test.js. That should be in a file named
-// activate-feed-test.js
 // TODO: consider having the open-db function return an object, let's call it
 // 'session', that has properties conn and channel. then change this to accept
 // a session instead of a conn and channel.

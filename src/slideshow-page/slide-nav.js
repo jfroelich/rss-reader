@@ -1,4 +1,4 @@
-import {openModelAccess} from '/src/db/model-access.js';
+import * as db from '/src/db/db.js';
 import {get_entries} from '/src/db/op/get-entries.js';
 import * as ls from '/src/localstorage/localstorage.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
@@ -17,17 +17,17 @@ export async function show_next_slide() {
     return;
   }
 
-  const ma = await openModelAccess(/* channeled */ true);
-  await mark_slide_read_start(ma, current_slide);
+  const session = await db.open_with_channel();
+  await mark_slide_read_start(session, current_slide);
 
   const slide_unread_count = count_unread_slides();
   let entries = [];
   if (slide_unread_count < 3) {
     const limit = ls.read_int('initial_entry_load_limit');
     const mode = 'viewable';
-    entries = await get_entries(ma.conn, mode, slide_unread_count, limit);
+    entries = await get_entries(session.conn, mode, slide_unread_count, limit);
   }
-  ma.close();
+  session.close();
 
   for (const entry of entries) {
     if (!document.querySelector('slide[entry="' + entry.id + '"]')) {

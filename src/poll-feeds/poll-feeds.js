@@ -6,7 +6,7 @@ import {create_entry} from '/src/db/op/create-entry.js';
 import {get_entry} from '/src/db/op/get-entry.js';
 import {get_feeds} from '/src/db/op/get-feeds.js';
 import {update_feed} from '/src/db/op/update-feed.js';
-import * as sanity from '/src/db/sanity/model-sanity.js';
+import * as sanity from '/src/db/sanity/sanity.js';
 import * as types from '/src/db/types.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
@@ -32,18 +32,18 @@ const default_options = {
   notify: true
 };
 
-function get_pollable_feeds(ma) {
+function get_pollable_feeds(session) {
   const mode = 'active', sort = false;
-  return get_feeds(ma.conn, mode, sort);
+  return get_feeds(session.conn, mode, sort);
 }
 
-export async function poll_feeds(ma, iconn, options = {}) {
+export async function poll_feeds(session, iconn, options = {}) {
   options = Object.assign({}, default_options, options);
 
-  const feeds = await get_pollable_feeds(ma);
+  const feeds = await get_pollable_feeds(session);
   const promises = [];
   for (const feed of feeds) {
-    const promise = poll_feed(ma, iconn, options, feed);
+    const promise = poll_feed(session, iconn, options, feed);
     const catch_promise = promise.catch(console.warn);
     promises.push(promise);
   }
@@ -66,7 +66,7 @@ export async function poll_feeds(ma, iconn, options = {}) {
 }
 
 // Check if a remote feed has new data and store it in the database
-export async function poll_feed(ma, iconn, options = {}, feed) {
+export async function poll_feed(session, iconn, options = {}, feed) {
   assert(types.is_feed(feed));
   assert(Array.isArray(feed.urls));
   assert(feed.urls.length > 0);
@@ -94,7 +94,8 @@ export async function poll_feed(ma, iconn, options = {}, feed) {
     response = await fetch_feed(
         tail_url, options.fetch_feed_timeout, skip_entries, resolve_entry_urls);
   } catch (error) {
-    await handle_fetch_error(ma, error, feed, options.deactivation_threshold);
+    await handle_fetch_error(
+        session, error, feed, options.deactivation_threshold);
     return 0;
   }
 
@@ -102,10 +103,10 @@ export async function poll_feed(ma, iconn, options = {}, feed) {
   handle_fetch_success(merged_feed);
   sanity.validate_feed(merged_feed);
   sanity.sanitize_feed(merged_feed);
-  await update_feed(ma.conn, ma.channel, merged_feed);
+  await update_feed(session.conn, session.channel, merged_feed);
 
   const count = await poll_entries(
-      ma, iconn, rewrite_rules, options, response.entries, merged_feed);
+      session, iconn, rewrite_rules, options, response.entries, merged_feed);
 
   if (options.notify && count) {
     const title = 'Added articles';
@@ -117,7 +118,8 @@ export async function poll_feed(ma, iconn, options = {}, feed) {
   return count;
 }
 
-async function poll_entries(ma, iconn, rewrite_rules, options, entries, feed) {
+async function poll_entries(
+    session, iconn, rewrite_rules, options, entries, feed) {
   const feed_url_string = feed.urls[feed.urls.length - 1];
   const coerced_entries = entries.map(coerce_entry);
   entries = dedup_entries(coerced_entries);
@@ -126,7 +128,7 @@ async function poll_entries(ma, iconn, rewrite_rules, options, entries, feed) {
   const poll_entry_promises = [];
   for (const entry of entries) {
     const promise = poll_entry(
-        ma, iconn, entry, options.fetch_html_timeout,
+        session, iconn, entry, options.fetch_html_timeout,
         options.fetch_image_timeout, rewrite_rules, feed_url_string);
     const catch_promise = promise.catch(poll_entry_onerror);
     poll_entry_promises.push(catch_promise);
@@ -194,7 +196,7 @@ function handle_fetch_success(feed) {
   return false;
 }
 
-async function handle_fetch_error(ma, error, feed, threshold) {
+async function handle_fetch_error(session, error, feed, threshold) {
   if (error instanceof TimeoutError || error instanceof OfflineError) {
     return;
   }
@@ -215,7 +217,7 @@ async function handle_fetch_error(ma, error, feed, threshold) {
   }
 
   // No need to validate/sanitize, we've had control for the entire lifetime
-  await update_feed(ma.conn, ma.channel, feed);
+  await update_feed(session.conn, session.channel, feed);
 }
 
 function dedup_entries(entries) {
@@ -283,15 +285,15 @@ function coerce_entry(parsed_entry) {
 // the full text of the entry. Either returns the added entry id, or throws an
 // error.
 export async function poll_entry(
-    ma, iconn, entry, fetch_html_timeout, fetch_image_timeout, rewrite_rules,
-    feed_url_string) {
+    session, iconn, entry, fetch_html_timeout, fetch_image_timeout,
+    rewrite_rules, feed_url_string) {
   assert(types.is_entry(entry));
 
   let url = new URL(entry.urls[entry.urls.length - 1]);
   entry_utils.append_entry_url(entry, rewrite_url(url, rewrite_rules));
 
   url = new URL(entry.urls[entry.urls.length - 1]);
-  let existing_entry = await get_entry(ma.conn, 'url', url, true);
+  let existing_entry = await get_entry(session.conn, 'url', url, true);
   if (existing_entry) {
     throw new EntryExistsError('Entry already exists for url ' + url.href);
   }
@@ -320,7 +322,7 @@ export async function poll_entry(
       entry_utils.append_entry_url(
           entry, rewrite_url(response_url, rewrite_rules));
       url = new URL(entry.urls[entry.urls.length - 1]);
-      existing_entry = await get_entry(ma.conn, 'url', url, true);
+      existing_entry = await get_entry(session.conn, 'url', url, true);
       if (existing_entry) {
         throw new EntryExistsError(
             'Entry exists for redirected url ' + url.href);
@@ -372,7 +374,7 @@ export async function poll_entry(
 
   sanity.sanitize_entry(entry);
   sanity.validate_entry(entry);
-  return create_entry(ma.conn, ma.channel, entry);
+  return create_entry(session.conn, session.channel, entry);
 }
 
 // TODO: somehow store in configuration instead of here, look into

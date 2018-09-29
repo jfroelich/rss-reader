@@ -1,9 +1,8 @@
-import {openModelAccess} from '/src/db/model-access.js';
+import * as db from '/src/db/db.js';
 
 export async function install_listener(event) {
   if (event.reason === 'install') {
-    const channeled = false;
-    const ma = await openModelAccess(channeled);
-    ma.close();
+    const session = await db.open();
+    session.close();
   }
 }

@@ -2,7 +2,7 @@ import '/src/slideshow-page/main-menu.js';
 import '/src/slideshow-page/left-panel.js';
 
 import * as config_control from '/src/config/config.js';
-import {openModelAccess} from '/src/db/model-access.js';
+import * as db from '/src/db/db.js';
 import {get_entries} from '/src/db/op/get-entries.js';
 import {get_feeds} from '/src/db/op/get-feeds.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
@@ -18,10 +18,10 @@ import {hide_splash, show_splash} from '/src/slideshow-page/splash.js';
 async function load_view() {
   show_splash();
 
-  const ma = await openModelAccess(/* channeled */ false);
-  const get_entries_promise = get_entries(ma.conn, 'viewable', 0, 6);
-  const get_feeds_promise = get_feeds(ma.conn, 'all', true);
-  ma.close();
+  const session = await db.open();
+  const get_entries_promise = get_entries(session.conn, 'viewable', 0, 6);
+  const get_feeds_promise = get_feeds(session.conn, 'all', true);
+  session.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)
   const entries = await get_entries_promise;

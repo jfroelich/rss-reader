@@ -1,4 +1,4 @@
-import {openModelAccess} from '/src/db/model-access.js';
+import * as db from '/src/db/db.js';
 import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';
 import {get_current_slide} from '/src/slideshow-page/slideshow-state.js';
 
@@ -62,9 +62,9 @@ export async function slide_onclick(event) {
   // the checks within mark_slide_read_start, it avoids opening the connection.
   if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
       !slide.hasAttribute('read-pending')) {
-    const ma = await openModelAccess(/* channeled */ true);
-    await mark_slide_read_start(ma, slide);
-    ma.close();
+    const session = await db.open_with_channel();
+    await mark_slide_read_start(session, slide);
+    session.close();
   }
 }
 

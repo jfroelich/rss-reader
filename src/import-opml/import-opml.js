@@ -1,7 +1,10 @@
+import * as db from '/src/db/db.js';
 import * as feed_utils from '/src/db/feed-utils.js';
-import {openModelAccess} from '/src/db/model-access.js';
 import {create_feeds} from '/src/db/op/create-feeds.js';
 import * as string from '/src/string/string.js';
+
+// TODO: break apart into two layers, a UI layer and a lower controller layer
+// The controller layer should work without a UI and it is what should be tested
 
 export function prompt() {
   const input = document.createElement('input');
@@ -12,13 +15,12 @@ export function prompt() {
 }
 
 async function input_onchange(event) {
-  const channeled = true;
-  const ma = await openModelAccess(channeled);
-  await import_files(ma, event.target.files);
-  ma.close();
+  const session = await db.open_with_channel();
+  await import_files(session, event.target.files);
+  session.close();
 }
 
-export async function import_files(ma, files) {
+export async function import_files(session, files) {
   const read_files_results = await read_files(files);
   const url_array = flatten_file_urls(read_files_results);
   const url_array_set = dedup_urls(url_array);
@@ -29,7 +31,7 @@ export async function import_files(ma, files) {
     return feed;
   });
 
-  return create_feeds(ma.conn, ma.channel, feeds);
+  return create_feeds(session.conn, session.channel, feeds);
 }
 
 function read_files(files) {

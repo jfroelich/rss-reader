@@ -1,5 +1,5 @@
 import * as badge from '/src/badge/badge.js';
-import {openModelAccess} from '/src/db/model-access.js';
+import * as db from '/src/db/db.js';
 import {get_entries} from '/src/db/op/get-entries.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
@@ -93,9 +93,10 @@ async function onmessage(event) {
     // logic.
 
     let limit = undefined;
-    const ma = await openModelAccess(/* channeled */ false);
-    const entries = await get_entries(ma.conn, 'viewable', unread_count, limit);
-    ma.close();
+    const session = await db.open();
+    const entries =
+        await get_entries(session.conn, 'viewable', unread_count, limit);
+    session.close();
 
     for (const entry of entries) {
       append_slide(entry);

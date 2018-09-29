@@ -1,5 +1,5 @@
+import * as db from '/src/db/db.js';
 import * as favicon from '/src/iconsvc/favicon.js';
-import {openModelAccess} from '/src/db/model-access.js';
 import {poll_feeds} from '/src/poll-feeds/poll-feeds.js';
 import {options_menu_hide, options_menu_show} from '/src/slideshow-page/left-panel.js';
 import {hide_no_articles_message, show_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
@@ -15,10 +15,10 @@ async function refresh_button_onclick(event) {
 
   refresh_in_progress = true;
 
-  const promises = [openModelAccess(/* channeled */ true), favicon.open()];
-  const [ma, iconn] = await Promise.all(promises);
-  await poll_feeds(ma, iconn, {ignore_recency_check: true});
-  ma.close();
+  const promises = [db.open_with_channel(), favicon.open()];
+  const [session, iconn] = await Promise.all(promises);
+  await poll_feeds(session, iconn, {ignore_recency_check: true});
+  session.close();
   iconn.close();
 
   refresh_in_progress = false;

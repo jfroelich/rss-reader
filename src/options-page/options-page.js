@@ -1,5 +1,5 @@
 import * as badge from '/src/badge/badge.js';
-import {openModelAccess} from '/src/db/model-access.js';
+import * as db from '/src/db/db.js';
 import {activate_feed} from '/src/db/op/activate-feed.js';
 import {deactivate_feed} from '/src/db/op/deactivate-feed.js';
 import {get_feed} from '/src/db/op/get-feed.js';
@@ -227,9 +227,9 @@ async function feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-  const ma = await openModelAccess(/* channeled */ false);
-  const feed = await get_feed(ma.conn, 'id', feed_id, false);
-  ma.close();
+  const session = await db.open();
+  const feed = await get_feed(session.conn, 'id', feed_id, false);
+  session.close();
 
   const title_element = document.getElementById('details-title');
   title_element.textContent = feed.title || feed.link || 'Untitled';
@@ -307,11 +307,10 @@ async function subscribe_form_onsubmit(event) {
   // TODO: subscribe can now throw an error, this should catch the error and
   // show a nice error message or something instead of panic
   // TODO: move this to a helper
-  const conn_promises =
-      Promise.all([openModelAccess(/* channeled */ true), favicon.open()]);
-  const [ma, iconn] = await conn_promises;
-  const feed = await subscribe(ma, iconn, subscribe_url, undefined, true);
-  ma.close();
+  const conn_promises = Promise.all([db.open_with_channel(), favicon.open()]);
+  const [session, iconn] = await conn_promises;
+  const feed = await subscribe(session, iconn, subscribe_url, undefined, true);
+  session.close();
   iconn.close();
 
   feed_list_append_feed(feed);
@@ -338,20 +337,18 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const conn_promises =
-      Promise.all([openModelAccess(/* channeled */ true), favicon.open()]);
-  const [ma, iconn] = await conn_promises;
-  const options = {ignore_recency_check: true, notify: true};
-  // TODO: should just be passing around ma
-  await poll_feed(ma, iconn, options, feed);
-  ma.close();
+  const conn_promises = Promise.all([db.open_with_channel(), favicon.open()]);
+  const [session, iconn] = await conn_promises;
+  const poll_options = {ignore_recency_check: true, notify: true};
+  await poll_feed(session, iconn, poll_options, feed);
+  session.close();
   iconn.close();
 }
 
 async function feed_list_init() {
-  const ma = await openModelAccess(/* channeled */ false);
-  const feeds = await get_feeds(ma.conn, 'all', true);
-  ma.close();
+  const session = await db.open();
+  const feeds = await get_feeds(session.conn, 'all', true);
+  session.close();
 
   for (const feed of feeds) {
     // TODO: I think this is actually a concern of feed_list_append_feed? I do
@@ -395,18 +392,21 @@ function feed_list_remove_feed_by_id(feed_id) {
 
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const ma = await openModelAccess(/* channeled */ true);
-  await unsubscribe(ma, feed_id);
-  ma.close();
+
+  const session = await db.open_with_channel();
+  await unsubscribe(session, feed_id);
+  session.close();
+
   feed_list_remove_feed_by_id(feed_id);
   section_show_by_id('subs-list-section');
 }
 
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const ma = await openModelAccess(/* channeled */ true);
-  await activate_feed(ma.conn, ma.channel, feed_id);
-  ma.close();
+
+  const session = await db.open_with_channel();
+  await activate_feed(session.conn, session.channel, feed_id);
+  session.close();
 
   // TODO: handling the event here may be wrong, it should be done in the
   // message handler. However, I am not sure how much longer the options page
@@ -423,10 +423,11 @@ async function activate_feed_button_onclick(event) {
 
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const ma = await openModelAccess(/* channeled */ true);
+
+  const session = await db.open_with_channel();
   const reason = 'manual';
-  await deactivate_feed(ma.conn, ma.channel, feed_id, reason);
-  ma.close();
+  await deactivate_feed(session.conn, session.channel, feed_id, reason);
+  session.close();
 
   // Deactivate the corresponding element in the view
   const item_selector = 'li[feed="' + feed_id + '"]';

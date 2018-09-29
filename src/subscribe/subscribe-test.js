@@ -1,8 +1,7 @@
 import assert from '/src/assert/assert.js';
+import * as db from '/src/db/db.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import * as types from '/src/db/types.js';
-import * as indexeddb from '/src/indexeddb/indexeddb.js';
-import {openModelAccess} from '/src/db/model-access.js';
 import {subscribe} from '/src/subscribe/subscribe.js';
 import {register_test} from '/src/test/test-registry.js';
 
@@ -10,20 +9,24 @@ import {register_test} from '/src/test/test-registry.js';
 // file somehow (e.g. a feed that exists within the extension folder)
 
 async function subscribe_test() {
-  const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
-  const url = new URL(test_url);
+  // Test setup
+  const db_name = 'subscribe-test';
+  const session = await db.open(db_name);
 
-  const ma = await openModelAccess(/* channeled */ false, 'subscribe-test');
+  // Inject a fake channel
   const messages = [];
-  ma.channel = {
+  session.channel = {
     name: 'channel-stub',
     postMessage: message => messages.push(message),
     close: noop
   };
 
+  const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
+  const url = new URL(test_url);
+
   // Rethrow subscribe exceptions just like assertion failures by omitting
   // try/catch here.
-  const feed = await subscribe(ma, undefined, url, 7000, false);
+  const feed = await subscribe(session, undefined, url, 7000, false);
 
   // Test the subscription produced the desired result
   assert(feed);
@@ -40,8 +43,9 @@ async function subscribe_test() {
   assert(messages[0].type === 'feed-created');
   assert(messages[0].id === feed.id);
 
-  ma.close();
-  await indexeddb.remove(ma.conn.name);
+  // Test teardown
+  session.close();
+  await db.remove(db_name);
 }
 
 function noop() {}

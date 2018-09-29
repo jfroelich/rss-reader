@@ -1,9 +1,9 @@
-import {filter_publisher} from '/src/slideshow-page/article-title/article-title.js';
 import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as types from '/src/db/types.js';
 import * as html from '/src/html/html.js';
 import * as ls from '/src/localstorage/localstorage.js';
+import {filter_publisher} from '/src/slideshow-page/article-title/article-title.js';
 import {escape_html} from '/src/slideshow-page/escape-html.js';
 import {hide_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
 import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
@@ -128,7 +128,7 @@ function create_feed_source_element(entry) {
 // TODO: this helper should probably be inlined into append_slide once I work
 // out the API better. One of the main things I want to do is resolve the
 // mismatch between the function name, append-slide, and its main parameter,
-// a model entry object. I think the solution is to separate entry-to-element
+// a database entry object. I think the solution is to separate entry-to-element
 // and append-element. This module should ultimately focus only on appending,
 // not creation and coercion.
 function attach_slide(slide) {

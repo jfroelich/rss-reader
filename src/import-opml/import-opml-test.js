@@ -1,8 +1,7 @@
 import assert from '/src/assert/assert.js';
+import * as db from '/src/db/db.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import * as import_opml from '/src/import-opml/import-opml.js';
-import * as indexeddb from '/src/indexeddb/indexeddb.js';
-import {openModelAccess} from '/src/db/model-access.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // TODO: test multiple files
@@ -10,11 +9,16 @@ import {register_test} from '/src/test/test-registry.js';
 // TODO: test dup handling
 
 async function import_opml_test() {
-  const ma = await openModelAccess(
-      /* channeled */ false, 'import-opml-test-db', undefined, 3000);
+  // Test setup
+  const db_name = 'import-opml-test-db';
+
+  // Open without a channel, we will inject our own fake one
+  const session = await db.open(db_name);
+
   let iconn = undefined;  // test without favicon caching support
   const messages = [];
-  ma.channel = {
+
+  session.channel = {
     name: 'import-opml-test',
     postMessage: message => messages.push(message),
     close: noop
@@ -24,7 +28,7 @@ async function import_opml_test() {
       'xmlUrl="a://b/c"/></body></opml>';
   const file = create_opml_file('file.xml', opml_string);
 
-  const results = await import_opml.import_files(ma, [file]);
+  const results = await import_opml.import_files(session, [file]);
   assert(results);
   assert(results.length === 1);
   assert(feed_utils.is_valid_feed_id(results[0]));
@@ -33,8 +37,8 @@ async function import_opml_test() {
   assert(messages[0].type === 'feed-created');
   assert(messages[0].id === 1);
 
-  ma.close();
-  await indexeddb.remove(ma.conn.name);
+  session.close();
+  await db.remove(db_name);
 }
 
 // A File implements the Blob interface

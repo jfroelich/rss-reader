@@ -1,7 +1,7 @@
 import {create_feed} from '/src/db/op/create-feed.js';
 import {delete_feed} from '/src/db/op/delete-feed.js';
 import {get_feed} from '/src/db/op/get-feed.js';
-import * as sanity from '/src/db/sanity/model-sanity.js';
+import * as sanity from '/src/db/sanity/sanity.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {response_is_redirect} from '/src/fetch2/fetch2.js';
 import * as favicon from '/src/iconsvc/favicon.js';
@@ -9,15 +9,16 @@ import * as notification from '/src/notification/notification.js';
 
 // Subscribe to a feed.  Entries are excluded because it takes too long to
 // process them on initial subscribe.
-// @param ma {ModelAccess} an open ModelAccess instance
+// @param session {DbSession} an open DbSession instance
 // @param iconn {IDBDatabase} an open icon database connection
 // @param url {URL} the url to subscribe
 // @param should_notify {Boolean} whether to send a notification
 // @param fetch_timeout {Number} fetch timeout
 // @error database errors, type errors, fetch errors, etc
 // @return {Promise} resolves to the feed object stored in the database
-export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
-  if (await model_has_feed_url(ma, url)) {
+export async function subscribe(
+    session, iconn, url, fetch_timeout, should_notify) {
+  if (await model_has_feed_url(session, url)) {
     throw new ConstraintError('Found existing feed with url ' + url.href);
   }
 
@@ -32,7 +33,7 @@ export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
   // requirements. In the mean time this extra check is disabled and hopefully
   // does not lead to serious problems.
 
-  // if (response_is_redirect(url, res_url) && await model_has_feed_url(ma,
+  // if (response_is_redirect(url, res_url) && await model_has_feed_url(session,
   // res_url)) {
   //  throw new ConstraintError(
   //      'Found existing feed for redirected url ' + res_url.href);
@@ -41,7 +42,7 @@ export async function subscribe(ma, iconn, url, fetch_timeout, should_notify) {
   await set_feed_favicon(iconn, feed);
   sanity.validate_feed(feed);
   sanity.sanitize_feed(feed);
-  feed.id = await create_feed(ma.conn, ma.channel, feed);
+  feed.id = await create_feed(session.conn, session.channel, feed);
   send_subscribe_notification(feed, should_notify);
   return feed;
 }
@@ -75,14 +76,14 @@ async function fetch_feed_without_entries(url, timeout) {
   return response.feed;
 }
 
-async function model_has_feed_url(ma, url) {
+async function model_has_feed_url(session, url) {
   const key_only = true;
-  const feed = await get_feed(ma.conn, 'url', url, key_only);
+  const feed = await get_feed(session.conn, 'url', url, key_only);
   return feed ? true : false;
 }
 
-export function unsubscribe(ma, feed_id) {
-  return delete_feed(ma.conn, ma.channel, feed_id, 'unsubscribe');
+export function unsubscribe(session, feed_id) {
+  return delete_feed(session.conn, session.channel, feed_id, 'unsubscribe');
 }
 
 export class ConstraintError extends Error {
