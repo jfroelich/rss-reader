@@ -46,13 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-ModelAccess.prototype.removeLostEntries = async function() {
-  const ids = await idbmodel.remove_lost_entries(this.conn);
-  for (const id of ids) {
-    this.channel.postMessage({type: 'entry-deleted', id: id, reason: 'lost'});
-  }
-};
-
 // Scans the database for entries not linked to a feed and deletes them
 ModelAccess.prototype.removeOrphanedEntries = async function() {
   const ids = await idbmodel.remove_orphaned_entries(this.conn);

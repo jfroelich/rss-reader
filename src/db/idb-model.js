@@ -102,18 +102,6 @@ function add_active_field_to_feeds(store) {
   };
 }
 
-export async function remove_lost_entries(conn) {
-  const deleted_ids = [];
-  await iterate_entries(conn, cursor => {
-    const entry = cursor.value;
-    if (!entry.urls || !entry.urls.length) {
-      cursor.delete();
-      deleted_ids.push(entry.id);
-    }
-  });
-  return deleted_ids;
-}
-
 export async function remove_orphaned_entries(conn) {
   const entry_ids = [];
   const feed_ids = await get_feed_ids(conn);
