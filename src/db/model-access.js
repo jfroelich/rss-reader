@@ -46,23 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-// Scan the feed store and the entry store and delete any objects missing their
-// hidden magic property. This is not 'thread-safe' because this uses multiple
-// write transactions.
-ModelAccess.prototype.removeUntypedObjects = async function() {
-  const {feed_ids, entry_ids} =
-      await idbmodel.remove_untyped_objects(this.conn);
-
-  for (const id of feed_ids) {
-    this.channel.postMessage({type: 'feed-deleted', id: id, reason: 'untyped'});
-  }
-
-  for (const id of entry_ids) {
-    this.channel.postMessage(
-        {type: 'entry-deleted', id: id, reason: 'untyped'});
-  }
-};
-
 ModelAccess.prototype.updateEntry = async function(entry) {
   assert(types.is_entry(entry));
   assert(entry_utils.is_valid_entry_id(entry.id));

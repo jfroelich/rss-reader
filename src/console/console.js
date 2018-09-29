@@ -9,6 +9,8 @@ import {poll_feed, poll_feeds} from '/src/poll-feeds/poll-feeds.js';
 import {refresh_feed_icons} from '/src/refresh-feed-icons/refresh-feed-icons.js';
 import {subscribe} from '/src/subscribe/subscribe.js';
 
+// TODO: add command for removing untyped objects
+
 // Handle commands entered into the console.
 
 async function cli_subscribe(url_string, poll = true) {

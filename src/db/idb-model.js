@@ -1,9 +1,4 @@
 import assert from '/src/assert/assert.js';
-import * as entry_utils from '/src/db/entry-utils.js';
-import * as feed_utils from '/src/db/feed-utils.js';
-import {delete_feed} from '/src/db/op/delete-feed.js';
-import {get_feeds} from '/src/db/op/get-feeds.js';
-import {iterate_entries} from '/src/db/op/iterate-entries.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 
@@ -102,37 +97,6 @@ function add_active_field_to_feeds(store) {
 }
 
 
-export async function remove_untyped_objects(conn) {
-  const removed_feed_ids = [];
-  const removed_entry_ids = [];
-
-  const feeds = get_feeds(conn);
-  const delete_feed_promises = [];
-  for (const feed of feeds) {
-    if (!types.is_feed(feed)) {
-      removed_feed_ids.push(feed.id);
-      const promise = delete_feed(conn, feed.id);
-      delete_feed_promises.push(promise);
-    }
-  }
-
-  const results = await Promise.all(delete_feed_promises);
-  for (const entry_ids of results) {
-    for (const id of entry_ids) {
-      removed_entry_ids.push(id);
-    }
-  }
-
-  await iterate_entries(conn, cursor => {
-    const entry = cursor.value;
-    if (!types.is_entry(entry)) {
-      removed_entry_ids.push(entry.id);
-      cursor.delete();
-    }
-  });
-
-  return {feed_ids: removed_feed_ids, entry_ids: removed_entry_ids};
-}
 
 export function update_entry(conn, entry) {
   return new Promise(update_entry_executor.bind(null, conn, entry));
