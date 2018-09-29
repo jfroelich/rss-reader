@@ -3,6 +3,7 @@ import {openModelAccess} from '/src/db/model-access.js';
 import {activate_feed} from '/src/db/op/activate-feed.js';
 import {deactivate_feed} from '/src/db/op/deactivate-feed.js';
 import {get_feed} from '/src/db/op/get-feed.js';
+import {get_feeds} from '/src/db/op/get-feeds.js';
 import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
@@ -349,7 +350,7 @@ async function after_subscribe_poll_feed_async(feed) {
 
 async function feed_list_init() {
   const ma = await openModelAccess(/* channeled */ false);
-  const feeds = await ma.getFeeds('all', true);
+  const feeds = await get_feeds(ma.conn, 'all', true);
   ma.close();
 
   for (const feed of feeds) {

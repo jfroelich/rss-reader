@@ -3,6 +3,7 @@ import * as feed_utils from '/src/db/feed-utils.js';
 import * as idbmodel from '/src/db/idb-model.js';
 import {create_feeds} from '/src/db/op/create-feeds.js';
 import {get_feed} from '/src/db/op/get-feed.js';
+import {get_feeds} from '/src/db/op/get-feeds.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
 import {register_test} from '/src/test/test-registry.js';
@@ -21,7 +22,7 @@ async function create_feeds_test() {
   const ids = await create_feeds(conn, undefined, feeds);
   assert(ids.length === num_feeds, '' + ids);
 
-  const stored_feeds = await idbmodel.get_feeds(conn, 'all');
+  const stored_feeds = await get_feeds(conn, 'all', false);
   assert(stored_feeds.length === num_feeds);
 
   // Exercise the id check

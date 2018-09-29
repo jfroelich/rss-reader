@@ -4,6 +4,7 @@ import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import {create_entry} from '/src/db/op/create-entry.js';
 import {get_entry} from '/src/db/op/get-entry.js';
+import {get_feeds} from '/src/db/op/get-feeds.js';
 import * as sanity from '/src/db/sanity/model-sanity.js';
 import * as types from '/src/db/types.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
@@ -31,7 +32,7 @@ const default_options = {
 
 function get_pollable_feeds(ma) {
   const mode = 'active', sort = false;
-  return ma.getFeeds(mode, sort);
+  return get_feeds(ma.conn, mode, sort);
 }
 
 export async function poll_feeds(ma, iconn, options = {}) {

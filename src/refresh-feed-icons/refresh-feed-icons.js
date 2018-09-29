@@ -1,8 +1,9 @@
+import {get_feeds} from '/src/db/op/get-feeds.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 
 // Update the favicon for each of the active feeds in the database
 export async function refresh_feed_icons(ma, iconn) {
-  const feeds = await ma.getFeeds('active', /* sorted */ false);
+  const feeds = await get_feeds(ma.conn, 'active', /* sorted */ false);
   const promises = [];
   for (const feed of feeds) {
     promises.push(refresh_feed_icon(ma, iconn, feed));

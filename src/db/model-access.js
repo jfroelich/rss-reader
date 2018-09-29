@@ -46,26 +46,6 @@ ModelAccess.prototype.close = function() {
   this.conn.close();
 };
 
-ModelAccess.prototype.getFeeds = async function(mode = 'all', sort = false) {
-  let feeds = await idbmodel.get_feeds(this.conn);
-
-  if (mode === 'active') {
-    feeds = feeds.filter(feed => feed.active);
-  }
-
-  if (sort) {
-    feeds.sort(compare_feeds);
-  }
-
-  return feeds;
-};
-
-function compare_feeds(a, b) {
-  const s1 = a.title ? a.title.toLowerCase() : '';
-  const s2 = b.title ? b.title.toLowerCase() : '';
-  return indexedDB.cmp(s1, s2);
-}
-
 ModelAccess.prototype.iterateEntries = function(handle_entry) {
   assert(typeof handle_entry === 'function');
   return idbmodel.iterate_entries(this.conn, handle_entry);

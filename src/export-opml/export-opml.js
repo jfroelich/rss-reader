@@ -1,4 +1,5 @@
 import {openModelAccess} from '/src/db/model-access.js';
+import {get_feeds} from '/src/db/op/get-feeds.js';
 
 // TODO: implement tests
 
@@ -8,7 +9,7 @@ export async function export_opml(document_title) {
   // Load feeds from storage
   const use_channel = false, sort_feeds = false, mode = 'all';
   const ma = await openModelAccess(use_channel);
-  const feeds = await ma.getFeeds(mode, sort_feeds);
+  const feeds = await get_feeds(ma.conn, mode, sort_feeds);
   ma.close();
 
   // Map feeds into outlines

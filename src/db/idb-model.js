@@ -3,20 +3,9 @@ import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import {delete_feed} from '/src/db/op/delete-feed.js';
 import {get_feed_ids} from '/src/db/op/get-feed-ids.js';
+import {get_feeds} from '/src/db/op/get-feeds.js';
 import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
-
-export function get_feeds(conn) {
-  return new Promise(get_feeds_executor.bind(null, conn));
-}
-
-function get_feeds_executor(conn, resolve, reject) {
-  const txn = conn.transaction('feed');
-  const store = txn.objectStore('feed');
-  const request = store.getAll();
-  request.onerror = _ => reject(request.error);
-  request.onsuccess = _ => resolve(request.result);
-}
 
 export function iterate_entries(conn, handle_entry) {
   return new Promise(iterate_entries_executor.bind(null, conn, handle_entry));
