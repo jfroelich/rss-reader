@@ -22,6 +22,7 @@ export {remove_lost_entries} from '/src/db/remove-lost-entries.js';
 export {remove_orphaned_entries} from '/src/db/remove-orphaned-entries.js';
 export {remove_untyped_objects} from '/src/db/remove-untyped-objects.js';
 export {remove} from '/src/db/remove.js';
+export * from '/src/db/sanity.js';
 export * from '/src/db/types.js';
 export {update_entry} from '/src/db/update-entry.js';
 export {update_feed} from '/src/db/update-feed.js';
