@@ -30,6 +30,8 @@ export async function create_entry(session, entry) {
     const message = {type: 'entry-created', id: id};
     session.channel.postMessage(message);
   }
+
+  return id;
 }
 
 // Put an entry in the entry object store. This does not resolve until the
