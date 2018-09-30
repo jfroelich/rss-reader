@@ -302,8 +302,8 @@ slide a {
 }
 
 .entry img {
-/*  max-width: 100%;
-  max-height: 100%;*/
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .entry .entry-content {
@@ -320,8 +320,8 @@ slide a {
   /*margin-left: auto;
   margin-right: auto;*/
 
-  margin-left: -100px;
-  margin-right: -100px;
+  margin-left: auto;
+  margin-right: auto;
 
   margin-top: 6px;
   margin-bottom: 6px;
@@ -329,30 +329,28 @@ slide a {
   padding: 0;
 
   width: auto;
-
+  height:auto;
 
   /*
   Init the opacity to ensure the transition works when softening on hover,
   and also slightly soften so that image better blends with the article background
   */
-  opacity: 0.90;
+  opacity: 0.94;
 
   /* Messing around with softening image corners
   Idea from http://www.elopezr.com/the-rendering-of-middle-earth-shadow-of-mordor/
   The 'parabola' effect
   */
-  border-radius: 8px;
-  border: 0 solid #333;
-  box-shadow: 0 0 4px #111;
+  border-radius: 5px;
+  border: 0 solid #444444;
+  box-shadow: 0 0 2px #333333;
 
   /* For opacity and border change on hover */
   transition: all .3s ease-in-out;
 }
 
-
-
 .entry .entry-content img:hover {
-  opacity: 0.8;
+  opacity: 0.7;
   box-shadow: none;
 }
 
