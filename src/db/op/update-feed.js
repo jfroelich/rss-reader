@@ -18,7 +18,9 @@ export async function update_feed(session, feed, transition) {
   assert(feed_utils.is_valid_feed_id(feed.id));
 
   // TODO: define has-url in feed-utils, use that here instead
-  assert(feed.urls && feed.urls.length);
+  // TODO: I have temporarily disabled this assertion. The issue is that callers
+  // use fake feed objects in a few places and do not always provide urls.
+  // assert(feed.urls && feed.urls.length);
 
   assert(transition === undefined || typeof transition === 'function');
 
