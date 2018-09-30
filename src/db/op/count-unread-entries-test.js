@@ -3,6 +3,7 @@ import * as db from '/src/db/db.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import {count_unread_entries} from '/src/db/op/count-unread-entries.js';
 import {create_entry} from '/src/db/op/create-entry.js';
+import {register_test} from '/src/test/test-registry.js';
 
 async function count_unread_entries_test() {
   // Test setup
