@@ -1,6 +1,7 @@
 import assert from '/src/assert/assert.js';
 import {activate_feed} from '/src/db/activate-feed.js';
 import {create_feed} from '/src/db/create-feed.js';
+import * as errors from '/src/db/errors.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import {get_feed} from '/src/db/get-feed.js';
 import {open} from '/src/db/open.js';
@@ -13,18 +14,18 @@ async function activate_feed_test() {
   // Test setup
   const db_name = 'activate-feed-test';
 
-  // This test is flaky right now. I am not using try/finally to ensure the
-  // database is removed at the end of the test when an exception occurs. It
-  // leaves the database as existing, which then causes ripple effect errors
-  // here when reusing the existing database. So just delete the database if it
-  // exists first to avoid the headache.
+  // I am not using try/finally to ensure the database is removed at the end of
+  // the test when an exception occurs. It leaves the database as existing,
+  // which then causes ripple effect errors here when reusing the existing
+  // database. So just delete the database if it exists first to avoid the
+  // headache.
   await remove(db_name);
 
   const session = await open(db_name);
 
   // Setup a fake channel for recording messages for later assertions. Do not
-  // immediately attach it to the session because we want to exclude other calls
-  // that broadcast.
+  // immediately attach it to the session because we want to ignore certain
+  // calls that broadcast messages.
   const messages = [];
   const channel = {};
   channel.postMessage = message => messages.push(message);
@@ -38,49 +39,60 @@ async function activate_feed_test() {
   // Now attach the channel. We wait until now to skip over create-feed
   session.channel = channel;
 
-  // Run the primary operation of this test. This should succeed without error.
+  // Run the primary focus of this test. This should succeed without error. This
+  // implies quite a lot, including that the feed object was found in the
+  // database, that the object was of type feed, and that the feed was not
+  // already in the active state.
   await activate_feed(session, id);
 
   // Detach the channel. Just rules out any chance of awkwardness with out of
   // order execution in this test.
   session.channel = undefined;
 
-  // TODO: the following assertion fails. The problem is that right now
-  // activate-feed makes use of update-feed internally, and forwards its channel
-  // implicitly when it forwards its session. update-feed also sends out a
-  // message about a feed being updated. The proper behavior, I think, is that
-  // only 1 message should be produced, activate-feed. So activate-feed needs to
-  // be changed somehow to produce only its own message.
-
   // Activating a feed should have produced a single message of a certain type
-  assert(messages.length === 1, JSON.stringify(messages));
-  assert(messages[0].type === 'activate-feed');
+  assert(messages.length === 1);
+  assert(messages[0].type === 'feed-activated');
 
+  // Read the feed back out of the database to investigate
   const stored_feed = await get_feed(session, 'id', id, false);
 
-  // Activation should not have somehow destroyed type info
+  // Activation should not have somehow destroyed type info. For performance
+  // reasons this check is NOT implicit in the get_feed call, so it is not
+  // redundant or unreasonable to check here.
   assert(types.is_feed(stored_feed));
 
   // Activation should result in the active state
   assert(stored_feed.active === true);
+
+  // Activation should have cleared out any dependent deactivation properties
   assert(stored_feed.deactivateDate === undefined);
   assert(stored_feed.deactivationReasonText === undefined);
 
-  // TODO: this is a second test. This should be in a separate test function
-  // because it is a different test. Or not? It is nice to reuse the setup
-  // and teardown of the first test.
+  // The feed should not have somehow been updated in the future
+  const now = new Date();
+  assert(stored_feed.dateUpdated <= now);
 
-  // Activating a feed that is already active should fail
-  // TODO: if activate-feed is changed to throw a more specific error type, I
-  // would prefer to test against that specific error type so there is no chance
-  // a different type of error is occurring
+  // Assert that activating a feed that is already active should fail. Test
+  // specifically against the particular error type. This excludes most of the
+  // other errors that may have happened so as to prevent false positives.
   let activation_error;
   try {
     await activate_feed(session, id);
   } catch (error) {
     activation_error = error;
   }
-  assert(activation_error);
+  assert(activation_error instanceof errors.InvalidStateError);
+
+  // Activating a feed that does not exist should fail. Test for the specific
+  // error occurring.
+  const fictitious_feed_id = 123456789;
+  activation_error = undefined;
+  try {
+    await activate_feed(session, fictitious_feed_id);
+  } catch (error) {
+    activation_error = error;
+  }
+  assert(activation_error instanceof errors.NotFoundError);
 
   // Test teardown
   session.close();
