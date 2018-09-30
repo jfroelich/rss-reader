@@ -81,7 +81,6 @@ register_test(article_title_test);
 register_test(subscribe_test);
 register_test(unwrap_element_test);
 
-
 function register_test(test_function) {
   if (typeof test_function !== 'function') {
     throw new TypeError('test_function is not a function');
@@ -131,8 +130,7 @@ function find_test_by_name(name) {
   // Allow for either - or _ as separator and mixed case
   let normal_test_name = name.replace(/-/g, '_').toLowerCase();
 
-  const tests = registry;
-  for (const test_function of tests) {
+  for (const test_function of registry) {
     if (test_function.name === normal_test_name) {
       return test_function;
     }
@@ -193,14 +191,12 @@ async function cli_run(name, timeout = 10000, parallel = true) {
 }
 
 function cli_print_tests() {
-  const tests = registry;
-  tests.forEach(test => console.log(test.name));
+  registry.forEach(test => console.log(test.name));
 }
 
 function populate_test_menu() {
-  const tests = registry;
   const menu = document.getElementById('tests');
-  for (const test of tests) {
+  for (const test of registry) {
     const option = document.createElement('option');
     option.value = test.name;
     option.textContent = test.name.replace(/_/g, '-').toLowerCase();
