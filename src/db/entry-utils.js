@@ -13,7 +13,7 @@ export const ENTRY_STATE_ARCHIVED = 1;
 // id, but is outside the range.
 export const INVALID_ENTRY_ID = 0;
 
-export function create_entry() {
+export function create_entry_object() {
   return {magic: types.ENTRY_MAGIC};
 }
 

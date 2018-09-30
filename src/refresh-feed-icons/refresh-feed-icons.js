@@ -1,10 +1,9 @@
-import {get_feeds} from '/src/db/op/get-feeds.js';
-import {update_feed} from '/src/db/op/update-feed.js';
+import * as db from '/src/db/db.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 
 // Update the favicon for each of the active feeds in the database
 export async function refresh_feed_icons(session, iconn) {
-  const feeds = await get_feeds(session, 'active', false);
+  const feeds = await db.get_feeds(session, 'active', false);
   const promises = [];
   for (const feed of feeds) {
     promises.push(refresh_feed_icon(session, iconn, feed));
@@ -35,6 +34,6 @@ async function refresh_feed_icon(session, iconn, feed) {
       delete feed.faviconURLString;
     }
 
-    await update_feed(session, feed);
+    await db.update_feed(session, feed);
   }
 }

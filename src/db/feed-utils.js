@@ -4,7 +4,7 @@ import * as types from '/src/db/types.js';
 // TODO: decouple from assert
 // TODO: inline append_url_common (artifact of old model.js)
 
-export function create_feed() {
+export function create_feed_object() {
   return {magic: types.FEED_MAGIC};
 }
 

@@ -5,7 +5,7 @@ import * as types from '/src/db/types.js';
 import {register_test} from '/src/test/test-registry.js';
 
 export async function is_entry_test() {
-  const correct = entry_utils.create_entry();
+  const correct = entry_utils.create_entry_object();
   assert(types.is_entry(correct));
   assert(!types.is_feed(correct));
 
@@ -14,7 +14,7 @@ export async function is_entry_test() {
 }
 
 export async function append_entry_url_test() {
-  const entry = entry_utils.create_entry();
+  const entry = entry_utils.create_entry_object();
 
   // Check our precondition
   assert(entry.urls === undefined || entry.urls.length === 0);

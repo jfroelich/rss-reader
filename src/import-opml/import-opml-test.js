@@ -1,6 +1,5 @@
 import assert from '/src/assert/assert.js';
 import * as db from '/src/db/db.js';
-import * as feed_utils from '/src/db/feed-utils.js';
 import * as import_opml from '/src/import-opml/import-opml.js';
 import {register_test} from '/src/test/test-registry.js';
 
@@ -31,7 +30,7 @@ async function import_opml_test() {
   const results = await import_opml.import_files(session, [file]);
   assert(results);
   assert(results.length === 1);
-  assert(feed_utils.is_valid_feed_id(results[0]));
+  assert(db.is_valid_feed_id(results[0]));
 
   assert(messages.length === 1);
   assert(messages[0].type === 'feed-created');

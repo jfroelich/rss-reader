@@ -1,7 +1,4 @@
-import {create_feed} from '/src/db/op/create-feed.js';
-import {delete_feed} from '/src/db/op/delete-feed.js';
-import {get_feed} from '/src/db/op/get-feed.js';
-import * as sanity from '/src/db/sanity.js';
+import * as db from '/src/db/db.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {response_is_redirect} from '/src/fetch2/fetch2.js';
 import * as favicon from '/src/iconsvc/favicon.js';
@@ -40,9 +37,9 @@ export async function subscribe(
   //}
 
   await set_feed_favicon(iconn, feed);
-  sanity.validate_feed(feed);
-  sanity.sanitize_feed(feed);
-  feed.id = await create_feed(session, feed);
+  db.validate_feed(feed);
+  db.sanitize_feed(feed);
+  feed.id = await db.create_feed(session, feed);
   send_subscribe_notification(feed, should_notify);
   return feed;
 }
@@ -78,12 +75,12 @@ async function fetch_feed_without_entries(url, timeout) {
 
 async function model_has_feed_url(session, url) {
   const key_only = true;
-  const feed = await get_feed(session, 'url', url, key_only);
+  const feed = await db.get_feed(session, 'url', url, key_only);
   return feed ? true : false;
 }
 
 export function unsubscribe(session, feed_id) {
-  return delete_feed(session, feed_id, 'unsubscribe');
+  return db.delete_feed(session, feed_id, 'unsubscribe');
 }
 
 export class ConstraintError extends Error {

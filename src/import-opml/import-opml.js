@@ -1,6 +1,4 @@
 import * as db from '/src/db/db.js';
-import * as feed_utils from '/src/db/feed-utils.js';
-import {create_feeds} from '/src/db/op/create-feeds.js';
 import * as string from '/src/string/string.js';
 
 // TODO: break apart into two layers, a UI layer and a lower controller layer
@@ -26,12 +24,12 @@ export async function import_files(session, files) {
   const url_array_set = dedup_urls(url_array);
 
   const feeds = url_array_set.map(url => {
-    const feed = feed_utils.create_feed();
-    feed_utils.append_feed_url(feed, url);
+    const feed = db.create_feed_object();
+    db.append_feed_url(feed, url);
     return feed;
   });
 
-  return create_feeds(session, feeds);
+  return db.create_feeds(session, feeds);
 }
 
 function read_files(files) {

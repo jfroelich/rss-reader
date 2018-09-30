@@ -1,6 +1,6 @@
-import {delete_feed} from '/src/db/op/delete-feed.js';
-import {get_feeds} from '/src/db/op/get-feeds.js';
-import {iterate_entries} from '/src/db/op/iterate-entries.js';
+import {delete_feed} from '/src/db/delete-feed.js';
+import {get_feeds} from '/src/db/get-feeds.js';
+import {iterate_entries} from '/src/db/iterate-entries.js';
 import * as types from '/src/db/types.js';
 
 // TODO: somehow use a single transaction?

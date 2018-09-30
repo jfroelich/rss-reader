@@ -1,13 +1,6 @@
 import assert from '/src/assert/assert.js';
 import {set_base_uri} from '/src/base-uri/base-uri.js';
-import * as entry_utils from '/src/db/entry-utils.js';
-import * as feed_utils from '/src/db/feed-utils.js';
-import {create_entry} from '/src/db/op/create-entry.js';
-import {get_entry} from '/src/db/op/get-entry.js';
-import {get_feeds} from '/src/db/op/get-feeds.js';
-import {update_feed} from '/src/db/op/update-feed.js';
-import * as sanity from '/src/db/sanity.js';
-import * as types from '/src/db/types.js';
+import * as db from '/src/db/db.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
 import {is_allowed_request} from '/src/fetch-policy/fetch-policy.js';
@@ -33,7 +26,7 @@ const default_options = {
 };
 
 function get_pollable_feeds(session) {
-  return get_feeds(session, 'active', false);
+  return db.get_feeds(session, 'active', false);
 }
 
 export async function poll_feeds(session, iconn, options = {}) {
@@ -66,7 +59,7 @@ export async function poll_feeds(session, iconn, options = {}) {
 
 // Check if a remote feed has new data and store it in the database
 export async function poll_feed(session, iconn, options = {}, feed) {
-  assert(types.is_feed(feed));
+  assert(db.is_feed(feed));
   assert(Array.isArray(feed.urls));
   assert(feed.urls.length > 0);
   assert(feed.active);
@@ -100,9 +93,9 @@ export async function poll_feed(session, iconn, options = {}, feed) {
 
   const merged_feed = merge_feed(feed, response.feed);
   handle_fetch_success(merged_feed);
-  sanity.validate_feed(merged_feed);
-  sanity.sanitize_feed(merged_feed);
-  await update_feed(session, merged_feed);
+  db.validate_feed(merged_feed);
+  db.sanitize_feed(merged_feed);
+  await db.update_feed(session, merged_feed);
 
   const count = await poll_entries(
       session, iconn, rewrite_rules, options, response.entries, merged_feed);
@@ -169,11 +162,11 @@ function propagate_feed_properties(feed, entries) {
 // each new feed url.
 function merge_feed(old_feed, new_feed) {
   const merged_feed =
-      Object.assign(feed_utils.create_feed(), old_feed, new_feed);
+      Object.assign(db.create_feed_object(), old_feed, new_feed);
   merged_feed.urls = [...old_feed.urls];
   if (new_feed.urls) {
     for (const url_string of new_feed.urls) {
-      feed_utils.append_feed_url(merged_feed, new URL(url_string));
+      db.append_feed_url(merged_feed, new URL(url_string));
     }
   }
 
@@ -216,7 +209,7 @@ async function handle_fetch_error(session, error, feed, threshold) {
   }
 
   // No need to validate/sanitize, we've had control for the entire lifetime
-  await update_feed(session, feed);
+  await db.update_feed(session, feed);
 }
 
 function dedup_entries(entries) {
@@ -263,7 +256,7 @@ function dedup_entries(entries) {
 // format. This is a cross-cutting concern so it belongs in the place where the
 // concerns meet.
 function coerce_entry(parsed_entry) {
-  const blank_entry = entry_utils.create_entry();
+  const blank_entry = db.create_entry_object();
 
   // Copy over everything
   const clone = Object.assign(blank_entry, parsed_entry);
@@ -272,7 +265,7 @@ function coerce_entry(parsed_entry) {
   delete clone.link;
   if (parsed_entry.link) {
     try {
-      entry_utils.append_entry_url(clone, new URL(parsed_entry.link));
+      db.append_entry_url(clone, new URL(parsed_entry.link));
     } catch (error) {
     }
   }
@@ -286,13 +279,13 @@ function coerce_entry(parsed_entry) {
 export async function poll_entry(
     session, iconn, entry, fetch_html_timeout, fetch_image_timeout,
     rewrite_rules, feed_url_string) {
-  assert(types.is_entry(entry));
+  assert(db.is_entry(entry));
 
   let url = new URL(entry.urls[entry.urls.length - 1]);
-  entry_utils.append_entry_url(entry, rewrite_url(url, rewrite_rules));
+  db.append_entry_url(entry, rewrite_url(url, rewrite_rules));
 
   url = new URL(entry.urls[entry.urls.length - 1]);
-  let existing_entry = await get_entry(session, 'url', url, true);
+  let existing_entry = await db.get_entry(session, 'url', url, true);
   if (existing_entry) {
     throw new EntryExistsError('Entry already exists for url ' + url.href);
   }
@@ -317,11 +310,10 @@ export async function poll_entry(
     const response_url = new URL(response.url);
     if (response_is_redirect(url, response)) {
       url_changed = true;
-      entry_utils.append_entry_url(entry, response_url);
-      entry_utils.append_entry_url(
-          entry, rewrite_url(response_url, rewrite_rules));
+      db.append_entry_url(entry, response_url);
+      db.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
       url = new URL(entry.urls[entry.urls.length - 1]);
-      existing_entry = await get_entry(session, 'url', url, true);
+      existing_entry = await db.get_entry(session, 'url', url, true);
       if (existing_entry) {
         throw new EntryExistsError(
             'Entry exists for redirected url ' + url.href);
@@ -371,9 +363,9 @@ export async function poll_entry(
 
   entry.content = document.documentElement.outerHTML;
 
-  sanity.sanitize_entry(entry);
-  sanity.validate_entry(entry);
-  return create_entry(session, entry);
+  db.sanitize_entry(entry);
+  db.validate_entry(entry);
+  return db.create_entry(session, entry);
 }
 
 // TODO: somehow store in configuration instead of here, look into

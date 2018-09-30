@@ -1,7 +1,5 @@
 import assert from '/src/assert/assert.js';
 import * as db from '/src/db/db.js';
-import * as feed_utils from '/src/db/feed-utils.js';
-import * as types from '/src/db/types.js';
 import {subscribe} from '/src/subscribe/subscribe.js';
 import {register_test} from '/src/test/test-registry.js';
 
@@ -30,8 +28,8 @@ async function subscribe_test() {
 
   // Test the subscription produced the desired result
   assert(feed);
-  assert(types.is_feed(feed));
-  assert(feed_utils.is_valid_feed_id(feed.id));
+  assert(db.is_feed(feed));
+  assert(db.is_valid_feed_id(feed.id));
 
   // Length may be 1 or 2 (may have redirected and captured new url)
   assert(feed.urls.length);

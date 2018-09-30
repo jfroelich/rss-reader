@@ -86,7 +86,7 @@ function archive_entry(entry) {
 }
 
 function compact_entry(entry) {
-  const ce = entry_utils.create_entry();
+  const ce = entry_utils.create_entry_object();
   ce.dateCreated = entry.dateCreated;
 
   if (entry.dateRead) {

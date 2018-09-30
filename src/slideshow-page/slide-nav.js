@@ -1,5 +1,4 @@
 import * as db from '/src/db/db.js';
-import {get_entries} from '/src/db/op/get-entries.js';
 import * as ls from '/src/localstorage/localstorage.js';
 import {append_slide} from '/src/slideshow-page/append-slide.js';
 import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
@@ -25,7 +24,7 @@ export async function show_next_slide() {
   if (slide_unread_count < 3) {
     const limit = ls.read_int('initial_entry_load_limit');
     const mode = 'viewable';
-    entries = await get_entries(session, mode, slide_unread_count, limit);
+    entries = await db.get_entries(session, mode, slide_unread_count, limit);
   }
   session.close();
 

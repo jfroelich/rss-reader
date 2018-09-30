@@ -6,7 +6,7 @@ import {register_test} from '/src/test/test-registry.js';
 async function sanitize_entry_content_test() {
   // TODO: validate truncation behavior?
 
-  const entry = entry_utils.create_entry();
+  const entry = entry_utils.create_entry_object();
 
   let content = 'hello world';
   entry.content = content;

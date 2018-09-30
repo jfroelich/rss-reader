@@ -1,6 +1,7 @@
 import assert from '/src/assert/assert.js';
-import * as db from '/src/db/db.js';
-import {archive_entries} from '/src/db/op/archive-entries.js';
+import {archive_entries} from '/src/db/archive-entries.js';
+import {open} from '/src/db/open.js';
+import {remove} from '/src/db/remove.js';
 import {register_test} from '/src/test/test-registry.js';
 
 // NOTE: At the moment this test is a nominal stub that does not actually test
@@ -13,11 +14,11 @@ import {register_test} from '/src/test/test-registry.js';
 
 async function archive_entries_test() {
   const db_name = 'archive-entries-test';
-  const session = await db.open(db_name);
+  const session = await open(db_name);
   const max_age = 100;
   const ids = await archive_entries(session, max_age);
   session.close();
-  await db.remove(db_name);
+  await remove(db_name);
 }
 
 register_test(archive_entries_test);

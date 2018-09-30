@@ -1,6 +1,6 @@
 import * as feed_utils from '/src/db/feed-utils.js';
-import {get_feed_ids} from '/src/db/op/get-feed-ids.js';
-import {iterate_entries} from '/src/db/op/iterate-entries.js';
+import {get_feed_ids} from '/src/db/get-feed-ids.js';
+import {iterate_entries} from '/src/db/iterate-entries.js';
 import * as types from '/src/db/types.js';
 
 // Scans the database for entries not linked to a feed and deletes them

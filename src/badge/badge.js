@@ -1,6 +1,5 @@
 import ExtensionLock from '/src/badge/extension-lock.js';
 import * as db from '/src/db/db.js';
-import {count_unread_entries} from '/src/db/op/count-unread-entries.js';
 
 export function install_listener(event) {
   console.debug('Install listener received event, refreshing badge');
@@ -31,7 +30,7 @@ export async function refresh(lock_value) {
     lock.acquire(unlock_deadline);
 
     const session = await db.open();
-    const count = await count_unread_entries(session);
+    const count = await db.count_unread_entries(session);
     session.close();
 
     const text = count > 999 ? '1k+' : '' + count;

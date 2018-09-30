@@ -1,4 +1,4 @@
-import {iterate_entries} from '/src/db/op/iterate-entries.js';
+import {iterate_entries} from '/src/db/iterate-entries.js';
 
 export async function remove_lost_entries(session) {
   const ids = [];

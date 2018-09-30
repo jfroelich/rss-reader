@@ -1,6 +1,6 @@
 import assert from '/src/assert/assert.js';
 import * as feed_utils from '/src/db/feed-utils.js';
-import {update_feed} from '/src/db/op/update-feed.js';
+import {update_feed} from '/src/db/update-feed.js';
 
 export async function deactivate_feed(session, feed_id, reason) {
   assert(feed_utils.is_valid_feed_id(feed_id));

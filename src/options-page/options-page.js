@@ -1,9 +1,5 @@
 import * as badge from '/src/badge/badge.js';
 import * as db from '/src/db/db.js';
-import {activate_feed} from '/src/db/op/activate-feed.js';
-import {deactivate_feed} from '/src/db/op/deactivate-feed.js';
-import {get_feed} from '/src/db/op/get-feed.js';
-import {get_feeds} from '/src/db/op/get-feeds.js';
 import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
@@ -228,7 +224,7 @@ async function feed_list_item_onclick(event) {
   const feed_id = parseInt(feed_id_string, 10);
 
   const session = await db.open();
-  const feed = await get_feed(session, 'id', feed_id, false);
+  const feed = await db.get_feed(session, 'id', feed_id, false);
   session.close();
 
   const title_element = document.getElementById('details-title');
@@ -347,7 +343,7 @@ async function after_subscribe_poll_feed_async(feed) {
 
 async function feed_list_init() {
   const session = await db.open();
-  const feeds = await get_feeds(session, 'all', true);
+  const feeds = await db.get_feeds(session, 'all', true);
   session.close();
 
   for (const feed of feeds) {
@@ -405,7 +401,7 @@ async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const session = await db.open_with_channel();
-  await activate_feed(session, feed_id);
+  await db.activate_feed(session, feed_id);
   session.close();
 
   // TODO: handling the event here may be wrong, it should be done in the
@@ -426,7 +422,7 @@ async function deactivate_feed_button_onclick(event) {
 
   const reason = 'manual';
   const session = await db.open_with_channel();
-  await deactivate_feed(session, feed_id, reason);
+  await db.deactivate_feed(session, feed_id, reason);
   session.close();
 
   // Deactivate the corresponding element in the view

@@ -1,8 +1,9 @@
 import assert from '/src/assert/assert.js';
-import * as db from '/src/db/db.js';
+import {create_feed} from '/src/db/create-feed.js';
 import * as feed_utils from '/src/db/feed-utils.js';
-import {create_feed} from '/src/db/op/create-feed.js';
-import {get_feed} from '/src/db/op/get-feed.js';
+import {get_feed} from '/src/db/get-feed.js';
+import {open} from '/src/db/open.js';
+import {remove} from '/src/db/remove.js';
 import * as types from '/src/db/types.js';
 import {register_test} from '/src/test/test-registry.js';
 
@@ -20,10 +21,10 @@ import {register_test} from '/src/test/test-registry.js';
 async function create_feed_test() {
   // Test setup
   const db_name = 'create-feed-test';
-  const session = await db.open(db_name);
+  const session = await open(db_name);
 
   // Create a dummy feed object, store it, grab its new id
-  const feed = feed_utils.create_feed();
+  const feed = feed_utils.create_feed_object();
   const feed_url = new URL('http://www.example.com/example.rss');
   feed_utils.append_feed_url(feed, feed_url);
   const stored_feed_id = await create_feed(session, feed);
@@ -41,7 +42,7 @@ async function create_feed_test() {
 
   // Test teardown
   session.close();
-  await db.remove(db_name);
+  await remove(db_name);
 }
 
 // Test that uniqueness contraint on feed store url index causes create-feed to
@@ -49,19 +50,19 @@ async function create_feed_test() {
 async function create_feed_url_constraint_test() {
   // Test setup
   const db_name = 'create-feed-url-constraint-test';
-  const session = await db.open(db_name);
+  const session = await open(db_name);
 
   // TODO: reuse the same URL object here, do not create two url objects, it
   // just leaves open room for inconsistency and is less terse
 
   // Generate and store a basic feed
-  const feed1 = feed_utils.create_feed();
+  const feed1 = feed_utils.create_feed_object();
   feed_utils.append_feed_url(
       feed1, new URL('http://www.example.com/example.rss'));
   await create_feed(session, feed1);
 
   // Generate and store a second feed with the same url
-  const feed2 = feed_utils.create_feed();
+  const feed2 = feed_utils.create_feed_object();
   feed_utils.append_feed_url(
       feed2, new URL('http://www.example.com/example.rss'));
 
@@ -85,7 +86,7 @@ async function create_feed_url_constraint_test() {
 
   // Test teardown
   session.close();
-  await db.remove(db_name);
+  await remove(db_name);
 }
 
 register_test(create_feed_test);

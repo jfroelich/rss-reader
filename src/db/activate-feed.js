@@ -1,9 +1,9 @@
 import assert from '/src/assert/assert.js';
-import {is_valid_feed_id} from '/src/db/feed-utils.js';
-import {update_feed} from '/src/db/op/update-feed.js';
+import * as feed_utils from '/src/db/feed-utils.js';
+import {update_feed} from '/src/db/update-feed.js';
 
 export async function activate_feed(session, feed_id) {
-  assert(is_valid_feed_id(feed_id));
+  assert(feed_utils.is_valid_feed_id(feed_id));
   await activate_feed_internal(session, feed_id);
 
   if (session.channel) {

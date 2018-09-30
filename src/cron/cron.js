@@ -1,8 +1,4 @@
 import * as db from '/src/db/db.js';
-import {archive_entries} from '/src/db/op/archive-entries.js';
-import {remove_lost_entries} from '/src/db/op/remove-lost-entries.js';
-import {remove_orphaned_entries} from '/src/db/op/remove-orphaned-entries.js';
-import {remove_untyped_objects} from '/src/db/op/remove-untyped-objects.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
 import {poll_feeds} from '/src/poll-feeds/poll-feeds.js';
@@ -49,7 +45,7 @@ export async function alarm_listener(alarm) {
     // TODO: read max age from config instead of defaulting
     let max_age;
     const session = await db.open_with_channel();
-    await archive_entries(session, max_age);
+    await db.archive_entries(session, max_age);
     session.close();
   } else if (alarm.name === 'poll') {
     if (ls.read_boolean('only_poll_if_idle')) {
@@ -69,15 +65,15 @@ export async function alarm_listener(alarm) {
     iconn.close();
   } else if (alarm.name === 'remove-entries-missing-urls') {
     const session = await db.open_with_channel();
-    await remove_lost_entries(session);
+    await db.remove_lost_entries(session);
     session.close();
   } else if (alarm.name === 'remove-orphaned-entries') {
     const session = await db.open_with_channel();
-    await remove_orphaned_entries(session);
+    await db.remove_orphaned_entries(session);
     session.close();
   } else if (alarm.name === 'remove-untyped-objects') {
     const session = await db.open_with_channel();
-    await remove_untyped_objects(session);
+    await db.remove_untyped_objects(session);
     session.close();
   } else if (alarm.name === 'refresh-feed-icons') {
     const proms = [await db.open_with_channel(), favicon.open()];

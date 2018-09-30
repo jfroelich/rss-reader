@@ -1,9 +1,10 @@
 import assert from '/src/assert/assert.js';
-import * as db from '/src/db/db.js';
+import {activate_feed} from '/src/db/activate-feed.js';
+import {create_feed} from '/src/db/create-feed.js';
 import * as feed_utils from '/src/db/feed-utils.js';
-import {activate_feed} from '/src/db/op/activate-feed.js';
-import {create_feed} from '/src/db/op/create-feed.js';
-import {get_feed} from '/src/db/op/get-feed.js';
+import {get_feed} from '/src/db/get-feed.js';
+import {open} from '/src/db/open.js';
+import {remove} from '/src/db/remove.js';
 import * as types from '/src/db/types.js';
 import {register_test} from '/src/test/test-registry.js';
 
@@ -14,10 +15,10 @@ import {register_test} from '/src/test/test-registry.js';
 async function activate_feed_test() {
   // Test setup
   const db_name = 'activate-feed-test';
-  const session = await db.open(db_name);
+  const session = await open(db_name);
 
   // Create an inactive feed and store it
-  const feed = feed_utils.create_feed();
+  const feed = feed_utils.create_feed_object();
   feed.active = false;
   feed_utils.append_feed_url(feed, new URL('a://b.c'));
   const id = await create_feed(session, feed);
@@ -53,7 +54,7 @@ async function activate_feed_test() {
 
   // Test teardown
   session.close();
-  await db.remove(db_name);
+  await remove(db_name);
 }
 
 register_test(activate_feed_test);

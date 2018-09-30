@@ -5,7 +5,7 @@ import * as types from '/src/db/types.js';
 import {register_test} from '/src/test/test-registry.js';
 
 export async function is_feed_test() {
-  const fcorrect = feed_utils.create_feed();
+  const fcorrect = feed_utils.create_feed_object();
   assert(types.is_feed(fcorrect));
   assert(!types.is_entry(fcorrect));
 
@@ -14,9 +14,9 @@ export async function is_feed_test() {
 }
 
 export async function append_feed_url_test() {
-  const feed = feed_utils.create_feed();
+  const feed = feed_utils.create_feed_object();
 
-  // precondition, in case create_feed changes its behavior
+  // precondition, in case create_feed_object changes its behavior
   assert(feed.urls === undefined || feed.urls.length === 0);
 
   // Appending the first url should lazily init urls list and increment the

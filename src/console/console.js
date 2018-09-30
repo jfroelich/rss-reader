@@ -1,9 +1,6 @@
 import * as config from '/src/config/config.js';
 import * as cron_control from '/src/cron/cron.js';
 import * as db from '/src/db/db.js';
-import {archive_entries} from '/src/db/op/archive-entries.js';
-import {remove_lost_entries} from '/src/db/op/remove-lost-entries.js';
-import {remove_orphaned_entries} from '/src/db/op/remove-orphaned-entries.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import {poll_feed, poll_feeds} from '/src/poll-feeds/poll-feeds.js';
 import {refresh_feed_icons} from '/src/refresh-feed-icons/refresh-feed-icons.js';
@@ -35,7 +32,7 @@ async function cli_subscribe(url_string, poll = true) {
 async function cli_archive_entries(max_age) {
   // TODO: if max_age parameter is not set, try reading in the config value?
   const session = await db.open_with_channel();
-  await archive_entries(session, max_age);
+  await db.archive_entries(session, max_age);
   session.close();
 }
 
@@ -58,13 +55,13 @@ async function cli_poll_feeds() {
 
 async function cli_remove_lost_entries() {
   const session = await db.open_with_channel();
-  await remove_lost_entries(session);
+  await db.remove_lost_entries(session);
   session.close();
 }
 
 async function cli_remove_orphans() {
   const session = await db.open_with_channel();
-  await remove_orphaned_entries(session);
+  await db.remove_orphaned_entries(session);
   session.close();
 }
 

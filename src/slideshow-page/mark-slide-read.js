@@ -1,4 +1,4 @@
-import {mark_entry_read} from '/src/db/op/mark-entry-read.js';
+import * as db from '/src/db/db.js';
 
 // Starts transitioning a slide into the read state. Updates both the view and
 // the database. This resolves before the view is fully updated. This only sets
@@ -32,7 +32,7 @@ export async function mark_slide_read_start(session, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  await mark_entry_read(session, entry_id);
+  await db.mark_entry_read(session, entry_id);
 }
 
 // This should be called once the view acknowledges it has received the message

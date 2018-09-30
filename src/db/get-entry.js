@@ -34,7 +34,7 @@ function get_entry_executor(conn, mode, value, key_only, resolve, reject) {
     if (key_only) {
       const entry_id = request.result;
       if (entry_utils.is_valid_entry_id(entry_id)) {
-        entry = entry_utils.create_entry();
+        entry = entry_utils.create_entry_object();
         entry.id = entry_id;
       }
     } else {

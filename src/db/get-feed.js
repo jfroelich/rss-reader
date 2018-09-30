@@ -35,7 +35,7 @@ function get_feed_executor(conn, mode, value, key_only, resolve, reject) {
     if (key_only) {
       const feed_id = request.result;
       if (feed_utils.is_valid_feed_id(feed_id)) {
-        feed = feed_utils.create_feed();
+        feed = feed_utils.create_feed_object();
         feed.id = feed_id;
       }
     } else {
