@@ -1,8 +1,7 @@
 import assert from '/src/assert/assert.js';
 import * as html from '/src/html/html.js';
-import {register_test} from '/src/test/test-registry.js';
 
-async function html_truncate_test() {
+export async function html_truncate_test() {
   const truncate = html.truncate_html;
 
   const e = '.';
@@ -29,5 +28,3 @@ async function html_truncate_test() {
     assert(input7, '=>', truncate(input7, 2, ext));
   */
 }
-
-register_test(html_truncate_test);

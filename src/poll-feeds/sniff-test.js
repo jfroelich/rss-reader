@@ -1,9 +1,8 @@
 import assert from '/src/assert/assert.js';
 import * as sniff from '/src/poll-feeds/sniff.js';
 import * as url_utils from '/src/url-utils/url-utils.js';
-import {register_test} from '/src/test/test-registry.js';
 
-async function sniff_test() {
+export async function sniff_test() {
   // expected binary output
   let input = new URL('http://www.example.com/example.pdf');
   let result = sniff.classify(input);
@@ -117,5 +116,3 @@ async function sniff_test() {
   result = sniff.mime_type_is_binary(input);
   assert(result === sniff.UNKNOWN_CLASS, input);
 }
-
-register_test(sniff_test);

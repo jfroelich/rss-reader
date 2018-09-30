@@ -1,18 +1,16 @@
-import {FaviconService} from '/src/iconsvc/favicon-service.js';
 import assert from '/src/assert/assert.js';
+import {FaviconService} from '/src/iconsvc/favicon-service.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
-import {register_test} from '/src/test/test-registry.js';
 
 // TODO: this needs to be implemented using local files
 // TODO: this needs to be implemented without parameters, it must run on a
 // preset url
 // TODO: there should be a cached test, and an uncached test
 
-async function favicon_service_test() {
-  return true;
+export async function favicon_service_test() {
+  // TODO: implement me
 }
 
-register_test(favicon_service_test);
 
 
 /*

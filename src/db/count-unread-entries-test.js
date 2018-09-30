@@ -4,9 +4,8 @@ import {create_entry} from '/src/db/create-entry.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import {open} from '/src/db/open.js';
 import {remove} from '/src/db/remove.js';
-import {register_test} from '/src/test/test-registry.js';
 
-async function count_unread_entries_test() {
+export async function count_unread_entries_test() {
   // Test setup
   const db_name = 'count-unread-entries-test';
   const session = await open(db_name);
@@ -51,5 +50,3 @@ async function count_unread_entries_test() {
   session.close();
   await remove(db_name);
 }
-
-register_test(count_unread_entries_test);

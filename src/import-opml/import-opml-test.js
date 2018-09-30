@@ -1,13 +1,12 @@
 import assert from '/src/assert/assert.js';
 import * as db from '/src/db/db.js';
 import * as import_opml from '/src/import-opml/import-opml.js';
-import {register_test} from '/src/test/test-registry.js';
 
 // TODO: test multiple files
 // TODO: test multiple feeds per file
 // TODO: test dup handling
 
-async function import_opml_test() {
+export async function import_opml_test() {
   // Test setup
   const db_name = 'import-opml-test-db';
 
@@ -48,5 +47,3 @@ function create_opml_file(name, text) {
 }
 
 function noop() {}
-
-register_test(import_opml_test);

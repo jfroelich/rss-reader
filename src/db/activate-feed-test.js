@@ -7,10 +7,9 @@ import {get_feed} from '/src/db/get-feed.js';
 import {open} from '/src/db/open.js';
 import {remove} from '/src/db/remove.js';
 import * as types from '/src/db/types.js';
-import {register_test} from '/src/test/test-registry.js';
 
 // Verify the activate-feed function works as expected
-async function activate_feed_test() {
+export async function activate_feed_test() {
   // Test setup
   const db_name = 'activate-feed-test';
 
@@ -98,5 +97,3 @@ async function activate_feed_test() {
   session.close();
   await remove(db_name);
 }
-
-register_test(activate_feed_test);

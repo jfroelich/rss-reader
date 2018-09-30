@@ -2,11 +2,10 @@ import assert from '/src/assert/assert.js';
 import {set_base_uri} from '/src/base-uri/base-uri.js';
 import * as html from '/src/html/html.js';
 import {set_image_sizes} from '/src/image-size-filter/image-size-filter.js';
-import {register_test} from '/src/test/test-registry.js';
 
 // Assert the ordinary case of a basic html document with an image with unknown
 // attributes
-async function set_image_sizes_basic_test() {
+export async function set_image_sizes_basic_test() {
   const doc = await fetch_local('basic.html');
   await set_sizes(doc);
   const image = doc.querySelector('img');
@@ -25,7 +24,7 @@ async function set_image_sizes_basic_test() {
 // checked in the devtools console settings. Or, what I should do is create a
 // fake Response object with 404 status... but I somehow need to be able to
 // inject the fetching into the module itself
-async function set_image_sizes_404_test() {
+export async function set_image_sizes_404_test() {
   const doc = await fetch_local('404.html');
   // This should not throw even though the image specified in the html is
   // missing
@@ -44,14 +43,14 @@ async function set_image_sizes_404_test() {
 // Exercise running the function on a document without any images. This should
 // not cause any kind of error (e.g. any code that assumes images always exist
 // is incorrect).
-async function set_image_sizes_text_only_test() {
+export async function set_image_sizes_text_only_test() {
   const doc = await fetch_local('text-only.html');
   await set_sizes(doc);
 }
 
 // Test that an image that is completely devoid of source information does not
 // cause an error, and does not somehow set attributes or properties.
-async function set_image_sizes_sourceless_test() {
+export async function set_image_sizes_sourceless_test() {
   const doc = await fetch_local('sourceless.html');
   await set_sizes(doc);
   const image = doc.querySelector('img');
@@ -80,8 +79,3 @@ async function fetch_local(filename) {
   set_base_uri(doc, base_url);
   return doc;
 }
-
-register_test(set_image_sizes_basic_test);
-register_test(set_image_sizes_404_test);
-register_test(set_image_sizes_text_only_test);
-register_test(set_image_sizes_sourceless_test);

@@ -5,7 +5,6 @@ import {get_feed} from '/src/db/get-feed.js';
 import {open} from '/src/db/open.js';
 import {remove} from '/src/db/remove.js';
 import * as types from '/src/db/types.js';
-import {register_test} from '/src/test/test-registry.js';
 
 // TODO: test the pathological use cases of create-feed
 // TODO: test that creating a feed with missing information fails, or creating
@@ -18,7 +17,7 @@ import {register_test} from '/src/test/test-registry.js';
 // TODO: test that searching by a different id does not somehow match new feed
 
 // Test the normal usage of create-feed
-async function create_feed_test() {
+export async function create_feed_test() {
   // Test setup
   const db_name = 'create-feed-test';
   const session = await open(db_name);
@@ -47,7 +46,7 @@ async function create_feed_test() {
 
 // Test that uniqueness contraint on feed store url index causes create-feed to
 // fail as expected
-async function create_feed_url_constraint_test() {
+export async function create_feed_url_constraint_test() {
   // Test setup
   const db_name = 'create-feed-url-constraint-test';
   const session = await open(db_name);
@@ -88,6 +87,3 @@ async function create_feed_url_constraint_test() {
   session.close();
   await remove(db_name);
 }
-
-register_test(create_feed_test);
-register_test(create_feed_url_constraint_test);

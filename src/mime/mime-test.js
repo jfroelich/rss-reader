@@ -1,8 +1,7 @@
 import assert from '/src/assert/assert.js';
 import * as mime from '/src/mime/mime.js';
-import {register_test} from '/src/test/test-registry.js';
 
-async function mime_test() {
+export async function mime_test() {
   const a = assert;
   // constants tests
   a(mime.MIME_TYPE_MIN_LENGTH < mime.MIME_TYPE_MAX_LENGTH);
@@ -70,5 +69,3 @@ async function mime_test() {
   a(!mime.is_mime_type('a b c / 123'));
   a(!mime.is_mime_type('text\\xml'));
 }
-
-register_test(mime_test);

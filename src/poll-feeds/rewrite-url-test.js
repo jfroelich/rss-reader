@@ -1,6 +1,5 @@
 import assert from '/src/assert/assert.js';
 import {rewrite_url} from '/src/poll-feeds/rewrite-url.js';
-import {register_test} from '/src/test/test-registry.js';
 
 // TODO: I've temporarily copied over the rules here for testing, but ideally
 // this should import the rules from somewhere, or, define local rules and test
@@ -31,34 +30,29 @@ function techcrunch_rule(url) {
 
 rules.push(techcrunch_rule);
 
-async function rewrite_url_norewrite_test() {
+export async function rewrite_url_norewrite_test() {
   let a = new URL('https://www.google.com');
   let b = rewrite_url(a, rules);
   assert(b.href === a.href, 'no rewrite');
 }
 
-async function rewrite_url_google_news_test() {
+export async function rewrite_url_google_news_test() {
   let a = new URL('https://news.google.com/news/url');
   a.searchParams.set('url', 'https://www.google.com');
   let b = rewrite_url(a, rules);
   assert(b.href === 'https://www.google.com/', 'google news');
 }
 
-async function rewrite_url_techcrunch_test() {
+export async function rewrite_url_techcrunch_test() {
   let a = new URL('https://techcrunch.com');
   a.searchParams.set('ncid', '1234');
   let b = rewrite_url(a, rules);
   assert(b.href === 'https://techcrunch.com/', 'techcrunch');
 }
 
-async function rewrite_url_cyclical_test() {
+export async function rewrite_url_cyclical_test() {
   let a = new URL('https://news.google.com/news/url');
   a.searchParams.set('url', 'https://techcrunch.com/foo?ncid=2');
   let b = rewrite_url(a, rules);
   assert(b.href === 'https://techcrunch.com/foo', 'cyclical ' + b.href);
 }
-
-register_test(rewrite_url_norewrite_test);
-register_test(rewrite_url_google_news_test);
-register_test(rewrite_url_techcrunch_test);
-register_test(rewrite_url_cyclical_test);

@@ -1,26 +1,99 @@
-import '/src/base-uri/base-uri-test.js';
-import '/src/color-contrast-filter/color-contrast-filter-test.js';
-import '/src/condense-tagnames-filter/coerce-element-test.js';
-import '/src/db/db-tests.js';
-import '/src/empty-attrs-filter/filter-empty-attrs-test.js';
-import '/src/slideshow-page/article-title/article-title-test.js';
-import '/src/poll-feeds/sniff-test.js';
-import '/src/poll-feeds/rewrite-url-test.js';
-import '/src/subscribe/subscribe-test.js';
-import '/src/color/color-test.js';
-import '/src/iconsvc/favicon-service-test.js';
-import '/src/lazy-image-filter/filter-lazy-images-test.js';
-import '/src/image-size-filter/image-size-filter-test.js';
-import '/src/html/html-truncate-test.js';
-import '/src/indexeddb/indexeddb-test.js';
-import '/src/fetch-feed/fetch-feed-test.js';
-import '/src/fetch-html/fetch-html-test.js';
-import '/src/fetch2/fetch2-test.js';
-import '/src/mime/mime-test.js';
-import '/src/import-opml/import-opml-test.js';
-import '/src/parse-feed/parse-feed-test.js';
-import '/src/unwrap-element/unwrap-element-test.js';
-import {get_registry} from '/src/test/test-registry.js';
+import {base_uri_test} from '/src/base-uri/test.js';
+import * as color_contrast_filter_tests from '/src/color-contrast-filter/test.js';
+import {color_test} from '/src/color/test.js';
+import {coerce_element_test} from '/src/condense-tagnames-filter/coerce-element-test.js';
+import * as db_tests from '/src/db/db-tests.js';
+import {empty_attribute_filter_test} from '/src/empty-attrs-filter/filter-empty-attrs-test.js';
+import {fetch_feed_test} from '/src/fetch-feed/fetch-feed-test.js';
+import {fetch_html_test} from '/src/fetch-html/fetch-html-test.js';
+import {fetch2_test} from '/src/fetch2/fetch2-test.js';
+import {html_truncate_test} from '/src/html/html-truncate-test.js';
+import {favicon_service_test} from '/src/iconsvc/favicon-service-test.js';
+import * as image_size_filter_tests from '/src/image-size-filter/image-size-filter-test.js';
+import {import_opml_test} from '/src/import-opml/import-opml-test.js';
+import * as indexeddb_tests from '/src/indexeddb/indexeddb-test.js';
+import {filter_lazy_images_test} from '/src/lazy-image-filter/filter-lazy-images-test.js';
+import {mime_test} from '/src/mime/mime-test.js';
+import {parse_feed_test} from '/src/parse-feed/parse-feed-test.js';
+import * as rewrite_url_tests from '/src/poll-feeds/rewrite-url-test.js';
+import {sniff_test} from '/src/poll-feeds/sniff-test.js';
+import {article_title_test} from '/src/slideshow-page/article-title/article-title-test.js';
+import {subscribe_test} from '/src/subscribe/subscribe-test.js';
+import {unwrap_element_test} from '/src/unwrap-element/unwrap-element-test.js';
+
+// A set-like array of test functions
+const registry = [];
+
+// Register tests
+register_test(base_uri_test);
+register_test(color_contrast_filter_tests.color_contrast_filter_test1);
+register_test(color_contrast_filter_tests.color_contrast_filter_test2);
+register_test(color_test);
+register_test(coerce_element_test);
+register_test(db_tests.activate_feed_test);
+register_test(db_tests.archive_entries_test);
+register_test(db_tests.count_unread_entries_test);
+register_test(db_tests.create_entry_test);
+register_test(db_tests.create_feed_test);
+register_test(db_tests.create_feed_url_constraint_test);
+register_test(db_tests.create_feeds_test);
+register_test(db_tests.deactivate_feed_test);
+register_test(db_tests.delete_feed_test);
+register_test(db_tests.entry_utils_is_entry_test);
+register_test(db_tests.entry_utils_append_entry_url_test);
+register_test(db_tests.feed_utils_is_feed_test);
+register_test(db_tests.feed_utils_append_feed_url_test);
+register_test(db_tests.filter_unprintables_test);
+register_test(db_tests.get_entries_test);
+register_test(db_tests.get_entry_test);
+register_test(db_tests.get_feed_test);
+register_test(db_tests.get_feeds_test);
+register_test(db_tests.iterate_entries_test);
+register_test(db_tests.mark_entry_read_test);
+register_test(db_tests.remove_lost_entries_test);
+register_test(db_tests.remove_orphaned_entries_test);
+register_test(db_tests.replace_tags_test);
+register_test(db_tests.sanitize_entry_content_test);
+register_test(db_tests.update_entry_test);
+register_test(db_tests.update_feed_test);
+register_test(empty_attribute_filter_test);
+register_test(fetch_feed_test);
+register_test(fetch_html_test);
+register_test(fetch2_test);
+register_test(html_truncate_test);
+register_test(favicon_service_test);
+register_test(image_size_filter_tests.set_image_sizes_basic_test);
+register_test(image_size_filter_tests.set_image_sizes_404_test);
+register_test(image_size_filter_tests.set_image_sizes_text_only_test);
+register_test(image_size_filter_tests.set_image_sizes_sourceless_test);
+register_test(import_opml_test);
+register_test(indexeddb_tests.indexeddb_test);
+register_test(indexeddb_tests.indexeddb_function_object_test);
+register_test(filter_lazy_images_test);
+register_test(mime_test);
+register_test(parse_feed_test);
+register_test(rewrite_url_tests.rewrite_url_norewrite_test);
+register_test(rewrite_url_tests.rewrite_url_google_news_test);
+register_test(rewrite_url_tests.rewrite_url_techcrunch_test);
+register_test(rewrite_url_tests.rewrite_url_cyclical_test);
+register_test(sniff_test);
+register_test(article_title_test);
+register_test(subscribe_test);
+register_test(unwrap_element_test);
+
+
+function register_test(test_function) {
+  if (typeof test_function !== 'function') {
+    throw new TypeError('test_function is not a function');
+  }
+
+  if (registry.includes(test_function)) {
+    console.warn('%s: test already registered', test_function.name);
+    return;
+  }
+
+  registry.push(test_function);
+}
 
 // Wrap a call to a test function with some extra log messages. Impose an
 // optional deadline for the test to complete by specifying a timeout.
@@ -58,7 +131,7 @@ function find_test_by_name(name) {
   // Allow for either - or _ as separator and mixed case
   let normal_test_name = name.replace(/-/g, '_').toLowerCase();
 
-  const tests = get_registry();
+  const tests = registry;
   for (const test_function of tests) {
     if (test_function.name === normal_test_name) {
       return test_function;
@@ -96,7 +169,7 @@ async function cli_run(name, timeout = 10000, parallel = true) {
       }
     }
   } else {
-    tests = get_registry();
+    tests = registry;
   }
 
   console.log('Spawning %d tests', tests.length);
@@ -120,12 +193,12 @@ async function cli_run(name, timeout = 10000, parallel = true) {
 }
 
 function cli_print_tests() {
-  const tests = get_registry();
+  const tests = registry;
   tests.forEach(test => console.log(test.name));
 }
 
 function populate_test_menu() {
-  const tests = get_registry();
+  const tests = registry;
   const menu = document.getElementById('tests');
   for (const test of tests) {
     const option = document.createElement('option');

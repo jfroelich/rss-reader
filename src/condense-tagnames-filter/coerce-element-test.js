@@ -1,9 +1,8 @@
 import assert from '/src/assert/assert.js';
 import {coerce_element} from '/src/condense-tagnames-filter/coerce-element.js';
 import * as html from '/src/html/html.js';
-import {register_test} from '/src/test/test-registry.js';
 
-async function coerce_element_test() {
+export async function coerce_element_test() {
   const input = '<html><head></head><body><p></p><a></a></body></html>';
   const doc = html.parse_html(input);
 
@@ -36,5 +35,3 @@ async function coerce_element_test() {
 
   // TODO: test error cases? what errors? invalid input?
 }
-
-register_test(coerce_element_test);

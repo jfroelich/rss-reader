@@ -1,12 +1,11 @@
 import assert from '/src/assert/assert.js';
 import * as db from '/src/db/db.js';
 import {subscribe} from '/src/subscribe/subscribe.js';
-import {register_test} from '/src/test/test-registry.js';
 
 // TODO: it is wrong to ping google, implement something that tests a local
 // file somehow (e.g. a feed that exists within the extension folder)
 
-async function subscribe_test() {
+export async function subscribe_test() {
   // Test setup
   const db_name = 'subscribe-test';
   const session = await db.open(db_name);
@@ -47,5 +46,3 @@ async function subscribe_test() {
 }
 
 function noop() {}
-
-register_test(subscribe_test);

@@ -1,13 +1,12 @@
 import assert from '/src/assert/assert.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
-import {register_test} from '/src/test/test-registry.js';
 
 // TODO: test upgrade handler specified vs not specified and assert that
 // upgrade occurs
 // TODO: test error paths like bad database name, bad version, etc
 
 // Exercise the basic open, close, delete process
-async function indexeddb_test() {
+export async function indexeddb_test() {
   const conn = await indexeddb.open('indexeddb-test');
   conn.close();
   await indexeddb.remove(conn.name);
@@ -21,7 +20,7 @@ async function indexeddb_test() {
 // its constructor function, read objects are just plain objects. The key
 // difference between my previous understanding and my current one is that
 // indexedDB does in fact tolerate storing objects created by new Func(){}.
-async function indexeddb_function_object_test() {
+export async function indexeddb_function_object_test() {
   // Create a really basic database with an object store
   const conn = await indexeddb.open(
       'indexeddb-function-object-test', undefined, function(event) {
@@ -86,6 +85,3 @@ async function indexeddb_function_object_test() {
   conn.close();
   await indexeddb.remove(conn.name);
 }
-
-register_test(indexeddb_function_object_test);
-register_test(indexeddb_test);

@@ -5,9 +5,8 @@ import {get_entry} from '/src/db/get-entry.js';
 import {open} from '/src/db/open.js';
 import {remove} from '/src/db/remove.js';
 import * as types from '/src/db/types.js';
-import {register_test} from '/src/test/test-registry.js';
 
-async function create_entry_test() {
+export async function create_entry_test() {
   // Test setup
   const db_name = 'create-entry-test';
   const session = await open(db_name);
@@ -35,5 +34,3 @@ async function create_entry_test() {
   session.close();
   await remove(db_name);
 }
-
-register_test(create_entry_test);

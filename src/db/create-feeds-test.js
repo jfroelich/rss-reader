@@ -6,11 +6,10 @@ import {get_feeds} from '/src/db/get-feeds.js';
 import {open} from '/src/db/open.js';
 import {remove} from '/src/db/remove.js';
 import * as types from '/src/db/types.js';
-import {register_test} from '/src/test/test-registry.js';
 
 // TODO: test behavior when two or more feeds have identical urls
 
-async function create_feeds_test() {
+export async function create_feeds_test() {
   // Test setup
   const db_name = 'create-feeds-test';
   const session = await open(db_name);
@@ -45,5 +44,3 @@ async function create_feeds_test() {
   session.close();
   await remove(db_name);
 }
-
-register_test(create_feeds_test);

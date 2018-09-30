@@ -1,9 +1,8 @@
 import assert from '/src/assert/assert.js';
 import {filter_empty_attrs} from '/src/empty-attrs-filter/filter-empty-attrs.js';
 import * as html from '/src/html/html.js';
-import {register_test} from '/src/test/test-registry.js';
 
-async function empty_attribute_filter_test() {
+export async function empty_attribute_filter_test() {
   // Simple empty non-boolean attribute in body
   let input = '<html><head></head><body><a name="">test</a></body></html>';
   let doc = html.parse_html(input);
@@ -58,5 +57,3 @@ async function empty_attribute_filter_test() {
   output = '<html><head></head><body><a disabled="">test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);
 }
-
-register_test(empty_attribute_filter_test);

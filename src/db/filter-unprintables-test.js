@@ -1,8 +1,7 @@
 import assert from '/src/assert/assert.js';
 import {filter_unprintables} from '/src/db/filter-unprintables.js';
-import {register_test} from '/src/test/test-registry.js';
 
-async function filter_unprintables_test() {
+export async function filter_unprintables_test() {
   const f = filter_unprintables;
 
   for (let i = 0; i < 9; i++) {
@@ -35,5 +34,3 @@ async function filter_unprintables_test() {
   assert(isNaN(f(NaN)));
   assert(f(0) === 0);
 }
-
-register_test(filter_unprintables_test);

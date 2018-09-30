@@ -1,11 +1,10 @@
 import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as sanity from '/src/db/sanity.js';
-import {register_test} from '/src/test/test-registry.js';
 
 // TODO: validate truncation behavior?
 
-async function sanitize_entry_content_test() {
+export async function sanitize_entry_content_test() {
   // Test setup. Create a reusable entry object for input to sub tests.
   const entry = entry_utils.create_entry_object();
 
@@ -26,5 +25,3 @@ async function sanitize_entry_content_test() {
   let expected = '<html><head></head><body>hello\nworld</body></html>';
   assert(entry.content === expected, entry.content);
 }
-
-register_test(sanitize_entry_content_test);

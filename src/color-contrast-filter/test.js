@@ -3,12 +3,11 @@ import * as ccf from '/src/color-contrast-filter/color-contrast-filter.js';
 import * as css_color from '/src/color-contrast-filter/css-color.js';
 import * as color from '/src/color/color.js';
 import * as ls from '/src/localstorage/localstorage.js';
-import {register_test} from '/src/test/test-registry.js';
 
 // TODO: these tests were written to work off a live document. Instead, create
 // a local fake document, and test against it
 
-async function color_contrast_filter_test1() {
+export async function color_contrast_filter_test1() {
   /*
   const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
 
@@ -30,7 +29,7 @@ async function color_contrast_filter_test1() {
   }*/
 }
 
-async function color_contrast_filter_test2() {
+export async function color_contrast_filter_test2() {
   /*
   const matte = color.WHITE;
 
@@ -47,7 +46,4 @@ async function color_contrast_filter_test2() {
     node = it.nextNode();
   }
 */
-};
-
-register_test(color_contrast_filter_test1);
-register_test(color_contrast_filter_test2);
+}

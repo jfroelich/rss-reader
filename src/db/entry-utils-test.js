@@ -2,9 +2,8 @@ import assert from '/src/assert/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import * as types from '/src/db/types.js';
-import {register_test} from '/src/test/test-registry.js';
 
-export async function is_entry_test() {
+export async function entry_utils_is_entry_test() {
   const correct = entry_utils.create_entry_object();
   assert(types.is_entry(correct));
   assert(!types.is_feed(correct));
@@ -13,7 +12,7 @@ export async function is_entry_test() {
   assert(!types.is_entry(nomagic));
 }
 
-export async function append_entry_url_test() {
+export async function entry_utils_append_entry_url_test() {
   const entry = entry_utils.create_entry_object();
 
   // Check our precondition
@@ -45,6 +44,3 @@ export async function append_entry_url_test() {
   // After any number of appends, entry should still be an entry
   assert(types.is_entry(entry));
 }
-
-register_test(is_entry_test);
-register_test(append_entry_url_test);

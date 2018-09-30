@@ -3,12 +3,11 @@ import {fetch_html} from '/src/fetch-html/fetch-html.js';
 import * as html from '/src/html/html.js';
 import {filter_lazy_images} from '/src/lazy-image-filter/filter-lazy-images.js';
 import {filter_dead_images} from '/src/sandoc/filter-dead-images.js';
-import {register_test} from '/src/test/test-registry.js';
 
 // TODO: rewrite in new test format
 // TODO: rewrite without input, load a local file internally
 
-async function lazy_image_filter_test(url_string) {
+export async function filter_lazy_images_test(url_string) {
   /*
     const request_url = new URL(url_string);
     const response = await fetch_html(request_url);
@@ -20,5 +19,3 @@ async function lazy_image_filter_test(url_string) {
     // filter_dead_images(document);
   */
 }
-
-register_test(lazy_image_filter_test);
