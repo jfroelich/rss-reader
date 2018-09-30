@@ -125,7 +125,8 @@ async function cli_run(name, timeout = 10000, parallel = true) {
   }
 
   const end_time = new Date();
-  console.log('Completed in %d ms', end_time - start_time);
+  const duration_ms = end_time - start_time;
+  console.log('%d tests completed in %d ms', tests.length, duration_ms);
 }
 
 function cli_print_tests() {
