@@ -6,7 +6,7 @@ import {create_entry} from '/src/db/op/create-entry.js';
 import {get_entry} from '/src/db/op/get-entry.js';
 import {get_feeds} from '/src/db/op/get-feeds.js';
 import {update_feed} from '/src/db/op/update-feed.js';
-import * as sanity from '/src/db/sanity/sanity.js';
+import * as sanity from '/src/db/sanity.js';
 import * as types from '/src/db/types.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';

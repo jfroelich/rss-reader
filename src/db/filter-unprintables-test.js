@@ -1,20 +1,13 @@
 import assert from '/src/assert/assert.js';
-import * as string from '/src/string/string.js';
+import {filter_unprintables} from '/src/db/filter-unprintables.js';
 import {register_test} from '/src/test/test-registry.js';
 
-// TODO: this test needs to be updated now that filter_unprintable_characters
-// has been deprecated and replaced by filter_controls. The test currently
-// fails because filter_controls does not match the same behavior.
-
-// TODO: side note, the switch from filter_unprintable_characters to
-// filter_controls may be the cause of the dissappearing whitespace, if
-// filter_controls is removing line breaks that filter_unprintable_characters
-// was not, and the sanitize functions called on entry content were previously
-// retaining some characters
+// TODO: this test needs to be updated. filter unprintables was deprecated, then
+// undeprecated, and it was moved, and renamed
 
 async function filter_unprintable_characters_test() {
   /*
-    const f = string.filter_controls;
+    const f = filter_unprintables;
 
     for (let i = 0; i < 9; i++) {
       assert(f(String.fromCharCode(i)).length === 0);
