@@ -3,11 +3,14 @@ import * as entry_utils from '/src/db/entry-utils.js';
 import * as sanity from '/src/db/sanity.js';
 import {register_test} from '/src/test/test-registry.js';
 
-async function sanitize_entry_content_test() {
-  // TODO: validate truncation behavior?
+// TODO: validate truncation behavior?
 
+async function sanitize_entry_content_test() {
+  // Test setup. Create a reusable entry object for input to sub tests.
   const entry = entry_utils.create_entry_object();
 
+  // Test the simple ordinary usage. Here no sanitization needs to take place,
+  // so test that the value is not somehow clobbered, returns a string.
   let content = 'hello world';
   entry.content = content;
   sanity.sanitize_entry(entry);
