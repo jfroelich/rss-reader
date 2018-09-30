@@ -317,14 +317,18 @@ slide a {
 .entry .entry-content img {
   display: block;
 
-  margin-left: auto;
-  margin-right: auto;
+  /*margin-left: auto;
+  margin-right: auto;*/
+
+  margin-left: -100px;
+  margin-right: -100px;
+
   margin-top: 6px;
   margin-bottom: 6px;
 
   padding: 0;
 
-  /*width: 100%;*/
+  width: auto;
 
 
   /*
