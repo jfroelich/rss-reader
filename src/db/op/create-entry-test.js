@@ -1,4 +1,5 @@
 import assert from '/src/assert/assert.js';
+import * as db from '/src/db/db.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import {create_entry} from '/src/db/op/create-entry.js';
 import {get_entry} from '/src/db/op/get-entry.js';
