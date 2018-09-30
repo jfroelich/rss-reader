@@ -20,7 +20,6 @@ class DbSession {
       this.channel.close();
     }
 
-
     if (this.conn) {
       this.conn.close();
     }
