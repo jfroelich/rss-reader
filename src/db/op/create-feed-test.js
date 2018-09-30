@@ -49,7 +49,7 @@ async function create_feed_test() {
 async function create_feed_url_constraint_test() {
   // Test setup
   const db_name = 'create-feed-url-constraint-test';
-  const session = await idbmodel.open(db_name);
+  const session = await db.open(db_name);
 
   // TODO: reuse the same URL object here, do not create two url objects, it
   // just leaves open room for inconsistency and is less terse

@@ -12,7 +12,7 @@ import {register_test} from '/src/test/test-registry.js';
 async function create_feeds_test() {
   // Test setup
   const db_name = 'create-feeds-test';
-  const session = await idbmodel.open(db_name);
+  const session = await db.open(db_name);
 
   // Create some feed objects with different urls
   const num_feeds = 3;
