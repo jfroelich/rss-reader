@@ -3,6 +3,10 @@ import {export_opml} from '/src/export-opml/export-opml.js';
 import * as import_opml from '/src/import-opml/import-opml.js';
 import * as ls from '/src/localstorage/localstorage.js';
 
+// TODO: this should not be directly interacting with local storage. this should
+// be interacting with some kind of config module that abstracts away how
+// configuration data is stored.
+
 export function options_menu_show() {
   const menu_options = document.getElementById('left-panel');
   menu_options.style.marginLeft = '0';

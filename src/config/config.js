@@ -2,6 +2,14 @@ import assert from '/src/assert/assert.js';
 import * as color from '/src/color/color.js';
 import * as ls from '/src/localstorage/localstorage.js';
 
+// TODO: not quite sure how to go about it, but i think i want two configuration
+// modules. one is the controller that interacts with lifecycle events. the
+// other is just a general data module that abstracts away how configuration is
+// stored. in that sense maybe this should be renamed to config-control, and
+// a new config.js module is created that deals with abstracting local storage
+// on the other hand, maybe the abstraction is just dumb in that just creates
+// more work. is there benefit?
+
 // TODO: turns out adding a font is difficult, this needs to be changed so that
 // I can add a font and it gets stored in local storage
 

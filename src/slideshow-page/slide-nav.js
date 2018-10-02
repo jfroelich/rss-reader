@@ -6,6 +6,10 @@ import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';
 import {remove_slide} from '/src/slideshow-page/remove-slide.js';
 import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
 
+// TODO: this should not be interacting directly with local storage. This should
+// be interacting with some kind of configuration module that abstracts away how
+// configuration information is stored
+
 export async function show_next_slide() {
   if (slideshow_state.get_active_transition_count()) {
     return;
