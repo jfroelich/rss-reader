@@ -1,4 +1,4 @@
-import '/src/parse-feed/third-party/he.js';
+import '/src/parse-feed/he.js';
 
 // Represents a deserialized feed in memory. Note this format may not correspond
 // to the feed format in other modules (and does not care).
