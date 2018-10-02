@@ -28,7 +28,7 @@ export async function update_feed_test() {
 
   // Update the feed's title property
   feed.title = 'second';
-  await update_feed(session, feed);
+  await update_feed(session, feed, true);
 
   session.channel = undefined;
   feed = undefined;  // paranoia

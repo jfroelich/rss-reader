@@ -34,6 +34,7 @@ async function refresh_feed_icon(session, iconn, feed) {
       delete feed.faviconURLString;
     }
 
-    await db.update_feed(session, feed);
+    // TODO: use a partial update here
+    await db.update_feed(session, feed, true);
   }
 }

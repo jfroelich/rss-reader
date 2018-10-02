@@ -95,7 +95,7 @@ export async function poll_feed(session, iconn, options = {}, feed) {
   handle_fetch_success(merged_feed);
   db.validate_feed(merged_feed);
   db.sanitize_feed(merged_feed);
-  await db.update_feed(session, merged_feed);
+  await db.update_feed(session, merged_feed, true);
 
   const count = await poll_entries(
       session, iconn, rewrite_rules, options, response.entries, merged_feed);
@@ -209,7 +209,7 @@ async function handle_fetch_error(session, error, feed, threshold) {
   }
 
   // No need to validate/sanitize, we've had control for the entire lifetime
-  await db.update_feed(session, feed);
+  await db.update_feed(session, feed, true);
 }
 
 function dedup_entries(entries) {
