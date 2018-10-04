@@ -1,8 +1,8 @@
 import assert from '/src/assert/assert.js';
-import * as errors from 'errors.js';
-import * as feed_utils from 'feed-utils.js';
-import * as object from 'object-utils.js';
-import * as types from 'types.js';
+import * as errors from './errors.js';
+import * as feed_utils from './feed-utils.js';
+import * as object from './object-utils.js';
+import * as types from './types.js';
 
 // TODO: throw the proper errors here
 // This is also causing activate-feed-test to fail
