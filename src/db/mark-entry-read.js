@@ -1,5 +1,7 @@
 import assert from '/src/assert/assert.js';
+
 import * as entry_utils from './entry-utils.js';
+import * as errors from './errors.js';
 import * as types from './types.js';
 
 // TODO: revise update-entry in the style of update-feed, then change this
@@ -31,26 +33,31 @@ function executor(conn, id, resolve, reject) {
 function request_onsuccess(id, event) {
   const entry = event.target.result;
 
-  // TODO: use specific error types from ./errors.js
-  // TODO: be more verbose so this is simpler to read
-
   if (!entry) {
-    reject(new Error('No entry found with id ' + id));
+    const message = 'No entry found with id ' + id;
+    const error = new errors.NotFoundError(message);
+    reject(error);
     return;
   }
 
   if (!types.is_entry(entry)) {
-    reject(new Error('Loaded object is not an entry ' + id));
+    const message = 'Read object is not an entry ' + id;
+    const error = new TypeError(message);
+    reject(error);
     return;
   }
 
   if (entry.archiveState === entry_utils.ENTRY_STATE_ARCHIVED) {
-    reject(new Error('Cannot mark archived entry as read ' + id));
+    const message = 'Cannot mark archived entry as read ' + id;
+    const error = new errors.InvalidStateError(message);
+    reject(error);
     return;
   }
 
   if (entry.readState === entry_utils.ENTRY_STATE_READ) {
-    reject(new Error('Cannot mark read entry as read ' + id));
+    const message = 'Cannot mark read entry as read ' + id;
+    const error = new errors.InvalidStateError(message);
+    reject(error);
     return;
   }
 
@@ -59,5 +66,6 @@ function request_onsuccess(id, event) {
   entry.dateUpdated = currentDate;
   entry.dateRead = currentDate;
 
-  event.target.source.put(entry);
+  const entry_store = event.target.source;
+  entry_store.put(entry);
 }
