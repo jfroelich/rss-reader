@@ -1,6 +1,6 @@
 import assert from '/src/assert/assert.js';
 import * as db from '/src/db/db.js';
-import {subscribe} from '/src/subscribe/subscribe.js';
+import {subscribe} from './subscribe.js';
 
 // TODO: it is wrong to ping google, implement something that tests a local
 // file somehow (e.g. a feed that exists within the extension folder)

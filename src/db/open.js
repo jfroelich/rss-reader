@@ -1,5 +1,6 @@
-import * as types from '/src/db/types.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
+
+import * as types from './types.js';
 
 // Return a new session without a channel
 export async function open(name = 'reader', version = 24, timeout = 500) {

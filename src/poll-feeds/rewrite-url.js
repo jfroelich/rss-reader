@@ -1,6 +1,3 @@
-// TODO: if this module is only used by one other module, this should not be a
-// global module, this should be a helper file within that other module's folder
-
 // Changes a url based on a set of rules. Based on Apache's mod_rewrite module.
 // @param url {URL} the starting url
 // @param rules {Array} an array of rules. A rule should be a function that

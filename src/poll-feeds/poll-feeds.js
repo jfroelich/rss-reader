@@ -4,16 +4,20 @@ import * as db from '/src/db/db.js';
 import {fetch_feed} from '/src/fetch-feed/fetch-feed.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
 import {is_allowed_request} from '/src/fetch-policy/fetch-policy.js';
+// TODO: import * as fetch_utils or something
 import {OfflineError, response_is_redirect, TimeoutError} from '/src/fetch2/fetch2.js';
 import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
 import * as notification from '/src/notification/notification.js';
-import {build as build_rewrite_rules} from '/src/poll-feeds/rewrite-rules.js';
-import {rewrite_url} from '/src/poll-feeds/rewrite-url.js';
-import * as sniff from '/src/poll-feeds/sniff.js';
 import {sanitize_document} from '/src/sandoc/sandoc.js';
 
+import {build as build_rewrite_rules} from './rewrite-rules.js';
+import {rewrite_url} from './rewrite-url.js';
+import * as sniff from './sniff.js';
+
+// TODO: this module is huge, maybe my biggest, i don't like it, break it up
+// somehow
 
 const default_options = {
   ignore_recency_check: false,

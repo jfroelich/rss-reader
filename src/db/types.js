@@ -1,3 +1,5 @@
+// TODO: move notes to markdown
+
 // This module provides type help. Objects stored in indexedDB undergo a clone
 // operation that strips function objects of type, making it impossible to use
 // instanceof to reliably verify an object's type after it has been loaded. As a

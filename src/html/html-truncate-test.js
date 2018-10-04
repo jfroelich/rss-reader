@@ -1,5 +1,5 @@
 import assert from '/src/assert/assert.js';
-import * as html from '/src/html/html.js';
+import * as html from './html.js';
 
 export async function html_truncate_test() {
   const truncate = html.truncate_html;

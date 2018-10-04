@@ -1,10 +1,11 @@
 import assert from '/src/assert/assert.js';
-import {create_feed} from '/src/db/create-feed.js';
-import * as feed_utils from '/src/db/feed-utils.js';
-import {get_feed} from '/src/db/get-feed.js';
-import {open} from '/src/db/open.js';
-import {remove} from '/src/db/remove.js';
-import {update_feed} from '/src/db/update-feed.js';
+
+import {create_feed} from './create-feed.js';
+import * as feed_utils from './feed-utils.js';
+import {get_feed} from './get-feed.js';
+import {open} from './open.js';
+import {remove} from './remove.js';
+import {update_feed} from './update-feed.js';
 
 export async function update_feed_test() {
   // Test setup

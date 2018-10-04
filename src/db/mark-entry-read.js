@@ -1,6 +1,6 @@
 import assert from '/src/assert/assert.js';
-import * as entry_utils from '/src/db/entry-utils.js';
-import * as types from '/src/db/types.js';
+import * as entry_utils from './entry-utils.js';
+import * as types from './types.js';
 
 export async function mark_entry_read(session, entry_id) {
   assert(entry_utils.is_valid_entry_id(entry_id));

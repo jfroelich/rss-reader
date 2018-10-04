@@ -1,10 +1,10 @@
 import * as badge from '/src/badge/badge.js';
 import * as db from '/src/db/db.js';
-import {append_slide} from '/src/slideshow-page/append-slide.js';
-import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
-import {mark_slide_read_end} from '/src/slideshow-page/mark-slide-read.js';
-import {remove_slide} from '/src/slideshow-page/remove-slide.js';
-import {is_current_slide} from '/src/slideshow-page/slideshow-state.js';
+import {append_slide} from './append-slide.js';
+import {count_unread_slides} from './count-unread-slides.js';
+import {mark_slide_read_end} from './mark-slide-read.js';
+import {remove_slide} from './remove-slide.js';
+import {is_current_slide} from './slideshow-state.js';
 
 let channel;
 

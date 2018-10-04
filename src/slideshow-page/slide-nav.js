@@ -1,10 +1,10 @@
 import * as db from '/src/db/db.js';
 import * as ls from '/src/localstorage/localstorage.js';
-import {append_slide} from '/src/slideshow-page/append-slide.js';
-import {count_unread_slides} from '/src/slideshow-page/count-unread-slides.js';
-import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';
-import {remove_slide} from '/src/slideshow-page/remove-slide.js';
-import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
+import {append_slide} from './append-slide.js';
+import {count_unread_slides} from './count-unread-slides.js';
+import {mark_slide_read_start} from './mark-slide-read.js';
+import {remove_slide} from './remove-slide.js';
+import * as slideshow_state from './slideshow-state.js';
 
 // TODO: this should not be interacting directly with local storage. This should
 // be interacting with some kind of configuration module that abstracts away how

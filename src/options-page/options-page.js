@@ -3,10 +3,11 @@ import * as db from '/src/db/db.js';
 import * as html from '/src/html/html.js';
 import * as favicon from '/src/iconsvc/favicon.js';
 import * as ls from '/src/localstorage/localstorage.js';
-import {fade_element} from '/src/options-page/fade-element.js';
-import * as permissions from '/src/options-page/permissions.js';
 import {poll_feed} from '/src/poll-feeds/poll-feeds.js';
 import {subscribe, unsubscribe} from '/src/subscribe/subscribe.js';
+
+import {fade_element} from './fade-element.js';
+import * as permissions from './permissions.js';
 
 let current_menu_item;
 let current_section;

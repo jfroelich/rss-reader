@@ -1,4 +1,4 @@
-import {update_feed} from '/src/db/update-feed.js';
+import {update_feed} from './update-feed.js';
 
 // TODO: deprecate, just inline this
 export function activate_feed(session, feed_id) {

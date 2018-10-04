@@ -1,6 +1,7 @@
 import assert from '/src/assert/assert.js';
-import * as object from '/src/db/object-utils.js';
-import * as types from '/src/db/types.js';
+
+import * as object from './object-utils.js';
+import * as types from './types.js';
 
 export async function create_feed(session, feed) {
   assert(types.is_feed(feed));

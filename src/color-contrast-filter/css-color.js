@@ -1,4 +1,4 @@
-import '/src/color-contrast-filter/tinycolor-min.js';
+import './tinycolor-min.js';
 import * as color from '/src/color/color.js';
 
 // Parses a css color value into a color

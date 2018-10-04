@@ -1,9 +1,9 @@
 import assert from '/src/assert/assert.js';
-import {count_unread_entries} from '/src/db/count-unread-entries.js';
-import {create_entry} from '/src/db/create-entry.js';
-import * as entry_utils from '/src/db/entry-utils.js';
-import {open} from '/src/db/open.js';
-import {remove} from '/src/db/remove.js';
+import {count_unread_entries} from './count-unread-entries.js';
+import {create_entry} from './create-entry.js';
+import * as entry_utils from './entry-utils.js';
+import {open} from './open.js';
+import {remove} from './remove.js';
 
 export async function count_unread_entries_test() {
   // Test setup

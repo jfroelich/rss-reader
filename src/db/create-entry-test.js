@@ -1,10 +1,10 @@
 import assert from '/src/assert/assert.js';
-import {create_entry} from '/src/db/create-entry.js';
-import * as entry_utils from '/src/db/entry-utils.js';
-import {get_entry} from '/src/db/get-entry.js';
-import {open} from '/src/db/open.js';
-import {remove} from '/src/db/remove.js';
-import * as types from '/src/db/types.js';
+import {create_entry} from './create-entry.js';
+import * as entry_utils from './entry-utils.js';
+import {get_entry} from './get-entry.js';
+import {open} from './open.js';
+import {remove} from './remove.js';
+import * as types from './types.js';
 
 export async function create_entry_test() {
   // Test setup
@@ -12,8 +12,6 @@ export async function create_entry_test() {
   const session = await open(db_name);
 
   // Create and store an entry in the database. Grab its generated id.
-  // TODO: if I impose urls constraint on create-entry then I will need to
-  // append a dummy url here
   const entry = entry_utils.create_entry_object();
   const id = await create_entry(session, entry);
 

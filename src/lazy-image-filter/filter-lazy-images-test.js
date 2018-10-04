@@ -1,8 +1,9 @@
 import assert from '/src/assert/assert.js';
 import {fetch_html} from '/src/fetch-html/fetch-html.js';
 import * as html from '/src/html/html.js';
-import {filter_lazy_images} from '/src/lazy-image-filter/filter-lazy-images.js';
 import {filter_dead_images} from '/src/sandoc/filter-dead-images.js';
+
+import {filter_lazy_images} from './filter-lazy-images.js';
 
 // TODO: rewrite in new test format
 // TODO: rewrite without input, load a local file internally

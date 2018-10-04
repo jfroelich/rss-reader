@@ -1,6 +1,6 @@
 import assert from '/src/assert/assert.js';
 import * as db from '/src/db/db.js';
-import * as import_opml from '/src/import-opml/import-opml.js';
+import * as import_opml from './import-opml.js';
 
 // TODO: test multiple files
 // TODO: test multiple feeds per file

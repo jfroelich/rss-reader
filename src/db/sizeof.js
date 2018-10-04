@@ -1,7 +1,3 @@
-// TODO: if this module is only used in one other module, this should not be a
-// global module, this should just be a helper module located within that other
-// module's folder
-
 // Calculates the approximate byte size of a value. This should only be used for
 // informational purposes because it is hilariously inaccurate. Adapted from
 // http://stackoverflow.com/questions/1248302.

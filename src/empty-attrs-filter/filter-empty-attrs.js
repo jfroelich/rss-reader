@@ -1,4 +1,4 @@
-import * as attribute from '/src/empty-attrs-filter/attribute.js';
+import * as attribute from './attribute.js';
 
 export function filter_empty_attrs(document) {
   if (document.body) {

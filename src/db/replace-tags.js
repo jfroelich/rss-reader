@@ -1,6 +1,9 @@
 import assert from '/src/assert/assert.js';
 import {parse_html} from '/src/html/html.js';
 
+// TODO: db modules should not depend on html modules, unless html modules are
+// a baser module. but, in general, it might be nice to just decouple
+
 // Replaces tags in the input string with the replacement. If a replacement is
 // not specified, then this removes the tags.
 export function replace_tags(html_string, replacement) {

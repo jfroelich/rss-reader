@@ -1,10 +1,10 @@
 import assert from '/src/assert/assert.js';
-import {create_feed} from '/src/db/create-feed.js';
-import * as feed_utils from '/src/db/feed-utils.js';
-import {get_feed} from '/src/db/get-feed.js';
-import {open} from '/src/db/open.js';
-import {remove} from '/src/db/remove.js';
-import * as types from '/src/db/types.js';
+import {create_feed} from './create-feed.js';
+import * as feed_utils from './feed-utils.js';
+import {get_feed} from './get-feed.js';
+import {open} from './open.js';
+import {remove} from './remove.js';
+import * as types from './types.js';
 
 // TODO: test the pathological use cases of create-feed
 // TODO: test that creating a feed with missing information fails, or creating

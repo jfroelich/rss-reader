@@ -1,4 +1,4 @@
-import * as icondb from 'icondb.js';
+import * as icondb from './icondb.js';
 
 // Async. Opens and returns a connection to the service's internal database.
 //

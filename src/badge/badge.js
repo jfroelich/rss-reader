@@ -1,5 +1,6 @@
-import ExtensionLock from '/src/badge/extension-lock.js';
 import * as db from '/src/db/db.js';
+
+import ExtensionLock from './extension-lock.js';
 
 export function install_listener(event) {
   console.debug('Install listener received event, refreshing badge');

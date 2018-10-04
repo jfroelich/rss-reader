@@ -1,12 +1,12 @@
 import assert from '/src/assert/assert.js';
-import {activate_feed} from '/src/db/activate-feed.js';
-import {create_feed} from '/src/db/create-feed.js';
-import * as errors from '/src/db/errors.js';
-import * as feed_utils from '/src/db/feed-utils.js';
-import {get_feed} from '/src/db/get-feed.js';
-import {open} from '/src/db/open.js';
-import {remove} from '/src/db/remove.js';
-import * as types from '/src/db/types.js';
+import {activate_feed} from './activate-feed.js';
+import {create_feed} from './create-feed.js';
+import * as errors from './errors.js';
+import * as feed_utils from './feed-utils.js';
+import {get_feed} from './get-feed.js';
+import {open} from './open.js';
+import {remove} from './remove.js';
+import * as types from './types.js';
 
 // Verify the activate-feed function works as expected
 export async function activate_feed_test() {

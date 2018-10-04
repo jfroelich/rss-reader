@@ -1,4 +1,4 @@
-import {FaviconService} from '/src/iconsvc/favicon-service.js';
+import {FaviconService} from './favicon-service.js';
 
 // Return a promise that resolves to a new connection to the favicon cache
 // database

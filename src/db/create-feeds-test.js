@@ -1,11 +1,11 @@
 import assert from '/src/assert/assert.js';
-import {create_feeds} from '/src/db/create-feeds.js';
-import * as feed_utils from '/src/db/feed-utils.js';
-import {get_feed} from '/src/db/get-feed.js';
-import {get_feeds} from '/src/db/get-feeds.js';
-import {open} from '/src/db/open.js';
-import {remove} from '/src/db/remove.js';
-import * as types from '/src/db/types.js';
+import {create_feeds} from './create-feeds.js';
+import * as feed_utils from './feed-utils.js';
+import {get_feed} from './get-feed.js';
+import {get_feeds} from './get-feeds.js';
+import {open} from './open.js';
+import {remove} from './remove.js';
+import * as types from './types.js';
 
 // TODO: test behavior when two or more feeds have identical urls
 

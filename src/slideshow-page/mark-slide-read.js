@@ -11,14 +11,12 @@ export async function mark_slide_read_start(session, slide) {
   // calls to mark_slide_read_start. This is routine, expected, and not an
   // error.
   if (slide.hasAttribute('read-pending')) {
-    console.debug('Slide is already read-pending', entry_id);  // TEMP
     return;
   }
 
   // The slide was already read. Typically happens when navigating away from a
   // slide a second time. Not an error.
   if (slide.hasAttribute('read')) {
-    console.debug('Slide is already read', entry_id);  // TEMP
     return;
   }
 

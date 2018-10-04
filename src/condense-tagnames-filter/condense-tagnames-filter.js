@@ -1,4 +1,4 @@
-import {coerce_element} from '/src/condense-tagnames-filter/coerce-element.js';
+import {coerce_element} from './coerce-element.js';
 
 export function condense_tagnames_filter(document, copy_attrs_flag) {
   // Analysis is restricted to body.

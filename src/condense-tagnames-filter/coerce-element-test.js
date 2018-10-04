@@ -1,6 +1,7 @@
 import assert from '/src/assert/assert.js';
-import {coerce_element} from '/src/condense-tagnames-filter/coerce-element.js';
 import * as html from '/src/html/html.js';
+
+import {coerce_element} from './coerce-element.js';
 
 export async function coerce_element_test() {
   const input = '<html><head></head><body><p></p><a></a></body></html>';

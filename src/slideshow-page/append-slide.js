@@ -2,11 +2,11 @@ import assert from '/src/assert/assert.js';
 import * as db from '/src/db/db.js';
 import * as html from '/src/html/html.js';
 import * as ls from '/src/localstorage/localstorage.js';
-import {filter_publisher} from '/src/slideshow-page/article-title/article-title.js';
-import {escape_html} from '/src/slideshow-page/escape-html.js';
-import {hide_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
-import {slide_onclick} from '/src/slideshow-page/slide-onclick.js';
-import * as slideshow_state from '/src/slideshow-page/slideshow-state.js';
+import {filter_publisher} from './article-title/article-title.js';
+import {escape_html} from './escape-html.js';
+import {hide_no_articles_message} from './no-articles-message.js';
+import {slide_onclick} from './slide-onclick.js';
+import * as slideshow_state from './slideshow-state.js';
 
 // BUG: create_article_title_element is double encoding entities, so entities
 // show up in the value. I partially fixed by not escaping ampersand but that's

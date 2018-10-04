@@ -1,7 +1,7 @@
 import assert from '/src/assert/assert.js';
 import {set_base_uri} from '/src/base-uri/base-uri.js';
 import * as html from '/src/html/html.js';
-import {set_image_sizes} from '/src/image-size-filter/image-size-filter.js';
+import {set_image_sizes} from './image-size-filter.js';
 
 // Assert the ordinary case of a basic html document with an image with unknown
 // attributes

@@ -1,6 +1,6 @@
 import assert from '/src/assert/assert.js';
 import {parse_html} from '/src/html/html.js';
-import {unwrap_element} from '/src/unwrap-element/unwrap-element.js';
+import {unwrap_element} from './unwrap-element.js';
 
 export async function unwrap_element_test() {
   // Assert the typical case of a simple straightforward unwrap call completes

@@ -1,7 +1,7 @@
 import assert from '/src/assert/assert.js';
-import * as entry_utils from '/src/db/entry-utils.js';
-import * as feed_utils from '/src/db/feed-utils.js';
-import * as types from '/src/db/types.js';
+import * as entry_utils from './entry-utils.js';
+import * as feed_utils from './feed-utils.js';
+import * as types from './types.js';
 
 export async function feed_utils_is_feed_test() {
   const fcorrect = feed_utils.create_feed_object();

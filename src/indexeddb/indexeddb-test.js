@@ -1,5 +1,5 @@
 import assert from '/src/assert/assert.js';
-import * as indexeddb from '/src/indexeddb/indexeddb.js';
+import * as indexeddb from './indexeddb.js';
 
 // TODO: test upgrade handler specified vs not specified and assert that
 // upgrade occurs

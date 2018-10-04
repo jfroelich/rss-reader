@@ -1,7 +1,7 @@
 import assert from '/src/assert/assert.js';
-import {archive_entries} from '/src/db/archive-entries.js';
-import {open} from '/src/db/open.js';
-import {remove} from '/src/db/remove.js';
+import {archive_entries} from './archive-entries.js';
+import {open} from './open.js';
+import {remove} from './remove.js';
 
 // NOTE: At the moment this test is a nominal stub that does not actually test
 // anything

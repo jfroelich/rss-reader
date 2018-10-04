@@ -1,5 +1,5 @@
 import assert from '/src/assert/assert.js';
-import * as entry_utils from '/src/db/entry-utils.js';
+import * as entry_utils from './entry-utils.js';
 
 export function get_entries(session, mode = 'all', offset, limit) {
   // TODO: this syntax is hideous, is there a nicer way?

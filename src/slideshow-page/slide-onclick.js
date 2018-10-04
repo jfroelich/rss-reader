@@ -1,6 +1,6 @@
 import * as db from '/src/db/db.js';
-import {mark_slide_read_start} from '/src/slideshow-page/mark-slide-read.js';
-import {get_current_slide} from '/src/slideshow-page/slideshow-state.js';
+import {mark_slide_read_start} from './mark-slide-read.js';
+import {get_current_slide} from './slideshow-state.js';
 
 export async function slide_onclick(event) {
   // Only intercept left clicks

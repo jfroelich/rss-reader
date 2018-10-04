@@ -1,11 +1,12 @@
 import assert from '/src/assert/assert.js';
-import * as entry_utils from '/src/db/entry-utils.js';
-import * as feed_utils from '/src/db/feed-utils.js';
-import * as types from '/src/db/types.js';
 import * as html from '/src/html/html.js';
-import {filter_unprintables} from '/src/db/filter-unprintables.js';
-import {replace_tags} from '/src/db/replace-tags.js';
 import * as string from '/src/string/string.js';
+
+import * as entry_utils from './entry-utils.js';
+import * as feed_utils from './feed-utils.js';
+import {filter_unprintables} from './filter-unprintables.js';
+import {replace_tags} from './replace-tags.js';
+import * as types from './types.js';
 
 export function validate_entry(entry) {
   assert(types.is_entry(entry));

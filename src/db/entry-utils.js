@@ -1,5 +1,5 @@
 import assert from '/src/assert/assert.js';
-import * as types from '/src/db/types.js';
+import * as types from './types.js';
 
 // TODO: decouple assert? it is not providing much value
 // TODO: inline append_url_common (remnant of deprecated model.js)

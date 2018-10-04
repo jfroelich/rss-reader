@@ -1,9 +1,11 @@
 import assert from '/src/assert/assert.js';
-import * as entry_utils from '/src/db/entry-utils.js';
-import * as object from '/src/db/object-utils.js';
-import * as types from '/src/db/types.js';
+import * as entry_utils from './entry-utils.js';
+import * as object from './object-utils.js';
+import * as types from './types.js';
 
-// TODO: is this even in use? doesn't seem like it. why did I implement?
+// TODO: change mark-entry-read to use this, in the same manner that i did for
+// how activate-feed uses update-feed. then use this base to also implement
+// support for star/unstar of entries
 
 export async function update_entry(session, entry) {
   assert(types.is_entry(entry));

@@ -1,6 +1,7 @@
 import assert from '/src/assert/assert.js';
-import {FaviconService} from '/src/iconsvc/favicon-service.js';
 import * as indexeddb from '/src/indexeddb/indexeddb.js';
+
+import {FaviconService} from './favicon-service.js';
 
 // TODO: this needs to be implemented using local files
 // TODO: this needs to be implemented without parameters, it must run on a
