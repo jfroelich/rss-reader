@@ -8,6 +8,7 @@ export {deactivate_feed} from '/src/db/deactivate-feed.js';
 export {delete_entry} from '/src/db/delete-entry.js';
 export {delete_feed} from '/src/db/delete-feed.js';
 export * from '/src/db/entry-utils.js';
+export * from '/src/db/errors.js';
 export * from '/src/db/feed-utils.js';
 export {get_entries} from '/src/db/get-entries.js';
 export {get_entry} from '/src/db/get-entry.js';
