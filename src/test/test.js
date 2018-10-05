@@ -38,6 +38,7 @@ register_test(db_tests.create_feed_test);
 register_test(db_tests.create_feed_url_constraint_test);
 register_test(db_tests.create_feeds_test);
 register_test(db_tests.deactivate_feed_test);
+register_test(db_tests.delete_entry_test);
 register_test(db_tests.delete_feed_test);
 register_test(db_tests.entry_utils_is_entry_test);
 register_test(db_tests.entry_utils_append_entry_url_test);
