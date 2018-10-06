@@ -2,14 +2,19 @@ import assert from '/src/assert/assert.js';
 import * as entry_utils from './entry-utils.js';
 
 export function get_entries(session, mode = 'all', offset, limit) {
-  // TODO: this syntax is hideous, is there a nicer way?
-  assert(
-      offset === null || offset === undefined || offset === NaN ||
-      (Number.isInteger(offset) && offset >= 0));
-  assert(
-      limit === null || limit === undefined || limit === NaN ||
-      (Number.isInteger(limit) && limit >= 0));
+  assert(is_valid_offset(offset));
+  assert(is_valid_limit(limit));
   return get_entries_internal(session.conn, mode, offset, limit);
+}
+
+function is_valid_offset(offset) {
+  return offset === null || offset === undefined || offset === NaN ||
+      (Number.isInteger(offset) && offset >= 0);
+}
+
+function is_valid_limit(limit) {
+  return limit === null || limit === undefined || limit === NaN ||
+      (Number.isInteger(limit) && limit >= 0);
 }
 
 function get_entries_internal(conn, mode, offset, limit) {
