@@ -11,15 +11,26 @@ export async function delete_feed(session, feed_id, reason) {
   const entry_ids = await promise;
 
   if (session.channel) {
-    const feed_message = {type: 'feed-deleted', id: feed_id, reason: reason};
+    const feed_message = {type: 'feed-deleted', id: feed_id, reason: undefined};
+
+    // Avoid setting reason unless it is a string so as to not potentially
+    // output garbage
+    if (typeof reason === 'string') {
+      feed_message.reason = reason;
+    }
+
     session.channel.postMessage(feed_message);
 
     const entry_message = {
       type: 'entry-deleted',
       id: entry_utils.INVALID_ENTRY_ID,
-      reason: reason,
+      reason: undefined,
       feed_id: feed_id
     };
+
+    if (typeof reason === 'string') {
+      entry_message.reason = reason;
+    }
 
     for (const id of entry_ids) {
       entry_message.id = id;
