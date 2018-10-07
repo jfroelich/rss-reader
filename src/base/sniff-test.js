@@ -1,7 +1,6 @@
 import assert from '/src/base/assert.js';
+import * as sniff from '/src/base/sniff.js';
 import * as url_utils from '/src/base/url-utils.js';
-
-import * as sniff from './sniff.js';
 
 export async function sniff_test() {
   // expected binary output

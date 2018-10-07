@@ -1,20 +1,20 @@
 import assert from '/src/base/assert.js';
 import * as html from '/src/base/html.js';
+import * as favicon from '/src/base/iconsvc/favicon.js';
 import * as ls from '/src/base/localstorage.js';
+import {sanitize_document} from '/src/base/sandoc/sandoc.js';
 import {set_base_uri} from '/src/base/set-base-uri.js';
+import * as sniff from '/src/base/sniff.js';
 import {fetch_feed} from '/src/control/fetch-feed.js';
-import * as db from '/src/db/db.js';
 import {fetch_html} from '/src/control/fetch-html.js';
 import {is_allowed_request} from '/src/control/fetch-policy.js';
 // TODO: import * as fetch_utils or something
 import {OfflineError, response_is_redirect, TimeoutError} from '/src/control/fetch2.js';
-import * as favicon from '/src/base/iconsvc/favicon.js';
 import * as notification from '/src/control/notification.js';
-import {sanitize_document} from '/src/base/sandoc/sandoc.js';
+import * as db from '/src/db/db.js';
 
 import {build as build_rewrite_rules} from './rewrite-rules.js';
 import {rewrite_url} from './rewrite-url.js';
-import * as sniff from './sniff.js';
 
 // TODO: this module is huge, maybe my biggest, i don't like it, break it up
 // somehow
