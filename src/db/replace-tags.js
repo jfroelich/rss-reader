@@ -1,5 +1,5 @@
-import assert from '/src/assert/assert.js';
-import {parse_html} from '/src/html/html.js';
+import assert from '/src/base/assert.js';
+import {parse_html} from '/src/base/html.js';
 
 // TODO: db modules should not depend on html modules, unless html modules are
 // a baser module. but, in general, it might be nice to just decouple

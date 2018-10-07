@@ -1,4 +1,4 @@
-import assert from '/src/assert/assert.js';
+import assert from '/src/base/assert.js';
 import {count_unread_entries} from './count-unread-entries.js';
 import {create_entry} from './create-entry.js';
 import * as entry_utils from './entry-utils.js';

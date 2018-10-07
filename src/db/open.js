@@ -1,4 +1,4 @@
-import * as indexeddb from '/src/indexeddb/indexeddb.js';
+import * as indexeddb from '/src/base/indexeddb.js';
 
 import * as types from './types.js';
 

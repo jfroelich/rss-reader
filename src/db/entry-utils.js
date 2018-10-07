@@ -1,4 +1,4 @@
-import assert from '/src/assert/assert.js';
+import assert from '/src/base/assert.js';
 import * as types from './types.js';
 
 // TODO: decouple assert? it is not providing much value

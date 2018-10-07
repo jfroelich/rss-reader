@@ -1,4 +1,4 @@
-import assert from '/src/assert/assert.js';
+import assert from '/src/base/assert.js';
 import * as entry_utils from './entry-utils.js';
 
 export function get_entry(session, mode = 'id', value, key_only) {

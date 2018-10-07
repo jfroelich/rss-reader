@@ -1,6 +1,6 @@
-import assert from '/src/assert/assert.js';
-import * as html from '/src/html/html.js';
-import * as string from '/src/string/string.js';
+import assert from '/src/base/assert.js';
+import * as html from '/src/base/html.js';
+import * as string from '/src/base/string.js';
 
 import * as entry_utils from './entry-utils.js';
 import * as feed_utils from './feed-utils.js';

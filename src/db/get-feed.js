@@ -1,4 +1,4 @@
-import assert from '/src/assert/assert.js';
+import assert from '/src/base/assert.js';
 import * as feed_utils from './feed-utils.js';
 
 export function get_feed(session, mode = 'id', value, key_only) {
