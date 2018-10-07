@@ -1,6 +1,7 @@
-import * as db from '/src/db/db.js';
 import * as favicon from '/src/base/iconsvc/favicon.js';
-import {poll_feeds} from '/src/control/poll-feeds/poll-feeds.js';
+import {poll_feeds} from '/src/control/poll-feeds.js';
+import * as db from '/src/db/db.js';
+
 import {options_menu_hide, options_menu_show} from './left-panel.js';
 import {hide_no_articles_message, show_no_articles_message} from './no-articles-message.js';
 

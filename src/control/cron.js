@@ -1,6 +1,6 @@
 import * as favicon from '/src/base/iconsvc/favicon.js';
 import * as ls from '/src/base/localstorage.js';
-import {poll_feeds} from '/src/control/poll-feeds/poll-feeds.js';
+import {poll_feeds} from '/src/control/poll-feeds.js';
 import {refresh_feed_icons} from '/src/control/refresh-feed-icons.js';
 import * as db from '/src/db/db.js';
 

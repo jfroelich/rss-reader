@@ -1,10 +1,10 @@
 import * as favicon from '/src/base/iconsvc/favicon.js';
 import * as config from '/src/control/config.js';
 import * as cron_control from '/src/control/cron.js';
-import {poll_feed, poll_feeds} from '/src/control/poll-feeds/poll-feeds.js';
+import {poll_feed, poll_feeds} from '/src/control/poll-feeds.js';
 import {refresh_feed_icons} from '/src/control/refresh-feed-icons.js';
-import * as db from '/src/db/db.js';
 import {subscribe} from '/src/control/subscribe.js';
+import * as db from '/src/db/db.js';
 
 // Exposes a command line interface to the console
 // TODO: add command for removing untyped objects

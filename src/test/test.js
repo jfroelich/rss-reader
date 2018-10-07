@@ -9,6 +9,7 @@ import * as image_size_filter_tests from '/src/base/image-size-filter/image-size
 import * as indexeddb_tests from '/src/base/indexeddb-test.js';
 import {mime_test} from '/src/base/mime-test.js';
 import {parse_feed_test} from '/src/base/parse-feed-test.js';
+import * as rewrite_url_tests from '/src/base/rewrite-url-test.js';
 import {base_uri_test} from '/src/base/set-base-uri-test.js';
 import {sniff_test} from '/src/base/sniff-test.js';
 import {unwrap_element_test} from '/src/base/unwrap-element-test.js';
@@ -16,7 +17,6 @@ import {fetch_feed_test} from '/src/control/fetch-feed-test.js';
 import {fetch_html_test} from '/src/control/fetch-html-test.js';
 import {fetch2_test} from '/src/control/fetch2-test.js';
 import {import_opml_test} from '/src/control/import-opml-test.js';
-import * as rewrite_url_tests from '/src/control/poll-feeds/rewrite-url-test.js';
 import {subscribe_test} from '/src/control/subscribe-test.js';
 import * as db_tests from '/src/db/db-tests.js';
 import {article_title_test} from '/src/view/slideshow-page/article-title/article-title-test.js';
