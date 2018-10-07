@@ -1,3 +1,4 @@
+import {article_title_test} from '/src/base/article-title-test.js';
 import {coerce_element_test} from '/src/base/coerce-element-test.js';
 import * as color_contrast_filter_tests from '/src/base/color-contrast-filter-test.js';
 import {color_test} from '/src/base/color-test.js';
@@ -21,7 +22,6 @@ import {fetch2_test} from '/src/control/fetch2-test.js';
 import {import_opml_test} from '/src/control/import-opml-test.js';
 import {subscribe_test} from '/src/control/subscribe-test.js';
 import * as db_tests from '/src/db/db-tests.js';
-import {article_title_test} from '/src/view/slideshow-page/article-title/article-title-test.js';
 
 // A set-like array of test functions
 const registry = [];

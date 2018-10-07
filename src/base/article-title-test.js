@@ -1,5 +1,5 @@
+import {filter_publisher} from '/src/base/article-title.js';
 import assert from '/src/base/assert.js';
-import {filter_publisher} from '/src/view/slideshow-page/article-title/article-title.js';
 
 // TODO: test using additional parameters where other parameters are not the
 // default values

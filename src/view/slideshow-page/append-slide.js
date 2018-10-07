@@ -1,8 +1,9 @@
+import {filter_publisher} from '/src/base/article-title.js';
 import assert from '/src/base/assert.js';
-import * as db from '/src/db/db.js';
 import * as html from '/src/base/html.js';
 import * as ls from '/src/base/localstorage.js';
-import {filter_publisher} from './article-title/article-title.js';
+import * as db from '/src/db/db.js';
+
 import {escape_html} from './escape-html.js';
 import {hide_no_articles_message} from './no-articles-message.js';
 import {slide_onclick} from './slide-onclick.js';
