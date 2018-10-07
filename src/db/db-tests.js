@@ -9,7 +9,6 @@ export * from './delete-entry-test.js';
 export * from './delete-feed-test.js';
 export * from './entry-utils-test.js';
 export * from './feed-utils-test.js';
-export * from './filter-unprintables-test.js';
 export * from './get-entries-test.js';
 export * from './get-entry-test.js';
 export * from './get-feed-test.js';

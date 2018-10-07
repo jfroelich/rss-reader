@@ -1,11 +1,11 @@
 import assert from '/src/base/assert.js';
+import {filter_unprintables} from '/src/base/filter-unprintables.js';
 import * as html from '/src/base/html.js';
 import {replace_tags} from '/src/base/replace-tags.js';
 import * as string from '/src/base/string.js';
 
 import * as entry_utils from './entry-utils.js';
 import * as feed_utils from './feed-utils.js';
-import {filter_unprintables} from './filter-unprintables.js';
 import * as types from './types.js';
 
 export function validate_entry(entry) {

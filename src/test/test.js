@@ -3,6 +3,7 @@ import * as color_contrast_filter_tests from '/src/base/color-contrast-filter-te
 import {color_test} from '/src/base/color-test.js';
 import {empty_attribute_filter_test} from '/src/base/filter-empty-attrs-test.js';
 import {filter_lazy_images_test} from '/src/base/filter-lazy-images-test.js';
+import {filter_unprintables_test} from '/src/base/filter-unprintables-test.js';
 import {html_truncate_test} from '/src/base/html-truncate-test.js';
 import {favicon_service_test} from '/src/base/iconsvc/favicon-service-test.js';
 import * as image_size_filter_tests from '/src/base/image-size-filter/image-size-filter-test.js';
