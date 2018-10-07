@@ -1,3 +1,4 @@
+import {fade_element} from '/src/base/fade-element.js';
 import * as html from '/src/base/html.js';
 import * as favicon from '/src/base/iconsvc/favicon.js';
 import * as ls from '/src/base/localstorage.js';
@@ -6,7 +7,6 @@ import {poll_feed} from '/src/control/poll-feeds.js';
 import {subscribe, unsubscribe} from '/src/control/subscribe.js';
 import * as db from '/src/db/db.js';
 
-import {fade_element} from './fade-element.js';
 import * as permissions from './permissions.js';
 
 let current_menu_item;
