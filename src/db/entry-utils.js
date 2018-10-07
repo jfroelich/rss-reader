@@ -21,6 +21,11 @@ export function is_valid_entry_id(value) {
   return Number.isInteger(value) && value > 0;
 }
 
+export function entry_has_url(entry) {
+  assert(types.is_entry(entry));
+  return Array.isArray(entry.urls) && entry.urls.length;
+}
+
 export function append_entry_url(entry, url) {
   assert(types.is_entry(entry));
   return append_url_common(entry, url);

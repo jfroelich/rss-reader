@@ -11,13 +11,14 @@ export async function update_entry(session, entry) {
   assert(types.is_entry(entry));
   assert(entry_utils.is_valid_entry_id(entry.id));
 
-  // TODO: should this be asserting entry.urls similar to update_feed?
+  // We do not assert that the entry has a url. Entries are not required to have
+  // urls at the model layer. Only higher layers are concerned with imposing
+  // that constraint.
+
   entry.dateUpdated = new Date();
   object.filter_empty_properties(entry);
 
-  const put_bound = put_entry.bind(undefined, session.conn, entry);
-  const promise = new Promise(put_bound);
-  await promise;
+  await new Promise(put_entry.bind(undefined, session.conn, entry));
 
   if (session.channel) {
     const message = {type: 'entry-updated', id: entry.id};

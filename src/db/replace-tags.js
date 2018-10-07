@@ -8,8 +8,7 @@ import {parse_html} from '/src/html/html.js';
 // not specified, then this removes the tags.
 export function replace_tags(html_string, replacement) {
   assert(typeof html_string === 'string');
-  const typeof_replacement = typeof replacement;
-  assert(typeof_replacement === 'undefined' || typeof_replacement === 'string');
+  assert(replacement === undefined || typeof replacement === 'string');
 
   // Fast case for empty strings
   if (!html_string) {

@@ -1,19 +1,15 @@
-export async function get_feeds(session, mode = 'all', sort = false) {
-  let feeds = await get_feeds_internal(session.conn);
+export async function get_feeds(session, mode = 'all', title_sort) {
+  let feeds = await new Promise(get_feeds_executor.bind(null, session.conn));
 
   if (mode === 'active') {
     feeds = feeds.filter(feed => feed.active);
   }
 
-  if (sort) {
-    feeds.sort(compare_feeds);
+  if (title_sort) {
+    feeds.sort(feed_title_comparator);
   }
 
   return feeds;
-}
-
-function get_feeds_internal(conn) {
-  return new Promise(get_feeds_executor.bind(null, conn));
 }
 
 function get_feeds_executor(conn, resolve, reject) {
@@ -24,7 +20,7 @@ function get_feeds_executor(conn, resolve, reject) {
   request.onsuccess = _ => resolve(request.result);
 }
 
-function compare_feeds(a, b) {
+function feed_title_comparator(a, b) {
   const s1 = a.title ? a.title.toLowerCase() : '';
   const s2 = b.title ? b.title.toLowerCase() : '';
   return indexedDB.cmp(s1, s2);

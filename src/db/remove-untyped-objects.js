@@ -9,7 +9,7 @@ import * as types from './types.js';
 // hidden magic property. This uses multiple transactions.
 export async function remove_untyped_objects(session) {
   // Find and delete untyped feeds
-  const feeds = get_feeds(session, 'all', false);
+  const feeds = await get_feeds(session, 'all', false);
   const delete_feed_promises = [];
   for (const feed of feeds) {
     if (!types.is_feed(feed)) {

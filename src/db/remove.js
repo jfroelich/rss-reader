@@ -1,7 +1,5 @@
-import * as indexeddb from '/src/indexeddb/indexeddb.js';
+export {remove} from '/src/indexeddb/indexeddb.js';
 
-export const remove = indexeddb.remove;
-
-// export function remove(name) {
-//  return indexeddb.remove(name);
-//}
+// TODO: i am not sure how much value i am getting from this. i am not
+// abstracting away much. this is basically only used by semi-private helper
+// modules anyway
