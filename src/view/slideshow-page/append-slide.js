@@ -1,10 +1,10 @@
 import {filter_publisher} from '/src/base/article-title.js';
 import assert from '/src/base/assert.js';
+import {escape_html} from '/src/base/escape-html.js';
 import * as html from '/src/base/html.js';
 import * as ls from '/src/base/localstorage.js';
 import * as db from '/src/db/db.js';
 
-import {escape_html} from './escape-html.js';
 import {hide_no_articles_message} from './no-articles-message.js';
 import {slide_onclick} from './slide-onclick.js';
 import * as slideshow_state from './slideshow-state.js';
