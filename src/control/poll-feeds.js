@@ -381,7 +381,30 @@ const inaccessible_content_descriptors = [
   {pattern: /wsj\.com$/i, reason: 'paywall'},
   {pattern: /heraldsun\.com\.au$/i, reason: 'requires-cookies'},
   {pattern: /ripe\.net$/i, reason: 'requires-cookies'},
-  {pattern: /foxnews.com$/i, reason: 'fake'}
+  {pattern: /foxnews\.com$/i, reason: 'fake'},
+  {pattern: /breitbart\.com$/i, reason: 'fake'},
+  {pattern: /infowars\.com$/i, reason: 'fake'},
+  {pattern: /drudgereport\.com$/i, reason: 'fake'},
+  {pattern: /globalresearch\.ca$/i, reason: 'fake'},
+  {pattern: /rt\.com$/i, reason: 'fake'},
+  {pattern: /theblaze\.com$/i, reason: 'fake'},
+  {pattern: /dailycaller\.com$/i, reason: 'fake'},
+  {pattern: /dailywire\.com$/i, reason: 'fake'},
+  {pattern: /ijr\.com$/i, reason: 'fake'},
+  {pattern: /lifezette\.com$/i, reason: 'fake'},
+  {pattern: /thegatewaypundit\.com$/i, reason: 'fake'},
+  {pattern: /newsmax\.com$/i, reason: 'fake'},
+  {pattern: /oann\.com$/i, reason: 'fake'},
+  {pattern: /pjmedia\.com$/i, reason: 'fake'},
+  {pattern: /rsbnetwork\.com$/i, reason: 'fake'},
+  {pattern: /thefederalist\.com$/i, reason: 'fake'},
+  {pattern: /therebel\.media$/i, reason: 'fake'},
+  {pattern: /freebeacon\.com$/i, reason: 'fake'},
+  {pattern: /twitchy\.com$/i, reason: 'fake'},
+  {pattern: /michellemalkin\.com$/i, reason: 'fake'},
+  {pattern: /truthrevolt\.org$/i, reason: 'fake'},
+  {pattern: /wnd\.com$/i, reason: 'fake'},
+  {pattern: /redstate\.com$/i, reason: 'fake'}
 ];
 
 function url_is_inaccessible(url) {
