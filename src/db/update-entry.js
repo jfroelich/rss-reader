@@ -1,6 +1,7 @@
 import assert from '/src/base/assert.js';
+import * as object from '/src/base/object-utils.js';
+
 import * as entry_utils from './entry-utils.js';
-import * as object from './object-utils.js';
 import * as types from './types.js';
 
 // TODO: change mark-entry-read to use this, in the same manner that i did for

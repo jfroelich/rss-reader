@@ -1,5 +1,5 @@
 import assert from '/src/base/assert.js';
-import * as object from './object-utils.js';
+import * as object from '/src/base/object-utils.js';
 import * as types from './types.js';
 
 // Create several feeds using a single transaction. This is preferable to

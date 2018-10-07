@@ -1,7 +1,8 @@
 import assert from '/src/base/assert.js';
+import * as object from '/src/base/object-utils.js';
+
 import * as errors from './errors.js';
 import * as feed_utils from './feed-utils.js';
-import * as object from './object-utils.js';
 import * as types from './types.js';
 
 // TODO: throw the proper errors here
