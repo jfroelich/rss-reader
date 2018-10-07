@@ -1,3 +1,13 @@
+// TODO: review all tests and ensure that tests follow pathological paths in
+// addition to the normal path. for example see the following url:
+// https://www.usenix.org/system/files/login/articles/03_lu_010-017_final.pdf
+// TODO: think of a nice way to ensure that each test uses a unique database to
+// avoid any surprises when running tests concurrently. maybe use a prefix
+// string parameter when calling each test function that is unique to that test
+// function call
+// TODO: consider enabling tests to somehow declare their own timeout instead of
+// using the same timeout for all tests
+
 import {article_title_test} from '/src/base/article-title-test.js';
 import {coerce_element_test} from '/src/base/coerce-element-test.js';
 import * as color_contrast_filter_tests from '/src/base/color-contrast-filter-test.js';
