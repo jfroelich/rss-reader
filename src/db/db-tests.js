@@ -20,7 +20,6 @@ export * from './mark-entry-read-test.js';
 export * from './remove-lost-entries-test.js';
 export * from './remove-orphaned-entries-test.js';
 export * from './remove-untyped-objects-test.js';
-export * from './replace-tags-test.js';
 export * from './sanity-test.js';
 export * from './update-entry-test.js';
 export * from './update-feed-test.js';

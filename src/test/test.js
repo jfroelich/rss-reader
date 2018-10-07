@@ -9,6 +9,7 @@ import * as image_size_filter_tests from '/src/base/image-size-filter/image-size
 import * as indexeddb_tests from '/src/base/indexeddb-test.js';
 import {mime_test} from '/src/base/mime-test.js';
 import {parse_feed_test} from '/src/base/parse-feed-test.js';
+import {replace_tags_test} from '/src/base/replace-tags-test.js';
 import * as rewrite_url_tests from '/src/base/rewrite-url-test.js';
 import {base_uri_test} from '/src/base/set-base-uri-test.js';
 import {sniff_test} from '/src/base/sniff-test.js';
