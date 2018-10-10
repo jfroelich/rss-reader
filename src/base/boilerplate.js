@@ -58,6 +58,13 @@ export function classify(dataset, model, options = {}) {
     area: document_area
   };
 
+  // TODO: the model should export a function named score. The function should
+  // encapsulate this loop, along with the secondary ensure pass. This should
+  // be calling that function here. Not doing this stuff explicitly in a calling
+  // context. The score function should operate off a dataset of blocks, so it
+  // should take a dataset as a parameter. Its individual per-block scoring
+  // function should be an internal helper to that module.
+
   for (const block of dataset) {
     block.score = model(block, info);
   }
@@ -125,6 +132,14 @@ export function create_block_dataset(document, max_token_length = 15) {
       dataset.push(block);
     }
   }
+
+  // TODO: this functionality should be decoupled from the generation of the
+  // dataset itself. This funcitonality should be implemented as a second pass
+  // over the extracted blocks, as a part of a feature-extraction module.
+
+  // TODO: attribute tokens should maybe be grouped into buckets of bad/good,
+  // and as separate features like bad_token_count and good_token_count, and
+  // then some uniform weight is applied in the scoring section
 
   // Extract features
   for (const block of dataset) {
@@ -290,6 +305,9 @@ export function create_model() {
     return Math.max(0, Math.min(score, 100));
   };
 }
+
+// TODO: returning a function is silly. if someone wants to use the default
+// scoring function they just reference it, there is need to generate
 
 // An element's score indicates whether it is boilerplate. A higher score means
 // less likely to be boilerplate.
