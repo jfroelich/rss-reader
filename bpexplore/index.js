@@ -1,6 +1,4 @@
-import {set_base_uri} from '/src/base/set-base-uri.js';
-import * as bp from '/src/base/boilerplate.js';
-import {fetch_html} from '/src/control/fetch-html.js';
+import * as boilerplate from '/src/base/boilerplate/boilerplate.js';
 import {parse_html} from '/src/base/html.js';
 import {set_image_sizes} from '/src/base/image-size-filter/image-size-filter.js';
 import {canonicalize_urls} from '/src/base/sandoc/canonicalize-urls.js';
@@ -9,6 +7,8 @@ import {filter_blacklisted_elements} from '/src/base/sandoc/filter-blacklisted-e
 import {filter_comments} from '/src/base/sandoc/filter-comments.js';
 import {filter_iframes} from '/src/base/sandoc/filter-iframes.js';
 import {filter_script} from '/src/base/sandoc/filter-script.js';
+import {set_base_uri} from '/src/base/set-base-uri.js';
+import {fetch_html} from '/src/control/fetch-html.js';
 
 // TODO: will filtering hidden elements help exploration?
 
@@ -60,11 +60,13 @@ async function bptest(url_string) {
 
   section.innerHTML = 'Analyzing boilerplate';
 
-  const dataset = bp.create_block_dataset(doc);
-  const model = bp.create_model();
-  const scored_dataset = bp.classify(dataset, model);
+  const dataset = boilerplate.create_block_dataset(doc);
+  boilerplate.extract_features(dataset);
 
-  bp.annotate_document(doc, scored_dataset);
+  const model = boilerplate.create_model();
+  const scored_dataset = boilerplate.classify(dataset, model);
+
+  boilerplate.annotate_document(doc, scored_dataset);
 
   // sort of remove ids so it does not muck with form stuff
   elements = doc.body.getElementsByTagName('*');

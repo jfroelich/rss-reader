@@ -1,4 +1,11 @@
+import {Block} from './block.js';
+import * as utils from './utils.js';
+
+export * from './feature-extraction.js';
+
 export const neutral_score = 50;
+
+// TODO: move scoring stuff to model.js
 
 // Given a dataset representing content sections of a document, produce a scored
 // dataset indicating which elements in the dataset are boilerplate.
@@ -30,6 +37,7 @@ export function classify(dataset, model, options = {}) {
   assert(Number.isInteger(document_area));
   assert(document_area >= 0);
 
+  // TODO: these statements should be located closer to where the result is used
   const default_minimum_content_threshold = 20;
   let minimum_content_threshold = isNaN(options.minimum_content_threshold) ?
       default_minimum_content_threshold :
@@ -38,7 +46,7 @@ export function classify(dataset, model, options = {}) {
 
   let text_length = 0;
   if (document.body) {
-    text_length = get_text_length(document.body.textContent);
+    text_length = utils.get_text_length(document.body.textContent);
   }
 
   let num_elements = 0;
@@ -96,9 +104,7 @@ export function annotate_document(document, dataset) {
 }
 
 // Given a document, produce a dataset suitable for analysis
-// @param max_token_length the maximum number of characters per token when
-// analyzing attribute tokens
-export function create_block_dataset(document, max_token_length = 15) {
+export function create_block_dataset(document) {
   if (!document.body) {
     return [];
   }
@@ -119,8 +125,10 @@ export function create_block_dataset(document, max_token_length = 15) {
        element_index++) {
     const element = elements[element_index];
     if (block_element_names.includes(element.localName)) {
-      const block = new Block(element, element_index);
+      const block = new Block(element, neutral_score, element_index);
 
+      // TODO: this needs a comment describing what this does because it is not
+      // obvious. It may even be better to encapsulate it in a helper function.
       for (let block_index = dataset.length - 1; block_index > -1;
            block_index--) {
         if (dataset[block_index].element.contains(element)) {
@@ -131,29 +139,6 @@ export function create_block_dataset(document, max_token_length = 15) {
 
       dataset.push(block);
     }
-  }
-
-  // TODO: this functionality should be decoupled from the generation of the
-  // dataset itself. This funcitonality should be implemented as a second pass
-  // over the extracted blocks, as a part of a feature-extraction module.
-
-  // TODO: attribute tokens should maybe be grouped into buckets of bad/good,
-  // and as separate features like bad_token_count and good_token_count, and
-  // then some uniform weight is applied in the scoring section
-
-  // Extract features
-  for (const block of dataset) {
-    block.element_type = block.element.localName;
-    block.depth = get_node_depth(block.element);
-    block.text_length = get_text_length(block.element.textContent);
-    block.anchor_text_length = get_anchor_text_length(block.element);
-    block.list_item_count = get_list_item_count(block.element);
-    block.paragraph_count = get_paragraph_count(block.element);
-    block.field_count = get_field_count(block.element);
-    block.line_count = get_line_count(block.element, block.text_length);
-    block.image_area = get_descendant_image_area(block.element);
-    block.attribute_tokens =
-        get_attribute_tokens(block.element, max_token_length);
   }
 
   return dataset;
@@ -394,57 +379,12 @@ function get_visible_content_length(blocks) {
   return length;
 }
 
-// A block is a representation of a portion of a document's content along with
-// some derived properties.
-//
-// @param element {Element} a live reference to the element in a document that
-// this block represents
-// @param element_index {Number} the index of the block in the all-body-elements
-// array
-function Block(element, element_index = -1) {
-  this.element = element;
-  this.element_index = element_index;
-  this.parent_block_index = -1;
-  this.element_type = undefined;
-  this.depth = -1;
-  this.text_length = -1;
-  this.line_count = 0;
-  this.image_area = 0;
-  this.list_item_count = 0;
-  this.paragraph_count = 0;
-  this.field_count = 0;
-  this.attribute_tokens = [];
-
-  this.score = neutral_score;
-}
-
 export function find_block_element(document, block) {
   // For now, cheat
   // TODO: maybe use something like element index
   assert(block.element);
   assert(block.element.ownerDocument === document);
   return block.element;
-}
-
-// Return the distance of the node to the owning document's root node.
-function get_node_depth(node) {
-  node = node.parentNode;
-  let depth = 0;
-  while (node) {
-    node = node.parentNode;
-    depth++;
-  }
-  return depth;
-}
-
-// Get the total area of all descendant images
-function get_descendant_image_area(element) {
-  const images = element.getElementsByTagName('img');
-  let area = 0;
-  for (const image of images) {
-    area += image.width * image.height;
-  }
-  return area;
 }
 
 // Calculates a bias that should increase or decrease an element's boilerplate
@@ -525,18 +465,6 @@ function derive_anchor_density_bias(anchor_text_length, text_length) {
   }
 }
 
-function get_text_length(text) {
-  // Exclude trailing whitespace entirely. This effectively excludes common
-  // text nodes such as '\t\n' from contributing to length.
-  const trimmed_text = text.trim();
-  // Condense inner whitespace. Note that I choose condense instead of just
-  // completely ignoring whitespace, because to some extent the number of
-  // intermediate spaces indicates the number of words, and therefore indicates
-  // a longer amount of text.
-  const condensed_text = trimmed_text.replace(/\s\s+/g, ' ');
-  return condensed_text.length;
-}
-
 function derive_element_type_bias(element_type, weights) {
   const bias = weights[element_type];
   return bias ? bias : 0;
@@ -544,22 +472,6 @@ function derive_element_type_bias(element_type, weights) {
 
 function derive_paragraph_bias(paragraph_count) {
   return Math.min(20, paragraph_count * 5);
-}
-
-// Counts child paragraphs (not all descendants!)
-function get_paragraph_count(element) {
-  // We actually match multiple paragraph-like items. We are actually looking
-  // for text-breaking elements related to text.
-  const names = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
-
-  let count = 0;
-  for (let child = element.firstElementChild; child;
-       child = child.nextElementSibling) {
-    if (names.includes(child.localName)) {
-      count++;
-    }
-  }
-  return count;
 }
 
 function derive_image_bias(image_area, doc_area) {
@@ -578,12 +490,9 @@ function derive_field_bias(field_count) {
   return field_count > 0 && field_count < 10 ? -10 : 0;
 }
 
-function get_field_count(element) {
-  return element.querySelectorAll('input, select, button, textarea').length;
-}
-
 // TODO: this should not depend on element, somehow, maybe use a block_type
-// that is a category of tags (e.g. list, generic-container)
+// that is a category of tags (e.g. list, container). This should only depend
+// on features. Even if I just add an 'is-list' feature, that is an improvement
 function derive_list_bias(element, list_item_count) {
   // Do not punish lists themselves
   if (['ol', 'ul', 'dl'].includes(element.localName)) {
@@ -591,40 +500,6 @@ function derive_list_bias(element, list_item_count) {
   }
 
   return Math.max(-5, -1 * list_item_count);
-}
-
-// Count the number of descendant list items
-function get_list_item_count(element) {
-  return element.querySelectorAll('li, dd, dt').length;
-}
-
-// Return a set of distinct lowercase tokens from some of the values of the
-// element's attributes
-function get_attribute_tokens(element, max_length) {
-  const keys = ['id', 'name', 'class', 'itemprop', 'role'];
-  const values = keys.map(key => element.getAttribute(key));
-  const joined_values = values.join(' ');
-  const normal_values = joined_values.toLowerCase();
-  const tokens = tokenize(normal_values);
-  const token_set = create_token_set(tokens);
-  return max_length > 0 ? token_set.filter(t => t.length <= max_length) :
-                          token_set;
-}
-
-function tokenize(value) {
-  const values = value.split(/[\s\-_0-9]+/g);
-  const non_empty_values = values.filter(v => v);
-  return non_empty_values;
-}
-
-function create_token_set(tokens) {
-  const set = [];
-  for (const token of tokens) {
-    if (!set.includes(token)) {
-      set.push(token);
-    }
-  }
-  return set;
 }
 
 // Look at the values of attributes of a block element to indicate whether a
@@ -635,45 +510,6 @@ function derive_attribute_bias(tokens, token_weights) {
     bias += token_weights[token] || 0;
   }
   return bias;
-}
-
-// Find the count of characters in anchors that are anywhere in the descendant
-// hierarchy of this element. This assumes anchors do not contain each other
-// (e.g. not misnested).
-function get_anchor_text_length(element) {
-  const anchors = element.querySelectorAll('a[href]');
-  let anchor_length = 0;
-  for (const anchor of anchors) {
-    const text_length = get_text_length(anchor.textContent);
-    anchor_length += text_length;
-  }
-  return anchor_length;
-}
-
-// Returns an approximate count of the number of lines in a block of text
-function get_line_count(element, text_length) {
-  if (!text_length) {
-    return 1;
-  }
-
-  const line_splitter_element_names = [
-    'br', 'dt', 'dd', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'hr', 'li',
-    'menuitem', 'p', 'tr'
-  ];
-
-  const selector = line_splitter_element_names.join(',');
-  const elements = element.querySelectorAll(line_splitter_element_names);
-  let line_count = elements.length;
-
-  // Special handling for preformatted text
-  let newline_count = 0;
-  if (['pre', 'code'].includes(element.localName)) {
-    const lines = element.textContent.split('\n');
-    newline_count = lines.length;
-  }
-  line_count += newline_count;
-
-  return line_count ? line_count : 1;
 }
 
 function assert(condition, message) {
