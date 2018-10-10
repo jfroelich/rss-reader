@@ -1,12 +1,15 @@
 import assert from '/src/base/assert.js';
 import * as object from '/src/base/object-utils.js';
-
 import * as errors from './errors.js';
 import * as feed_utils from './feed-utils.js';
 import * as types from './types.js';
 
-// TODO: throw the proper errors here
-// This is also causing activate-feed-test to fail
+// TODO: consider a stronger level of validation of incoming properties,
+// possibly using some kind of a schema of known properties. Or make this less
+// of a concern here, and more of a concern of some external validation.
+
+// TODO: throw the proper errors here, this is also causing activate-feed-test
+// to fail
 
 export async function update_feed(session, feed, overwrite) {
   // If overwriting, the new feed must be valid. If partial update, the new

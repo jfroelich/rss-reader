@@ -5,7 +5,14 @@ import * as db from './db.js';
 
 export async function install_listener(event) {
   if (event.reason === 'install') {
-    const session = await db.open();
+    let name = undefined;
+    let version = undefined;
+
+    // We pass an explicit timeout of 0, meaning indefinite or no timeout,
+    // because this is potentially a database upgrade that can take a long time
+    const timeout = 0;
+
+    const session = await db.open(name, version, timeout);
     session.close();
   }
 }

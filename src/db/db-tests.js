@@ -1,6 +1,7 @@
 export * from './activate-feed-test.js';
 export * from './archive-entries-test.js';
 export * from './count-unread-entries-test.js';
+export * from './count-unread-entries-by-feed-test.js';
 export * from './create-entry-test.js';
 export * from './create-feed-test.js';
 export * from './create-feeds-test.js';

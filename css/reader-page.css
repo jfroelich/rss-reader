@@ -1,0 +1,51 @@
+html {
+  font-size: 100%;
+}
+
+body {
+  margin: 0;
+  font-size: 16px;
+}
+
+header {
+  background-color: #efefef;
+  width: 100%;
+  margin: 0;
+  padding: 10px;
+}
+
+.bold-item {
+  font-weight: bold;
+}
+
+#subscribe {
+  margin-top: 10px;
+  margin-bottom: 10px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#left-pane {
+  background-color: blue;
+  width: 200px;
+  height: 100%;
+  float: left;
+  padding: 10px;
+}
+
+#feed-list {
+  background-color: orange;
+  list-style-type: none;
+  padding-left: 0;
+  margin-left: auto;
+  margin-right: auto;
+  width: 95%;
+}
+
+#feed-list li {
+  padding: 6px;
+}
+
+#article-list {
+  float: left;
+}

@@ -12,7 +12,6 @@ html, body {
 
 #left-panel {
   position: absolute;
-  /*z-index: 2;*/
   top: 0;
   left: 0;
   bottom: 0;
@@ -23,7 +22,6 @@ html, body {
   background-color: #ffffff;
   opacity: 1;
   margin-left: -320px;
-  /*padding-top: 56px;*/
   transition: all 0.15s linear 0s;
 }
 
@@ -66,7 +64,6 @@ html, body {
   pointer-events: initial;
 
   background-color: #ffffff;
-  /*background: linear-gradient(45deg, #FE6B8B 30%, #FF8E53 90%);*/
 
   color: #4d4d4f;
 
@@ -242,7 +239,6 @@ pre {
 }
 
 #no-entries-message {
-  /* Initially hidden */
   display: none;
   margin: auto;
   width: 80%;

@@ -3,7 +3,7 @@ import * as indexeddb from '/src/base/indexeddb.js';
 import * as types from './types.js';
 
 // Return a new session without a channel
-export async function open(name = 'reader', version = 24, timeout = 500) {
+export async function open(name = 'reader', version = 25, timeout = 500) {
   const session = new DbSession();
   session.conn =
       await indexeddb.open(name, version, on_upgrade_needed, timeout);
@@ -38,8 +38,14 @@ function on_upgrade_needed(event) {
   let feed_store, entry_store;
   const stores = conn.objectStoreNames;
 
+  // TODO: only print this if verbose flag is set or something like that,
+  // otherwise this needlessly spams the test console
+  // console.debug(
+  //    'Creating or upgrading database from version %d to %d',
+  //    event.oldVersion, conn.version);
+
   // NOTE: event.oldVersion is 0 when the database is being created
-  // NOTE: use conn.version to get the current version being created/updated
+  // NOTE: use conn.version to get the current version
 
   if (event.oldVersion < 20) {
     const feed_store_props = {keyPath: 'id', autoIncrement: true};
@@ -60,22 +66,32 @@ function on_upgrade_needed(event) {
     entry_store = txn.objectStore('entry');
   }
 
-  if (event.oldVersion && event.oldVersion < 21) {
+  // Only do this if not creating
+  if (event.oldVersion > 0 && event.oldVersion < 21) {
     add_magic_to_entries(txn);
   }
 
-  if (event.oldVersion && event.oldVersion < 22) {
+  // Only do this if not creating
+  if (event.oldVersion > 0 && event.oldVersion < 22) {
     add_magic_to_feeds(txn);
   }
 
-  if (event.oldVersion && event.oldVersion < 23) {
+  if (event.oldVersion < 23) {
     if (feed_store.indexNames.contains('title')) {
       feed_store.deleteIndex('title');
     }
   }
 
-  if (event.oldVersion && event.oldVersion < 24) {
+  // Only do this if not creating
+  if (event.oldVersion > 0 && event.oldVersion < 24) {
     add_active_field_to_feeds(feed_store);
+  }
+
+  // Handle upgrading to or past version 25 from all prior versions
+  if (event.oldVersion < 25) {
+    // Create an index on feed id and read state. This enables fast querying
+    // of unread entries per feed.
+    entry_store.createIndex('feed-readState', ['feed', 'readState']);
   }
 }
 

@@ -1,0 +1,35 @@
+<html>
+<head>
+  <title>RSS Reader</title>
+  <link rel="stylesheet" href="/css/fonts.css"/>
+  <link rel="stylesheet" href="/css/reader-page.css"/>
+  <script type="module" src="/src/view/cli.js"></script>
+  <script type="module" src="/src/view/reader-page/reader-page.js"></script>
+</head>
+<body>
+  <header>
+    <span>RSS Reader</span>
+
+    <button id="subscribe">Add Subscription</button>
+    <button>Refresh</button>
+
+    <select id="read-state-filter-menu">
+      <option>All items</option>
+      <option>Unread items</option>
+      <option>Read items</option>
+      <option>Starred items</option>
+    </select>
+
+    <button>Mark all as read</button>
+    <button>Open Display Settings</button>
+    <button>Open Settings</button>
+
+  </header>
+  <aside id="left-pane">
+    <ul id="feed-list"></ul>
+  </aside>
+  <section id="article-list">
+    the article list
+  </section>
+</body>
+</html>

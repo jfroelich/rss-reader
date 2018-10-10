@@ -37,6 +37,7 @@ import * as db_tests from '/src/db/db-tests.js';
 const registry = [];
 
 // Register tests
+register_test(article_title_test);
 register_test(base_uri_test);
 register_test(color_contrast_filter_tests.color_contrast_filter_test1);
 register_test(color_contrast_filter_tests.color_contrast_filter_test2);
@@ -45,6 +46,7 @@ register_test(coerce_element_test);
 register_test(db_tests.activate_feed_test);
 register_test(db_tests.archive_entries_test);
 register_test(db_tests.count_unread_entries_test);
+register_test(db_tests.count_unread_entries_by_feed_test);
 register_test(db_tests.create_entry_test);
 register_test(db_tests.create_feed_test);
 register_test(db_tests.create_feed_url_constraint_test);
@@ -56,7 +58,7 @@ register_test(db_tests.entry_utils_is_entry_test);
 register_test(db_tests.entry_utils_append_entry_url_test);
 register_test(db_tests.feed_utils_is_feed_test);
 register_test(db_tests.feed_utils_append_feed_url_test);
-register_test(db_tests.filter_unprintables_test);
+
 register_test(db_tests.get_entries_test);
 register_test(db_tests.get_entry_test);
 register_test(db_tests.get_feed_test);
@@ -67,7 +69,7 @@ register_test(db_tests.mark_entry_read_test);
 register_test(db_tests.remove_lost_entries_test);
 register_test(db_tests.remove_orphaned_entries_test);
 register_test(db_tests.remove_untyped_objects_test);
-register_test(db_tests.replace_tags_test);
+
 register_test(db_tests.sanitize_entry_content_test);
 register_test(db_tests.update_entry_test);
 register_test(db_tests.update_feed_test);
@@ -75,6 +77,7 @@ register_test(empty_attribute_filter_test);
 register_test(fetch_feed_test);
 register_test(fetch_html_test);
 register_test(fetch2_test);
+register_test(filter_unprintables_test);
 register_test(html_truncate_test);
 register_test(favicon_service_test);
 register_test(image_size_filter_tests.set_image_sizes_basic_test);
@@ -87,18 +90,18 @@ register_test(indexeddb_tests.indexeddb_function_object_test);
 register_test(filter_lazy_images_test);
 register_test(mime_test);
 register_test(parse_feed_test);
+register_test(replace_tags_test);
 register_test(rewrite_url_tests.rewrite_url_norewrite_test);
 register_test(rewrite_url_tests.rewrite_url_google_news_test);
 register_test(rewrite_url_tests.rewrite_url_techcrunch_test);
 register_test(rewrite_url_tests.rewrite_url_cyclical_test);
 register_test(sniff_test);
-register_test(article_title_test);
 register_test(subscribe_test);
 register_test(unwrap_element_test);
 
 function register_test(test_function) {
   if (typeof test_function !== 'function') {
-    throw new TypeError('test_function is not a function');
+    throw new TypeError('test_function is not a function: ' + test_function);
   }
 
   if (registry.includes(test_function)) {
