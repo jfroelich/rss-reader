@@ -321,13 +321,29 @@ function ensure_minimum_content(
         'Adjusting scores to meet min-content-length threshold', ratio,
         minimum_content_threshold);
 
+    // TODO: track adjustment per iteration. If no score change will result,
+    // this is another reason to stop.
+
+    let adjustment_per_iteration = 0;
+
     // Slightly adjust all low scores. We do not favor any particular
     // block, everything gets a bump. This uniformly distributes some positive
     // bias because I think it indicates a generally flawed model.
     for (const block of blocks) {
       if (block.score < neutral_score) {
         block.score += 1;
+        adjustment_per_iteration += 1;
       }
+    }
+
+    // If we did not make any adjustments, that is a stopping condition
+    if (adjustment_per_iteration === 0) {
+      // TEMP: just hackishly monitoring this new functionality for a bit
+      console.debug(
+          'Unable to adjust scores further to meet threshold', ratio,
+          minimum_content_threshold);
+
+      break;
     }
 
     content_text_length = get_visible_content_length(blocks);
