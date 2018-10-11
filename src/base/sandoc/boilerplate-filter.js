@@ -13,9 +13,17 @@ export function filter_boilerplate(document, options = {}) {
   for (const row of scored_dataset) {
     if (row.score < boilerplate.neutral_score) {
       const element = boilerplate.find_block_element(document, row);
-      if (element) {
-        element.remove();
-      }
+
+      // Elements should always be found
+      assert(element);
+
+      element.remove();
     }
+  }
+}
+
+function assert(condition) {
+  if (!condition) {
+    throw new Error('Assertion error');
   }
 }
