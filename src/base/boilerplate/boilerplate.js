@@ -1,21 +1,22 @@
 import {Block} from './block.js';
+import {score_dataset} from './score.js';
 import * as utils from './utils.js';
 
 export * from './feature-extraction.js';
+export * from './block-parser.js';
 
 export const neutral_score = 50;
-
-// TODO: move scoring stuff to model.js
 
 // Given a dataset representing content sections of a document, produce a scored
 // dataset indicating which elements in the dataset are boilerplate.
 //
-// @option tail_size {Number} optional, should be in range [0..0.5), determines
-// what percentage of content blocks fall into header and footer sections
-// @option document_area {Number} optional, the default dimensions of a document
-// to use when determining the proportional size of content blocks
-// @option minimum_content_threshold {Number} optional, should be in range
-// 0-100, indicating minimum desired percentage of content vs. boilerplate
+// Options:
+// - tail_size {Number} optional, should be in range [0..0.5), determines what
+// percentage of content blocks fall into header and footer sections
+// - document_area {Number} optional, the default dimensions of a document to
+// use when determining the proportional size of content blocks
+// - minimum_content_threshold {Number} optional, should be in range 0-100,
+// indicating minimum desired percentage of content vs. boilerplate
 export function classify(dataset, model, options = {}) {
   assert(Array.isArray(dataset));
 
@@ -56,9 +57,6 @@ export function classify(dataset, model, options = {}) {
   const front_max = (tail_size * num_elements) | 0;
   const end_min = num_elements - front_max;
 
-  // TODO: this is the wrong grouping, front_max and end_min are options,
-  // not metadata, area is an option, and text_length is the only data point
-  // Maybe text_length should be a per block property
   const info = {
     text_length: text_length,
     front_max: front_max,
@@ -66,18 +64,7 @@ export function classify(dataset, model, options = {}) {
     area: document_area
   };
 
-  // TODO: the model should export a function named score. The function should
-  // encapsulate this loop, along with the secondary ensure pass. This should
-  // be calling that function here. Not doing this stuff explicitly in a calling
-  // context. The score function should operate off a dataset of blocks, so it
-  // should take a dataset as a parameter. Its individual per-block scoring
-  // function should be an internal helper to that module.
-
-  for (const block of dataset) {
-    block.score = model(block, info);
-  }
-
-  ensure_minimum_content(dataset, text_length, minimum_content_threshold);
+  score_dataset(dataset, model, info, neutral_score, minimum_content_threshold);
   return dataset;
 }
 
@@ -103,46 +90,8 @@ export function annotate_document(document, dataset) {
   }
 }
 
-// Given a document, produce a dataset suitable for analysis
-export function create_block_dataset(document) {
-  if (!document.body) {
-    return [];
-  }
-
-  // Distinguishable areas of content
-  // NOTE: lists (ol/ul/dl) excluded at the moment due to bad scoring
-  // NOTE: <code> excluded at the moment, maybe permanently
-
-  const block_element_names = [
-    'article', 'aside', 'blockquote', 'div', 'figure', 'footer', 'header',
-    'layer', 'main', 'mainmenu', 'menu', 'nav', 'picture', 'pre', 'section',
-    'table', 'td', 'tr'
-  ];
-
-  const elements = document.body.getElementsByTagName('*');
-  const dataset = [];
-  for (let element_index = 0, len = elements.length; element_index < len;
-       element_index++) {
-    const element = elements[element_index];
-    if (block_element_names.includes(element.localName)) {
-      const block = new Block(element, neutral_score, element_index);
-
-      // TODO: this needs a comment describing what this does because it is not
-      // obvious. It may even be better to encapsulate it in a helper function.
-      for (let block_index = dataset.length - 1; block_index > -1;
-           block_index--) {
-        if (dataset[block_index].element.contains(element)) {
-          block.parent_block_index = block_index;
-          break;
-        }
-      }
-
-      dataset.push(block);
-    }
-  }
-
-  return dataset;
-}
+// TODO: returning a function is silly. if someone wants to use the default
+// scoring function they just reference it, there is need to generate
 
 // Returns a model evaluation function that operates on a row of a block dataset
 export function create_model() {
@@ -289,94 +238,6 @@ export function create_model() {
 
     return Math.max(0, Math.min(score, 100));
   };
-}
-
-// TODO: returning a function is silly. if someone wants to use the default
-// scoring function they just reference it, there is need to generate
-
-// An element's score indicates whether it is boilerplate. A higher score means
-// less likely to be boilerplate.
-function ensure_minimum_content(
-    blocks, document_text_length, minimum_content_threshold) {
-  if (!document_text_length) {
-    return;
-  }
-
-  if (!blocks.length) {
-    return;
-  }
-
-  // This is about how far we are willing to go before giving up on promoting
-  // boilerplate into content (given score adjustment by 1% at a time). Note
-  // this implies we may not even reach the desired minimum threshold if we stop
-  // bumping early.
-  const max_iterations = 20;
-  let iterations = 0;
-
-  // Loop over the blocks, uniformly incrementing boilerplate block scores a bit
-  // each iteration, until we reach the minimum content threshold or give up
-  // after a number of iterations.
-  let content_text_length = get_visible_content_length(blocks);
-  let ratio = content_text_length / (document_text_length || 1);
-  while (ratio < minimum_content_threshold && iterations < max_iterations) {
-    // TEMP: debugging
-    console.debug(
-        'Adjusting scores to meet min-content-length threshold', ratio,
-        minimum_content_threshold);
-
-    // TODO: track adjustment per iteration. If no score change will result,
-    // this is another reason to stop.
-
-    let adjustment_per_iteration = 0;
-
-    // Slightly adjust all low scores. We do not favor any particular
-    // block, everything gets a bump. This uniformly distributes some positive
-    // bias because I think it indicates a generally flawed model.
-    for (const block of blocks) {
-      if (block.score < neutral_score) {
-        block.score += 1;
-        adjustment_per_iteration += 1;
-      }
-    }
-
-    // If we did not make any adjustments, that is a stopping condition
-    if (adjustment_per_iteration === 0) {
-      // TEMP: just hackishly monitoring this new functionality for a bit
-      console.debug(
-          'Unable to adjust scores further to meet threshold', ratio,
-          minimum_content_threshold);
-
-      break;
-    }
-
-    content_text_length = get_visible_content_length(blocks);
-    ratio = content_text_length / document_text_length;
-    iterations++;
-  }
-}
-
-// Get the total text length of all non-boilerplate blocks. A block only
-// contributes to visible length when the block itself is visible and all of its
-// ancestors are visible.
-function get_visible_content_length(blocks) {
-  let length = 0;
-  for (const block of blocks) {
-    let visible = block.score >= neutral_score;
-    let index = block.parent_block_index;
-    while (visible && index > -1) {
-      const ancestor = blocks[index];
-      if (ancestor.score < neutral_score) {
-        visible = false;
-      } else {
-        index = ancestor.parent_block_index;
-      }
-    }
-
-    if (visible) {
-      length += block.text_length;
-    }
-  }
-  return length;
 }
 
 export function find_block_element(document, block) {

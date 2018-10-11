@@ -60,7 +60,8 @@ async function bptest(url_string) {
 
   section.innerHTML = 'Analyzing boilerplate';
 
-  const dataset = boilerplate.create_block_dataset(doc);
+  const dataset =
+      boilerplate.create_block_dataset(doc, boilerplate.neutral_score);
   boilerplate.extract_features(dataset);
 
   const model = boilerplate.create_model();
