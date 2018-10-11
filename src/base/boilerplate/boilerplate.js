@@ -64,8 +64,8 @@ export function classify(dataset, model, options = {}) {
     area: document_area
   };
 
-  score_dataset(dataset, model, info, neutral_score, minimum_content_threshold);
-  return dataset;
+  return score_dataset(
+      dataset, model, info, neutral_score, minimum_content_threshold);
 }
 
 // Given a scored dataset representing a document, annotate the document

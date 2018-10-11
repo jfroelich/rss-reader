@@ -1,4 +1,11 @@
-// TODO:see the comment in feature extraction on feature props
+// TODO: none of the features should be build it, things like text_length and
+// line count and all of that.
+
+// TODO: score should not be a built in property. a block is only concerned with
+// representing the parsed featured of a block, not its derived features,
+// whether those derived features are variables for later heuristics or the
+// final classification. this also means that initial score should not be a
+// parameter.
 
 // A block is a representation of a portion of a document's content along with
 // some derived properties.
