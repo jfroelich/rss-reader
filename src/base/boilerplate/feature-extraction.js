@@ -6,6 +6,8 @@ import * as utils from './utils.js';
 // This is a package-private module only intended for use by boilerplate.js or
 // testing. This is re-exported by boilerplate.js, so access it from there.
 
+// TODO: maybe specifying the Block type was bad, I should simply use a generic
+// dictionary
 
 // TODO: the main export is public facing, so it would be appropriate to use
 // an assertion or two to check against bad parameters (TypeErrors).
@@ -62,6 +64,8 @@ export function extract_features(dataset, options = {}) {
     block.attribute_tokens =
         get_attribute_tokens(block.element, max_token_length);
   }
+
+  return dataset;
 }
 
 // Return the distance of the node to the owning document's root node.
