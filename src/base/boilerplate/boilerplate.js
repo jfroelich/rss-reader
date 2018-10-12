@@ -1,3 +1,4 @@
+import {adjust_scores} from './adjust-scores.js';
 import {Block} from './block.js';
 import {score_dataset} from './score.js';
 import * as utils from './utils.js';
@@ -64,8 +65,13 @@ export function classify(dataset, model, options = {}) {
     area: document_area
   };
 
-  return score_dataset(
-      dataset, model, info, neutral_score, minimum_content_threshold);
+  score_dataset(dataset, model, info);
+
+  const max_adjustment_iterations = 20;
+  const adjustment_delta = 2;
+  return adjust_scores(
+      dataset, text_length, adjustment_delta, max_adjustment_iterations,
+      neutral_score, minimum_content_threshold);
 }
 
 // Given a scored dataset representing a document, annotate the document

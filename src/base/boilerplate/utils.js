@@ -1,3 +1,4 @@
+// TODO: if this is just one function, name file after the one function
 
 export function get_text_length(text) {
   // Exclude trailing whitespace entirely. This effectively excludes common
