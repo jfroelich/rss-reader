@@ -1,3 +1,28 @@
+# About adjust-scores
+Adjusts block scores in place until a minimum amount of a non-boilerplate
+content remains in the document. Or at least this tries to do so and gives up
+after a while. This only adjusts blocks with low scores.
+
+## Why does this function exist
+Removing the right amount of boilerplate is a fickle task. The model uses various heuristics to make a guess about whether a piece of content is boilerplate, but it is presently inaccurate. The model operates on a shallow symbolic level without considering morphological or semantic meaning. There is a material risk that good content is removed along with some bad.
+
+Basically, the algorithm is imperfect, so this function performs a second pass over the data that changes content scores to as to ensure that a minimum amount of content remains regardless of model accuracy. After this pass, only the worst offenders remain in the data. This helps counter parts of the algorithm where it is too greedy.
+
+Ideally this pass maybe should not exist. But that requires more tuning of the model. Until that time this suffices to ensure the model does not destroy too much valid content.
+
+## Parameters
+* *blocks* is the array of blocks parsed from the document and scored according
+to the boilerplate model
+* *document_length* is number of characters in document body
+* *delta* is the amount of adjustment to make to a particular block's score in
+one pass
+* *max_iterations* is the maximum amount of adjustment passes to perform before
+giving up
+* *content_threshold* is score below which a block is boilerplate
+* *ratio_threshold* is ratio of content length to document length, below which
+scoring needs adjustment, this algorithm works by making score adjustments
+until the ratio is above this threshold, unless it gives up
+
 * TODO: store adjustment score in block for debugging
 * TODO: implement tests
 * TODO: verify the double counting problem is solved
@@ -31,9 +56,9 @@ Actually do this: sum up the block_get_own_length(boilerplate_block), then subtr
 
 some old temp code that will be deleted shortly:
 ```javascript
-// Returns whether the block represents
-// content, considering the block itself
-// AND its ancestors.
+Returns whether the block represents
+content, considering the block itself
+AND its ancestors.
 export function is_visible(
   block, threshold) {
   let cursor = block;

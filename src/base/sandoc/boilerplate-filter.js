@@ -5,7 +5,7 @@ const model = boilerplate.create_model();
 
 export function filter_boilerplate(document, options = {}) {
   const dataset =
-      boilerplate.create_block_dataset(document, boilerplate.neutral_score);
+      boilerplate.parse_blocks(document, boilerplate.neutral_score);
   boilerplate.extract_features(dataset, options);
 
   const scored_dataset = boilerplate.classify(dataset, model);

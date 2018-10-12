@@ -1,25 +1,11 @@
-// Adjusts block scores in place until a minimum amount of a non-boilerplate
-// content remains in the document. Or at least this tries to do so and gives up
-// after a while. This only adjusts blocks with low scores.
-//
-// * blocks is the array of blocks parsed from the document and scored according
-// to the boilerplate model
-// * document_length is number of characters in document body
-// * delta is the amount of adjustment to make to a particular block's score in
-// one pass
-// * max_iterations is the maximum amount of adjustment passes to perform before
-// giving up
-// * content_threshold is score below which a block is boilerplate
-// * ratio_threshold is ratio of content length to document length, below which
-// scoring needs adjustment, this algorithm works by making score adjustments
-// until the ratio is above this threshold, unless it gives up
+
 export function adjust_scores(
     blocks, document_length, delta = 1, max_iterations = 20,
     content_threshold = 0, ratio_threshold = 0) {
   let iterations = 0;
-  let content_text_length =
+  let content_length =
       get_content_length(blocks, document_length, content_threshold);
-  let ratio = content_text_length / (document_length || 1);
+  let ratio = content_length / (document_length || 1);
   while (ratio < ratio_threshold && iterations < max_iterations) {
     let adjustment_per_iteration = 0;
 
@@ -34,11 +20,9 @@ export function adjust_scores(
       break;
     }
 
-    console.debug('Adjusted this iteration:', adjustment_per_iteration);
-
-    content_text_length =
+    content_length =
         get_content_length(blocks, document_length, content_threshold);
-    ratio = content_text_length / (document_length || 1);
+    ratio = content_length / (document_length || 1);
     iterations++;
   }
 

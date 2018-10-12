@@ -114,6 +114,7 @@ export function create_model() {
       body: 20,
       bottom: -10,
       branding: -10,
+      breadcrumbs: -10,
       carousel: -10,
       cit: 10,  // citation abbreviation
       citation: 10,
@@ -125,6 +126,7 @@ export function create_model() {
       contact: -10,
       content: 20,
       contentpane: 50,
+      cookie: -10,
       copyright: -10,
       credit: -2,
       date: -10,
