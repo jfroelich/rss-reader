@@ -49,3 +49,11 @@ header {
 #article-list {
   float: left;
 }
+
+/* TODO: use this instead of js-based truncation */
+.truncate {
+  width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

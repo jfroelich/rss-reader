@@ -9,6 +9,7 @@ One of the driving goals is to re-implement much of the old Google Reader interf
 
 ### Current development task
 * implement current-view switch
+* use .truncate css class instead of js-based truncation
 
 ### Upcoming development tasks short term
 
