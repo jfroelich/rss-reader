@@ -8,6 +8,9 @@ import * as types from './types.js';
 // function to simply wrap a call to update-entry, and then possibly just
 // deprecate this function
 
+// TODO: write a test that checks the failure cases, I just had to fix a bug
+// because the failure case was only realized later in the UI
+
 export async function mark_entry_read(session, id) {
   assert(entry_utils.is_valid_entry_id(id));
 
@@ -27,10 +30,10 @@ function executor(conn, id, resolve, reject) {
 
   const store = txn.objectStore('entry');
   const request = store.get(id);
-  request.onsuccess = request_onsuccess.bind(request, id);
+  request.onsuccess = request_onsuccess.bind(request, id, reject);
 }
 
-function request_onsuccess(id, event) {
+function request_onsuccess(id, reject, event) {
   const entry = event.target.result;
 
   if (!entry) {
