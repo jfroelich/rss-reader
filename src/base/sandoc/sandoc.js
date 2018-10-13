@@ -59,6 +59,11 @@ export async function sanitize_document(document, options = {}) {
 
   filter_script(document);
 
+  // This should occur before canonicalizing urls, because it may set attributes
+  // that need to be canonicalized that previously did not exist, and would be
+  // missed by the canonicalize_urls filter. This was previously a bug.
+  filter_lazy_images(document);
+
   // This should occur before setting image sizes
   // TODO: actually the above comment is no longer true, right? Reverify. If
   // I am using baseURI now, and set-image-sizes uses baseURI, then technically
@@ -67,8 +72,11 @@ export async function sanitize_document(document, options = {}) {
   // at the end.
   canonicalize_urls(document);
 
+  // It does not matter whether this occurs before or after canonicalize_urls
+  // because canonicalize_urls handles srcsets and srcs, and this just moves
+  // some srcsets into srcs
   filter_responsive_images(document);
-  filter_lazy_images(document);
+
   lonestar_filter(document);
   filter_dead_images(document);
 

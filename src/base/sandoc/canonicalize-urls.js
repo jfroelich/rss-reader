@@ -44,9 +44,16 @@ function build_resolver_selector() {
 // Resolves all attribute values that contain urls
 // @throws {Error} if document.baseURI is undefined or an invalid url
 export function canonicalize_urls(document) {
+  // Although this would be caught later, I prefer an explicit sanity check
+  assert(typeof document.baseURI === 'string');
+
+  // If the baseURI is set but not a well-formed canonical url, this still
+  // throws. Otherwise, this does the deserialization once up front for later
+  // use in all transformations
   const base_url = new URL(document.baseURI);
 
   const src_elements = document.querySelectorAll(element_url_attr_selector);
+
   for (const src_element of src_elements) {
     resolve_attr(src_element, base_url);
   }
