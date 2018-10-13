@@ -1,5 +1,5 @@
-import * as db from '/src/db/db.js';
 import * as favicon from '/src/base/iconsvc/favicon.js';
+import * as db from '/src/db/db.js';
 
 // Update the favicon for each of the active feeds in the database
 export async function refresh_feed_icons(session, iconn) {
@@ -34,7 +34,7 @@ async function refresh_feed_icon(session, iconn, feed) {
       delete feed.faviconURLString;
     }
 
-    // TODO: use a partial update here
+    // TODO: use a partial update here instead of a full feed overwrite
     await db.update_feed(session, feed, true);
   }
 }

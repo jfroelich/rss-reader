@@ -66,10 +66,6 @@ async function left_pane_init(session) {
 
   list_element.appendChild(all_feeds_item_element);
 
-  // const ELLIPSIS = '\u2026';
-  // const title_truncate_length = 14;
-  // const title_truncate_suffix = ELLIPSIS;
-
   const feeds = await db.get_feeds(session, 'active', true);
 
   // Load the unread count for each feed
@@ -87,12 +83,14 @@ async function left_pane_init(session) {
     feeds[i].unread_count = unread_counts[i];
   }
 
+  const default_favicon_url =
+      chrome.extension.getURL('/images/rss_icon_trans.gif');
+
   for (const feed of feeds) {
     const item_element = document.createElement('li');
 
     const icon_element = document.createElement('img');
-    let fus = feed.faviconURLString ||
-        chrome.extension.getURL('/images/rss_icon_trans.gif');
+    let fus = feed.faviconURLString || default_favicon_url;
     icon_element.setAttribute('src', fus);
     icon_element.setAttribute('width', '16px');
     icon_element.setAttribute('height', '16px');

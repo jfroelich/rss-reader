@@ -26,7 +26,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
     throw new TypeError('url is not url-like, missing href accessor');
   }
 
-  console.log('%s: lookup', favicon_lookup.name, url.href);
+  console.log('favicon lookup:', url.href);
 
   const urls = [];
   urls.push(url.href);
@@ -38,7 +38,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   if (this.conn) {
     const entry = await this.find_entry(url);
     if (entry && entry.iconURLString && !this.is_expired(entry)) {
-      console.debug('%s: hit', favicon_lookup.name, entry.iconURLString);
+      console.debug('lookup cache hit', entry.iconURLString);
       return entry.iconURLString;
     }
     if (origin_url.href === url.href && entry &&
@@ -138,11 +138,14 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   const base_url = response_url ? response_url : url;
   const image_url = new URL(base_url.origin + '/favicon.ico');
 
+  // Reset to avoid any confusion (this was previously a bug)
+  response = undefined;
+
   try {
     response = await this.head_image(image_url);
   } catch (error) {
+    // Ignore this error
   }
-
 
   if (response && response.ok) {
     if (!urls.includes(origin_url.href)) {
