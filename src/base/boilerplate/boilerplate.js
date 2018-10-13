@@ -68,11 +68,14 @@ export function classify(dataset, score_block, options = {}) {
     block.score = score_block(block, info, neutral_score);
   }
 
-  const max_adjustment_iterations = 20;
-  const adjustment_delta = 2;
-  return adjust_scores(
-      dataset, text_length, adjustment_delta, max_adjustment_iterations,
-      neutral_score, minimum_content_threshold);
+  // adjustment options
+  const ao = {};
+  ao.document_length = text_length;
+  ao.delta = 2;
+  ao.max_iterations = 20;
+  ao.content_threshold = neutral_score;
+  ao.ratio_threshold = minimum_content_threshold;
+  return adjust_scores(dataset, ao);
 }
 
 // Given a scored dataset representing a document, annotate the document
@@ -97,15 +100,13 @@ export function annotate_document(document, dataset) {
   }
 }
 
-
+// Given a block, get its represented element
 export function find_block_element(document, block) {
-  // For now, cheat
-  // TODO: maybe use something like element index
+  // TODO: for now, cheat, but maybe use something like element index
   assert(block.element);
   assert(block.element.ownerDocument === document);
   return block.element;
 }
-
 
 function assert(condition, message) {
   if (!condition) {

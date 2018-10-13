@@ -1,18 +1,21 @@
 # About adjust-scores
-Adjusts block scores in place until a minimum amount of a non-boilerplate
-content remains in the document. Or at least this tries to do so and gives up
-after a while. This only adjusts blocks with low scores.
+This is a private helper module for the boilerplate module. The function adjusts block scores (in place) until a minimum amount of a non-boilerplate content remains in the document. Or at least this tries to do so and gives up after a while. This only adjusts scores of blocks with low scores.
 
-## Why does this function exist
-Removing the right amount of boilerplate is a fickle task. The model uses various heuristics to make a guess about whether a piece of content is boilerplate, but it is presently inaccurate. The model operates on a shallow symbolic level without considering morphological or semantic meaning. There is a material risk that good content is removed along with some bad.
+## Why does this module exist
+Removing the right amount of boilerplate is a fickle task. The model uses heuristics regarding whether a piece of content is boilerplate. The model operates on a shallow symbolic level without considering the morphological structure or the semantic meaning of content. There is a risk this shallow analysis removes good content.
 
-Basically, the algorithm is imperfect, so this function performs a second pass over the data that changes content scores to as to ensure that a minimum amount of content remains regardless of model accuracy. After this pass, only the worst offenders remain in the data. This helps counter parts of the algorithm where it is too greedy.
+This function performs a second pass over the data to ensure that a minimum amount of content remains regardless of model accuracy. After this pass, only the worst offenders remain in the data. This helps counter parts of the algorithm where it is overzealous in flagging bad content.
 
-Ideally this pass maybe should not exist. But that requires more tuning of the model. Until that time this suffices to ensure the model does not destroy too much valid content.
+Ideally the model output should not require further adjustment. But that requires more tuning of the model. Until that time, this extra adjustment suffices.
+
+In some sense this guarantee of minimum content length is part of the model. Perhaps the model should be considering how much content remains in its own analysis. For now I chose to express this concern as independent of the model.
 
 ## Parameters
 * *blocks* is the array of blocks parsed from the document and scored according
 to the boilerplate model
+* *options* an optional object that is basically just an aggregation of the other parameters
+
+## Options (for options parameter)
 * *document_length* is number of characters in document body
 * *delta* is the amount of adjustment to make to a particular block's score in
 one pass
@@ -23,9 +26,10 @@ giving up
 scoring needs adjustment, this algorithm works by making score adjustments
 until the ratio is above this threshold, unless it gives up
 
-* TODO: store adjustment score in block for debugging
-* TODO: implement tests
-* TODO: verify the double counting problem is solved
+## Todos
+* store adjustment score in block for debugging
+* implement tests
+* verify the double counting problem is solved using a verifiable test
 
 ### Old notes on the double counting issue
 I think it is solved but have not yet verified. Until it is verified I am leaving the notes here for reference. I want to solve the double counting problem. I think to match how document-length is calculated, what i want to do is get total length, and then get the total length of boilerplate blocks, the substract that. this way i do not naively sum up lengths of content blocks and double count. but note that this still assumes that if an ancestor is boilerplate, then all its descendants are boilerplate too. this is also a separate and more fundamental question. right now i just look at filter behavior, it just strips by block if boilerplate, meaning that it implicitly strips descendants, meaning i have kind of already made my decision
