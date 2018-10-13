@@ -51,7 +51,7 @@ async function left_pane_init(session) {
 
   const all_feeds_item_element = document.createElement('li');
   const all_feeds_item_text_element = document.createElement('span');
-  all_feeds_item_text_element.textContent = 'All feeds';
+  all_feeds_item_text_element.textContent = 'All sources';
   all_feeds_item_element.appendChild(all_feeds_item_text_element);
 
   if (total_unread_count) {
@@ -60,15 +60,15 @@ async function left_pane_init(session) {
     const all_feeds_unread_count_element = document.createElement('span');
     const display_count =
         total_unread_count > 1000 ? '999+' : '' + total_unread_count;
-    all_feeds_unread_count_element.textContent = '(' + display_count + ')';
+    all_feeds_unread_count_element.textContent = ' (' + display_count + ')';
     all_feeds_item_element.appendChild(all_feeds_unread_count_element);
   }
 
   list_element.appendChild(all_feeds_item_element);
 
-  const ELLIPSIS = '\u2026';
-  const title_truncate_length = 14;
-  const title_truncate_suffix = ELLIPSIS;
+  // const ELLIPSIS = '\u2026';
+  // const title_truncate_length = 14;
+  // const title_truncate_suffix = ELLIPSIS;
 
   const feeds = await db.get_feeds(session, 'active', true);
 
@@ -101,14 +101,13 @@ async function left_pane_init(session) {
     const title = feed.title || '';
     const title_element = document.createElement('span');
     title_element.setAttribute('title', title);
-    title_element.textContent =
-        truncate_string(title, title_truncate_length, title_truncate_suffix);
+    title_element.textContent = title;
     item_element.appendChild(title_element);
 
     if (feed.unread_count) {
       title_element.classList.add('bold-item');
       const feed_unread_count_element = document.createElement('span');
-      feed_unread_count_element.textContent = '(' + feed.unread_count + ')';
+      feed_unread_count_element.textContent = ' (' + feed.unread_count + ')';
       item_element.appendChild(feed_unread_count_element);
     }
 

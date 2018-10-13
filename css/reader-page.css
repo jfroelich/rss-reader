@@ -26,7 +26,6 @@ header {
 }
 
 #left-pane {
-  background-color: blue;
   width: 200px;
   height: 100%;
   float: left;
@@ -34,7 +33,6 @@ header {
 }
 
 #feed-list {
-  background-color: orange;
   list-style-type: none;
   padding-left: 0;
   margin-left: auto;
@@ -44,16 +42,15 @@ header {
 
 #feed-list li {
   padding: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#feed-list li img {
+  margin-right: 8px;
 }
 
 #article-list {
   float: left;
-}
-
-/* TODO: use this instead of js-based truncation */
-.truncate {
-  width: 250px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
