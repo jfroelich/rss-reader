@@ -7,100 +7,39 @@ import * as entry_utils from './entry-utils.js';
 // included in the output.
 //
 // Query properties:
-// * feed_id - 0 for all feeds, or id of feed, required
-// * sort_order ('asc' or 'dsc') on entry date
+// * feed_id - 0 for all feeds, or id of feed
+// * direction ('ASC' or 'ASC') on datePublished
 // * offset - how many objects to skip
 // * limit - max number of objects to return
 // * read_state - undefined for any state, or read or unread only state
-// * _cursor_strategy - internal test property, do not use
 
-// TODO: for sorting do I want date created or date published? is date published
-// guaranteed? i think i want date published
 
-// TODO: i have to use cursor. if i use getAll, then i would have to load all
-// entries without any offset or limit, then sort all, then apply offset and
-// limit. if i use a cursor, i can use cursor.advance to advance to offset, i
-// can stop iterating at limit, and i can use the direction parameter to
-// openCursor. getAll has no direction parameter. offset and limit only make
-// sense based on direction. the count trick only works on natural order
-// results.
-
-// TODO: is using a cursor better performance than getAll?
-
-export function query_entries(session, query) {
+export function query_entries(session, query = {}) {
   assert(typeof query === 'object');
-  assert(Number.isInteger(query.feed_id) && query.feed_id >= 0);
+  assert(
+      query.feed_id === undefined ||
+      (Number.isInteger(query.feed_id) && query.feed_id >= 0));
   assert(is_valid_read_state(query.read_state));
   assert(is_valid_offset(query.offset));
+  assert(is_valid_direction(query.direction));
 
   const bound = query_entries_executor.bind(null, session.conn, query);
   return new Promise(bound);
 }
 
 function query_entries_executor(conn, query, resolve, reject) {
+  const offset = query.offset === undefined ? 0 : query.offset;
+  const limit = query.limit === undefined ? 0 : query.limit;
+  const direction = translate_direction(query.direction);
   const entries = [];
 
   const txn = conn.transaction('entry');
   txn.onerror = event => reject(event.target.error);
   const store = txn.objectStore('entry');
+  const request = build_request(store, query, direction);
 
-  // For purity, we store calculations in local variables instead of modifying
-  // the input.
-  const offset = query.offset === undefined ? 0 : query.offset;
-  const limit = query.limit === undefined ? 0 : query.limit;
-
-  // Any request will be using getAll. getAll's second parameter is count, where
-  // we can specify limit. It is preferable to use this because this reduces the
-  // amount of data loaded. However, getAll does not support offset, so we
-  // cannot use the count parameter as intended. However, we can work around
-  // this, by calculating limit relative to offset as (offset + limit), and then
-  // later getting a slice of the array after offset. I hope the performance
-  // will be reasonable.
-  const count = offset + limit;
-
-
-  // TODO: based on the query parameters, build the request. The request may
-  // run on the store, or some index on the store.
-
-  let request;
-
-  if (query.feed_id === 0) {
-    if (query.read_state === undefined) {
-      // any feed, any read state
-      // in this case we just want to open an unbounded cursor on the date
-      // index, and then specify direction to openCursor accordingly
-
-    } else if (query.read_state === entry_utils.ENTRY_STATE_UNREAD) {
-      // any feed, unread
-
-      // in this case we want to open a cursor on [readState, date], using
-      // [unread, min_date] as lower bound, and [unread, max_date] as upper
-      // bound, and then specify direction accordingly
-      // TODO: i think we can even use a 1 element array, just use [unread]
-    } else {
-      // any feed, read
-      // similar to unread above, but this time use [read]
-    }
-  } else {
-    if (query.read_state === undefined) {
-      // particular feed, any read state
-      // open a bounded cursor on the index [feed, date], using just [feed]
-
-    } else if (query.read_state === entry_utils.ENTRY_STATE_UNREAD) {
-      // particular feed, unread
-      // open a bounded cursor on the index [feed, read state, date], specifying
-      // just [feed, unread]
-
-    } else {
-      // particular feed, read
-      // open a bounced cursor on index [feed, read state, date], specifying
-      // jsut [feed, read]
-    }
-  }
-
+  // Setup a shared state across all cursor event handlers
   const cursor_state = {};
-  // we pretend we already advanced if offset is 0 in order to simplify some of
-  // the later logic in cursor iteration
   cursor_state.advanced = offset ? false : true;
   cursor_state.offset = offset;
   cursor_state.limit = limit;
@@ -110,8 +49,76 @@ function query_entries_executor(conn, query, resolve, reject) {
   request.onsuccess = request_onsuccess.bind(request, cursor_state);
 }
 
+function is_valid_direction(dir) {
+  return dir === undefined || dir === 'ASC' || dir === 'DESC';
+}
+
+function translate_direction(input_direction) {
+  let direction;
+  if (input_direction === 'ASC' || input_direction === undefined) {
+    direction = 'next';
+  } else if (input_direction === 'DESC') {
+    direction = 'prev';
+  }
+  return direction;
+}
+
+function build_request(store, query, direction) {
+  let request;
+
+  // Several branches use these same two variables
+  const min_date = new Date(1);
+  const max_date = new Date();
+
+  // Shorter alias
+  const read = entry_utils.ENTRY_STATE_READ;
+  const unread = entry_utils.ENTRY_STATE_UNREAD;
+
+
+  if (query.feed_id === 0 || query.feed_id === undefined) {
+    if (query.read_state === undefined) {
+      const index = store.index('datePublished');
+      let range = undefined;
+      request = index.openCursor(range, direction);
+    } else if (query.read_state === unread) {
+      const index = store.index('readState-datePublished');
+      const lower_bound = [unread, min_date];
+      const upper_bound = [unread, max_date];
+      const range = IDBKeyRange.bound(lower_bound, upper_bound);
+      request = index.openCursor(range, direction);
+    } else {
+      const index = store.index('readState-datePublished');
+      const lower_bound = [read, min_date];
+      const upper_bound = [read, max_date];
+      const range = IDBKeyRange.bound(lower_bound, upper_bound);
+      request = index.openCursor(range, direction);
+    }
+  } else {
+    if (query.read_state === undefined) {
+      const index = store.index('feed-datePublished');
+      const lower_bound = [query.feed_id, min_date];
+      const upper_bound = [query.feed_id, max_date];
+      const range = IDBKeyRange.bound(lower_bound, upper_bound);
+      request = index.openCursor(range, direction);
+    } else if (query.read_state === unread) {
+      const index = store.index('feed-readState-datePublished');
+      const lower_bound = [query.feed_id, unread, min_date];
+      const upper_bound = [query.feed_id, unread, max_date];
+      const range = IDBKeyRange.bound(lower_bound, upper_bound);
+      request = index.openCursor(range, direction);
+    } else {
+      const index = store.index('feed-readState-datePublished');
+      const lower_bound = [query.feed_id, read, min_date];
+      const upper_bound = [query.feed_id, read, max_date];
+      const range = IDBKeyRange.bound(lower_bound, upper_bound);
+      request = index.openCursor(range, direction);
+    }
+  }
+
+  return request;
+}
+
 function request_onsuccess(cursor_state, event) {
-  // TODO: implement me
   const cursor = event.target.result;
 
   // This is the iteration stopping condition. If there is no cursor, we are
@@ -134,12 +141,15 @@ function request_onsuccess(cursor_state, event) {
 
   // If we are limited and reached the limit, then do not continue
   // NOTE: technically the condition should just be === limit, and >= is just
-  // kind of a relaxed condition out of paranoia, unclear understanding
-  if (cursor_state.limit && cursor_state.entries.length >= cursor_state.limit) {
+  // kind of a relaxed condition out of paranoia related to how two or more
+  // js "tasks" load a non-atomic value.
+  if (cursor_state.limit > 0 &&
+      cursor_state.entries.length >= cursor_state.limit) {
+    cursor_state.callback(cursor_state.entries);
     return;
   }
 
-  cursor.continue;
+  cursor.continue();
 }
 
 function is_valid_offset(offset) {

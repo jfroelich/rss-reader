@@ -85,9 +85,22 @@ function archive_entry(entry) {
   return ce;
 }
 
+// TODO: just inline this, it is not obvious why some property changes occur
+// here but not in archive-entry
 function compact_entry(entry) {
   const ce = entry_utils.create_entry_object();
   ce.dateCreated = entry.dateCreated;
+
+  // Retain this past archival date so that it can still be displayed
+  // in front end queries on datePublished index as of version 26 of database.
+  ce.datePublished = entry.datePublished;
+
+  // Prior to datePublished index being added in database version 26, entries
+  // could be created without a publish date. Now entries must have one. This is
+  // a migration fix.
+  if (!ce.datePublished) {
+    ce.datePublished = ce.dateCreated;
+  }
 
   if (entry.dateRead) {
     ce.dateRead = entry.dateRead;

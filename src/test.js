@@ -58,7 +58,6 @@ register_test(db_tests.entry_utils_is_entry_test);
 register_test(db_tests.entry_utils_append_entry_url_test);
 register_test(db_tests.feed_utils_is_feed_test);
 register_test(db_tests.feed_utils_append_feed_url_test);
-
 register_test(db_tests.get_entries_test);
 register_test(db_tests.get_entry_test);
 register_test(db_tests.get_feed_test);
@@ -66,10 +65,10 @@ register_test(db_tests.get_feed_ids_test);
 register_test(db_tests.get_feeds_test);
 register_test(db_tests.iterate_entries_test);
 register_test(db_tests.mark_entry_read_test);
+register_test(db_tests.query_entries_test);
 register_test(db_tests.remove_lost_entries_test);
 register_test(db_tests.remove_orphaned_entries_test);
 register_test(db_tests.remove_untyped_objects_test);
-
 register_test(db_tests.sanitize_entry_content_test);
 register_test(db_tests.update_entry_test);
 register_test(db_tests.update_feed_test);

@@ -17,6 +17,7 @@ export * from './get-feeds-test.js';
 export * from './get-feed-ids-test.js';
 export * from './iterate-entries-test.js';
 export * from './mark-entry-read-test.js';
+export * from './query-entries-test.js';
 export * from './remove-lost-entries-test.js';
 export * from './remove-orphaned-entries-test.js';
 export * from './remove-untyped-objects-test.js';

@@ -20,11 +20,19 @@ export async function create_entry(session, entry) {
     entry.dateCreated = new Date();
   }
 
+  // All entries need to appear in the datePublished index, so all entries
+  // must have a datePublished. If it is unknown, then default to dateCreated.
+  if (entry.datePublished === undefined) {
+    entry.datePublished = entry.dateCreated;
+  }
+
+  // Make sure dateUpdated is not set.
   delete entry.dateUpdated;
+
   object.filter_empty_properties(entry);
 
-  const create_entry_promise =
-      new Promise(put_entry.bind(null, session.conn, entry));
+  const put_bound = put_entry.bind(null, session.conn, entry);
+  const create_entry_promise = new Promise(put_bound);
   const id = await create_entry_promise;
 
   if (session.channel) {

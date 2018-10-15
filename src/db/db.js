@@ -20,6 +20,7 @@ export * from './iterate-entries.js';
 export * from './mark-entry-read.js';
 export * from './open-with-channel.js';
 export * from './open.js';
+export * from './query-entries.js';
 export * from './remove-lost-entries.js';
 export * from './remove-orphaned-entries.js';
 export * from './remove-untyped-objects.js';

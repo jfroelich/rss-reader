@@ -2,8 +2,24 @@ import * as indexeddb from '/src/base/indexeddb.js';
 
 import * as types from './types.js';
 
+const DEFAULT_NAME = 'reader';
+const DEFAULT_VERSION = 29;
+const DEFAULT_TIMEOUT = 500;
+
 // Return a new session without a channel
-export async function open(name = 'reader', version = 25, timeout = 500) {
+export async function open(name, version, timeout) {
+  if (name === undefined) {
+    name = DEFAULT_NAME;
+  }
+
+  if (version === undefined) {
+    version = DEFAULT_VERSION;
+  }
+
+  if (timeout === undefined) {
+    timeout = DEFAULT_TIMEOUT;
+  }
+
   const session = new DbSession();
   session.conn =
       await indexeddb.open(name, version, on_upgrade_needed, timeout);
@@ -66,23 +82,22 @@ function on_upgrade_needed(event) {
     entry_store = txn.objectStore('entry');
   }
 
-  // Only do this if not creating
+  // Only do this if upgrading
   if (event.oldVersion > 0 && event.oldVersion < 21) {
     add_magic_to_entries(txn);
   }
 
-  // Only do this if not creating
+  // Only do this if upgrading
   if (event.oldVersion > 0 && event.oldVersion < 22) {
     add_magic_to_feeds(txn);
   }
 
-  if (event.oldVersion < 23) {
-    if (feed_store.indexNames.contains('title')) {
-      feed_store.deleteIndex('title');
-    }
+  // Only do this if upgrading
+  if (event.oldVersion > 0 && event.oldVersion < 23) {
+    feed_store.deleteIndex('title');
   }
 
-  // Only do this if not creating
+  // Only do this if upgrading
   if (event.oldVersion > 0 && event.oldVersion < 24) {
     add_active_field_to_feeds(feed_store);
   }
@@ -93,6 +108,58 @@ function on_upgrade_needed(event) {
     // of unread entries per feed.
     entry_store.createIndex('feed-readState', ['feed', 'readState']);
   }
+
+  // Handle upgrading to or past version 26 from all prior versions.
+  // This version adds an index on the entry store on the datePublished
+  // property, so that all entries can be loaded sorted by datePublished
+  if (event.oldVersion < 26) {
+    // If there may be existing entries, then ensure that all older entries have
+    // a datePublished
+    if (event.oldVersion > 0) {
+      ensure_entries_have_date_published(entry_store);
+    }
+
+    entry_store.createIndex('datePublished', 'datePublished');
+  }
+
+  // Handle upgrade to 27, or past 27, from all prior versions. This version
+  // adds a new index for use in the reader-page view.
+  if (event.oldVersion < 27) {
+    const index_name = 'readState-datePublished';
+    const index_path = ['readState', 'datePublished'];
+    entry_store.createIndex(index_name, index_path);
+  }
+
+  if (event.oldVersion < 28) {
+    const index_name = 'feed-datePublished';
+    const index_path = ['feed', 'datePublished'];
+    entry_store.createIndex(index_name, index_path);
+  }
+
+  if (event.oldVersion < 29) {
+    const index_name = 'feed-readState-datePublished';
+    const index_path = ['feed', 'readState', 'datePublished'];
+    entry_store.createIndex(index_name, index_path);
+  }
+}
+
+function ensure_entries_have_date_published(store) {
+  const request = store.openCursor();
+  request.onerror = _ => console.error(request.error);
+
+  request.onsuccess = event => {
+    const cursor = request.result;
+    if (!cursor) {
+      return;
+    }
+    const entry = cursor.value;
+    if (!entry.datePublished) {
+      entry.datePublished = entry.dateCreated;
+      entry.dateUpdated = new Date();
+      cursor.update(entry);
+    }
+    cursor.continue();
+  };
 }
 
 function add_magic_to_entries(txn) {
@@ -101,14 +168,17 @@ function add_magic_to_entries(txn) {
   request.onerror = _ => console.error(request.error);
   request.onsuccess = function() {
     const cursor = request.result;
-    if (cursor) {
-      const entry = cursor.value;
-      if (!('magic' in entry)) {
-        entry.magic = types.ENTRY_MAGIC;
-        entry.dateUpdated = new Date();
-        cursor.update(entry);
-      }
+    if (!cursor) {
+      return;
     }
+
+    const entry = cursor.value;
+    if (!('magic' in entry)) {
+      entry.magic = types.ENTRY_MAGIC;
+      entry.dateUpdated = new Date();
+      cursor.update(entry);
+    }
+    cursor.continue();
   };
 }
 

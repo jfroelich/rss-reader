@@ -9,24 +9,51 @@ async function article_list_init(session) {
 }
 
 async function article_list_refresh(session) {
-  // TODO: this may be called on a list that already has stuff in it.
-  // temporarily just write it as if nothing was there, i am still confused
-  // as to how this will all look
+  const article_list_element = document.getElementById('article-list');
+
+  // At this dev stage, the current behavior is to fully clear the list,
+  // then repopulate
+  for (let n = article_list_element.firstElementChild; n;
+       n = article_list_element.firstElementChild) {
+    n.remove();
+  }
+
+  const loading_element = document.createElement('span');
+  loading_element.textContent = 'Loading';
+  article_list_element.appendChild(loading_element);
 
 
   const query = {};
   query.feed_id = current_view_feed_id;
-  query.sort_property = 'dateCreated';
-  query.sort_order = 'next';
+  // TODO: direction should come from params
+  query.direction = 'ASC';
   query.offset = 0;
   query.read_state = undefined;  // read or unread
+  // TODO: limit should come from settings?
+  query.limit = 25;
 
-  // TODO: this should probably be limited, right?
-  query.limit = 0;  // unlimited
+  const entries = await db.query_entries(session, query);
 
+  // console.debug('Loaded %d entries from database', entries.length);
 
+  loading_element.remove();
 
-  const article_list_element = document.getElementById('article-list');
+  for (const entry of entries) {
+    const entry_element = create_article_list_entry_element(entry);
+    article_list_element.appendChild(entry_element);
+  }
+}
+
+// TODO: this is incomplete, for now just returning title to see if anything
+// works
+function create_article_list_entry_element(entry) {
+  const article_element = document.createElement('article');
+
+  const title_element = document.createElement('span');
+  const title = entry.title || 'Untitled';
+  title_element.textContent = entry.id + ' ' + title;
+  article_element.appendChild(title_element);
+  return article_element;
 }
 
 
