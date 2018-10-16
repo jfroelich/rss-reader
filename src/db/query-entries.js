@@ -1,30 +1,21 @@
 import assert from '/src/base/assert.js';
 import * as entry_utils from './entry-utils.js';
 
-// Returns an array of matching entries. This still returns an array even when
-// no entries are found so the result is always defined. |query| is a required
-// parameter that constrains which entries are loaded from the database and
-// included in the output.
-//
-// Query properties:
-// * feed_id - 0 for all feeds, or id of feed
-// * direction ('ASC' or 'ASC') on datePublished
-// * offset - how many objects to skip
-// * limit - max number of objects to return
-// * read_state - undefined for any state, or read or unread only state
-
-
 export function query_entries(session, query = {}) {
+  assert(session);
+  assert(session.conn);
   assert(typeof query === 'object');
-  assert(
-      query.feed_id === undefined ||
-      (Number.isInteger(query.feed_id) && query.feed_id >= 0));
+  assert(is_valid_feed_id(query.feed_id));
   assert(is_valid_read_state(query.read_state));
   assert(is_valid_offset(query.offset));
   assert(is_valid_direction(query.direction));
 
   const bound = query_entries_executor.bind(null, session.conn, query);
   return new Promise(bound);
+}
+
+function is_valid_feed_id(id) {
+  return id === undefined || (Number.isInteger(id) && id >= 0)
 }
 
 function query_entries_executor(conn, query, resolve, reject) {
@@ -53,16 +44,22 @@ function is_valid_direction(dir) {
   return dir === undefined || dir === 'ASC' || dir === 'DESC';
 }
 
-function translate_direction(input_direction) {
-  let direction;
-  if (input_direction === 'ASC' || input_direction === undefined) {
-    direction = 'next';
-  } else if (input_direction === 'DESC') {
-    direction = 'prev';
-  }
-  return direction;
+// Translate the query parameter direction into the indexedDB cursor direction
+function translate_direction(direction) {
+  // Assume that by this point the input direction is valid so there is no
+  // need for a sanity check. The absence of a precondition assertion also seems
+  // reasonable because this is an internal function and not part of the public
+  // API, so it is free to enjoy caller guarantees.
+
+  // There is no need to translate in the default case of iterating forward. So
+  // we leave the output direction as undefined in that case, which will have
+  // the effect of specifying undefined to openCursor later, which will then
+  // default to forward. So we only need to have an explicit value in the
+  // reverse case.
+  return direction === 'DESC' ? 'prev' : undefined;
 }
 
+// Compose the proper IDBRequest object based on the query values
 function build_request(store, query, direction) {
   let request;
 
@@ -121,9 +118,9 @@ function build_request(store, query, direction) {
 function request_onsuccess(cursor_state, event) {
   const cursor = event.target.result;
 
-  // This is the iteration stopping condition. If there is no cursor, we are
-  // done. We might not have encountered any entries at all, or we advanced the
-  // cursor past the end.
+  // This is one of two iteration stopping conditions. If there is no cursor, we
+  // are done. We might not have encountered any entries at all, or we advanced
+  // the cursor past the end.
   if (!cursor) {
     cursor_state.callback(cursor_state.entries);
     return;
@@ -139,10 +136,9 @@ function request_onsuccess(cursor_state, event) {
 
   cursor_state.entries.push(cursor.value);
 
-  // If we are limited and reached the limit, then do not continue
-  // NOTE: technically the condition should just be === limit, and >= is just
-  // kind of a relaxed condition out of paranoia related to how two or more
-  // js "tasks" load a non-atomic value.
+  // If we are limited and reached the limit, then do not continue. This is also
+  // a stopping condition. Technically the condition should just be === limit,
+  // and using >= is a relaxed condition out of paranoia related to concurrency.
   if (cursor_state.limit > 0 &&
       cursor_state.entries.length >= cursor_state.limit) {
     cursor_state.callback(cursor_state.entries);
