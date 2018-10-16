@@ -8,7 +8,43 @@ async function article_list_init(session) {
   await article_list_refresh(session);
 }
 
-async function article_list_refresh(session) {
+async function left_pane_onclick(event) {
+  const list_item = event.target.closest('li');
+  if (!list_item) {
+    console.debug('No list item found', event.target.outerHTML);
+    return;
+  }
+
+  const data_source = list_item.getAttribute('data-source');
+  if (!data_source) {
+    console.debug('No data source found', list_item.outerHTML);
+    return;
+  }
+
+  const feed_id = parseInt(data_source, 10);
+  if (feed_id === NaN) {
+    console.debug('Invalid data source', data_source);
+    return;
+  }
+
+  await switch_view('article-list', feed_id);
+}
+
+async function switch_view(view, feed_id) {
+  current_view = view;
+  let prior_feed_id = current_view_feed_id;
+  current_view_feed_id = feed_id;
+
+  if (current_view === 'article-list') {
+    if (prior_feed_id != current_view_feed_id) {
+      const session = await db.open();
+      article_list_refresh(session);
+      session.close();
+    }
+  }
+}
+
+function article_list_clear() {
   const article_list_element = document.getElementById('article-list');
 
   // At this dev stage, the current behavior is to fully clear the list,
@@ -17,7 +53,15 @@ async function article_list_refresh(session) {
        n = article_list_element.firstElementChild) {
     n.remove();
   }
+}
 
+async function article_list_refresh(session) {
+  // At this dev stage, the current behavior is to fully clear the list,
+  // then repopulate
+  article_list_clear();
+
+
+  const article_list_element = document.getElementById('article-list');
   const loading_element = document.createElement('span');
   loading_element.textContent = 'Loading';
   article_list_element.appendChild(loading_element);
@@ -51,7 +95,7 @@ function create_article_list_entry_element(entry) {
 
   const title_element = document.createElement('span');
   const title = entry.title || 'Untitled';
-  title_element.textContent = entry.id + ' ' + title;
+  title_element.textContent = title;
   article_element.appendChild(title_element);
   return article_element;
 }
@@ -67,6 +111,7 @@ function truncate_string(value, length, suffix) {
 // Load the list of feeds in the left panel
 async function left_pane_init(session) {
   const list_element = document.getElementById('feed-list');
+  list_element.addEventListener('click', left_pane_onclick);
 
   const loading_element = document.createElement('li');
   loading_element.setAttribute('id', 'feed-list-load-progress');
@@ -77,6 +122,7 @@ async function left_pane_init(session) {
   const total_unread_count = await db.count_unread_entries(session);
 
   const all_feeds_item_element = document.createElement('li');
+  all_feeds_item_element.setAttribute('data-source', '0');
   const all_feeds_item_text_element = document.createElement('span');
   all_feeds_item_text_element.textContent = 'All sources';
   all_feeds_item_element.appendChild(all_feeds_item_text_element);
@@ -115,6 +161,8 @@ async function left_pane_init(session) {
 
   for (const feed of feeds) {
     const item_element = document.createElement('li');
+
+    item_element.setAttribute('data-source', feed.id);
 
     const icon_element = document.createElement('img');
     let fus = feed.faviconURLString || default_favicon_url;

@@ -8,10 +8,20 @@ body {
 }
 
 header {
-  background-color: #efefef;
   width: 100%;
-  margin: 0;
   padding: 10px;
+  border-bottom: 1px solid #cccccc;
+  margin: 0;
+  position: fixed;
+  background-color: #ffffff;
+}
+
+#app-title {
+  font-size: 32px;
+  font-weight: bold;
+  font-family: Merriweather Regular;
+  padding: 10px;
+  margin-right: 30px;
 }
 
 .bold-item {
@@ -26,31 +36,58 @@ header {
 }
 
 #left-pane {
-  width: 200px;
+  width: 19%;
   height: 100%;
   float: left;
-  padding: 10px;
+  padding: 0;
+  margin-top: 75px;
 }
 
 #feed-list {
   list-style-type: none;
-  padding-left: 0;
-  margin-left: auto;
-  margin-right: auto;
-  width: 95%;
+  padding: 0;
+  margin: 0;
+  width: 100%;
 }
 
 #feed-list li {
-  padding: 6px;
+  user-select: none;
+  padding: 8px;
+  margin-top: 0;
+  margin-left: 0;
+  margin-right: 0;
+  margin-bottom: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  background-color: red;
+}
+
+#feed-list li:hover {
+  background-color: pink;
+  cursor: hand;
 }
 
 #feed-list li img {
   margin-right: 8px;
+  margin-top: 0;
+  margin-bottom: -2px;
+  margin-left: 0;
+  padding: 0;
 }
 
 #article-list {
+  margin-top: 75px;
+  margin-left: 3px;
   float: left;
+  width: 80%;
+}
+
+article {
+  width: 100%;
+  margin: 0;
+  padding: 10px;
+  font-size: 48px;
+  border-bottom: 1px dotted #cccccc;
+  font-weight: normal;
 }
