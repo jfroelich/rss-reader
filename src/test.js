@@ -6,7 +6,8 @@
 // string parameter when calling each test function that is unique to that test
 // function call
 // TODO: consider enabling tests to somehow declare their own timeout instead of
-// using the same timeout for all tests
+// using the same timeout for all tests. actually, each test function should use
+// a db named after the test itself. we know all test functions are unique?
 
 import {article_title_test} from '/src/base/article-title-test.js';
 import {coerce_element_test} from '/src/base/coerce-element-test.js';
