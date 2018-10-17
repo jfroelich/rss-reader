@@ -1,7 +1,7 @@
 import {fetch_feed} from '/src/control/fetch-feed.js';
 import * as db from '/src/db/db.js';
 import {response_is_redirect} from '/src/control/fetch2.js';
-import * as favicon from '/src/base/iconsvc/favicon.js';
+import * as favicon from '/src/control/favicon.js';
 import * as notification from '/src/control/notification.js';
 
 

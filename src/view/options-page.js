@@ -1,6 +1,6 @@
 import {fade_element} from '/src/base/fade-element.js';
 import * as html from '/src/base/html.js';
-import * as favicon from '/src/base/iconsvc/favicon.js';
+import * as favicon from '/src/control/favicon.js';
 import * as ls from '/src/base/localstorage.js';
 import * as permissions from '/src/base/permissions.js';
 import * as badge from '/src/control/badge.js';

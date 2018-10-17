@@ -1,6 +1,6 @@
 import assert from '/src/base/assert.js';
 import * as html from '/src/base/html.js';
-import * as favicon from '/src/base/iconsvc/favicon.js';
+import * as favicon from '/src/control/favicon.js';
 import * as ls from '/src/base/localstorage.js';
 import {rewrite_url} from '/src/base/rewrite-url.js';
 import {sanitize_document} from '/src/base/sandoc/sandoc.js';

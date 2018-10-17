@@ -1,4 +1,4 @@
-import * as favicon from '/src/base/iconsvc/favicon.js';
+import * as favicon from '/src/control/favicon.js';
 import * as config from '/src/control/config.js';
 import * as cron_control from '/src/control/cron.js';
 import {poll_feed, poll_feeds} from '/src/control/poll-feeds.js';
