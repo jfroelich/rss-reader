@@ -4,7 +4,7 @@
 import './main-menu.js';
 import './left-panel.js';
 
-import * as config_control from '/src/control/config.js';
+import * as config_control from '/src/control/config-control.js';
 import * as db from '/src/db/db.js';
 import {append_slide} from './append-slide.js';
 import * as channel from './channel.js';
@@ -12,8 +12,6 @@ import {feeds_container_append_feed} from './feeds-container.js';
 import {show_no_articles_message} from './no-articles-message.js';
 import {onkeydown} from './onkeydown.js';
 import {hide_splash, show_splash} from './splash.js';
-
-
 
 async function load_view() {
   show_splash();

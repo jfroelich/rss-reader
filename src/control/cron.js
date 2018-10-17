@@ -1,4 +1,4 @@
-import * as ls from '/src/base/localstorage.js';
+import * as config from '/src/control/config.js';
 import * as favicon from '/src/control/favicon.js';
 import {poll_feeds} from '/src/control/poll-feeds.js';
 import {refresh_feed_icons} from '/src/control/refresh-feed-icons.js';
@@ -37,7 +37,7 @@ export function install_listener(event) {
 
 export async function alarm_listener(alarm) {
   console.debug('Alarm wokeup:', alarm.name);
-  ls.write_string('last_alarm', alarm.name);
+  config.write_string('last_alarm', alarm.name);
 
   // TODO: these branches could probably all share the session open and close?
 
@@ -48,8 +48,8 @@ export async function alarm_listener(alarm) {
     await db.archive_entries(session, max_age);
     session.close();
   } else if (alarm.name === 'poll') {
-    if (ls.read_boolean('only_poll_if_idle')) {
-      // TODO: this value should come from local storage
+    if (config.read_boolean('only_poll_if_idle')) {
+      // TODO: this value should come from configuration
       const idle_secs = 30;
       const state = await query_idle_state(idle_secs);
       if (state !== 'locked' || state !== 'idle') {

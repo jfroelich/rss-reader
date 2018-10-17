@@ -1,14 +1,11 @@
+import * as config from '/src/control/config.js';
 import * as db from '/src/db/db.js';
-import * as ls from '/src/base/localstorage.js';
+
 import {append_slide} from './append-slide.js';
 import {count_unread_slides} from './count-unread-slides.js';
 import {mark_slide_read_start} from './mark-slide-read.js';
 import {remove_slide} from './remove-slide.js';
 import * as slideshow_state from './slideshow-state.js';
-
-// TODO: this should not be interacting directly with local storage. This should
-// be interacting with some kind of configuration module that abstracts away how
-// configuration information is stored
 
 export async function show_next_slide() {
   if (slideshow_state.get_active_transition_count()) {
@@ -26,7 +23,7 @@ export async function show_next_slide() {
   const slide_unread_count = count_unread_slides();
   let entries = [];
   if (slide_unread_count < 3) {
-    const limit = ls.read_int('initial_entry_load_limit');
+    const limit = config.read_int('initial_entry_load_limit');
     const mode = 'viewable';
     entries = await db.get_entries(session, mode, slide_unread_count, limit);
   }

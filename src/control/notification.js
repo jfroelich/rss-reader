@@ -1,4 +1,4 @@
-import * as local_storage from '/src/base/localstorage.js';
+import * as config from '/src/control/config.js';
 import * as extension_tab from '/src/control/extension-tab.js';
 
 // TODO: i should rename this file to just show-notification.js. It is a single
@@ -13,11 +13,6 @@ import * as extension_tab from '/src/control/extension-tab.js';
 // consider using notification functionality. or maybe it is located in the
 // right place. need to think about it more.
 
-// TODO: this should not be directly interacting with local storage module.
-// this should be interacting only with the config module, that wraps the
-// local storage module in some way. the config module abstracts away how
-// configuration data is persisted.
-
 // TODO: separate to the issue with config, is that this relies on config.
 // if i want to move this to a lower layer, that cannot happen. it is the
 // single check at the start of the function that causes the early exit that
@@ -27,7 +22,7 @@ import * as extension_tab from '/src/control/extension-tab.js';
 // hardcoded here.
 
 export function show(title, message, icon_url_string) {
-  if (!local_storage.read_boolean('show_notifications')) {
+  if (!config.read_boolean('show_notifications')) {
     return;
   }
 

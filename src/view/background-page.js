@@ -1,5 +1,5 @@
 import * as badge_control from '/src/control/badge.js';
-import * as config_control from '/src/control/config.js';
+import * as config_control from '/src/control/config-control.js';
 import * as cron_control from '/src/control/cron.js';
 import * as db_control from '/src/control/db-control.js';
 import * as extension_tab from '/src/control/extension-tab.js';

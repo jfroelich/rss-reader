@@ -1,4 +1,4 @@
-import * as ls from '/src/base/localstorage.js';
+import * as config from '/src/control/config.js';
 
 export async function open_view() {
   const url_string = chrome.extension.getURL('slideshow.html');
@@ -9,7 +9,7 @@ export async function open_view() {
     return;
   }
 
-  const reuse_newtab = ls.read_boolean('reuse_newtab');
+  const reuse_newtab = config.read_boolean('reuse_newtab');
   if (reuse_newtab) {
     tab = await find_tab('chrome://newtab/');
     if (tab) {

@@ -1,6 +1,6 @@
-import * as favicon from '/src/control/favicon.js';
-import * as config from '/src/control/config.js';
+import * as config from '/src/control/config-control.js';
 import * as cron_control from '/src/control/cron.js';
+import * as favicon from '/src/control/favicon.js';
 import {poll_feed, poll_feeds} from '/src/control/poll-feeds.js';
 import {refresh_feed_icons} from '/src/control/refresh-feed-icons.js';
 import {subscribe} from '/src/control/subscribe.js';

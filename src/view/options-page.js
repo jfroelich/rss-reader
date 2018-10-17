@@ -1,9 +1,9 @@
 import {fade_element} from '/src/base/fade-element.js';
 import * as html from '/src/base/html.js';
-import * as favicon from '/src/control/favicon.js';
-import * as ls from '/src/base/localstorage.js';
 import * as permissions from '/src/base/permissions.js';
 import * as badge from '/src/control/badge.js';
+import * as config from '/src/control/config.js';
+import * as favicon from '/src/control/favicon.js';
 import {poll_feed} from '/src/control/poll-feeds.js';
 import {subscribe, unsubscribe} from '/src/control/subscribe.js';
 import * as db from '/src/db/db.js';
@@ -440,7 +440,7 @@ function menu_item_onclick(event) {
 }
 
 function enable_notifications_checkbox_onclick(event) {
-  ls.write_boolean('show_notifications', event.target.checked);
+  config.write_boolean('show_notifications', event.target.checked);
 }
 
 function enable_bg_processing_checkbox_onclick(event) {
@@ -451,7 +451,7 @@ function enable_bg_processing_checkbox_onclick(event) {
   }
 }
 
-// TODO: this should be using a local storage variable and instead the
+// TODO: this should be using a configuration variable and instead the
 // permission should be permanently defined.
 async function enable_bg_processing_checkbox_init() {
   const checkbox = document.getElementById('enable-background');
@@ -462,67 +462,67 @@ async function enable_bg_processing_checkbox_init() {
 function bg_image_menu_onchange(event) {
   const path = event.target.value;
   if (path) {
-    ls.write_string('bg_image', path);
+    config.write_string('bg_image', path);
   } else {
-    ls.remove('bg_image');
+    config.remove('bg_image');
   }
 }
 
 function column_count_menu_onchange(event) {
   const count = event.target.value;
   if (count) {
-    ls.write_string('column_count', count);
+    config.write_string('column_count', count);
   } else {
-    ls.remove('column_count');
+    config.remove('column_count');
   }
 }
 
 function entry_bg_color_input_oninput(event) {
   const color = event.target.value;
   if (color) {
-    ls.write_string('bg_color', color);
+    config.write_string('bg_color', color);
   } else {
-    ls.remove('bg_color');
+    config.remove('bg_color');
   }
 }
 
 function entry_margin_slider_onchange(event) {
   const margin = event.target.value;
   if (margin) {
-    ls.write_string('padding', margin);
+    config.write_string('padding', margin);
   } else {
-    ls.remove('padding');
+    config.remove('padding');
   }
 }
 
 function header_font_size_slider_onchange(event) {
   const size = event.target.value;
   if (size) {
-    ls.write_string('header_font_size', size);
+    config.write_string('header_font_size', size);
   } else {
-    ls.remove('header_font_size');
+    config.remove('header_font_size');
   }
 }
 
 function body_font_size_slider_onchange(event) {
   const size = event.target.value;
   if (size) {
-    ls.write_string('body_font_size', size);
+    config.write_string('body_font_size', size);
   } else {
-    ls.remove('body_font_size');
+    config.remove('body_font_size');
   }
 }
 
 function justify_text_checkbox_onchange(event) {
-  ls.write_boolean('justify_text', event.target.checked);
+  config.write_boolean('justify_text', event.target.checked);
 }
 
 function body_line_height_input_oninput(event) {
   const height = event.target.value;
   if (height) {
-    ls.write_string('body_line_height', height);
+    config.write_string('body_line_height', height);
   } else {
-    ls.remove('body_line_height');
+    config.remove('body_line_height');
   }
 }
 
@@ -534,15 +534,15 @@ function body_line_height_input_oninput(event) {
   }
 
   const enable_notes_checkbox = document.getElementById('enable-notifications');
-  enable_notes_checkbox.checked = ls.read_boolean('show_notifications');
+  enable_notes_checkbox.checked = config.read_boolean('show_notifications');
   enable_notes_checkbox.onclick = enable_notifications_checkbox_onclick;
 
   enable_bg_processing_checkbox_init();
 
   const idle_poll_checkbox = document.getElementById('enable-idle-check');
-  idle_poll_checkbox.checked = ls.read_boolean('only_poll_if_idle');
+  idle_poll_checkbox.checked = config.read_boolean('only_poll_if_idle');
   idle_poll_checkbox.onclick = event =>
-      ls.write_boolean('only_poll_if_idle', event.target.checked);
+      config.write_boolean('only_poll_if_idle', event.target.checked);
 
   feed_list_init();
 
@@ -567,8 +567,8 @@ function body_line_height_input_oninput(event) {
     option.textContent = 'Use background color';
     bg_image_menu.appendChild(option);
 
-    let current_path = ls.read_string('bg_image');
-    const background_images = ls.read_array('background_images');
+    let current_path = config.read_string('bg_image');
+    const background_images = config.read_array('background_images');
     for (const path of background_images) {
       let option = document.createElement('option');
       option.value = path;
@@ -582,7 +582,7 @@ function body_line_height_input_oninput(event) {
     const column_count_menu = document.getElementById('column-count');
     column_count_menu.onchange = column_count_menu_onchange;
     const column_count_options = [1, 2, 3];
-    const current_column_count = ls.read_int('column_count');
+    const current_column_count = config.read_int('column_count');
     for (const column_count of column_count_options) {
       const option = document.createElement('option');
       option.value = column_count;
@@ -594,40 +594,40 @@ function body_line_height_input_oninput(event) {
 
   const bg_color_input = document.getElementById('entry-background-color');
   bg_color_input.oninput = entry_bg_color_input_oninput;
-  const bg_color = ls.read_string('bg_color');
+  const bg_color = config.read_string('bg_color');
   if (bg_color) {
     bg_color_input.value = bg_color;
   }
 
   const entry_margin_input = document.getElementById('entry-margin');
   entry_margin_input.onchange = entry_margin_slider_onchange;
-  const margin = ls.read_int('padding', 0);
+  const margin = config.read_int('padding', 0);
   if (!isNaN(margin)) {
     entry_margin_input.value = margin;
   }
 
   const justify_checkbox = document.getElementById('justify-text');
-  justify_checkbox.checked = ls.read_boolean('justify_text');
+  justify_checkbox.checked = config.read_boolean('justify_text');
   justify_checkbox.onchange = event =>
-      ls.write_boolean('justify_text', event.target.checked);
+      config.write_boolean('justify_text', event.target.checked);
 
   const header_size_range = document.getElementById('header-font-size');
   header_size_range.onchange = header_font_size_slider_onchange;
-  const header_font_size = ls.read_int('header_font_size');
+  const header_font_size = config.read_int('header_font_size');
   if (!isNaN(header_font_size)) {
     header_size_range.value = header_font_size;
   }
 
   const body_size_range = document.getElementById('body-font-size');
   body_size_range.onchange = body_font_size_slider_onchange;
-  const body_font_size = ls.read_int('body_font_size');
+  const body_font_size = config.read_int('body_font_size');
   if (!isNaN(body_font_size)) {
     body_size_range.value = body_font_size;
   }
 
   const body_line_height_input = document.getElementById('body-line-height');
   body_line_height_input.oninput = body_line_height_input_oninput;
-  const body_line_height = ls.read_int('body_line_height');
+  const body_line_height = config.read_int('body_line_height');
   if (!isNaN(body_line_height)) {
     body_line_height_input.value = body_line_height;
   }

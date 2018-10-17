@@ -1,11 +1,7 @@
-import * as ls from '/src/base/localstorage.js';
-import * as config_control from '/src/control/config.js';
+import * as config_control from '/src/control/config-control.js';
+import * as config from '/src/control/config.js';
 import {export_opml} from '/src/control/export-opml.js';
 import * as import_opml from '/src/control/import-opml.js';
-
-// TODO: this should not be directly interacting with local storage. this should
-// be interacting with some kind of config module that abstracts away how
-// configuration data is stored.
 
 export function options_menu_show() {
   const menu_options = document.getElementById('left-panel');
@@ -79,7 +75,7 @@ function download_opml_document(opml_document, file_name = 'subs.xml') {
 function header_font_menu_init(fonts) {
   const menu = document.getElementById('header-font-menu');
   menu.onchange = header_font_menu_onchange;
-  const current_header_font = ls.read_string('header_font_family');
+  const current_header_font = config.read_string('header_font_family');
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Header Font';
@@ -99,7 +95,7 @@ function header_font_menu_init(fonts) {
 function body_font_menu_init(fonts) {
   const menu = document.getElementById('body-font-menu');
   menu.onchange = body_font_menu_onchange;
-  const current_body_font = ls.read_string('body_font_family');
+  const current_body_font = config.read_string('body_font_family');
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Body Font';
@@ -119,11 +115,11 @@ function body_font_menu_init(fonts) {
 
 export function header_font_menu_onchange(event) {
   const font_name = event.target.value;
-  const old_value = ls.read_string('header_font_family');
+  const old_value = config.read_string('header_font_family');
   if (font_name) {
-    ls.write_string('header_font_family', font_name);
+    config.write_string('header_font_family', font_name);
   } else {
-    ls.remove('header_font_family');
+    config.remove('header_font_family');
   }
 
   // HACK: dispatch a fake local change because storage change event listener
@@ -139,11 +135,11 @@ export function header_font_menu_onchange(event) {
 
 function body_font_menu_onchange(event) {
   const font_name = event.target.value;
-  const old_value = ls.read_string('body_font_family');
+  const old_value = config.read_string('body_font_family');
   if (font_name) {
-    ls.write_string('body_font_family', font_name);
+    config.write_string('body_font_family', font_name);
   } else {
-    ls.remove('body_font_family');
+    config.remove('body_font_family');
   }
 
   // HACK: dispatch a fake local change because storage change event listener
@@ -183,8 +179,8 @@ function leftpanel_init() {
   const menu_options = document.getElementById('left-panel');
   menu_options.onclick = options_menu_onclick;
 
-  // Load fonts from local storage once for both init helpers
-  const fonts = ls.read_array('fonts');
+  // Load fonts from configuration once for both init helpers
+  const fonts = config.read_array('fonts');
   header_font_menu_init(fonts);
   body_font_menu_init(fonts);
 

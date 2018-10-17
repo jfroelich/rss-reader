@@ -1,11 +1,11 @@
 import assert from '/src/base/assert.js';
 import * as html from '/src/base/html.js';
-import * as favicon from '/src/control/favicon.js';
-import * as ls from '/src/base/localstorage.js';
 import {rewrite_url} from '/src/base/rewrite-url.js';
 import {sanitize_document} from '/src/base/sandoc/sandoc.js';
 import {set_base_uri} from '/src/base/set-base-uri.js';
 import * as sniff from '/src/base/sniff.js';
+import * as config from '/src/control/config.js';
+import * as favicon from '/src/control/favicon.js';
 import {fetch_feed} from '/src/control/fetch-feed.js';
 import {fetch_html} from '/src/control/fetch-html.js';
 import {is_allowed_request} from '/src/control/fetch-policy.js';
@@ -355,11 +355,11 @@ export async function poll_entry(
   set_base_uri(document, url);
 
   const sd_opts = {};
-  sd_opts.contrast_matte = ls.read_int('contrast_default_matte');
-  sd_opts.contrast_ratio = ls.read_float('min_contrast_ratio');
-  sd_opts.image_size_timeout = ls.read_int('set_image_sizes_timeout');
-  sd_opts.table_scan_max_rows = ls.read_int('table_scan_max_rows');
-  sd_opts.emphasis_max_length = ls.read_int('emphasis_max_length');
+  sd_opts.contrast_matte = config.read_int('contrast_default_matte');
+  sd_opts.contrast_ratio = config.read_float('min_contrast_ratio');
+  sd_opts.image_size_timeout = config.read_int('set_image_sizes_timeout');
+  sd_opts.table_scan_max_rows = config.read_int('table_scan_max_rows');
+  sd_opts.emphasis_max_length = config.read_int('emphasis_max_length');
   sd_opts.is_allowed_request = is_allowed_request;
 
   await sanitize_document(document, sd_opts);
