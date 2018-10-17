@@ -60,7 +60,8 @@ header {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  background-color: red;
+  background-color: #d40000;
+  color: white;
 }
 
 #feed-list li:hover {
