@@ -4,10 +4,9 @@ import {check_image} from '/src/base/favicon/check-image.js';
 
 // Provides favicon lookup functionality. Given a url, find the url of the
 // corresponding favicon. Not spec compliant (does not always check document
-// first).
+// first, uses origin wide favicon regardless of page icon sometimes).
 
 const ONE_MONTH_MS = 1000 * 60 * 60 * 24 * 30;
-const TWO_MONTHS_MS = 2 * ONE_MONTH_MS;
 const DEFAULT_MAX_FAILURE_COUNT = 3;
 
 export {clear, compact, open} from '/src/base/favicon/cache.js';
@@ -31,7 +30,6 @@ export async function lookup(request) {
 
   let entry = await cache.find_entry(conn, origin);
 
-  // Exit successfully on a cache hit
   if (entry && entry.icon_url && !entry_is_expired(entry)) {
     console.debug('Hit', entry);
     return entry.icon_url;
@@ -39,15 +37,12 @@ export async function lookup(request) {
 
   // Exit early without error if too many failed looks against this origin
   if (entry && entry.failures > request.max_failure_count) {
-    console.debug('Too many failed lookups for origin', origin.href);
+    console.debug('Hit but too many failed lookups', origin.href);
     return;
   }
 
   // At this point we either have no entry, or an expired entry. If expired we
   // also know that it has not had too many failures
-
-  // TODO: this should not trust the url, need to ping the image
-  // similarly, what is proper reaction to failed in-doc url vs failed root url?
 
   // Check the document
   if (document) {
@@ -80,7 +75,9 @@ export async function lookup(request) {
     has_root = await check_image(
         root_icon.href, size_constraints, request.fetch_image_timeout);
   } catch (error) {
-    // Ignore
+    // Fetch errors are not fatal to lookup
+    // TODO: well, assertion-style errors should be fatal and rethrown but how
+    // do i differentiate here?
   }
 
   if (has_root) {
@@ -124,14 +121,7 @@ function search_document(document) {
 }
 
 function entry_is_expired(entry) {
-  if (entry.expires) {
-    const now = new Date();
-    if (entry.expires <= now) {
-      return true;
-    }
-  }
-
-  return false;
+  return entry.expires && entry.expires <= new Date();
 }
 
 function is_valid_lookup_request(request) {
@@ -161,6 +151,6 @@ function record_failure(origin, conn, entry) {
     entry.failures = 1;
   }
 
-  entry.expires = new Date(now.getTime() + TWO_MONTHS_MS);
+  entry.expires = new Date(now.getTime() + 2 * ONE_MONTH_MS);
   return cache.put_entry(conn, entry);
 }

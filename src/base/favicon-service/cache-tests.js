@@ -2,6 +2,9 @@ import assert from '/src/base/assert.js';
 import * as cache from '/src/base/favicon-service/cache.js';
 import * as indexeddb from '/src/base/indexeddb.js';
 
+// TODO: test that creating a second with same url does not create second and
+// just overwrites first
+
 export async function favicon_cache_open_test() {
   const db_name = favicon_cache_open_test.name;
   await indexeddb.remove(db_name);
@@ -100,5 +103,69 @@ export async function favicon_cache_clear_test() {
 }
 
 export async function favicon_cache_compact_test() {
-  console.warn('favicon_cache_compact_test not implemented');
+  // Test setup
+  const db_name = favicon_cache_compact_test.name;
+  await indexeddb.remove(db_name);
+
+  const conn = await cache.open(db_name);
+
+  // Insert a mix of expired and non-expired entries. Then run compact and check
+  // the expired entries are gone and the non-expired entries remain.
+
+  const six_months = 1000 * 60 * 60 * 24 * 31 * 6;
+
+  // Create 5 of each
+  const create_promises = [];
+  for (let i = 0; i < 10; i++) {
+    const icon_url = new URL('http://www.example' + i + '.com/favicon.ico');
+    const origin = icon_url.origin;
+    const origin_url = new URL(origin);
+
+    const entry = new cache.Entry();
+    entry.origin = origin_url.href;
+    entry.icon_url = icon_url.href;
+
+    const now = new Date();
+    if ((i % 2) === 0) {
+      entry.expires = new Date(now.getTime() - six_months - i * 1000);
+    } else {
+      entry.expires = new Date(now.getTime() + six_months + i * 1000);
+    }
+
+    // console.debug('expires:', origin, entry.expires);
+    const promise = cache.put_entry(conn, entry);
+    create_promises.push(promise);
+  }
+
+  await Promise.all(create_promises);
+
+  await cache.compact(conn);
+
+  // Now the 5 expired should be removed, and the 5 non-expired should remain
+  // Look for each of the 10 individually
+  const find_promises = [];
+  for (let i = 0; i < 10; i++) {
+    const url = new URL('http://www.example' + i + '.com/favicon.ico');
+    const origin_url = new URL(url.origin);
+    const promise = cache.find_entry(conn, origin_url);
+    find_promises.push(promise);
+  }
+  const results = await Promise.all(find_promises);
+
+  for (let i = 0; i < 10; i++) {
+    const result = results[i];
+    if (i % 2) {
+      // The result should exist because this entry should not have been removed
+      // because it was not expired
+      assert(result !== undefined);
+    } else {
+      // The result should not exist because this entry should have been removed
+      // because it was expired
+      assert(result === undefined);
+    }
+  }
+
+  // Test teardown
+  conn.close();
+  await indexeddb.remove(db_name);
 }

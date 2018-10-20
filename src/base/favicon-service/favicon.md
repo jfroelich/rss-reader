@@ -1,23 +1,28 @@
-This is undergoing redesign. Here are the notes
+# favicon
+Provides functionality for finding the favicon corresponding to a given url, and for caching lookups to speed up future lookups and reduce network load.
 
-* design new favicon cache
-* design new favicon service
-* cache will be used only by favicon service, the service will re-export any functionality that needs to be called by a higher layer
-* cache will store expiration date as part of entry, instead of passing max-age parameter to compact
-* probably just rename to favicon, no need for -service suffix
-* the new lookup should be decoupled from fetch modules in higher layer for now
-* database name should come from a parameter, not be hardcoded in the library. instead the library should just use a default name, and allow the caller to override it. the higher layer favicon.js controller module can choose to hardcode the app's preferred name and then pass it as a parameter
-* ensure not to use config.js from higher layer, everything should come from parameters to the functions, this should be independent of the app, config.js can instead only be used from the higher layer favicon.js controller module (basically to load config values and then appropriately pass those values as parameters to here)
-* field names in db will be in snake_case
-* i will create favicon-cache2, and favicon-service2 first, then switch the higher layer favicon controller module to use it, then remove the old files, then remove the 2 suffix
-* the new lookup function should accept one parameter, a lookup_request or lookup_query style object
-* no FaviconService object, just export functions from the module, the db connection can be first class
-* cache entries will be PER ORIGIN, not per page url
-* drop the suffix "string" from field names in the db
-* use an index on entry url (which again is now origin url string) to speed up lookup, unless url is the object store key path in which case that is self-defeating
-* decouple from fetch utils located in higher layers for now. i still need coupling at some point because of the need to block http requests per origin for certain origins (like github.com which denies concurrent request), but i will factor that in later, not now
-* it is ok to couple to other libraries in this layer, so it is ok to retain coupling to indexeddb.js, because that is just too much duplication otherwise, so this will not be a completely standalone module
-* consider caching the bytes of the icon in the store, i think this functionality can come in a later revision. this will enable offline mode, increase privacy
-* eventually write actual documentation but only for the public part of the api
-* eventually write tests, do tests for cache and service separately
-* i think this should not depend on html.js, maybe just parse_html, so i think i also need to eventually de-aggregate html.js module, and realize it was a mistake to aggregate there
+## Public functions
+* **lookup** specify the url of a page and find the url of its favicon
+* **clear** remove all entries from the favicon cache
+* **compact** remove expired entries from the favicon cache
+* **open** open a connection to the favicon cache
+
+
+## Design notes and todos
+* i think i want to break up the functionality into smaller modules. one, i do not love how i export all these disparate tests in a single test module for the cache. two, now this approach of aggregated functionality in a single module is a little bit inconsistent with the approach used in other places. three, i like how easy it is to document individual modules instead of monoliths. on the other hand, i end up with many modules (even though all but one are pseudo-private), i spread out functionality into multiple modules that maybe should not be spread out (the distributed monolith anti-pattern), i've already done some of the work (ok that is a bad reason but still true)
+* document
+* implement lookup tests
+* rename folder to favicon, no need for -service suffix
+* think more about how to solve the concurrent github requests problem
+* consider caching favicon as data uri within db
+* review why i chose origin over domain or hostname, maybe domain is fine, i should at least have a clear articulated reason why. if i use hostname, i should also consider ips, maybe i want canonical host name instead or maybe both, like entry {host: foo, canon_host: bar, icon}
+* look into imposing image dimensions constraints, need to get image dimensions somehow but from the raw bytes of response
+* if HTTP HEAD yields 405 maybe i want to retry as GET?
+* maybe record the favicon's mime type in the entry data
+* maybe there should be a higher level compact operation that looks at all entries in the favicon store that do not correspond to a cached article, and remove them, basically remove orphaned favicons
+* if I do store bytes, maybe i want to be more careful about duplicates, e.g. two sites that use the same favicon should each reference favicon entry by id, and entries should just be a table of favicons with ids, and then there is separate table of site-to-favicon-id mappings
+* if i switch to storing and using bytes, i should no longer be rejecting unacceptable mime types, or at least i should be less strict, because if we are grabbing the bytes then we can do deep sniffing and do not care about the mime type. this will avoid issues with dishonest/errant http responses.
+* lookup should not trust the url found in document, need to actually ping the image
+* what is proper reaction to failed in-doc url ping vs failed root url ping?
+* lookup finding favicon in root should consider the expires header reported by the response from the server? also if it is in the past it should just store it as never-expires. this means i need to allow never-expires by having expires property not defined
+* the default expires date should be configurable via params to lookup, the delta from current date should not be hardcoded, the delta should just default to a default value if not specified

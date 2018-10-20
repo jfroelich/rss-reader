@@ -1,14 +1,8 @@
 import assert from '/src/base/assert.js';
 import * as indexeddb from '/src/base/indexeddb.js';
 
-// NOTE: this file is undergoing development and is unstable!!!! DO NOT USE!
-
-// This module provides storage functionality for the favicon service.
-//
-// This module is considered private to favicon-service.js and its test module.
-// Do not directly import this module. Only access cache functionality via the
-// service.
-
+// This module provides persistence for favicon.js. This should be considered
+// private to favicon.js and its test module. Do not directly import.
 
 const DEFAULT_NAME = 'favicon';
 const DEFAULT_VERSION = 1;
@@ -80,8 +74,8 @@ export function compact(conn) {
         return;
       }
       const entry = cursor.value;
-      if (entry.expires && entry.expires > now) {
-        console.debug('Deleting expired entry', entry);
+      if (entry.expires && entry.expires <= now) {
+        // console.debug('Deleting expired entry', entry.origin, entry.expires);
         cursor.delete();
       }
 
