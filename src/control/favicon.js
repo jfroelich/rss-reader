@@ -1,4 +1,4 @@
-import {FaviconService} from '/src/base/iconsvc/favicon-service.js';
+import {FaviconService} from '/src/base/favicon-service/favicon-service.js';
 
 // This is a higher layer wrapper module around the base favicon-service module
 // All other functionality that need favicon functionality in this extension

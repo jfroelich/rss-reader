@@ -4,6 +4,8 @@ This is undergoing redesign. Here are the notes
 * design new favicon service
 * cache will be used only by favicon service, the service will re-export any functionality that needs to be called by a higher layer
 * cache will store expiration date as part of entry, instead of passing max-age parameter to compact
+* probably just rename to favicon, no need for -service suffix
+* the new lookup should be decoupled from fetch modules in higher layer for now
 * database name should come from a parameter, not be hardcoded in the library. instead the library should just use a default name, and allow the caller to override it. the higher layer favicon.js controller module can choose to hardcode the app's preferred name and then pass it as a parameter
 * ensure not to use config.js from higher layer, everything should come from parameters to the functions, this should be independent of the app, config.js can instead only be used from the higher layer favicon.js controller module (basically to load config values and then appropriately pass those values as parameters to here)
 * field names in db will be in snake_case
