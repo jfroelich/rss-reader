@@ -1,5 +1,5 @@
 {
-  "version": "5",
+  "version": "6",
   "manifest_version": 2,
   "minimum_chrome_version" : "63",
   "name": "Josh's RSS Reader",
@@ -7,9 +7,13 @@
   "homepage_url": "https://github.com/jfroelich/rss-reader",
   "description": "A simple RSS reader extension for Chrome",
   "browser_action": {
-    "default_icon": "/images/rss_icon_trans.png",
     "default_title": "Josh's RSS Reader"
   },
+
+  "icons": { "16": "logo/16x16Blue.png",
+           "48": "logo/48x48Blue.png",
+          "128": "logo/128x128Blue.png" },
+
   "background": {
     "persistent": false,
     "page": "background.html"
