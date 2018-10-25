@@ -102,10 +102,9 @@ async function fetch_root_icon(request) {
 
   const fetch_options = {timeout: timeout};
 
-  // Call and rethrow any error
+  // Call without catching errors
   const response = await http_head_image(root_icon, fetch_options);
 
-  // Check if the byte size of the response is tolerable
   const content_length = response.headers.get('Content-Length');
   if (content_length) {
     const length = parseInt(content_length, 10);
