@@ -9,7 +9,7 @@ const DEFAULT_VERSION = 1;
 const DEFAULT_TIMEOUT = 500;
 
 export function Entry() {
-  this.origin = undefined;
+  this.hostname = undefined;
   this.icon_url = undefined;
   this.expires = undefined;
   this.failures = 0;
@@ -40,7 +40,7 @@ function on_upgrade_needed(event) {
   if (event.oldVersion) {
     store = txn.objectStore('entries');
   } else {
-    store = conn.createObjectStore('entries', {keyPath: 'origin'});
+    store = conn.createObjectStore('entries', {keyPath: 'hostname'});
   }
 }
 
@@ -54,12 +54,7 @@ export function clear(conn) {
   });
 }
 
-// Removes expired entries from the database
-// NOTE: unsure how this will look. For now I am focusing on using the new
-// expires property approach.
-// TODO: the lookup code should check expires and consider uncached if expired,
-// so that it avoids finding expired-but-not-yet-cleared entries, because the
-// lookup should not be concerned with removing expired and paying that cost
+// Remove expired entries from the database
 export function compact(conn) {
   return new Promise((resolve, reject) => {
     const txn = conn.transaction('entries', 'readwrite');
@@ -75,18 +70,16 @@ export function compact(conn) {
       }
       const entry = cursor.value;
       if (entry.expires && entry.expires <= now) {
-        // console.debug('Deleting expired entry', entry.origin, entry.expires);
         cursor.delete();
       }
-
       cursor.continue();
     };
   });
 }
 
-// Find and return an entry corresponding to the given origin. Note this does
-// not care if expired. |origin| must be a URL.
-export function find_entry(conn, origin) {
+// Find and return an entry corresponding to the given hostname. Note this does
+// not care if expired. |hostname| must be a string.
+export function find_entry(conn, hostname) {
   return new Promise((resolve, reject) => {
     // For convenience, no-op disconnected checks
     if (!conn) {
@@ -94,19 +87,20 @@ export function find_entry(conn, origin) {
       return;
     }
 
-    if (!origin || !origin.href) {
-      reject(new TypeError('Invalid origin ' + origin));
+    if (typeof hostname !== 'string' || hostname.length < 1) {
+      reject(new TypeError('Invalid hostname ' + hostname));
       return;
     }
 
     const txn = conn.transaction('entries');
     const store = txn.objectStore('entries');
-    const request = store.get(origin.href);
+    const request = store.get(hostname);
     request.onsuccess = _ => resolve(request.result);
     request.onerror = _ => reject(request.error);
   });
 }
 
+// Create or replace an entry in the cache
 export function put_entry(conn, entry) {
   return new Promise((resolve, reject) => {
     if (!conn) {
@@ -118,8 +112,8 @@ export function put_entry(conn, entry) {
       return reject(new TypeError('Invalid entry parameter ' + entry));
     }
 
-    if (!entry.origin) {
-      return reject(new TypeError('Missing origin property ' + entry));
+    if (typeof entry.hostname !== 'string' || entry.hostname.length < 1) {
+      return reject(new TypeError('Entry missing hostname ' + entry));
     }
 
     let result;

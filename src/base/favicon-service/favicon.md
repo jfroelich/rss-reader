@@ -15,7 +15,6 @@ Provides functionality for finding the favicon corresponding to a given url, and
 * rename folder to favicon, no need for -service suffix
 * think more about how to solve the concurrent github requests problem
 * consider caching favicon as data uri within db
-* review why i chose origin over domain or hostname, maybe domain is fine, i should at least have a clear articulated reason why. if i use hostname, i should also consider ips, maybe i want canonical host name instead or maybe both, like entry {host: foo, canon_host: bar, icon}
 * look into imposing image dimensions constraints, need to get image dimensions somehow but from the raw bytes of response
 * if HTTP HEAD yields 405 maybe i want to retry as GET?
 * maybe record the favicon's mime type in the entry data
@@ -23,6 +22,6 @@ Provides functionality for finding the favicon corresponding to a given url, and
 * if I do store bytes, maybe i want to be more careful about duplicates, e.g. two sites that use the same favicon should each reference favicon entry by id, and entries should just be a table of favicons with ids, and then there is separate table of site-to-favicon-id mappings
 * if i switch to storing and using bytes, i should no longer be rejecting unacceptable mime types, or at least i should be less strict, because if we are grabbing the bytes then we can do deep sniffing and do not care about the mime type. this will avoid issues with dishonest/errant http responses.
 * lookup should not trust the url found in document, need to actually ping the image
-* what is proper reaction to failed in-doc url ping vs failed root url ping?
 * lookup finding favicon in root should consider the expires header reported by the response from the server? also if it is in the past it should just store it as never-expires. this means i need to allow never-expires by having expires property not defined
 * the default expires date should be configurable via params to lookup, the delta from current date should not be hardcoded, the delta should just default to a default value if not specified
+* test that creating a second entry in cache with same url does not create second and just overwrites first

@@ -1,10 +1,12 @@
-import assert from '/src/base/assert.js';
+import {assert, AssertionError} from '/src/base/assert.js';
 import * as cache from '/src/base/favicon/cache.js';
-import {check_image} from '/src/base/favicon/check-image.js';
+import {http_head_image} from '/src/base/favicon/http-head-image.js';
+
+// TODO: implement tests, DO NOT USE UNTIL TESTED
 
 // Provides favicon lookup functionality. Given a url, find the url of the
 // corresponding favicon. Not spec compliant (does not always check document
-// first, uses origin wide favicon regardless of page icon sometimes).
+// first, uses host-wide favicon regardless of page icon sometimes).
 
 const ONE_MONTH_MS = 1000 * 60 * 60 * 24 * 30;
 const DEFAULT_MAX_FAILURE_COUNT = 3;
@@ -25,80 +27,103 @@ export async function lookup(request) {
   assert(is_valid_lookup_request(request));
 
   const conn = request.conn;
-  const document = request.document;
-  const origin = new URL(request.url.origin);
+  const hostname = request.url.hostname;
 
-  let entry = await cache.find_entry(conn, origin);
+  let entry = await cache.find_entry(conn, hostname);
 
   if (entry && entry.icon_url && !entry_is_expired(entry)) {
-    console.debug('Hit', entry);
+    console.debug('Hit valid', hostname, entry.icon_url);
     return entry.icon_url;
   }
 
-  // Exit early without error if too many failed looks against this origin
   if (entry && entry.failures > request.max_failure_count) {
-    console.debug('Hit but too many failed lookups', origin.href);
+    console.debug('Hit but invalid', hostname);
     return;
   }
 
-  // At this point we either have no entry, or an expired entry. If expired we
-  // also know that it has not had too many failures
-
-  // Check the document
-  if (document) {
-    const url = search_document(document);
-    if (url) {
-      const entry = new cache.Entry();
-      entry.origin = origin.href;
-      entry.icon_url = url;
-      const now = new Date();
-      entry.expires = new Date(Date.now() + ONE_MONTH_MS);
-      entry.failures = 0;
-
-      console.debug(
-          'Found icon in document, storing new entry or replacing expired',
-          entry);
-      await cache.put_entry(conn, entry);
-      return url;
-    }
-  }
-
-  // Check for /favicon.ico and if found store an entry. This will either
-  // create a new entry or replace the expired one.
-  const root_icon = new URL(request.url.origin + '/favicon.ico');
-  const size_constraints = {
-    min: request.min_image_size,
-    max: request.max_image_size
-  };
-  let has_root = false;
-  try {
-    has_root = await check_image(
-        root_icon.href, size_constraints, request.fetch_image_timeout);
-  } catch (error) {
-    // Fetch errors are not fatal to lookup
-    // TODO: well, assertion-style errors should be fatal and rethrown but how
-    // do i differentiate here?
-  }
-
-  if (has_root) {
+  const icon_url = search_document(request.document);
+  if (icon_url) {
+    console.debug('Found favicon in document', icon_url);
     const entry = new cache.Entry();
-    entry.origin = origin.href;
-    entry.icon_url = root_icon.href;
+    entry.hostname = hostname;
+    entry.icon_url = icon_url;
     const now = new Date();
     entry.expires = new Date(Date.now() + ONE_MONTH_MS);
     entry.failures = 0;
-    console.debug(
-        'Found root icon, storing new entry or replacing expired', entry);
-    await cache.put_entry(conn, entry);
 
-    return root_icon.href;
+    await cache.put_entry(conn, entry);
+    return icon_url;
   }
 
-  // All checks failed, record a failed lookup and return undefined
-  await record_failure(origin, conn, entry);
+  let response;
+  try {
+    response = await fetch_root_icon(request);
+  } catch (error) {
+    if (error instanceof AssertionError) {
+      throw error;
+    } else {
+      // Ignore
+    }
+  }
+
+
+  if (response) {
+    console.debug('Found root icon', hostname, response.url);
+    const entry = new cache.Entry();
+    entry.hostname = hostname;
+    entry.icon_url = response.url;
+    const now = new Date();
+    entry.expires = new Date(Date.now() + ONE_MONTH_MS);
+    entry.failures = 0;
+    await cache.put_entry(conn, entry);
+    return response.url;
+  }
+
+  // Memoize a failed lookup
+  console.debug(
+      'lookup failed', hostname, entry.failures ? entry.failures + 1 : 1);
+  const failure = new cache.Entry();
+  failure.hostname = hostname;
+  failure.failures = entry && entry.failures ? entry.failures + 1 : 1;
+  failure.icon_url = entry ? entry.icon_url : undefined;
+  const now = new Date();
+  failure.expires = new Date(now.getTime() + 2 * ONE_MONTH_MS);
+  await cache.put_entry(conn, failure);
+}
+
+// Fetch /favicon.ico
+async function fetch_root_icon(request) {
+  const url = request.url;
+  const min_size = request.min_image_size;
+  const max_size = request.max_image_size;
+  const timeout = request.fetch_image_timeout;
+
+  const root_icon = new URL(url.origin + '/favicon.ico');
+
+  const fetch_options = {timeout: timeout};
+
+  // Call and rethrow any error
+  const response = await http_head_image(root_icon, fetch_options);
+
+  // Check if the byte size of the response is tolerable
+  const content_length = response.headers.get('Content-Length');
+  if (content_length) {
+    const length = parseInt(content_length, 10);
+    if (!isNaN(length)) {
+      if (length < min_size || length > max_size) {
+        throw new RangeError('Image byte size out of range ' + root_icon.href);
+      }
+    }
+  }
+
+  return response;
 }
 
 function search_document(document) {
+  if (!document) {
+    return;
+  }
+
   if (!document.head) {
     return;
   }
@@ -111,10 +136,9 @@ function search_document(document) {
 
   const links = document.head.querySelectorAll(selector);
 
-  // Assume the document has a valid baseURI
-  // although we are not even using that at the moment, for now we just trust
-  // the href is canonical
-
+  // Assume the document has a valid baseURI. Although we are not even using
+  // that at the moment, for now we just trust the href is canonical (and a
+  // defined string)
   if (links.length > 1) {
     return links[0].getAttribute('href');
   }
@@ -140,17 +164,8 @@ function is_valid_lookup_request(request) {
   return true;
 }
 
-function record_failure(origin, conn, entry) {
-  const now = new Date();
-
-  if (entry) {
-    entry.failures++;
-  } else {
-    entry = new cache.Entry();
-    entry.origin = origin.href;
-    entry.failures = 1;
+export class RangeError extends Error {
+  constructor(message) {
+    super(message);
   }
-
-  entry.expires = new Date(now.getTime() + 2 * ONE_MONTH_MS);
-  return cache.put_entry(conn, entry);
 }
