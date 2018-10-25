@@ -1,19 +1,17 @@
 {
   "version": "6",
   "manifest_version": 2,
-  "minimum_chrome_version" : "63",
-  "name": "Josh's RSS Reader",
+  "minimum_chrome_version" : "70",
+  "name": "RSS Reader",
   "author": "Josh Froelich",
   "homepage_url": "https://github.com/jfroelich/rss-reader",
   "description": "A simple RSS reader extension for Chrome",
   "browser_action": {
-    "default_title": "Josh's RSS Reader"
+    "default_title": "RSS Reader"
   },
-
   "icons": { "16": "logo/16x16Blue.png",
            "48": "logo/48x48Blue.png",
           "128": "logo/128x128Blue.png" },
-
   "background": {
     "persistent": false,
     "page": "background.html"
