@@ -1,5 +1,5 @@
 import assert from '/src/base/assert.js';
-import {fetch_with_timeout} from '/src/base/favicon-service/fetch-with-timeout.js';
+import {fetch_with_timeout} from '/src/base/fetch-with-timeout.js';
 import * as mime from '/src/base/mime.js';
 
 export async function fetch_image(url, options = {}) {
@@ -63,5 +63,5 @@ export async function fetch_image(url, options = {}) {
 
 export class AcceptError extends Error {}
 export class OfflineError extends Error {}
-export {TimeoutError} from '/src/base/favicon-service/fetch-with-timeout.js';
+export {TimeoutError} from '/src/base/fetch-with-timeout.js';
 export class FetchError extends Error {}
