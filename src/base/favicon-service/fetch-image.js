@@ -21,9 +21,12 @@ export async function fetch_image(url, options = {}) {
   // Use our explicit defaults over the browser's defaults
   const merged_options = Object.assign({}, default_fetch_options, options);
 
-  assert(is_supported_http_method(merged_options.method));
-
-  console.debug(merged_options.method.toUpperCase(), url.href);
+  const supported_methods = ['get', 'head'];
+  const method = merged_options.method;
+  assert(
+      typeof method === 'string' &&
+      supported_methods.includes(method.toLowerCase()));
+  console.debug(method.toUpperCase(), url.href);
 
   if (!navigator.onLine) {
     throw new OfflineError('Offline when trying to fetch ' + url.href);
@@ -56,12 +59,6 @@ export async function fetch_image(url, options = {}) {
 
   console.debug(response.status, response.statusText, url.href);
   return response;
-}
-
-function is_supported_http_method(method) {
-  const supported_methods = ['get', 'head'];
-  return typeof method === 'string' &&
-      supported_methods.includes(method.toLowerCase());
 }
 
 export class AcceptError extends Error {}
