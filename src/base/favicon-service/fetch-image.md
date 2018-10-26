@@ -1,10 +1,12 @@
-# http_head_image
-Asynchronously send an HTTP request for an image specifying the *head* method.
+# fetch_image
+Asynchronously send an HTTP request for an image
 
 ## Params
 This accepts the same kind of options object as native `fetch`, but it also supports an extra option, `timeout`, indicating the maximum time in milliseconds that the fetch can take before throwing a `TimeoutError`.
 
 The url parameter must be of type `URL`, not a string. Using the URL type ensures the url is syntactically correct because it is not possible to create a URL object containing an invalid url. This also ensures the url is canonical so as to prevent fetching local resources implicitly.
+
+Supports only GET or HEAD methods.
 
 ## Return value
 Returns a `Response` object.
@@ -26,7 +28,6 @@ Returns a `Response` object.
 
 ## Todos
 * the handling of timeout in options and assertion against its validity should all occur within the timed_fetch helper function, not external to it
-* there is nothing particularly idiosyncratic to this request over a request using any method. This could be easily refactored into a more generic http_fetch_image and work for any method. This moves the choice of method to the caller so it is more flexible and more reusable.
 * rather than hardcode image types, maybe it should come from the accept header, and the option is just whether to enforce the accept header. but i also want the convenience in calling context of not having to remember all the image mime types. also i need to allow for octet-stream but i am not sure it is specific enough and do not like it.
 * not sure about the precondition asserts regarding navigator and fetch. this is inconsistent with how my other code works, and feels overly paranoid and stupid.
 * unit tests

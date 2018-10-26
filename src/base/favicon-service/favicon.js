@@ -1,6 +1,6 @@
 import {assert, AssertionError} from '/src/base/assert.js';
 import * as cache from '/src/base/favicon/cache.js';
-import {http_head_image} from '/src/base/favicon/http-head-image.js';
+import {fetch_image} from '/src/base/favicon/http-head-image.js';
 
 // TODO: implement tests, DO NOT USE UNTIL TESTED
 
@@ -100,10 +100,10 @@ async function fetch_root_icon(request) {
 
   const root_icon = new URL(url.origin + '/favicon.ico');
 
-  const fetch_options = {timeout: timeout};
+  const fetch_options = {method: 'head', timeout: timeout};
 
   // Call without catching errors
-  const response = await http_head_image(root_icon, fetch_options);
+  const response = await fetch_image(root_icon, fetch_options);
 
   const content_length = response.headers.get('Content-Length');
   if (content_length) {

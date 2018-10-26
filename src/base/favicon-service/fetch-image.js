@@ -2,17 +2,15 @@ import assert from '/src/base/assert.js';
 import {fetch_with_timeout} from '/src/base/favicon/fetch-with-timeout.js';
 import * as mime from '/src/base/mime.js';
 
-export async function http_head_image(url, options = {}) {
+export async function fetch_image(url, options = {}) {
   assert(navigator && typeof navigator === 'object');
   assert(fetch && typeof fetch === 'function');
   assert(url instanceof URL);
   assert(options && typeof options === 'object');
 
-  console.debug('HEAD', url.href);
-
   const default_fetch_options = {
     credentials: 'omit',
-    method: 'head',
+    method: 'get',
     mode: 'cors',
     cache: 'default',
     redirect: 'follow',
@@ -23,8 +21,9 @@ export async function http_head_image(url, options = {}) {
   // Use our explicit defaults over the browser's defaults
   const merged_options = Object.assign({}, default_fetch_options, options);
 
-  const method = merged_options.method;
-  assert(method === 'string' && method.toLowerCase() === 'head');
+  assert(is_supported_http_method(merged_options.method));
+
+  console.debug(merged_options.method.toUpperCase(), url.href);
 
   if (!navigator.onLine) {
     throw new OfflineError('Offline when trying to fetch ' + url.href);
@@ -57,6 +56,12 @@ export async function http_head_image(url, options = {}) {
 
   console.debug(response.status, response.statusText, url.href);
   return response;
+}
+
+function is_supported_http_method(method) {
+  const supported_methods = ['get', 'head'];
+  return typeof method === 'string' &&
+      supported_methods.includes(method.toLowerCase());
 }
 
 export class AcceptError extends Error {}
