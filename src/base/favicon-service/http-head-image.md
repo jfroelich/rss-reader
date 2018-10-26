@@ -25,6 +25,7 @@ Returns a `Response` object.
 * This checks if online before calling fetch. Assert the precondition that we are online. Ordinarily the native fetch call would later fail with a generic error. This traps that situation most of the time and singles out the particular error path. Also note that we do not call assert because this is not an invariant condition indicative of a programming error, this is an ephemeral error related to a temporarily unavailable resource.
 
 ## Todos
+* the handling of timeout in options and assertion against its validity should all occur within the timed_fetch helper function, not external to it
 * there is nothing particularly idiosyncratic to this request over a request using any method. This could be easily refactored into a more generic http_fetch_image and work for any method. This moves the choice of method to the caller so it is more flexible and more reusable.
 * rather than hardcode image types, maybe it should come from the accept header, and the option is just whether to enforce the accept header. but i also want the convenience in calling context of not having to remember all the image mime types. also i need to allow for octet-stream but i am not sure it is specific enough and do not like it.
 * not sure about the precondition asserts regarding navigator and fetch. this is inconsistent with how my other code works, and feels overly paranoid and stupid.

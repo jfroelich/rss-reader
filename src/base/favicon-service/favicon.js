@@ -163,8 +163,4 @@ function is_valid_lookup_request(request) {
   return true;
 }
 
-export class RangeError extends Error {
-  constructor(message) {
-    super(message);
-  }
-}
+export class RangeError extends Error {}
