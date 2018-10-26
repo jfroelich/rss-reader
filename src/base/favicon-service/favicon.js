@@ -1,6 +1,6 @@
 import {assert, AssertionError} from '/src/base/assert.js';
 import * as cache from '/src/base/favicon-service/cache.js';
-import {fetch_image} from '/src/base/favicon-service/fetch-image.js';
+import {fetch_image} from '/src/base/fetch-image/fetch-image.js';
 
 // TODO: implement tests, DO NOT USE UNTIL TESTED
 
