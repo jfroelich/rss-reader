@@ -1,17 +1,11 @@
 import {assert, AssertionError} from '/src/base/assert.js';
-import * as cache from '/src/base/favicon-service/cache.js';
+import * as cache from '/src/base/favicon/cache.js';
 import {fetch_image} from '/src/base/fetch-image/fetch-image.js';
-
-// TODO: implement tests, DO NOT USE UNTIL TESTED
-
-// Provides favicon lookup functionality. Given a url, find the url of the
-// corresponding favicon. Not spec compliant (does not always check document
-// first, uses host-wide favicon regardless of page icon sometimes).
 
 const ONE_MONTH_MS = 1000 * 60 * 60 * 24 * 30;
 const DEFAULT_MAX_FAILURE_COUNT = 3;
 
-export {clear, compact, open} from '/src/base/favicon-service/cache.js';
+export {clear, compact, open} from '/src/base/favicon/cache.js';
 
 export function LookupRequest() {
   this.url = undefined;

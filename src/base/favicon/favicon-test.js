@@ -1,5 +1,5 @@
 import assert from '/src/base/assert.js';
-import * as favicon from '/src/base/favicon-service/favicon.js';
+import * as favicon from '/src/base/favicon/favicon.js';
 
 // under construction
 
