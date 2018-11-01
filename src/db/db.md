@@ -142,3 +142,5 @@ open_feed_db todos
 
 * i should have used numbers for dates. allocating tons of date objects is actually
 probably pretty bad perf. this alloc happens eagerly, not lazily, at the time of retrieval, so the only way around it is to not even use objects.
+
+* object versions brainstorming idea. each object stores a version property, similar to a serialization key. if the object's schema changes, then i should take care to use a different version property. version can be monotonic (e.g. 1, 2, 3, ...) or more like hash, gotta decide. this will allow me to do more checks regarding object validity. or maybe this is all a horrible idea. just something to think about.
