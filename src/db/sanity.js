@@ -1,8 +1,8 @@
 import assert from '/src/base/assert.js';
 import {filter_unprintables} from '/src/base/filter-unprintables.js';
-import * as html from '/src/base/html.js';
 import {replace_tags} from '/src/base/replace-tags.js';
 import * as string from '/src/base/string.js';
+import truncate_html from '/src/base/truncate-html.js';
 
 import * as entry_utils from './entry-utils.js';
 import * as feed_utils from './feed-utils.js';
@@ -106,7 +106,7 @@ export function sanitize_entry(
     author = string.filter_controls(author);
     author = replace_tags(author, '');
     author = string.condense_whitespace(author);
-    author = html.truncate_html(author, author_max_length);
+    author = truncate_html(author, author_max_length);
     entry.author = author;
   }
 
@@ -115,7 +115,7 @@ export function sanitize_entry(
     // We cannot use filter_controls because that matches \r\n. This was
     // previously the source of a bug
     content = filter_unprintables(content);
-    content = html.truncate_html(content, content_max_length);
+    content = truncate_html(content, content_max_length);
     entry.content = content;
   }
 
@@ -124,7 +124,7 @@ export function sanitize_entry(
     title = string.filter_controls(title);
     title = replace_tags(title, '');
     title = string.condense_whitespace(title);
-    title = html.truncate_html(title, title_max_length);
+    title = truncate_html(title, title_max_length);
     entry.title = title;
   }
 }
@@ -148,7 +148,7 @@ export function sanitize_feed(feed, title_max_len, desc_max_len) {
     title = string.filter_controls(title);
     title = replace_tags(title, html_tag_replacement);
     title = string.condense_whitespace(title);
-    title = html.truncate_html(title, title_max_len, repl_suffix);
+    title = truncate_html(title, title_max_len, repl_suffix);
     feed.title = title;
   }
 
@@ -157,7 +157,7 @@ export function sanitize_feed(feed, title_max_len, desc_max_len) {
     desc = string.filter_controls(desc);
     desc = replace_tags(desc, html_tag_replacement);
     desc = string.condense_whitespace(desc);
-    desc = html.truncate_html(desc, desc_max_len, repl_suffix);
+    desc = truncate_html(desc, desc_max_len, repl_suffix);
     feed.description = desc;
   }
 }

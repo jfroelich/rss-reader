@@ -1,13 +1,16 @@
 import {filter_publisher} from '/src/base/article-title.js';
 import assert from '/src/base/assert.js';
 import {escape_html} from '/src/base/escape-html.js';
-import * as html from '/src/base/html.js';
+import truncate_html from '/src/base/truncate-html.js';
 import * as config from '/src/control/config.js';
 import * as db from '/src/db/db.js';
 
 import {hide_no_articles_message} from './no-articles-message.js';
 import {slide_onclick} from './slide-onclick.js';
 import * as slideshow_state from './slideshow-state.js';
+
+// TODO: this should be relying on css-based truncation rather than calling
+// truncate_html
 
 // BUG: create_article_title_element is double encoding entities, so entities
 // show up in the value. I partially fixed by not escaping ampersand but that's
@@ -74,7 +77,7 @@ function create_article_title_element(entry) {
 
     const max_length = config.read_int('entry_title_max_length');
     if (!isNaN(max_length)) {
-      title = html.truncate_html(title, max_length);
+      title = truncate_html(title, max_length);
     }
 
     // Use innerHTML to allow entities

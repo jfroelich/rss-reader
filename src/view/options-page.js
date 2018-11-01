@@ -1,12 +1,15 @@
 import {fade_element} from '/src/base/fade-element.js';
-import * as html from '/src/base/html.js';
 import * as permissions from '/src/base/permissions.js';
+import truncate_html from '/src/base/truncate-html.js';
 import * as badge from '/src/control/badge.js';
 import * as config from '/src/control/config.js';
 import * as favicon from '/src/control/favicon.js';
 import {poll_feed} from '/src/control/poll-feeds.js';
 import {subscribe, unsubscribe} from '/src/control/subscribe.js';
 import * as db from '/src/db/db.js';
+
+// TODO: this should rely on css-based html truncation rather than calling
+// truncate_html
 
 let current_menu_item;
 let current_section;
@@ -192,7 +195,7 @@ function feed_list_append_feed(feed) {
 
   const title_element = document.createElement('span');
   let feed_title = feed.title || 'Untitled';
-  feed_title = html.truncate_html(feed_title, 300);
+  feed_title = truncate_html(feed_title, 300);
   title_element.textContent = feed_title;
   item_element.appendChild(title_element);
   const feed_list_element = document.getElementById('feedlist');

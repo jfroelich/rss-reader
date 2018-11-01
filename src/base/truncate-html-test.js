@@ -1,17 +1,20 @@
 import assert from '/src/base/assert.js';
-import * as html from './html.js';
+import truncate_html from '/src/base/truncate-html.js';
 
-export async function html_truncate_test() {
-  const truncate = html.truncate_html;
+// TODO: fix this test
+// TODO: finish up conversion to new test format
 
+export async function truncate_html_test() {
   const e = '.';
   let input = 'a<p>b</p>c';
   let output = 'a<p>b.</p>';
-  assert(truncate(input, 2, e) === output);
+  assert(truncate_html(input, 2, e) === output);
 
-  // TODO: finish up conversion to new test format
 
   /*
+
+  // NOTE: truncate function no longer exists, no longer aliasing
+
     const input2 = `<html><head><title>new title</title></head><body>${input1}
       </body></html>`;
     assert(input2, '=>', truncate(input2, 2, ext));
