@@ -1,6 +1,7 @@
 import assert from '/src/base/assert.js';
+import {parse_html} from '/src/base/parse-html.js';
 import {set_base_uri} from '/src/base/set-base-uri.js';
-import * as html from '/src/base/html.js';
+
 import {set_image_sizes} from './image-size-filter.js';
 
 // Assert the ordinary case of a basic html document with an image with unknown
@@ -72,7 +73,7 @@ async function fetch_local(filename) {
   const url_string = chrome.extension.getURL(path);
   const response = await fetch(url_string);
   const text = await response.text();
-  const doc = html.parse_html(text);
+  const doc = parse_html(text);
 
   const canonical_base_url_string = chrome.extension.getURL(base_path);
   const base_url = new URL(canonical_base_url_string);

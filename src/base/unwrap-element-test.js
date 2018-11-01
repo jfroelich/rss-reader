@@ -1,5 +1,5 @@
 import assert from '/src/base/assert.js';
-import {parse_html} from '/src/base/html.js';
+import {parse_html} from '/src/base/parse-html.js';
 import {unwrap_element} from './unwrap-element.js';
 
 export async function unwrap_element_test() {

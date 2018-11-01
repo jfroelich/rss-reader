@@ -1,5 +1,5 @@
 import assert from '/src/base/assert.js';
-import * as html from '/src/base/html.js';
+import {parse_html} from '/src/base/parse-html.js';
 import {rewrite_url} from '/src/base/rewrite-url.js';
 import {sanitize_document} from '/src/base/sandoc/sandoc.js';
 import {set_base_uri} from '/src/base/set-base-uri.js';
@@ -326,13 +326,13 @@ export async function poll_entry(
     let response_text;
     try {
       response_text = await response.text();
-      document = html.parse_html(response_text);
+      document = parse_html(response_text);
     } catch (error) {
       console.debug(error);
     }
   } else {
     try {
-      document = html.parse_html(entry.content);
+      document = parse_html(entry.content);
     } catch (error) {
       console.debug(error);
       document = window.document.implementation.createHTMLDocument();
