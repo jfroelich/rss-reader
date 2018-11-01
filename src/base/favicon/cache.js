@@ -1,9 +1,6 @@
 import assert from '/src/base/assert.js';
 import * as indexeddb from '/src/base/indexeddb.js';
 
-// This module provides persistence for favicon.js. This should be considered
-// private to favicon.js and its test module. Do not directly import.
-
 const DEFAULT_NAME = 'favicon';
 const DEFAULT_VERSION = 1;
 const DEFAULT_TIMEOUT = 500;
