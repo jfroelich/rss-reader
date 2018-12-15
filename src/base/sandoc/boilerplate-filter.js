@@ -1,4 +1,4 @@
-import * as boilerplate from '/src/base/boilerplate/boilerplate.js';
+import * as boilerplate from '/src/boilerplate/boilerplate.js';
 
 export function filter_boilerplate(document, options = {}) {
   let dataset = boilerplate.parse_blocks(document, boilerplate.neutral_score);
