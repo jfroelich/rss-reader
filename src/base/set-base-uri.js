@@ -1,37 +1,9 @@
 import assert from '/src/base/assert.js';
 
-// Set the baseURI property of a document. baseURI is readonly. However, its
-// value is derived from base elements, which are manipulable. Therefore baseURI
-// is indirectly manipulable by manipulating base elements. Note that this is a
-// brittle solution because doing other document manipulation that affects base
-// elements or attributes can have unintended side effects.
-//
-// Note this imposes a canonical requirement. After this operation the document
-// will have a canonical base url that is standalone, free of dependency on any
-// kind of inherited/substituted base url that comes from somewhere else.
-//
-// Spec information:
-// https://html.spec.whatwg.org/multipage/semantics.html#the-base-element
-//
-// @param document {Document} the document to modify. Due to the prohibitive
-// cost of copying document objects, the document input is modified in place
-// rather than treated as immutable.
-// @param url {URL} the desired base url to use, which depending on params
-// and the document, will either be ignored, merged with existing base, or will
-// replace the existing base.
-// @param overwrite {Boolean} if true, then existing bases are ignored, and the
-// base uri is set to the input url. If false, then existing bases are
-// respected. Defaults to false. Note that in both cases, all bases other than
-// the intended base element are implicitly removed.
-// @return {void}
 export function set_base_uri(document, url, overwrite) {
   assert(typeof document === 'object');
   assert(typeof url === 'object');
   assert(url.href);
-
-  // SECURITY: this implementation uses createElement. This creates the element
-  // as owned by the input document, which should not be the same document as
-  // the document running this script.
 
   // If we will be creating a new base element, we want to place it correctly
   // in the dom hierarchy, under the head element, so we will need to find the
@@ -41,7 +13,8 @@ export function set_base_uri(document, url, overwrite) {
   let head = document.querySelector('head');
 
   // If the head element doesn't exist, we will be creating it, and will want to
-  // insert it before the body element.
+  // insert it before the body element, so we need to find the body. Note the
+  // later code still works if no body is found.
   const body = document.querySelector('body');
 
   if (overwrite) {
@@ -58,12 +31,9 @@ export function set_base_uri(document, url, overwrite) {
 
     if (head) {
       // Insert the base as the first element within head. If firstElementChild
-      // is undefined, this seamlessly turns into an appendChild operation.
+      // is undefined, this devolves into appendChild.
       head.insertBefore(base, head.firstElementChild);
     } else {
-      // SECURITY: this creates the element as owned by the input document,
-      // which should not be the same document as the document running this
-      // script.
       head = document.createElement('head');
       // Appending to new head while it is still detached is better performance
       // in case document is live
@@ -111,6 +81,7 @@ export function set_base_uri(document, url, overwrite) {
     // If there was no material change to the value after canonicalization, this
     // means the existing base href value is canonical. Since we are not
     // overwriting at this point, we respect the existing value.
+    // Fallthrough
   }
 
   // Per the spec, "[t]here must be no more than one base element per
