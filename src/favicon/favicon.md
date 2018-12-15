@@ -1,7 +1,7 @@
 # favicon
 **IMPORTANT**: this module is under development. Continue to use favicon-service and do not use this module.
 
-Provides functionality for finding the favicon corresponding to a given url, and for caching lookups to speed up future lookups and reduce network load.Not spec compliant (does not always check document first, uses host-wide favicon regardless of page icon sometimes).
+Provides functionality for finding the favicon corresponding to a given url, and for caching lookups to speed up future lookups and reduce network load. Not spec compliant (does not always check document first, uses host-wide favicon regardless of page icon sometimes).
 
 ## Public functions
 * **lookup** specify the url of a page and find the url of its favicon

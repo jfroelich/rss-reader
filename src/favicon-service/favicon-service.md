@@ -1,4 +1,5 @@
 # favicon-service.js
+Functionality for looking up the url of the favicon image for a page url, along with caching requests for later reuse.
 
 ## TODOS
 * lib modules should not depend on app modules
