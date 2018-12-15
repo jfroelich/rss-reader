@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import * as url_utils from '/src/base/url-utils.js';
 
 // Scans the images of a document and ensures the width and height attributes

@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import * as object from '/src/base/object-utils.js';
 
 import * as entry_utils from './entry-utils.js';

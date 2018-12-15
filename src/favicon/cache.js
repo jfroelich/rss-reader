@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import * as indexeddb from '/src/base/indexeddb.js';
 
 const DEFAULT_NAME = 'favicon';

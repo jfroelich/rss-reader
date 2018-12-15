@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 
 export function set_base_uri(document, url, overwrite) {
   assert(typeof document === 'object');

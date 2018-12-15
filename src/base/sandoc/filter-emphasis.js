@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {unwrap_element} from '/src/base/unwrap-element.js';
 
 // NOTE: whitespace is completely stripped prior to analysis. This threshold

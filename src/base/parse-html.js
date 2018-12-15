@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import * as string from '/src/base/string.js';
 
 export function parse_html(html_string) {

@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {open} from './open.js';
 import {remove_untyped_objects} from './remove-untyped-objects.js';
 import {remove} from './remove.js';

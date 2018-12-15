@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import truncate_html from '/src/base/truncate-html.js';
 
 // TODO: fix this test

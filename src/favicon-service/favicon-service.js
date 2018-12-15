@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {parse_html} from '/src/base/parse-html.js';
 import * as indexeddb from '/src/base/indexeddb.js';
 import * as mime from '/src/base/mime.js';

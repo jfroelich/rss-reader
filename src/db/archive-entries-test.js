@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {archive_entries} from './archive-entries.js';
 import {open} from './open.js';
 import {remove} from './remove.js';

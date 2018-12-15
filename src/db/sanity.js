@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {filter_unprintables} from '/src/base/filter-unprintables.js';
 import {replace_tags} from '/src/base/replace-tags.js';
 import * as string from '/src/base/string.js';

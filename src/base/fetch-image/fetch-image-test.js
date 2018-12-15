@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {fetch_image} from '/src/base/fetch-image/fetch-image.js';
 
 export async function fetch_image_test() {

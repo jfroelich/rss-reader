@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import * as mime from './mime.js';
 
 export async function mime_test() {

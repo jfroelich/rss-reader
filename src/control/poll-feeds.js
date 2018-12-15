@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {parse_html} from '/src/base/parse-html.js';
 import {rewrite_url} from '/src/base/rewrite-url.js';
 import {sanitize_document} from '/src/base/sandoc/sandoc.js';

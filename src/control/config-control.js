@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import * as color from '/src/base/color.js';
 import * as config from '/src/control/config.js';
 

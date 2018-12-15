@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {rewrite_url} from '/src/base/rewrite-url.js';
 
 // TODO: I've temporarily copied over the rules here for testing, but ideally

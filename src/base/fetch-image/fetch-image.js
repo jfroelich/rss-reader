@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {fetch_with_timeout} from '/src/base/fetch-with-timeout.js';
 import * as mime from '/src/base/mime.js';
 

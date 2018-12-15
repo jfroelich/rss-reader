@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 
 import {create_feed} from './create-feed.js';
 import {deactivate_feed} from './deactivate-feed.js';

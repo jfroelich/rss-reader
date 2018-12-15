@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {count_unread_entries_by_feed} from './count-unread-entries-by-feed.js';
 import {create_entry} from './create-entry.js';
 import {create_feed} from './create-feed.js';

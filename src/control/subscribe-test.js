@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import * as db from '/src/db/db.js';
 import {subscribe} from './subscribe.js';
 

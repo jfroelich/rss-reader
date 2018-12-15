@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {filter_lazy_images} from '/src/base/filter-lazy-images.js';
 import {parse_html} from '/src/base/parse-html.js';
 import {filter_dead_images} from '/src/base/sandoc/filter-dead-images.js';

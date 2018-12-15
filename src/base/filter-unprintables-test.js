@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {filter_unprintables} from '/src/base/filter-unprintables.js';
 
 export async function filter_unprintables_test() {

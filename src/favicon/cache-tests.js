@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import * as cache from '/src/favicon/cache.js';
 import * as indexeddb from '/src/base/indexeddb.js';
 

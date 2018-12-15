@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 
 // Call the native fetch with a timeout. The native fetch does not have a
 // timeout, so we simulate it by racing it against a promise that resolves to

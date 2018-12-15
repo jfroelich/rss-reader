@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import * as color from '/src/base/color.js';
 import * as css_color from '/src/base/css-color.js';
 import * as ccf from './color-contrast-filter.js';

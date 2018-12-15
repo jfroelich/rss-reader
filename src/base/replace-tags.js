@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {parse_html} from '/src/base/parse-html.js';
 
 // TODO: db modules should not depend on html modules, unless html modules are

@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 
 export function iterate_entries(session, handle_entry) {
   assert(typeof handle_entry === 'function');

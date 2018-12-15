@@ -1,4 +1,4 @@
-import assert from '/src/base/assert.js';
+import assert from '/src/assert.js';
 import {parse_feed} from '/src/base/parse-feed.js';
 
 export async function parse_feed_test() {

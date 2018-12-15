@@ -1,4 +1,4 @@
-import {assert, AssertionError} from '/src/base/assert.js';
+import {assert, AssertionError} from '/src/assert.js';
 import * as cache from '/src/favicon/cache.js';
 import {fetch_image} from '/src/base/fetch-image/fetch-image.js';
 
