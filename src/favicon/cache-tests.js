@@ -1,5 +1,5 @@
 import assert from '/src/base/assert.js';
-import * as cache from '/src/base/favicon/cache.js';
+import * as cache from '/src/favicon/cache.js';
 import * as indexeddb from '/src/base/indexeddb.js';
 
 export async function favicon_cache_open_test() {
