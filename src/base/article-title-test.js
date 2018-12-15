@@ -1,9 +1,6 @@
 import {filter_publisher} from '/src/base/article-title.js';
 import assert from '/src/base/assert.js';
 
-// TODO: test using additional parameters where other parameters are not the
-// default values
-
 export async function article_title_test() {
   // alias, i just prefer it here over module import, it is local to this
   // function and colocated with otherwise confusing function name
