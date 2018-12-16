@@ -80,7 +80,12 @@ export async function activate_feed_test() {
   }
   assert(activation_error);
 
-  // Activating a feed that does not exist should fail.
+  // Activating a feed that does not exist should fail. There is some subtle
+  // complexity here because we need to test against a feed identifier that at
+  // minimum appears to be a real feed identifier. There are implicit checks for
+  // invalid feed ids (e.g. anything less than 1), and we don't want to trigger
+  // those errors, we want to trigger only the error that occurs as a result of
+  // searching the object store and not finding something.
   const fictitious_feed_id = 123456789;
   activation_error = undefined;
   try {
