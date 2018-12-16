@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
 import {parse_html} from '/src/base/parse-html.js';
 import {rewrite_url} from '/src/base/rewrite-url.js';
-import {sanitize_document} from '/src/base/sandoc/sandoc.js';
+import {sanitize_document} from '/src/dom-filters/sandoc.js';
 import {set_base_uri} from '/src/base/set-base-uri.js';
 import * as sniff from '/src/base/sniff.js';
 import * as config from '/src/control/config.js';
