@@ -1,4 +1,4 @@
-import {unwrap_element} from '/src/base/unwrap-element.js';
+import {unwrap_element} from '/src/dom-utils/unwrap-element.js';
 
 // Returns true if the image element has at least one source
 export function image_has_source(image) {

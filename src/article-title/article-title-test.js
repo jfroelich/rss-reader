@@ -1,4 +1,4 @@
-import {filter_publisher} from '/src/base/article-title.js';
+import {filter_publisher} from '/src/article-title/article-title.js';
 import assert from '/src/assert.js';
 
 export async function article_title_test() {

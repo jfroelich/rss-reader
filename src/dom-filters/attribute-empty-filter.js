@@ -1,4 +1,4 @@
-import * as attribute from '/src/base/attribute.js';
+import * as attribute_utils from '/src/dom-utils/attribute-utils.js';
 
 // TODO: rename to something like attribute-value-filter, or
 // attribute-value-length-filter?
@@ -15,7 +15,7 @@ export function attribute_empty_filter(document) {
 function filter_element(element) {
   const names = element.getAttributeNames();
   for (const name of names) {
-    if (!attribute.is_boolean(element, name)) {
+    if (!attribute_utils.is_boolean(element, name)) {
       const value = element.getAttribute(name);
       if (typeof value !== 'string' || !value.trim()) {
         element.removeAttribute(name);

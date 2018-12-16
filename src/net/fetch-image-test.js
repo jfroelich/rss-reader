@@ -1,8 +1,8 @@
 import assert from '/src/assert.js';
-import {fetch_image} from '/src/base/fetch-image/fetch-image.js';
+import {fetch_image} from '/src/net/fetch-image.js';
 
 export async function fetch_image_test() {
-  let path = '/src/base/fetch-image/fetch-image-test.png';
+  let path = '/src/net/fetch-image-test.png';
   let url_string = chrome.extension.getURL(path);
   let url = new URL(url_string);
 
@@ -17,7 +17,7 @@ export async function fetch_image_test() {
   assert(response);
 
   // Test against a non-existent image
-  path = '/src/base/fetch-image/i-do-not-exist.png';
+  path = '/src/net/i-do-not-exist.png';
   url_string = chrome.extension.getURL(path);
   url = new URL(url_string);
   let error404;

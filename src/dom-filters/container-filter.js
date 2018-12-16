@@ -1,4 +1,4 @@
-import {unwrap_element} from '/src/base/unwrap-element.js';
+import {unwrap_element} from '/src/dom-utils/unwrap-element.js';
 
 // Removes container-like elements from the document
 export function container_filter(document) {

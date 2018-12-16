@@ -1,5 +1,5 @@
 import * as db from '/src/db/db.js';
-import * as string from '/src/base/string.js';
+import * as string from '/src/lang-utils/string.js';
 
 // TODO: break apart into two layers, a UI layer and a lower controller layer
 // The controller layer should work without a UI and it is what should be tested

@@ -1,4 +1,4 @@
-import {coerce_element} from '/src/base/coerce-element.js';
+import {coerce_element} from '/src/dom-utils/coerce-element.js';
 
 // Replaces certain elements with near equivalents that use fewer characters in
 // the element name, so that when a document it serialized, it contains fewer

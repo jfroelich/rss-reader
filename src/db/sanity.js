@@ -1,8 +1,8 @@
 import assert from '/src/assert.js';
-import {filter_unprintables} from '/src/base/filter-unprintables.js';
-import {replace_tags} from '/src/base/replace-tags.js';
-import * as string from '/src/base/string.js';
-import truncate_html from '/src/base/truncate-html.js';
+import {filter_unprintables} from '/src/lang-utils/filter-unprintables.js';
+import {replace_tags} from '/src/html-utils/replace-tags.js';
+import * as string from '/src/lang-utils/string.js';
+import truncate_html from '/src/html-utils/truncate-html.js';
 
 import * as entry_utils from './entry-utils.js';
 import * as feed_utils from './feed-utils.js';

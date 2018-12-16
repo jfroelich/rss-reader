@@ -1,6 +1,6 @@
 import * as entry_utils from './entry-utils.js';
 import * as types from './types.js';
-import sizeof from '/src/base/sizeof.js';
+import sizeof from '/src/lang-utils/sizeof.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 

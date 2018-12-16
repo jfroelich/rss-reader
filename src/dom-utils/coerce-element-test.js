@@ -1,7 +1,6 @@
 import assert from '/src/assert.js';
-import {parse_html} from '/src/base/parse-html.js';
-
-import {coerce_element} from './coerce-element.js';
+import {coerce_element} from '/src/dom-utils/coerce-element.js';
+import {parse_html} from '/src/html-utils/parse-html.js';
 
 export async function coerce_element_test() {
   const input = '<html><head></head><body><p></p><a></a></body></html>';

@@ -1,5 +1,5 @@
-import '/src/base/tinycolor-min.js';
-import * as color from '/src/base/color.js';
+import '/src/third-party/tinycolor-min.js';
+import * as color from '/src/color/color.js';
 
 // Parses a css color value into a color
 export function parse(value) {

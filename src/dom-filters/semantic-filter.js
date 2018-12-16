@@ -1,4 +1,4 @@
-import {unwrap_element} from '/src/base/unwrap-element.js';
+import {unwrap_element} from '/src/dom-utils/unwrap-element.js';
 
 // Filter semantic web elements from document content
 export function semantic_filter(document) {

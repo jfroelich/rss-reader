@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as object from '/src/base/object-utils.js';
+import * as object from '/src/lang-utils/object-utils.js';
 import * as types from './types.js';
 
 export async function create_feed(session, feed) {

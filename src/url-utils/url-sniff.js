@@ -1,6 +1,6 @@
-import * as mime from '/src/base/mime.js';
-import * as string from '/src/base/string.js';
-import * as url_utils from '/src/base/url-utils.js';
+import * as mime from '/src/mime-utils/mime-utils.js';
+import * as string from '/src/lang-utils/string.js';
+import * as url_utils from '/src/url-utils/url-utils.js';
 
 export const UNKNOWN_CLASS = 0;
 export const TEXT_CLASS = 1;

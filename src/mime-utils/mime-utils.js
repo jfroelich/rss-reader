@@ -1,4 +1,4 @@
-import * as string from '/src/base/string.js';
+import * as string from '/src/lang-utils/string.js';
 
 // A mime-type is a specialized type of string. This module provides helpers for
 // interacting with purported mime-type values.

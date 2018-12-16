@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
-import {parse_html} from '/src/base/parse-html.js';
-import {set_base_uri} from '/src/base/set-base-uri.js';
+import {parse_html} from '/src/html-utils/parse-html.js';
+import {set_base_uri} from '/src/dom-utils/set-base-uri.js';
 
 import {image_size_filter} from './image-size-filter.js';
 

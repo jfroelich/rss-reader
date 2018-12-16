@@ -1,8 +1,8 @@
 import assert from '/src/assert.js';
-import * as sniff from '/src/base/sniff.js';
-import * as url_utils from '/src/base/url-utils.js';
+import * as sniff from '/src/url-utils/url-sniff.js';
+import * as url_utils from '/src/url-utils/url-utils.js';
 
-export async function sniff_test() {
+export async function url_sniff_test() {
   // expected binary output
   let input = new URL('http://www.example.com/example.pdf');
   let result = sniff.classify(input);

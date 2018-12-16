@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {set_base_uri} from '/src/base/set-base-uri.js';
+import {set_base_uri} from '/src/dom-utils/set-base-uri.js';
 
 // TODO: the set-base-uri test is slightly out of date due to recent changes to
 // set-base-uri. Need to take into account the new overwrite parameter, and need

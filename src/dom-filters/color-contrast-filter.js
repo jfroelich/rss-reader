@@ -1,5 +1,5 @@
-import * as color from '/src/base/color.js';
-import * as css_color from '/src/base/css-color.js';
+import * as color from '/src/color/color.js';
+import * as css_color from '/src/color/css-color.js';
 
 export const DEFAULT_MIN_CONTRAST_RATIO = 1.2;
 export const DEFAULT_MATTE = color.WHITE;

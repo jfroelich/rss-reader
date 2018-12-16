@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
-import {parse_html} from '/src/base/parse-html.js';
-import * as indexeddb from '/src/base/indexeddb.js';
-import * as mime from '/src/base/mime.js';
+import {parse_html} from '/src/html-utils/parse-html.js';
+import * as indexeddb from '/src/indexeddb-utils/indexeddb-utils.js';
+import * as mime from '/src/mime-utils/mime-utils.js';
 import {fetch_html} from '/src/control/fetch-html.js';
 import {fetch2, response_is_redirect} from '/src/control/fetch2.js';
 

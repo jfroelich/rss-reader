@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as color from '/src/base/color.js';
+import * as color from '/src/color/color.js';
 import * as config from '/src/control/config.js';
 
 // TODO: turns out adding a font is difficult, this needs to be changed so that

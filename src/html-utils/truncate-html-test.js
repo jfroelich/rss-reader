@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import truncate_html from '/src/base/truncate-html.js';
+import truncate_html from '/src/html-utils/truncate-html.js';
 
 // TODO: fix this test
 // TODO: finish up conversion to new test format

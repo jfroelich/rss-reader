@@ -1,6 +1,6 @@
 import {assert, AssertionError} from '/src/assert.js';
 import * as cache from '/src/favicon/cache.js';
-import {fetch_image} from '/src/base/fetch-image/fetch-image.js';
+import {fetch_image} from '/src/net/fetch-image.js';
 
 const ONE_MONTH_MS = 1000 * 60 * 60 * 24 * 30;
 const DEFAULT_MAX_FAILURE_COUNT = 3;

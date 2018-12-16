@@ -1,9 +1,9 @@
 import assert from '/src/assert.js';
-import {parse_html} from '/src/base/parse-html.js';
-import {rewrite_url} from '/src/base/rewrite-url.js';
+import {parse_html} from '/src/html-utils/parse-html.js';
+import {rewrite_url} from '/src/url-utils/rewrite-url.js';
 import {sanitize_document} from '/src/dom-filters/sandoc.js';
-import {set_base_uri} from '/src/base/set-base-uri.js';
-import * as sniff from '/src/base/sniff.js';
+import {set_base_uri} from '/src/dom-utils/set-base-uri.js';
+import * as sniff from '/src/url-utils/url-sniff.js';
 import * as config from '/src/control/config.js';
 import * as favicon from '/src/control/favicon.js';
 import {fetch_feed} from '/src/control/fetch-feed.js';

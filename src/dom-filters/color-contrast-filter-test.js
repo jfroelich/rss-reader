@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
-import * as color from '/src/base/color.js';
-import * as css_color from '/src/base/css-color.js';
+import * as color from '/src/color/color.js';
+import * as css_color from '/src/color/css-color.js';
 import * as ccf from './color-contrast-filter.js';
 
 // TODO: these tests were written to work off a live document. Instead, create

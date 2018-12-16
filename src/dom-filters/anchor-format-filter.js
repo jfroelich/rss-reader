@@ -1,4 +1,4 @@
-import {unwrap_element} from '/src/base/unwrap-element.js';
+import {unwrap_element} from '/src/dom-utils/unwrap-element.js';
 
 // Removes anchor elements that play a formatting role instead of a functional
 // inter-linking role. Essentially, any anchor that is missing an href attribute

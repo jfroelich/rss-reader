@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
-import {fetch_with_timeout} from '/src/base/fetch-with-timeout.js';
-import * as mime from '/src/base/mime.js';
+import {fetch_with_timeout} from '/src/net/fetch-with-timeout.js';
+import * as mime from '/src/mime-utils/mime-utils.js';
 
 export async function fetch_image(url, options = {}) {
   assert(navigator && typeof navigator === 'object');
@@ -63,5 +63,5 @@ export async function fetch_image(url, options = {}) {
 
 export class AcceptError extends Error {}
 export class OfflineError extends Error {}
-export {TimeoutError} from '/src/base/fetch-with-timeout.js';
+export {TimeoutError} from '/src/net/fetch-with-timeout.js';
 export class FetchError extends Error {}

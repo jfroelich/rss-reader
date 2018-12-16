@@ -9,25 +9,25 @@
 // using the same timeout for all tests. actually, each test function should use
 // a db named after the test itself. we know all test functions are unique?
 
-import {article_title_test} from '/src/base/article-title-test.js';
-import {coerce_element_test} from '/src/base/coerce-element-test.js';
+import {article_title_test} from '/src/article-title/article-title-test.js';
+import {coerce_element_test} from '/src/dom-utils/coerce-element-test.js';
 import * as color_contrast_filter_tests from '/src/dom-filters/color-contrast-filter-test.js';
-import {color_test} from '/src/base/color-test.js';
+import {color_test} from '/src/color/color-test.js';
 import * as favicon_cache_tests from '/src/favicon/cache-tests.js';
-import {fetch_image_test} from '/src/base/fetch-image/fetch-image-test.js';
+import {fetch_image_test} from '/src/net/fetch-image-test.js';
 import {attribute_empty_filter_test} from '/src/dom-filters/attribute-empty-fiter-test.js';
 import {image_lazy_filter_test} from '/src/dom-filters/image-lazy-filter-test.js';
-import {filter_unprintables_test} from '/src/base/filter-unprintables-test.js';
+import {filter_unprintables_test} from '/src/lang-utils/filter-unprintables-test.js';
 import * as image_size_filter_tests from '/src/dom-filters/image-size-filter-test.js';
-import * as indexeddb_tests from '/src/base/indexeddb-test.js';
-import {mime_test} from '/src/base/mime-test.js';
-import {parse_feed_test} from '/src/base/parse-feed-test.js';
-import {replace_tags_test} from '/src/base/replace-tags-test.js';
-import * as rewrite_url_tests from '/src/base/rewrite-url-test.js';
-import {base_uri_test} from '/src/base/set-base-uri-test.js';
-import {sniff_test} from '/src/base/sniff-test.js';
-import {truncate_html_test} from '/src/base/truncate-html-test.js';
-import {unwrap_element_test} from '/src/base/unwrap-element-test.js';
+import * as indexeddb_tests from '/src/indexeddb-utils/indexeddb-utils-test.js';
+import {mime_test} from '/src/mime-utils/mime-utils-test.js';
+import {parse_feed_test} from '/src/feed-utils/parse-feed-test.js';
+import {replace_tags_test} from '/src/html-utils/replace-tags-test.js';
+import * as rewrite_url_tests from '/src/url-utils/rewrite-url-test.js';
+import {base_uri_test} from '/src/dom-utils/set-base-uri-test.js';
+import {url_sniff_test} from '/src/url-utils/url-sniff-test.js';
+import {truncate_html_test} from '/src/html-utils/truncate-html-test.js';
+import {unwrap_element_test} from '/src/dom-utils/unwrap-element-test.js';
 import {fetch_feed_test} from '/src/control/fetch-feed-test.js';
 import {fetch_html_test} from '/src/control/fetch-html-test.js';
 import {fetch2_test} from '/src/control/fetch2-test.js';
@@ -100,7 +100,7 @@ register_test(rewrite_url_tests.rewrite_url_norewrite_test);
 register_test(rewrite_url_tests.rewrite_url_google_news_test);
 register_test(rewrite_url_tests.rewrite_url_techcrunch_test);
 register_test(rewrite_url_tests.rewrite_url_cyclical_test);
-register_test(sniff_test);
+register_test(url_sniff_test);
 register_test(subscribe_test);
 register_test(unwrap_element_test);
 

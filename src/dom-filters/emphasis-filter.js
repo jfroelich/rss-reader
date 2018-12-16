@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {unwrap_element} from '/src/base/unwrap-element.js';
+import {unwrap_element} from '/src/dom-utils/unwrap-element.js';
 
 // Explores document content searching for segments of emphasized text, such as
 // bold, italicized, or underlined text. If a segment is found that is longer

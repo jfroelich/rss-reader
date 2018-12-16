@@ -1,4 +1,4 @@
-import {parse_feed} from '/src/base/parse-feed.js';
+import {parse_feed} from '/src/feed-utils/parse-feed.js';
 import * as db from '/src/db/db.js';
 import {is_allowed_request} from '/src/control/fetch-policy.js';
 import {fetch2} from '/src/control/fetch2.js';
