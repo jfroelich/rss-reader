@@ -4,15 +4,15 @@ import {rewrite_url} from '/src/url-utils/rewrite-url.js';
 import {sanitize_document} from '/src/dom-filters/sandoc.js';
 import {set_base_uri} from '/src/dom-utils/set-base-uri.js';
 import * as sniff from '/src/url-utils/url-sniff.js';
-import * as config from '/src/control/config.js';
-import * as favicon from '/src/control/favicon.js';
-import {fetch_feed} from '/src/control/fetch-feed.js';
-import {fetch_html} from '/src/control/fetch-html.js';
-import {is_allowed_request} from '/src/control/fetch-policy.js';
+import * as config from '/src/config/config.js';
+import * as favicon from '/src/favicon-service/favicon-control.js';
+import {fetch_feed} from '/src/net/fetch-feed.js';
+import {fetch_html} from '/src/net/fetch-html.js';
+import {is_allowed_request} from '/src/net/fetch-policy.js';
 // TODO: import * as fetch_utils or something
-import {OfflineError, response_is_redirect, TimeoutError} from '/src/control/fetch2.js';
-import * as notification from '/src/control/notification.js';
-import {build as build_rewrite_rules} from '/src/control/rewrite-rules.js';
+import {OfflineError, response_is_redirect, TimeoutError} from '/src/net/fetch2.js';
+import * as notification from '/src/notification/notification.js';
+import {build as build_rewrite_rules} from '/src/poll/rewrite-rules.js';
 import * as db from '/src/db/db.js';
 
 // TODO: this module is huge, maybe my biggest, i don't like it, break it up

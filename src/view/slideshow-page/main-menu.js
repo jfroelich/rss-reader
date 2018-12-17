@@ -1,5 +1,5 @@
-import * as favicon from '/src/control/favicon.js';
-import {poll_feeds} from '/src/control/poll-feeds.js';
+import * as favicon from '/src/favicon-service/favicon-control.js';
+import {poll_feeds} from '/src/poll/poll-feeds.js';
 import * as db from '/src/db/db.js';
 
 import {options_menu_hide, options_menu_show} from './left-panel.js';

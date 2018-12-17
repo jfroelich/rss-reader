@@ -2,8 +2,8 @@ import assert from '/src/assert.js';
 import {parse_html} from '/src/html-utils/parse-html.js';
 import * as indexeddb from '/src/indexeddb-utils/indexeddb-utils.js';
 import * as mime from '/src/mime-utils/mime-utils.js';
-import {fetch_html} from '/src/control/fetch-html.js';
-import {fetch2, response_is_redirect} from '/src/control/fetch2.js';
+import {fetch_html} from '/src/net/fetch-html.js';
+import {fetch2, response_is_redirect} from '/src/net/fetch2.js';
 
 // TODO: fetch_html dependency is a layer dependency violation (at the moment)
 

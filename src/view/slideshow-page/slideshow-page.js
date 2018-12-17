@@ -4,7 +4,7 @@
 import './main-menu.js';
 import './left-panel.js';
 
-import * as config_control from '/src/control/config-control.js';
+import * as config_control from '/src/config/config-control.js';
 import * as db from '/src/db/db.js';
 import {append_slide} from './append-slide.js';
 import * as channel from './channel.js';

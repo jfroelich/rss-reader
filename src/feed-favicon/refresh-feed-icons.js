@@ -1,4 +1,4 @@
-import * as favicon from '/src/control/favicon.js';
+import * as favicon from '/src/favicon-service/favicon-control.js';
 import * as db from '/src/db/db.js';
 
 // Update the favicon for each of the active feeds in the database

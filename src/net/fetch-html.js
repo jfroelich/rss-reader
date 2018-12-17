@@ -1,5 +1,5 @@
-import {is_allowed_request} from '/src/control/fetch-policy.js';
-import {fetch2} from '/src/control/fetch2.js';
+import {is_allowed_request} from '/src/net/fetch-policy.js';
+import {fetch2} from '/src/net/fetch2.js';
 
 // NOTE: this is not a generic library, this uses app fetch policy
 

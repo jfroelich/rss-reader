@@ -1,9 +1,9 @@
-import * as config from '/src/control/config-control.js';
-import * as cron_control from '/src/control/cron.js';
-import * as favicon from '/src/control/favicon.js';
-import {poll_feed, poll_feeds} from '/src/control/poll-feeds.js';
-import {refresh_feed_icons} from '/src/control/refresh-feed-icons.js';
-import {subscribe} from '/src/control/subscribe.js';
+import * as config from '/src/config/config-control.js';
+import * as cron_control from '/src/cron/cron.js';
+import * as favicon from '/src/favicon-service/favicon-control.js';
+import {poll_feed, poll_feeds} from '/src/poll/poll-feeds.js';
+import {refresh_feed_icons} from '/src/feed-favicon/refresh-feed-icons.js';
+import {subscribe} from '/src/subscribe/subscribe.js';
 import * as db from '/src/db/db.js';
 
 // Exposes a command line interface to the console

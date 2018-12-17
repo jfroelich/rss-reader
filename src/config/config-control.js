@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import * as color from '/src/color/color.js';
-import * as config from '/src/control/config.js';
+import * as config from '/src/config/config.js';
 
 // TODO: turns out adding a font is difficult, this needs to be changed so that
 // I can add a font and it gets stored in config

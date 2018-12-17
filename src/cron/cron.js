@@ -1,7 +1,7 @@
-import * as config from '/src/control/config.js';
-import * as favicon from '/src/control/favicon.js';
-import {poll_feeds} from '/src/control/poll-feeds.js';
-import {refresh_feed_icons} from '/src/control/refresh-feed-icons.js';
+import * as config from '/src/config/config.js';
+import * as favicon from '/src/favicon-service/favicon-control.js';
+import {poll_feeds} from '/src/poll/poll-feeds.js';
+import {refresh_feed_icons} from '/src/feed-favicon/refresh-feed-icons.js';
 import * as db from '/src/db/db.js';
 
 // Periods are in minutes to easily align with Chrome createAlarm param

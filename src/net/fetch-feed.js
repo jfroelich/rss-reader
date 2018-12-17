@@ -1,7 +1,7 @@
 import {parse_feed} from '/src/feed-utils/parse-feed.js';
 import * as db from '/src/db/db.js';
-import {is_allowed_request} from '/src/control/fetch-policy.js';
-import {fetch2} from '/src/control/fetch2.js';
+import {is_allowed_request} from '/src/net/fetch-policy.js';
+import {fetch2} from '/src/net/fetch2.js';
 
 // Fetches a remote feed xml file. Note that this is not a generic library, this
 // applies app-specific behavior. To get generic functionality, directly

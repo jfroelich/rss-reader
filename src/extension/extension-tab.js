@@ -1,4 +1,4 @@
-import * as config from '/src/control/config.js';
+import * as config from '/src/config/config.js';
 
 export async function open_view() {
   const url_string = chrome.extension.getURL('slideshow.html');

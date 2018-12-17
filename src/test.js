@@ -28,11 +28,11 @@ import {base_uri_test} from '/src/dom-utils/set-base-uri-test.js';
 import {url_sniff_test} from '/src/url-utils/url-sniff-test.js';
 import {truncate_html_test} from '/src/html-utils/truncate-html-test.js';
 import {unwrap_element_test} from '/src/dom-utils/unwrap-element-test.js';
-import {fetch_feed_test} from '/src/control/fetch-feed-test.js';
-import {fetch_html_test} from '/src/control/fetch-html-test.js';
-import {fetch2_test} from '/src/control/fetch2-test.js';
-import {import_opml_test} from '/src/control/import-opml-test.js';
-import {subscribe_test} from '/src/control/subscribe-test.js';
+import {fetch_feed_test} from '/src/net/fetch-feed-test.js';
+import {fetch_html_test} from '/src/net/fetch-html-test.js';
+import {fetch2_test} from '/src/net/fetch2-test.js';
+import {import_opml_test} from '/src/opml/import-opml-test.js';
+import {subscribe_test} from '/src/subscribe/subscribe-test.js';
 import * as db_tests from '/src/db/db-tests.js';
 
 // A set-like array of test functions

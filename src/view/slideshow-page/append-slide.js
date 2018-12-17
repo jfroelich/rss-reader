@@ -2,7 +2,7 @@ import {filter_publisher} from '/src/article-title/article-title.js';
 import assert from '/src/assert.js';
 import {escape_html} from '/src/html-utils/escape-html.js';
 import truncate_html from '/src/html-utils/truncate-html.js';
-import * as config from '/src/control/config.js';
+import * as config from '/src/config/config.js';
 import * as db from '/src/db/db.js';
 
 import {hide_no_articles_message} from './no-articles-message.js';

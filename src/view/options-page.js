@@ -1,10 +1,10 @@
 import * as permissions from '/src/extension-utils/permissions.js';
 import truncate_html from '/src/html-utils/truncate-html.js';
-import * as badge from '/src/control/badge.js';
-import * as config from '/src/control/config.js';
-import * as favicon from '/src/control/favicon.js';
-import {poll_feed} from '/src/control/poll-feeds.js';
-import {subscribe, unsubscribe} from '/src/control/subscribe.js';
+import * as badge from '/src/extension/badge.js';
+import * as config from '/src/config/config.js';
+import * as favicon from '/src/favicon-service/favicon-control.js';
+import {poll_feed} from '/src/poll/poll-feeds.js';
+import {subscribe, unsubscribe} from '/src/subscribe/subscribe.js';
 import * as db from '/src/db/db.js';
 import {fade_element} from '/src/dom-utils/fade-element.js';
 
