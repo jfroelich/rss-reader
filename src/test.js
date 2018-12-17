@@ -15,7 +15,7 @@ import * as color_contrast_filter_tests from '/src/dom-filters/color-contrast-fi
 import {color_test} from '/src/color/color-test.js';
 import * as favicon_cache_tests from '/src/favicon/cache-tests.js';
 import {fetch_image_test} from '/src/net/fetch-image-test.js';
-import {attribute_empty_filter_test} from '/src/dom-filters/attribute-empty-fiter-test.js';
+import {attribute_empty_filter_test} from '/src/dom-filters/attribute-empty-filter-test.js';
 import {image_lazy_filter_test} from '/src/dom-filters/image-lazy-filter-test.js';
 import {filter_unprintables_test} from '/src/lang-utils/filter-unprintables-test.js';
 import * as image_size_filter_tests from '/src/dom-filters/image-size-filter-test.js';

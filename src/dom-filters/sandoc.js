@@ -1,5 +1,5 @@
 import {condense_tagnames_filter} from '/src/dom-filters/condense-tagnames-filter.js';
-import {attribute_empty_filter} from '/src/dom-filters/attribute-empty-fiter.js';
+import {attribute_empty_filter} from '/src/dom-filters/attribute-empty-filter.js';
 import {image_lazy_filter} from '/src/dom-filters/image-lazy-filter.js';
 import {image_size_filter} from '/src/dom-filters/image-size-filter.js';
 import {boilerplate_filter} from '/src/dom-filters/boilerplate-filter.js';
