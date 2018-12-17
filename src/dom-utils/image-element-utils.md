@@ -1,3 +1,5 @@
+# image-element-utils
+
 TODO: cleanup comments, be more concise
 
 TODO: better ripple effects handling. This ties into knowledge of how a

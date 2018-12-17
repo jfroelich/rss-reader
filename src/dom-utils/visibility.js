@@ -1,5 +1,9 @@
-// Returns true if an element is hidden according to its inline style
+// Returns true if an element is hidden
 export function is_hidden_inline(element) {
+  if(element_input_is_hidden(element)) {
+    return true;
+  }
+
   const style = element.style;
 
   // Despite whatever the documentation states, the style property is sometimes
@@ -9,20 +13,34 @@ export function is_hidden_inline(element) {
     return false;
   }
 
-  // The style object has a length property that is set to the number of
-  // properties specified inline. If it is 0, that means that no inline style
-  // properties are present. I am not sure, but I think it is worth doing this
-  // check. I think many elements do not have an inline style.
+  // The style object has a length property that is set to the number of inline
+  // properties specified. If it is 0, that means that no inline style
+  // properties are specified. I am not sure, but I think it is worth doing this
+  // check because it potentially reduces the number of subsequent checks more
+  // often than not.
   if (style.length < 1) {
-    return;
+    return false;
   }
 
   return style.display === 'none' || style.visibility === 'hidden' ||
-      is_near_transparent(element) || is_offscreen(element);
+      element_is_near_transparent(element) || element_is_offscreen(element);
+}
+
+// Return whether the element is <input type="hidden">
+// TODO: consider element.matches('input[type="hidden"]')?
+function element_input_is_hidden(element) {
+  const name = element.localName;
+  if(name === 'input') {
+    const type = element.getAttribute('type');
+    if(type && type.trim().toLowerCase() === 'hidden') {
+      return true;
+    }
+  }
+  return false;
 }
 
 // Returns true if the element's opacity is close to 0 or 0.
-function is_near_transparent(element) {
+function element_is_near_transparent(element) {
   const style = element.style;
 
   // This time we know style is defined because we expect this to be called
@@ -54,7 +72,7 @@ function is_near_transparent(element) {
 // Returns true if the element is positioned off screen. Heuristic guess.
 // Probably several false negatives, and a few false positives. The cost of
 // guessing wrong is not too high. This is inaccurate.
-function is_offscreen(element) {
+function element_is_offscreen(element) {
   const style = element.style;
   if (style.position === 'absolute') {
     const left = parseInt(style.left, 10);

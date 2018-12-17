@@ -1,11 +1,6 @@
 import assert from '/src/assert.js';
 import {set_base_uri} from '/src/dom-utils/set-base-uri.js';
 
-// TODO: the set-base-uri test is slightly out of date due to recent changes to
-// set-base-uri. Need to take into account the new overwrite parameter, and need
-// to take into account the clarified behavior on following the
-// one-base-per-document rule.
-
 export async function base_uri_test() {
   // If a document has no base elements, and overwrite is true, then this should
   // add a base element and that should become the baseURI value, and there
@@ -71,7 +66,5 @@ export async function base_uri_test() {
   set_base_uri(doc, url);
   assert(doc.baseURI === 'http://www.example.com/foo%20%20bar');
 
-  // TODO: test 'missing a head element' basic case?
-  // TODO: test for multiple existing bases? when multiple, first one with
-  // href should be the one used
+
 }

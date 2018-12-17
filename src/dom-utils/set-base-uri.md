@@ -24,3 +24,8 @@ full hierarchy in a detached context before attaching the root of the hierarchy.
 
 ## Security notes regarding XSS prevention
 This implementation uses `document.createElement`. The `set_base_uri` function takes care to create the element as owned by the input document, which should not be the same document as the document running this script. Because the identifier `document` is a global variable and this uses a function parameter named `document`, there is some ambiguity. So I want to be very clear here. When this accesses `document`, it is accessing the local variable, not the global.
+
+## TODOs
+* regarding testing, the set-base-uri test is slightly out of date due to recent changes to set-base-uri. Need to take into account the new overwrite parameter, and need to take into account the clarified behavior on following the one-base-per-document rule.
+* when testing, test 'missing a head element' basic case?
+* when testing, test for multiple existing bases? when multiple, first one with href should be the one used
