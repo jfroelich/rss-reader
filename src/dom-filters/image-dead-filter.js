@@ -1,4 +1,4 @@
-import * as image_element_utils from '/src/dom-utils/image-element-utils.js';
+import * as image_element_utils from '/src/dom-utils/image-utils.js';
 
 // Removes dead images from the document. An image is 'dead' if it is
 // unfetchable. One reason that an image is unfetchable is when an image does
