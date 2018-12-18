@@ -1,9 +1,6 @@
 import * as db from '/src/db/db.js';
 import * as string from '/src/lang-utils/string.js';
 
-// TODO: break apart into two layers, a UI layer and a lower controller layer
-// The controller layer should work without a UI and it is what should be tested
-
 export function prompt() {
   const input = document.createElement('input');
   input.setAttribute('type', 'file');
@@ -44,12 +41,12 @@ function read_files(files) {
   return Promise.all(promises);
 }
 
-// Flatten the results into a single array and filter missing values
 function flatten_file_urls(all_files_urls) {
+  // per_file_urls may be undefined if there was a problem reading the file
+  // that generated it
+
   const urls = [];
   for (const per_file_urls of all_files_urls) {
-    // per_file_urls may be undefined if there was a problem reading the file
-    // that generated it
     if (per_file_urls) {
       for (const url of per_file_urls) {
         urls.push(url);
@@ -61,8 +58,8 @@ function flatten_file_urls(all_files_urls) {
 
 async function read_file_feeds(file) {
   if (!file_is_opml(file)) {
-    throw new TypeError(
-        'Unacceptable type ' + file.type + ' for file ' + file.name);
+    const msg = 'Unacceptable type ' + file.type + ' for file ' + file.name;
+    throw new TypeError(msg);
   }
 
   if (!file.size) {

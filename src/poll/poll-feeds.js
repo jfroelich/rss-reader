@@ -15,8 +15,7 @@ import * as notification from '/src/notification/notification.js';
 import {build as build_rewrite_rules} from '/src/poll/rewrite-rules.js';
 import * as db from '/src/db/db.js';
 
-// TODO: this module is huge, maybe my biggest, i don't like it, break it up
-// somehow
+
 
 const default_options = {
   ignore_recency_check: false,

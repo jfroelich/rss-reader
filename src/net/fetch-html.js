@@ -2,7 +2,6 @@ import {is_allowed_request} from '/src/net/fetch-policy.js';
 import {fetch2} from '/src/net/fetch2.js';
 
 // NOTE: this is not a generic library, this uses app fetch policy
-
 export function fetch_html(url, timeout, allow_text) {
   const html_mime_types = ['text/html'];
 

@@ -1,9 +1,5 @@
 import * as db from '/src/db/db.js';
 
-// TODO: implement tests
-
-// Creates and triggers the download of an OPML document containing feeds from
-// the database
 export async function export_opml(document_title) {
   // Load feeds from storage
   const session = await db.open();
