@@ -1,5 +1,5 @@
 import * as config from '/src/config/config.js';
-import * as extension_tab from '/src/extension/extension-tab.js';
+import * as extension_tab from '/src/extension/tab.js';
 
 // TODO: i should rename this file to just show-notification.js. It is a single
 // function. I do not see the benefit of being more abstract. In fact I should

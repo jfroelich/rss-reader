@@ -2,7 +2,7 @@ import * as badge_control from '/src/extension/badge.js';
 import * as config_control from '/src/config/config-control.js';
 import * as cron_control from '/src/cron/cron.js';
 import * as db_control from '/src/db/db-control.js';
-import * as extension_tab from '/src/extension/extension-tab.js';
+import * as extension_tab from '/src/extension/tab.js';
 
 // TODO: there is a problem with the db install listener, it gets loaded too
 // later or maybe the timeout is not being followed, hard to tell, but i think
