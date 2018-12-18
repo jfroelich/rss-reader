@@ -60,7 +60,11 @@ function request_onsuccess(id, reject, event) {
   if (entry.readState === entry_utils.ENTRY_STATE_READ) {
     const message = 'Cannot mark read entry as read ' + id;
     const error = new errors.InvalidStateError(message);
-    reject(error);
+    //reject(error);
+    // There is some bug with rejection here, somehow related to loading of
+    // entries from the database in a fresh install with one feed, so this
+    // rejection is temporarily disabled
+    console.warn(error);
     return;
   }
 
