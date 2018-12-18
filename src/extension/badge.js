@@ -1,4 +1,4 @@
-import ExtensionLock from '/src/extension-utils/extension-lock.js';
+import ExtensionLock from '/src/extension/lock.js';
 import * as db from '/src/db/db.js';
 
 export function install_listener(event) {

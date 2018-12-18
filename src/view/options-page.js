@@ -1,4 +1,4 @@
-import * as permissions from '/src/extension-utils/permissions.js';
+import * as permissions from '/src/extension/permission-utils.js';
 import truncate_html from '/src/html-utils/truncate-html.js';
 import * as badge from '/src/extension/badge.js';
 import * as config from '/src/config/config.js';
