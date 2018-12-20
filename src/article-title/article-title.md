@@ -6,6 +6,13 @@ If the publisher cannot be found, confidently, then then input is returned unfil
 
 This is not a fancy algorithm. In fact it is really quite dumb. It is just something I cobbled together to get something remotely usable up and running. It does the job for now. It is generally rather conservative and just makes a few really dumb guesses.
 
+## Params
+* title {String}
+* delims {Array} array of strings, delimiters (currently including spaces between the delimiter and other words)
+* max_tail_words - if there are too many words after the delimiter then publisher is not filtered
+* min_title_length - if the title has too few characters before or after filtering then publisher is not filtered
+* min_publisher_length - if the publisher has too few characters then the publisher is not filtered
+
 ## Misc notes
 
 If I ever have the time and enthusiasm it would be fun to research a smarter algorithm. There are obvious constraints, one being that it must be written in JavaScript, and it must be shallow so that it remains fast. Speed and simplicity is more important than accuracy in this case.

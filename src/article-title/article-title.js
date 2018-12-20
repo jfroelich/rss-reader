@@ -1,12 +1,3 @@
-// @param title {String}
-// @param delims {Array} array of strings, delimiters (currently including
-// spaces between the delimiter and other words)
-// @param max_tail_words - if there are too many words after the delimiter then
-// publisher is not filtered
-// @param min_title_length - if the title has too few characters before or after
-// filtering then publisher is not filtered
-// @param min_publisher_length - if the publisher has too few characters then
-// the publisher is not filtered
 export function filter_publisher(
     title, delims = ['-', '|', ':'], max_tail_words = 4, min_title_length = 20,
     min_publisher_length = 5) {
