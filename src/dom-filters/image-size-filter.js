@@ -1,14 +1,22 @@
-import assert from '/src/assert.js';
 import * as url_utils from '/src/url-utils/url-utils.js';
+import {fetch_image_element, is_ephemeral_fetch_error} from '/src/net/fetch-image-element.js';
+import {AssertionError} from '/src/assert.js';
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this attempts to infer the
 // dimensions for each image and modifies each image element's attributes.
 export async function image_size_filter(document, timeout, is_allowed_request) {
+  // This is similar to a programmer error, but it is not invariant, so it is
+  // better to use a typical sanity check here instead of an assert.
   if (!document.baseURI) {
     throw new TypeError('document missing baseURI');
   }
 
+  // This only pays attention to image elements within body, and assumes that
+  // the HTML parsing that generated the Document object did implied
+  // transformations that moved out of body content to within body, and that
+  // even if after those implied changes the body is empty, there is nothing
+  // to do.
   if (!document.body) {
     return;
   }
@@ -18,57 +26,65 @@ export async function image_size_filter(document, timeout, is_allowed_request) {
   for (const image of images) {
     promises.push(get_image_dims(image, timeout, is_allowed_request));
   }
-  const results = await Promise.all(promises);
+  const infos = await Promise.all(promises);
 
-  for (const result of results) {
-    if (result.width && result.height) {
-      result.image.setAttribute('width', result.width);
-      result.image.setAttribute('height', result.height);
+  for (const info of infos) {
+    if (info.width && info.height) {
+      info.image.setAttribute('width', info.width);
+      info.image.setAttribute('height', info.height);
     }
   }
 }
 
+// Finds the dimensions of an image based on its HTML attributes
 function find_attribute_dimensions(image) {
-  const dimensions = {width: 0, height: 0};
+  const info = {width: 0, height: 0};
   if (image.hasAttribute('width')) {
-    dimensions.width = image.width;
+    info.width = image.width;
   }
 
   if (image.hasAttribute('height')) {
-    dimensions.height = image.height;
+    info.height = image.height;
   }
 
-  return dimensions;
+  return info;
 }
 
 // Finds the dimensions of an image. This first looks at information that is
 // available within the document, and if that fails, then fallsback to doing
 // a network request.
 async function get_image_dims(image, timeout, is_allowed_request) {
-  const attr_dimensions = find_attribute_dimensions(image);
-  if (attr_dimensions.width && attr_dimensions.height) {
+  const attribute_info = find_attribute_dimensions(image);
+  if (attribute_info.width && attribute_info.height) {
     return {
       image: image,
       reason: 'attributes',
-      width: attr_dimensions.width,
-      height: attr_dimensions.height
+      width: attribute_info.width,
+      height: attribute_info.height
     };
   }
 
-  const style_dimensions = find_style_dimensions(image);
-  if (style_dimensions.width && style_dimensions.height) {
+  const style_info = find_style_dimensions(image);
+  if (style_info.width && style_info.height) {
     return {
       image: image,
       reason: 'style',
-      width: style_dimensions.width,
-      height: style_dimensions.height
+      width: style_info.width,
+      height: style_info.height
     };
   }
 
+  // The remaining checks require use of the src attribute. If that is not
+  // available then exit early. While the src property imputes an absolute
+  // url (based on baseURI and the src attribute), it is empty when the src
+  // attribute is missing (there is no risk baseURI is provided).
   if (!image.src) {
     return {image: image, reason: 'sourceless'};
   }
 
+  // Parse the value of the src property into a URL object. This validates the
+  // url's syntax. This makes it easy to inspect more atomic properties of the
+  // url in separate checks. This avoids the need to repeatedly parse later.
   let source_url;
   try {
     source_url = new URL(image.src);
@@ -76,13 +92,13 @@ async function get_image_dims(image, timeout, is_allowed_request) {
     return {image: image, reason: 'badsource'};
   }
 
-  let url_dimensions = find_url_dimensions(source_url);
-  if (url_dimensions) {
+  let url_info = find_url_dimensions(source_url);
+  if (url_info) {
     return {
       image: image,
       reason: 'url-sniff',
-      width: url_dimensions.width,
-      height: url_dimensions.height
+      width: url_info.width,
+      height: url_info.height
     };
   }
 
@@ -91,6 +107,14 @@ async function get_image_dims(image, timeout, is_allowed_request) {
     fetched_image =
         await fetch_image_element(source_url, timeout, is_allowed_request);
   } catch (error) {
+    // Never suppress assertion errors (programmer errors). Any catch block is
+    // suspect. Here I know that, currently, fetch_image_element does
+    // assertions, so this check is correct.
+    if(error instanceof AssertionError) {
+      throw error;
+    }
+
+    // Handle certain fetch errors, like a timeout, as non-programming errors
     if (is_ephemeral_fetch_error(error)) {
       return {image: image, reason: 'fetch-error'};
     }
@@ -98,12 +122,14 @@ async function get_image_dims(image, timeout, is_allowed_request) {
     throw error;
   }
 
-  return {
+  const info = {
     image: image,
     reason: 'fetch',
     width: fetched_image.width,
     height: fetched_image.height
   };
+
+  return info;
 }
 
 // Try and find image dimensions from the characters of a url
@@ -174,97 +200,4 @@ function find_style_dimensions(element) {
   }
 
   return dimensions;
-}
-
-// TODO: avoid sending cookies, probably need to use fetch api and give up on
-// using the simple element.src trick, it looks like HTMLImageElement does not
-// allow me to control the request parameters and does send cookies, but I need
-// to review this more, I am still unsure.
-// @param is_allowed_request {Function} optional, is given a request-like
-// object, throws a policy error if the function returns false
-async function fetch_image_element(url, timeout = 0, is_allowed_request) {
-  assert(url instanceof URL);
-
-  const request_data = {method: 'GET', url: url};
-  if (is_allowed_request && !is_allowed_request(request_data)) {
-    throw new PolicyError('Refused to fetch ' + url.href);
-  }
-
-  const fpromise = fetch_image_element_promise(url);
-  const contestants = timeout ? [fpromise, sleep(timeout)] : [fpromise];
-  const image = await Promise.race(contestants);
-
-  // Image is undefined when sleep won
-  if (!image) {
-    throw new TimeoutError('Timed out fetching ' + url.href);
-  }
-
-  return image;
-}
-
-// Return a promise that resolves to an image element. The image is loaded by
-// proxy, which in other words means that we use a new, separate image element
-// attached to the same document executing this function to load the image. The
-// resulting image is NOT attached to the document that contained the image that
-// had the given url. The proxy is used because we cannot reliably load images
-// using the HTMLImageElement src setter method if we do not know for certain
-// whether the document is live or inert. Documents created by DOMParser and
-// XMLHttpRequest are inert. In an inert document the src setter method does not
-// work.
-function fetch_image_element_promise(url, is_allowed_request) {
-  return new Promise((resolve, reject) => {
-    const proxy = new Image();
-    proxy.src = url.href;
-
-    // If cached then resolve immediately
-    if (proxy.complete) {
-      resolve(proxy);
-      return;
-    }
-
-    proxy.onload = _ => resolve(proxy);
-
-    // The error event does not contain any useful error information so create
-    // our own error. Also, we create a specific error type so as to distinguish
-    // this kind of error from programmer errors or other kinds of fetch errors.
-    const error = new FetchError('Fetch image error ' + url.href);
-    proxy.onerror = _ => reject(error);
-  });
-}
-
-// Return true if the error is a kind of temporary fetch error that is not
-// indicative of a programming error
-function is_ephemeral_fetch_error(error) {
-  return error instanceof FetchError || error instanceof PolicyError ||
-      error instanceof TimeoutError;
-}
-
-// This error indicates a fetch operation failed for some reason like network
-// unavailable, url could not be reached, etc
-class FetchError extends Error {
-  constructor(message = 'Failed to fetch') {
-    super(message);
-  }
-}
-
-// This error indicates a resource cannot be fetched because something about the
-// http request violates the app's policy
-class PolicyError extends Error {
-  constructor(message = 'Refused to fetch url due to policy') {
-    super(message);
-  }
-}
-
-// This error indicates a fetch operation took too long
-class TimeoutError extends Error {
-  constructor(message = 'Failed to fetch due to timeout') {
-    super(message);
-  }
-}
-
-// Returns a promise that resolves to undefined after a given amount of
-// milliseconds.
-function sleep(ms = 0) {
-  assert(Number.isInteger(ms) && ms >= 0);
-  return new Promise(resolve => setTimeout(resolve, ms));
 }
