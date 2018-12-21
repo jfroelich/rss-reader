@@ -2,6 +2,12 @@ import assert from '/src/assert.js';
 
 export function filter_publisher(title, options = {}) {
   let delims = options.delims;
+
+  // TODO: i converted to options, but i retained a previous issue, that some
+  // of these options are no longer in use. second problem, previously these
+  // options had defaults, but now they do not. third concern, there is a better
+  // approach to using defaults via use of Object.assign, similar to how I have
+  // done so in other places.
   let max_tail_words = options.max_tail_words;
   let min_title_length = options.min_title_length;
   let min_publisher_length = options.min_publisher_length;
@@ -75,14 +81,9 @@ export function filter_publisher(title, options = {}) {
   return non_pub_tokens.join(' ');
 }
 
-// Split a string into smaller strings based on intermediate whitespace
-export function tokenize(value) {
-  if (typeof value === 'string' && value.length) {
-    // Avoid empty tokens
-    const trimmed = value.trim();
-    if (trimmed.length) {
-      return trimmed.split(/\s+/g);
-    }
-  }
-  return [];
+// Split a string into smaller strings based on intermediate whitespace. Throws
+// an error if string is not a String object.
+export function tokenize(string) {
+  // The implicit trim avoids producing empty tokens
+  return string.trim().split(/\s+/g);
 }

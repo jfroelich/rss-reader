@@ -1,6 +1,13 @@
 import {filter_publisher} from '/src/article-title/article-title.js';
 import assert from '/src/assert.js';
 
+// TODO: store input/output in a json file, then change this test to load the
+// local json file data and run against that, instead of hardcoding?
+
+// TODO: test various failure cases, e.g. bad inputs
+
+// TODO: more tests, e.g. short title
+
 export async function article_title_test() {
   // no delimiters found
   assert(filter_publisher('Hello World') === 'Hello World');
