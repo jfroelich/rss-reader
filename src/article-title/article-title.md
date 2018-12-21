@@ -21,3 +21,4 @@ One idea would be to start development of a testing dataset. I think I would try
 
 ## TODO:
 * add more tests, e.g. test using additional parameters where other parameters are not the default values
+* maybe should tolerate other whitespace than exactly ascii 32 around delims, actually should probably do an actual split by words tokenization so that the original spacing becomes irrelevant. we are tokenizing later after all. it would make more sense to tokenize first, then iterate over tokens and find the delimiter token.
