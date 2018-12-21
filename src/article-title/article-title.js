@@ -1,11 +1,17 @@
 import assert from '/src/assert.js';
 
-export function filter_publisher(
-    title, max_tail_words = 4, min_title_length = 20,
-    min_publisher_length = 5) {
+export function filter_publisher(title, options = {}) {
+  let delims = options.delims;
+  let max_tail_words = options.max_tail_words;
+  let min_title_length = options.min_title_length;
+  let min_publisher_length = options.min_publisher_length;
 
   // Tolerate partially bad input (Postel's Law)
   if (typeof title !== 'string') {
+    return title;
+  }
+
+  if(title.length < min_title_length) {
     return title;
   }
 
@@ -31,42 +37,47 @@ export function filter_publisher(
     assert(false);
   }
 
-  const NOT_FOUND = -1;
-  let delim_pos = NOT_FOUND;
-  for(let i = 0, len = delims.length; i < len && delim_pos === NOT_FOUND; i++) {
-    delim_pos = title.lastIndexOf(' ' + delims[i] + ' ');
-  }
+  const tokens = tokenize(title);
 
-  if (delim_pos === NOT_FOUND) {
+  // Basically just assume there is no point to looking if we are only dealing
+  // with 3 tokens or less. This is a tentative conclusion. Note that delimiters
+  // are individual tokens here, and multiple consecutive delimiters will
+  // constitute only one token.
+  if(tokens.length < 4) {
     return title;
   }
 
-  if (delim_pos < min_title_length) {
+  // TODO: this could probably be smarter, this is just first draft
+  // TODO: use a loop with only one exit condition
+  // TODO: if i is defined outside of the loop's scope, then we can just move
+  // i along like a cursor, and the loop's exit condition leaves i at some
+  // point
+
+  let delimiter_index = -1;
+  for(let i = tokens.length - 2; i > -1; i--) {
+    const token = tokens[i];
+    if(delims.includes(token)) {
+      delimiter_index = i;
+      break;
+    }
+  }
+
+  if(delimiter_index === -1) {
     return title;
   }
 
-  const remaining = title.length - delim_pos;
-  if (remaining < min_publisher_length) {
+  // Ignore publisher unless remaining title is larger
+  if(delimiter_index < tokens.length - delimiter_index - 1) {
     return title;
   }
 
-  // The 3 length accounts for leading and trailing whitespace
-  const delim_len = 3;
-  const tail = title.substring(delim_pos + delim_len);
-  if (count_words(tail) > max_tail_words) {
-    return title;
-  }
-
-  return title.substring(0, delim_pos).trim();
-}
-
-export function count_words(value) {
-  return tokenize(value).length;
+  const non_pub_tokens = tokens.slice(0, delimiter_index);
+  return non_pub_tokens.join(' ');
 }
 
 // Split a string into smaller strings based on intermediate whitespace
 export function tokenize(value) {
-  if (typeof value === 'string') {
+  if (typeof value === 'string' && value.length) {
     // Avoid empty tokens
     const trimmed = value.trim();
     if (trimmed.length) {
