@@ -1,4 +1,4 @@
-<img src="/logo/GithubRead.me.png" alt="Proje ismi" height="150px">
+<img src="/images/logo/GithubRead.me.png" alt="Proje ismi" height="150px">
 
 A simple Chrome extension for viewing RSS feeds. This is mostly a fun project where I experiment with new Javascript features, test my knowledge, and keep myself from getting too rusty.
 
