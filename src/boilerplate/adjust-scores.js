@@ -1,3 +1,5 @@
+import assert from '/src/assert.js';
+
 export function adjust_scores(blocks, options) {
   let document_length = options.document_length;
   if (document_length === undefined) {
@@ -101,10 +103,4 @@ function has_boilerplate_ancestor(blocks, block, threshold) {
 
   // either no ancestors, or no boilerplate ancestors found
   return false;
-}
-
-function assert(condition, message = 'Assertion error') {
-  if (!condition) {
-    throw new Error(message);
-  }
 }

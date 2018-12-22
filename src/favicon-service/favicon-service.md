@@ -2,6 +2,7 @@
 Functionality for looking up the url of the favicon image for a page url, along with caching requests for later reuse.
 
 ## TODOS
+* fetch_html dependency is a layer dependency violation (at the moment)
 * lib modules should not depend on app modules
 * Break up the favicon lookup function into smaller functions so it easier to read
 * bug with oracle.com lookup, the lookup fails because the response content type is literally "unknown". However, the browser allows it. I suppose this is because the browser inspects the bytes or something.

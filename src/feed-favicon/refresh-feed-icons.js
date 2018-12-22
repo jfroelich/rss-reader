@@ -1,7 +1,6 @@
 import * as favicon from '/src/favicon-service/favicon-control.js';
 import * as db from '/src/db/db.js';
 
-// Update the favicon for each of the active feeds in the database
 export async function refresh_feed_icons(session, iconn) {
   const feeds = await db.get_feeds(session, 'active', false);
   const promises = [];

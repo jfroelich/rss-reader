@@ -1,3 +1,4 @@
+import assert from '/src/assert.js';
 import {adjust_scores} from './adjust-scores.js';
 import * as utils from './utils.js';
 
@@ -106,10 +107,4 @@ export function find_block_element(document, block) {
   assert(block.element);
   assert(block.element.ownerDocument === document);
   return block.element;
-}
-
-function assert(condition, message) {
-  if (!condition) {
-    throw new Error(message || 'Assertion error');
-  }
 }

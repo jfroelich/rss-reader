@@ -8,3 +8,5 @@ This function is a composition of the following functions:
 
 TODOs
 * conflict on whether this is fetch-xml + parse-xml + coerce-feed, or something like a specialization wrapper of fetch-xml. it is a composition, for sure. one problem with composition is the sheer amount of errors a single call can generate. but at the same time, not composing is really just shifting separate error handling into the calling client, because it is not like the number of errors decreases in the calling context.
+* test should be run on a local resource
+* test cannot accept parameters

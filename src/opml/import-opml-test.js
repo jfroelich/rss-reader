@@ -1,14 +1,8 @@
 import assert from '/src/assert.js';
 import * as db from '/src/db/db.js';
-
-import * as import_opml from './import-opml.js';
-
-// TODO: test multiple files
-// TODO: test multiple feeds per file
-// TODO: test dup handling
+import * as import_opml from '/src/opml/import-opml.js';
 
 export async function import_opml_test() {
-  // Test setup
   const db_name = 'import-opml-test-db';
 
   // Open without a channel, we will inject our own fake one
@@ -40,7 +34,6 @@ export async function import_opml_test() {
   await db.remove(db_name);
 }
 
-// A File implements the Blob interface
 function create_opml_file(name, text) {
   const file = new Blob([text], {type: 'application/xml'});
   file.name = name;

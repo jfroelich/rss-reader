@@ -5,8 +5,6 @@ import * as mime from '/src/mime-utils/mime-utils.js';
 import {fetch_html} from '/src/net/fetch-html.js';
 import {fetch2, response_is_redirect} from '/src/net/fetch2.js';
 
-// TODO: fetch_html dependency is a layer dependency violation (at the moment)
-
 export function FaviconService() {
   this.name = 'favicon-cache';
   this.version = 3;

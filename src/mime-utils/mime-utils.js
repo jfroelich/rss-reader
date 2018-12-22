@@ -1,7 +1,5 @@
 import * as string from '/src/lang-utils/string.js';
 
-// A mime-type is a specialized type of string. This module provides helpers for
-// interacting with purported mime-type values.
 
 export const MIME_TYPE_MIN_LENGTH = 7;
 export const MIME_TYPE_MAX_LENGTH = 100;

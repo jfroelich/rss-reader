@@ -1,9 +1,5 @@
-import assert from '/src/assert.js';
 import * as color from '/src/color/color.js';
 import * as config from '/src/config/config.js';
-
-// TODO: turns out adding a font is difficult, this needs to be changed so that
-// I can add a font and it gets stored in config
 
 // React to the extension being installed or updated, or when chrome is updated,
 // to do config related things. Note that this listener should be bound before
@@ -16,11 +12,6 @@ export function install_listener(event) {
   }
 }
 
-// TODO: updates get fired for many reasons, such as when reloading the
-// extension from the extensions page. This does not indicate a version
-// change. Removing legacy keys should be based on extension version change.
-// I always forget what this is, and might use it in the future
-// const previous_version_string = event.previousVersion;
 function update_config(event) {
   config.remove('debug');
   config.remove('refresh_badge_delay');

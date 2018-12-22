@@ -1,3 +1,4 @@
+import assert from '/src/assert.js';
 import * as boilerplate from '/src/boilerplate/boilerplate.js';
 
 export function boilerplate_filter(document, options = {}) {
@@ -18,11 +19,5 @@ export function boilerplate_filter(document, options = {}) {
 
       element.remove();
     }
-  }
-}
-
-function assert(condition) {
-  if (!condition) {
-    throw new Error('Assertion error');
   }
 }
