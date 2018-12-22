@@ -73,6 +73,8 @@ function create_article_title_element(entry) {
     title = escape_html(title);
     title_element.setAttribute('title', title);
 
+    // filter_publisher requires title be a string. we know it is a string here
+    // so no need for extra sanity checks
     title = filter_publisher(title);
 
     const max_length = config.read_int('entry_title_max_length');

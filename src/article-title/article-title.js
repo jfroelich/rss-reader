@@ -1,59 +1,48 @@
 import assert from '/src/assert.js';
 
-export function filter_publisher(title, options = {}) {
-  let delims = options.delims;
+export function filter_publisher(title, delims, min_title_length) {
+  assert(typeof title === 'string');
 
-  // TODO: i converted to options, but i retained a previous issue, that some
-  // of these options are no longer in use. second problem, previously these
-  // options had defaults, but now they do not. third concern, there is a better
-  // approach to using defaults via use of Object.assign, similar to how I have
-  // done so in other places.
-  let max_tail_words = options.max_tail_words;
-  let min_title_length = options.min_title_length;
-  let min_publisher_length = options.min_publisher_length;
+  const default_delims = ['-', '|', ':'];
 
-  // Tolerate partially bad input (Postel's Law)
-  if (typeof title !== 'string') {
-    return title;
+  // TODO: maybe this should be a stricter sanity check. |delims| should be
+  // either null, undefined, or an array. Anything else should be a type error.
+  if(!Array.isArray(delims)) {
+    delims = default_delims;
+  }
+
+  const default_min_title_length = 20;
+
+  // TODO: like above, perhaps this should only allow null, undefined, and
+  // positive integer, and anything else should be an error, not a substitution
+  if(isNaN(min_title_length)) {
+    min_title_length = default_min_title_length;
+  } else {
+    assert(min_title_length >= 0);
   }
 
   if(title.length < min_title_length) {
     return title;
   }
 
-  const default_delims = ['-', '|', ':'];
-
-  // Sanity check the delims param and possibly assign a default value to it
-  if(Array.isArray(delims)) {
-    if(delims.length < 1) {
-      // Technically the function should never be called with an empty array of
-      // delimiters because the function will never find a publisher in that
-      // case. However, partially tolerate bad input (Postel's Law) for caller
-      // convenience rather than throw an error. Note this fails to bring the
-      // problem to the caller's attention though.
-      // TODO: maybe nag with a console warning?
-      return title;
-    } else {
-      // Leave delims as is
-    }
-  } else if(delims === null || delims === undefined) {
-    delims = default_delims;
-  } else {
-    // Should never enter this branch
-    assert(false);
+  if(delims.length < 1) {
+    return title;
   }
 
-  const tokens = tokenize(title);
+  const tokens = tokenize_words(title);
 
   // Basically just assume there is no point to looking if we are only dealing
   // with 3 tokens or less. This is a tentative conclusion. Note that delimiters
   // are individual tokens here, and multiple consecutive delimiters will
-  // constitute only one token.
+  // constitute only one token. Note that this also implicitly handles the 0
+  // tokens case.
   if(tokens.length < 4) {
     return title;
   }
 
-  // TODO: this could probably be smarter, this is just first draft
+  // TODO: this could be smarter, this is just first draft, well, it
+  // is now like the 6th revision of this module, but this is the first attempt
+  // at using the index of tokens instead of input string length
   // TODO: use a loop with only one exit condition
   // TODO: if i is defined outside of the loop's scope, then we can just move
   // i along like a cursor, and the loop's exit condition leaves i at some
@@ -72,8 +61,32 @@ export function filter_publisher(title, options = {}) {
     return title;
   }
 
-  // Ignore publisher unless remaining title is larger
-  if(delimiter_index < tokens.length - delimiter_index - 1) {
+  // Regardless of the number of words in the full title, if the publisher we
+  // find has too many words, the delimiter probably did not delimit the
+  // publisher, so bail out.
+  // TODO: this rule can be implicit in the above loop by limiting the number
+  // of iterations before exiting.
+  // TODO: the number of words in the publisher is a metric that is used again
+  // later in this function, so maybe it makes more sense to store it in a
+  // variable to avoid the cost of recalculation and to use named values instead
+  // of expressions.
+  if(tokens.length - delimiter_index - 1 > 5) {
+    return title;
+  }
+
+  // If there are more publisher words than non-publisher words in the title,
+  // then we should not filter out the publisher, because this indicates a
+  // false positive identification of the delimiter, most of the time,
+  // empirically.
+  // TODO: i am not satisfied with the clarity here, there is anxiety about
+  // off by 1 error
+  // TODO: what is more accurate? character count or word count
+  // TODO: is it simpler and safer to count pub words by subtracting non pub
+  // words from total? again, off by 1 anxiety.
+
+  const non_pub_word_count = delimiter_index;
+  const pub_word_count = tokens.length - delimiter_index - 1;
+  if(non_pub_word_count < pub_word_count) {
     return title;
   }
 
@@ -82,8 +95,9 @@ export function filter_publisher(title, options = {}) {
 }
 
 // Split a string into smaller strings based on intermediate whitespace. Throws
-// an error if string is not a String object.
-export function tokenize(string) {
-  // The implicit trim avoids producing empty tokens
+// an error if string is not a String object. Returns an array.
+export function tokenize_words(string) {
+  // The implicit trim avoids producing empty tokens. The input might already
+  // be trimmed but we cannot rely on that so we have to accept the overhead.
   return string.trim().split(/\s+/g);
 }
