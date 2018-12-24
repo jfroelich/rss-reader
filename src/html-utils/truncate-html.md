@@ -21,3 +21,6 @@ Double check the behavior of setting nodeValue or reading nodeValue. Clearly und
 There is an issue with truncation when the input string contains entities because of the implicit decoding that occurs. The truncation position is inaccurate. This currently truncates the decoded position, which is different than the nearest legal position in the encoded raw input.
 If tokenize_html is implemented, this should probably switch to that and avoid using native parsing. This avoids the lossy issue, and possibly avoids the inaccurate position issue.
 Write tests
+
+## todos
+* finish up conversion of test to new test format

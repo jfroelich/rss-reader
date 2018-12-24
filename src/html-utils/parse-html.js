@@ -1,16 +1,16 @@
 import assert from '/src/assert.js';
 import * as string from '/src/lang-utils/string.js';
 
-export function parse_html(html_string) {
-  assert(typeof html_string === 'string');
+export function parse_html(html) {
+  assert(typeof html === 'string');
 
   const parser = new DOMParser();
-  const document = parser.parseFromString(html_string, 'text/html');
+  const document = parser.parseFromString(html, 'text/html');
 
   const error = document.querySelector('parsererror');
   if (error) {
-    const msg = string.condense_whitespace(error.textContent);
-    throw new Error(msg);
+    const message = string.condense_whitespace(error.textContent);
+    throw new Error(message);
   }
 
   return document;
