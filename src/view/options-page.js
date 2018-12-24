@@ -34,7 +34,7 @@ channel.onmessage = function options_page_onmessage(event) {
   const badge_types =
       ['entry-created', 'entry-updated', 'entry-deleted', 'entry-read'];
   if (badge_types.includes(type)) {
-    badge.refresh(location.pathname);
+    badge.refresh();
   }
 
   if (type === 'feed-activated') {

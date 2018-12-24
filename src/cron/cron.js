@@ -4,12 +4,11 @@ import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {refresh_feed_icons} from '/src/feed-favicon/refresh-feed-icons.js';
 import * as db from '/src/db/db.js';
 
-// Periods are in minutes to easily align with Chrome createAlarm param
+// Periods are represented in minutes to easily align with Chrome's createAlarm
 const PERIOD_HALF_DAY = 60 * 12;
 const PERIOD_ONE_WEEK = 60 * 24 * 7;
 
 const alarms = [
-  {name: 'cleanup-refresh-badge-lock', period: PERIOD_HALF_DAY},
   {name: 'archive', period: PERIOD_HALF_DAY},
   {name: 'remove-entries-missing-urls', period: PERIOD_ONE_WEEK},
   {name: 'poll', period: PERIOD_ONE_WEEK},
@@ -18,7 +17,8 @@ const alarms = [
   {name: 'refresh-feed-icons', period: PERIOD_ONE_WEEK * 2},
   {name: 'compact-favicon-db', period: PERIOD_ONE_WEEK},
   {name: 'test-install-binding-alarms', deprecated: true},
-  {name: 'db-remove-orphaned-entries', deprecated: true}
+  {name: 'db-remove-orphaned-entries', deprecated: true},
+  {name: 'cleanup-refresh-badge-lock', deprecated: true}
 ];
 
 // Appropriately modify alarm settings when the extension is installed or
@@ -83,12 +83,6 @@ export async function alarm_listener(alarm) {
     iconn.close();
   } else if (alarm.name === 'compact-favicon-db') {
     await favicon.compact();
-  } else if (alarm.name === 'cleanup-refresh-badge-lock') {
-    // This is just a precaution that deletes the lock periodically, so that due
-    // to error a user is not left with an unread count that permanently stops
-    // updating. Now if it gets into bad state it will only last until this
-    // alarm.
-    delete localStorage.refresh_badge_cross_page_lock;
   } else {
     console.warn('Unhandled alarm', alarm.name);
   }
@@ -103,6 +97,8 @@ function query_idle_state(idle_secs) {
 
 // TODO: should this check for configuration changes and delete-create changed
 // alarms? or just overwrite everytime?
+// TODO: shouldn't calls to remove an alarm only happen based on certain upgrades
+// instead of blinding removing everything on every update?
 export function update_alarms(prev_version_string) {
   for (const alarm of alarms) {
     if (alarm.deprecated) {

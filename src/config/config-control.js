@@ -13,6 +13,8 @@ export function install_listener(event) {
 }
 
 function update_config(event) {
+  // Remove deprecated keys
+  // TODO: should just have an array and iterate over it
   config.remove('debug');
   config.remove('refresh_badge_delay');
   config.remove('db_name');
@@ -136,6 +138,7 @@ export function install_fonts() {
 }
 
 // Rename a configuration key.
+// TODO: this belongs in config.js, not here
 function rename(from, to) {
   // There is no need to do any type coercion. Maintain fidelity by using the
   // string type, because everything in and out of config is derivative of
@@ -330,7 +333,7 @@ function page_style_content_rule_create(sheet) {
 
 // Returns the first matching css rule or undefined
 // @param selector_text {String}
-// @returns rule {CSSStyleRule}
+// @return {CSSStyleRule}
 function find_css_rule(selector_text) {
   for (const sheet of document.styleSheets) {
     for (const rule of sheet.rules) {

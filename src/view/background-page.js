@@ -19,7 +19,7 @@ async function channel_onmessage(event) {
   const types =
       ['entry-created', 'entry-updated', 'entry-deleted', 'entry-read'];
   if (event.isTrusted && event.data && types.includes(event.data.type)) {
-    badge_control.refresh(location.pathname);
+    badge_control.refresh();
   }
 }
 

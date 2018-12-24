@@ -33,8 +33,7 @@ async function onmessage(event) {
   const badge_types =
       ['entry-created', 'entry-updated', 'entry-deleted', 'entry-read'];
   if (badge_types.includes(message.type)) {
-    const locker_name = location.pathname;
-    badge.refresh(locker_name);  // non-blocking
+    badge.refresh();  // intentionally unawaited
   }
 
   // Type handlers are ordered by estimated frequency. Using if-blocks because I
