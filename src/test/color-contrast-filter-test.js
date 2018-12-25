@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
-import * as color from '/src/color/color.js';
-import * as css_color from '/src/color/css-color.js';
-import * as ccf from '/src/dom-filters/color-contrast-filter.js';
+import * as color from '/src/color.js';
+import * as css_color from '/src/dom-filters/color-contrast-filter/css-color.js';
+import * as ccf from '/src/dom-filters/color-contrast-filter/color-contrast-filter.js';
 
 // TODO: these tests were written to work off a live document. Instead, create
 // a local fake document, and test against it

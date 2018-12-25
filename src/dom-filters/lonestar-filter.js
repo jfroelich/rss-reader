@@ -1,5 +1,5 @@
-import {is_hidden_inline} from '/src/dom-utils/visibility.js';
-import {remove_image} from '/src/dom-utils/image-utils.js';
+import {is_hidden_inline} from '/src/dom-filters/utils/visibility.js';
+import {remove_image} from '/src/dom-filters/utils/image-utils.js';
 
 // The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
 // can be found here: https://youtu.be/rGvblGCD7qM

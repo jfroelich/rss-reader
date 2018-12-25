@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
-import * as entry_utils from './entry-utils.js';
-import * as feed_utils from './feed-utils.js';
+import * as entry_utils from '/src/db/entry-utils.js';
+import * as feed_utils from '/src/db/feed-utils.js';
 
 // Remove a feed and its associated data from the database using a single
 // transaction.

@@ -1,8 +1,7 @@
 import assert from '/src/assert.js';
-import * as object from '/src/lang-utils/object-utils.js';
-
-import * as entry_utils from './entry-utils.js';
-import * as types from './types.js';
+import * as object from '/src/db/object-utils.js';
+import * as entry_utils from '/src/db/entry-utils.js';
+import * as types from '/src/db/types.js';
 
 // TODO: change mark-entry-read to use this, in the same manner that i did for
 // how activate-feed uses update-feed. then use this base to also implement

@@ -1,17 +1,17 @@
+import '/src/slideshow-page/main-menu.js';
+import '/src/slideshow-page/left-panel.js';
+import * as config_control from '/src/config-control.js';
+import * as db from '/src/db/db.js';
+import {append_slide} from '/src/slideshow-page/append-slide.js';
+import * as channel from '/src/slideshow-page/channel.js';
+import {feeds_container_append_feed} from '/src/slideshow-page/feeds-container.js';
+import {show_no_articles_message} from '/src/slideshow-page/no-articles-message.js';
+import {onkeydown} from '/src/slideshow-page/onkeydown.js';
+import {hide_splash, show_splash} from '/src/slideshow-page/splash.js';
+
 // TODO: if main menu and left panel are separate from slideshow-page, then
 // it would be better to separately load them as modules in the html
 
-import './main-menu.js';
-import './left-panel.js';
-
-import * as config_control from '/src/config/config-control.js';
-import * as db from '/src/db/db.js';
-import {append_slide} from './append-slide.js';
-import * as channel from './channel.js';
-import {feeds_container_append_feed} from './feeds-container.js';
-import {show_no_articles_message} from './no-articles-message.js';
-import {onkeydown} from './onkeydown.js';
-import {hide_splash, show_splash} from './splash.js';
 
 async function load_view() {
   show_splash();

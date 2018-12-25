@@ -11,9 +11,9 @@ Furthermore, there is the diagonal issue, what happens when a dependency needs t
 
 This has a lot of counter-intuitiveness to it. For example, the logical cohesion of string-utils.js. It is extremely tempting to just group string related functions together in a module that provides string related functions. But this is not functional cohesion, which is supposedly a stronger version of cohesion, where things are grouped together based on use, not type. The reference to use here may be my simplified understanding of feature. I may be aiming for what is termed feature-oriented modular composition just without really understanding what I am doing.
 
-
+* db should be part of core, but concern about notifying other pages is not part of core, that is part of extension content. so there should be extension context that wraps db lib and adds broadcasting. the db calls themselves should not be concerned with broadcasting, just doing db operations. other parts of the code that calls should go the extension-db wrapper of db, and not interact directly with db itself
 * get clang format working again on windows
-* deprecate database cleaning alarms
+* deprecate database cleaning alarms, they are just not used
 * in cron, separate out deprecated alarms, the deprecated flag prop feels wrong
 * move old notes back into github repository
 * get documentation into more of a working shape with markdown files

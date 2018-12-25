@@ -1,8 +1,8 @@
 import assert from '/src/assert.js';
-import * as object from '/src/lang-utils/object-utils.js';
-import * as errors from './errors.js';
-import * as feed_utils from './feed-utils.js';
-import * as types from './types.js';
+import * as object from '/src/db/object-utils.js';
+import * as errors from '/src/db/errors.js';
+import * as feed_utils from '/src/db/feed-utils.js';
+import * as types from '/src/db/types.js';
 
 // TODO: consider a stronger level of validation of incoming properties,
 // possibly using some kind of a schema of known properties. Or make this less

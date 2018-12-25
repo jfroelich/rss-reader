@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import {parse_html} from '/src/html-utils/parse-html.js';
-import {set_base_uri} from '/src/dom-utils/set-base-uri.js';
+import {set_base_uri} from '/src/poll/set-base-uri.js';
 import {image_size_filter} from '/src/dom-filters/image-size-filter.js';
 
 // Assert the ordinary case of a basic html document with an image with unknown

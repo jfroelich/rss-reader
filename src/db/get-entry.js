@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as entry_utils from './entry-utils.js';
+import * as entry_utils from '/src/db/entry-utils.js';
 
 export function get_entry(session, mode = 'id', value, key_only) {
   assert(mode !== 'id' || entry_utils.is_valid_entry_id(value));

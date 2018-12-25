@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {archive_entries} from '/src/db/archive-entries.js';
+import {archive_entries} from '/src/db/archive-entries/archive-entries.js';
 import {open} from '/src/db/open.js';
 import {remove} from '/src/db/remove.js';
 

@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as string from '/src/lang-utils/string.js';
+import * as string from '/src/string-utils.js';
 
 export function parse_html(html) {
   assert(typeof html === 'string');

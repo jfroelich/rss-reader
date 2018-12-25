@@ -1,4 +1,4 @@
-import {open} from './open.js';
+import {open} from '/src/db/open.js';
 
 // Return a session with a channel. Channel name is optional.
 export async function open_with_channel(

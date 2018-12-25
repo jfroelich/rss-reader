@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import * as entry_utils from '/src/db/entry-utils.js';
-import * as sanity from '/src/db/sanity.js';
+import * as sanity from '/src/db/sanity/sanity.js';
 
 // TODO: validate truncation behavior?
 

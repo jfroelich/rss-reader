@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as entry_utils from './entry-utils.js';
+import * as entry_utils from '/src/db/entry-utils.js';
 
 export function query_entries(session, query = {}) {
   assert(session);

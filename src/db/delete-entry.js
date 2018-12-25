@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as entry_utils from './entry-utils.js';
+import * as entry_utils from '/src/db/entry-utils.js';
 
 export async function delete_entry(session, id, reason) {
   assert(entry_utils.is_valid_entry_id(id));

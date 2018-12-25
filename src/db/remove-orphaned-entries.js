@@ -1,6 +1,6 @@
-import {get_feed_ids} from './get-feed-ids.js';
-import {iterate_entries} from './iterate-entries.js';
-import * as types from './types.js';
+import {get_feed_ids} from '/src/db/get-feed-ids.js';
+import {iterate_entries} from '/src/db/iterate-entries.js';
+import * as types from '/src/db/types.js';
 
 // Scans the database for entries not linked to a feed and deletes them
 export async function remove_orphaned_entries(session) {

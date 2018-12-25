@@ -1,4 +1,4 @@
-import * as url_utils from '/src/url-utils/url-utils.js';
+import * as url_utils from '/src/url-utils.js';
 import {fetch_image_element, is_ephemeral_fetch_error} from '/src/net/fetch-image-element.js';
 import {AssertionError} from '/src/assert.js';
 

@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {filter_unprintables} from '/src/lang-utils/filter-unprintables.js';
+import {filter_unprintables} from '/src/db/sanity/filter-unprintables.js';
 
 export async function filter_unprintables_test() {
   const f = filter_unprintables;

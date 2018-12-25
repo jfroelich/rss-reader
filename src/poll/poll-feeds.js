@@ -1,17 +1,17 @@
 import assert from '/src/assert.js';
 import {parse_html} from '/src/html-utils/parse-html.js';
-import {rewrite_url} from '/src/url-utils/rewrite-url.js';
+import {rewrite_url} from '/src/poll/rewrite-url.js';
 import {sanitize_document} from '/src/dom-filters/sandoc.js';
-import {set_base_uri} from '/src/dom-utils/set-base-uri.js';
-import * as sniff from '/src/url-utils/url-sniff.js';
-import * as config from '/src/config/config.js';
-import * as favicon from '/src/favicon-service/favicon-control.js';
-import {fetch_feed} from '/src/net/fetch-feed.js';
+import {set_base_uri} from '/src/poll/set-base-uri.js';
+import * as sniff from '/src/poll/url-sniff.js';
+import * as config from '/src/config.js';
+import * as favicon from '/src/favicon/favicon-control.js';
+import {fetch_feed} from '/src/net/fetch-feed/fetch-feed.js';
 import {fetch_html} from '/src/net/fetch-html.js';
 import {is_allowed_request} from '/src/net/fetch-policy.js';
 // TODO: import * as fetch_utils or something
 import {OfflineError, response_is_redirect, TimeoutError} from '/src/net/fetch2.js';
-import * as notification from '/src/notification/notification.js';
+import * as notification from '/src/notification.js';
 import {build as build_rewrite_rules} from '/src/poll/rewrite-rules.js';
 import * as db from '/src/db/db.js';
 

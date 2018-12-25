@@ -1,4 +1,4 @@
-import {update_feed} from './update-feed.js';
+import {update_feed} from '/src/db/update-feed.js';
 
 // TODO: deprecate, inline everywhere (like 1 place?)
 export async function deactivate_feed(session, feed_id, reason) {

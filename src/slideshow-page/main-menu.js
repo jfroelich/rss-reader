@@ -1,4 +1,4 @@
-import * as favicon from '/src/favicon-service/favicon-control.js';
+import * as favicon from '/src/favicon/favicon-control.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import * as db from '/src/db/db.js';
 

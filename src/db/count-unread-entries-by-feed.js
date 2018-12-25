@@ -1,4 +1,4 @@
-import * as entry_utils from './entry-utils.js';
+import * as entry_utils from '/src/db/entry-utils.js';
 
 // Return the number of unread entries for the given feed
 // NOTE: this is not optimized, this is just getting something working stage

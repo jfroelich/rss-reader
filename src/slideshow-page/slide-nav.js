@@ -1,4 +1,4 @@
-import * as config from '/src/config/config.js';
+import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
 
 import {append_slide} from './append-slide.js';

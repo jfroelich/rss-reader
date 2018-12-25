@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
-import * as object from '/src/lang-utils/object-utils.js';
-import * as types from './types.js';
+import * as object from '/src/db/object-utils.js';
+import * as types from '/src/db/types.js';
 
 // Create several feeds using a single transaction. This is preferable to
 // calling create_feed in a loop as that involves many transactions.

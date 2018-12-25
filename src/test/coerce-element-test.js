@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {coerce_element} from '/src/dom-utils/coerce-element.js';
+import {coerce_element} from '/src/dom-filters/condense-tagnames-filter/coerce-element.js';
 import {parse_html} from '/src/html-utils/parse-html.js';
 
 export async function coerce_element_test() {

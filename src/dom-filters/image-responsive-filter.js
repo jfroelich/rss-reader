@@ -1,4 +1,4 @@
-import * as srcset from '/src/dom-utils/srcset-utils.js';
+import * as srcset from '/src/dom-filters/utils/srcset-utils.js';
 
 // Transforms responsive images in document content. An image is 'responsive' if
 // it uses a srcset instead of a src, such that the actual image used is derived

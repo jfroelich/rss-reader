@@ -1,4 +1,4 @@
-import * as badge from '/src/extension/badge.js';
+import * as badge from '/src/badge.js';
 import * as db from '/src/db/db.js';
 import {append_slide} from './append-slide.js';
 import {count_unread_slides} from './count-unread-slides.js';

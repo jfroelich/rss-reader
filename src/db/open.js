@@ -1,6 +1,5 @@
-import * as indexeddb from '/src/indexeddb-utils/indexeddb-utils.js';
-
-import * as types from './types.js';
+import * as indexeddb from '/src/indexeddb-utils.js';
+import * as types from '/src/db/types.js';
 
 const DEFAULT_NAME = 'reader';
 const DEFAULT_VERSION = 29;

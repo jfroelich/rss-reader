@@ -1,4 +1,4 @@
-import {filter_publisher} from '/src/article-title/article-title.js';
+import {filter_publisher} from '/src/slideshow-page/article-title.js';
 import assert from '/src/assert.js';
 
 // TODO: store input/output in a json file, then change this test to load the

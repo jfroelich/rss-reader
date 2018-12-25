@@ -1,4 +1,4 @@
-import * as string from '/src/lang-utils/string.js';
+import * as string from '/src/string-utils.js';
 
 // Filters certain whitespace from a document. This scans the text nodes of a
 // document and modifies certain text nodes.

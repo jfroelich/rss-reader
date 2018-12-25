@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import * as db from '/src/db/db.js';
-import * as import_opml from '/src/opml/import-opml.js';
+import * as import_opml from '/src/slideshow-page/utils/import-opml.js';
 
 export async function import_opml_test() {
   const db_name = 'import-opml-test-db';

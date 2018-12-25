@@ -1,8 +1,7 @@
 import assert from '/src/assert.js';
-
-import * as entry_utils from './entry-utils.js';
-import * as errors from './errors.js';
-import * as types from './types.js';
+import * as entry_utils from '/src/db/entry-utils.js';
+import * as errors from '/src/db/errors.js';
+import * as types from '/src/db/types.js';
 
 // TODO: revise update-entry in the style of update-feed, then change this
 // function to simply wrap a call to update-entry, and then possibly just
