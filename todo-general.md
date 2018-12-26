@@ -1,3 +1,6 @@
+* consolidate db tests into single file
+
+
 Reorganization of modules. Instead of every module being in the main space, modules that are in use only by other modules should be submodules of those other modules. The only top level modules should be the shared modules or truly orthogonal modules. I want to think and learn more about module locality. I think a better way to state this is that I want a deeper hierarchy. Instead of having all modules exist in the highest level of the hierarchy, I want to nest modules within subfolders to limit the visibility of the module. The idea is that a module is only visible (by convention not syntax) to its ancestors in this hierarchy. It is not visible to its descendants, and it is not visible to modules that are siblings of its ancestry. In other words I am basically grouping dependencies. From bottom up point of view this is recursive grouping.
 
 If a module is only used in one place, it should only be located within that one place. It should (by convention) not be accessible everywhere.
@@ -11,10 +14,16 @@ Furthermore, there is the diagonal issue, what happens when a dependency needs t
 
 This has a lot of counter-intuitiveness to it. For example, the logical cohesion of string-utils.js. It is extremely tempting to just group string related functions together in a module that provides string related functions. But this is not functional cohesion, which is supposedly a stronger version of cohesion, where things are grouped together based on use, not type. The reference to use here may be my simplified understanding of feature. I may be aiming for what is termed feature-oriented modular composition just without really understanding what I am doing.
 
-* db should be part of core, but concern about notifying other pages is not part of core, that is part of extension content. so there should be extension context that wraps db lib and adds broadcasting. the db calls themselves should not be concerned with broadcasting, just doing db operations. other parts of the code that calls should go the extension-db wrapper of db, and not interact directly with db itself
+* db should be part of core, but concern about notifying other pages is not part of core, that is part of extension content. so there should be extension context that wraps db lib and adds broadcasting. the db calls themselves should not be concerned with broadcasting, just doing db operations. other parts of the code that calls should go the extension-db wrapper of db, and not interact directly with db itself. to get started on this i think i start by moving things into core, and then pulling the extension-db proxy back out of core. config is not part of core so it has to be injected (basically no hardcoded settings in core, everything injected via params objects). one issue is indexeddb. it does not exist outside of the browser. therefore the idea of a core that is browser agnostic is just plain stupid.
+
+* merge favicon.js and cache.js, not enough value to separate, also merge the separate tests
+* undo all the unnesting with db functions, simplify the module, the prevailing concern is simplicity, readability can be partially sacced
+* probably merge db files
+* maybe just merge all doc todos into one todo file or github issues
 * get clang format working again on windows
 * deprecate database cleaning alarms, they are just not used
 * in cron, separate out deprecated alarms, the deprecated flag prop feels wrong
 * move old notes back into github repository
 * get documentation into more of a working shape with markdown files
 * maybe move tests back into separate folder
+* go full material ui instead of slideshow, as an experiment

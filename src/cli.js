@@ -7,8 +7,6 @@ import {subscribe} from '/src/subscribe.js';
 import * as db from '/src/db/db.js';
 
 // Exposes a command line interface to the console
-// TODO: add command for removing untyped objects
-// TODO: this module was actually better named as cli, console is just strange
 
 async function cli_subscribe(url_string, poll = true) {
   const proms = [db.open_with_channel(), favicon.open()];

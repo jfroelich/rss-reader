@@ -1,10 +1,10 @@
 import * as db from '/src/db/db.js';
 
 export function install_listener(event) {
-  // We do not care if event.reason is install or update. While it would seem
-  // like we only need to do this on install, reloading the extension from
-  // chrome's extensions page also triggers an update event where for some
-  // reason the badge text is unset, so we must set it again.
+  // Refresh for both install and update event types. While it would seem like
+  // we only need to do this on install, reloading the extension from Chrome's
+  // extensions page triggers an update event where for some reason the badge
+  // text is unset.
   refresh();
 }
 

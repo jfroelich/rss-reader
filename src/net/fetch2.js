@@ -1,15 +1,5 @@
 import * as mime from '/src/mime-utils.js';
 
-const default_options = {
-  credentials: 'omit',
-  method: 'get',
-  mode: 'cors',
-  cache: 'default',
-  redirect: 'follow',
-  referrer: 'no-referrer',
-  referrerPolicy: 'no-referrer'
-};
-
 // Extends the builtin fetch with timeout, response type checking, and a way to
 // explicitly reject certain urls for policy reasons. Either returns a response,
 // or throws an error of some kind.
@@ -32,6 +22,16 @@ export async function fetch2(url, options = {}, is_allowed_request) {
         ['Refusing to request url', url.href, 'with method', options.method];
     throw new PolicyError(message.join(' '));
   }
+
+  const default_options = {
+    credentials: 'omit',
+    method: 'get',
+    mode: 'cors',
+    cache: 'default',
+    redirect: 'follow',
+    referrer: 'no-referrer',
+    referrerPolicy: 'no-referrer'
+  };
 
   const merged_options = Object.assign({}, default_options, options);
 
