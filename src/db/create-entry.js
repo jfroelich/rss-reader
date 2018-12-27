@@ -1,6 +1,5 @@
 import assert from '/src/assert.js';
 import * as object from '/src/db/object-utils.js';
-
 import * as entry_utils from './entry-utils.js';
 import * as types from './types.js';
 
@@ -31,9 +30,17 @@ export async function create_entry(session, entry) {
 
   object.filter_empty_properties(entry);
 
-  const put_bound = put_entry.bind(null, session.conn, entry);
-  const create_entry_promise = new Promise(put_bound);
-  const id = await create_entry_promise;
+  // This intentionally does not resolve until the transaction resolves because
+  // resolving when the request completes would be premature.
+  const id = await new Promise((resolve, reject) => {
+    let id;
+    const txn = session.conn.transaction('entry', 'readwrite');
+    txn.oncomplete = _ => resolve(id);
+    txn.onerror = event => reject(event.target.error);
+    const store = txn.objectStore('entry');
+    const request = store.put(entry);
+    request.onsuccess = _ => id = request.result;
+  });
 
   if (session.channel) {
     const message = {type: 'entry-created', id: id};
@@ -41,17 +48,4 @@ export async function create_entry(session, entry) {
   }
 
   return id;
-}
-
-// Put an entry in the entry object store. This does not resolve until the
-// transaction itself resolves. Resolving when the request resolves would be
-// premature.
-function put_entry(conn, entry, resolve, reject) {
-  let id;
-  const txn = conn.transaction('entry', 'readwrite');
-  txn.oncomplete = _ => resolve(id);
-  txn.onerror = event => reject(event.target.error);
-  const store = txn.objectStore('entry');
-  const request = store.put(entry);
-  request.onsuccess = _ => id = request.result;
 }
