@@ -51,8 +51,6 @@ export function get_blue(c) {
 
 // Based on the spec, which provides the formula.
 // http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
-// Calculating luminance is needed to calculate contrast.
-// TODO: this is for RGB, not ARGB. Do i premultiply or ignore alpha?
 export function get_luminance(color) {
   const rr = get_red(color) / 255;
   const rg = get_green(color) / 255;

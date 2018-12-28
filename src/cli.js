@@ -6,29 +6,21 @@ import {refresh_feed_icons} from '/src/refresh-feed-icons.js';
 import {subscribe} from '/src/subscribe.js';
 import * as db from '/src/db/db.js';
 
-// Exposes a command line interface to the console
-
 async function cli_subscribe(url_string, poll = true) {
+  const url = new URL(url_string);
   const proms = [db.open_with_channel(), favicon.open()];
   const [session, iconn] = await Promise.all(proms);
-
-  // Bubble up error to console if url is invalid
-  const url = new URL(url_string);
-
   const feed = await subscribe(session, iconn, url, options, 3000, true);
-
   // Do a sequential poll of the created feed
   if (poll) {
     const poll_options = {ignore_recency_check: true, notify: true};
     await poll_feed(session, iconn, poll_options, feed);
   }
-
   session.close();
   iconn.close();
 }
 
 async function cli_archive_entries(max_age) {
-  // TODO: if max_age parameter is not set, try reading in the config value?
   const session = await db.open_with_channel();
   await db.archive_entries(session, max_age);
   session.close();
@@ -125,5 +117,4 @@ const cli = {
   subscribe: cli_subscribe
 };
 
-// Expose to console
 window.cli = cli;

@@ -4,29 +4,23 @@ import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {refresh_feed_icons} from '/src/refresh-feed-icons.js';
 import * as db from '/src/db/db.js';
 
-// Periods are represented in minutes to easily align with Chrome's createAlarm
-const PERIOD_HALF_DAY = 60 * 12;
-const PERIOD_ONE_WEEK = 60 * 24 * 7;
+const HALF_DAY_MINUTES = 60 * 12;
+const ONE_WEEK_MINUTES = 60 * 24 * 7;
 
 const alarms = [
-  {name: 'archive', period: PERIOD_HALF_DAY},
-  {name: 'remove-entries-missing-urls', period: PERIOD_ONE_WEEK},
-  {name: 'poll', period: PERIOD_ONE_WEEK},
-  {name: 'remove-orphaned-entries', period: PERIOD_ONE_WEEK},
-  {name: 'remove-untyped-objects', period: PERIOD_ONE_WEEK},
-  {name: 'refresh-feed-icons', period: PERIOD_ONE_WEEK * 2},
-  {name: 'compact-favicon-db', period: PERIOD_ONE_WEEK},
+  {name: 'archive', period: HALF_DAY_MINUTES},
+  {name: 'remove-entries-missing-urls', period: ONE_WEEK_MINUTES},
+  {name: 'poll', period: ONE_WEEK_MINUTES},
+  {name: 'remove-orphaned-entries', period: ONE_WEEK_MINUTES},
+  {name: 'remove-untyped-objects', period: ONE_WEEK_MINUTES},
+  {name: 'refresh-feed-icons', period: ONE_WEEK_MINUTES * 2},
+  {name: 'compact-favicon-db', period: ONE_WEEK_MINUTES},
   {name: 'test-install-binding-alarms', deprecated: true},
   {name: 'db-remove-orphaned-entries', deprecated: true},
   {name: 'cleanup-refresh-badge-lock', deprecated: true}
 ];
 
-// Appropriately modify alarm settings when the extension is installed or
-// updated
 export function install_listener(event) {
-  // Of the reasons, if we are not installing, we are doing some kind of update
-  // and do not care which subtype, and all reasons other than install are
-  // update per the chrome api docs
   if (event.reason === 'install') {
     create_alarms();
   } else {
