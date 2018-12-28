@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {parse_html} from '/src/html-utils/parse-html.js';
+import {parse_html} from '/src/parse-html.js';
 
 export function replace_tags(html, replacement) {
   assert(typeof html === 'string');

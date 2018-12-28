@@ -2,7 +2,7 @@ import assert from '/src/assert.js';
 import {filter_unprintables} from '/src/db/sanity/filter-unprintables.js';
 import {replace_tags} from '/src/db/sanity/replace-tags.js';
 import * as string from '/src/string-utils.js';
-import truncate_html from '/src/html-utils/truncate-html.js';
+import truncate_html from '/src/truncate-html.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import * as types from '/src/db/types.js';

@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {parse_html} from '/src/html-utils/parse-html.js';
+import {parse_html} from '/src/parse-html.js';
 import * as indexeddb from '/src/indexeddb-utils.js';
 import * as mime from '/src/mime-utils.js';
 import {fetch_html} from '/src/net/fetch-html.js';

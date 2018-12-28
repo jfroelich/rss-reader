@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import {image_lazy_filter} from '/src/dom-filters/image-lazy-filter.js';
-import {parse_html} from '/src/html-utils/parse-html.js';
+import {parse_html} from '/src/parse-html.js';
 import {image_dead_filter} from '/src/dom-filters/image-dead-filter.js';
 import {fetch_html} from '/src/net/fetch-html.js';
 
