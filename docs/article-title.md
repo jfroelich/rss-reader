@@ -1,3 +1,4 @@
+# article-title
 Returns a new string where the publisher information has been stripped. For example, in the string "Florida man shoots self - Your Florida News", the algorithm would hopefully identify the publisher as "Your Florida news" and then return the string "Florida man shoots self" where the publisher has been filtered.
 
 If the input is bad, the input is returned unfiltered.

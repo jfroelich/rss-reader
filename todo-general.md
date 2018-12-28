@@ -1,4 +1,6 @@
-* consolidate db tests into single file
+* I think it was wrong to try and forego github issues. Just go back to taking the time to properly enter individual issues in github. Move all existing todos located throughout the code and throughout the documentation into individual github issues.
+
+
 
 
 Reorganization of modules. Instead of every module being in the main space, modules that are in use only by other modules should be submodules of those other modules. The only top level modules should be the shared modules or truly orthogonal modules. I want to think and learn more about module locality. I think a better way to state this is that I want a deeper hierarchy. Instead of having all modules exist in the highest level of the hierarchy, I want to nest modules within subfolders to limit the visibility of the module. The idea is that a module is only visible (by convention not syntax) to its ancestors in this hierarchy. It is not visible to its descendants, and it is not visible to modules that are siblings of its ancestry. In other words I am basically grouping dependencies. From bottom up point of view this is recursive grouping.

@@ -1,7 +1,7 @@
-# About adjust-scores
+# boilerplate-adjust-scores
 This is a private helper module for the boilerplate module. The function adjusts block scores (in place) until a minimum amount of a non-boilerplate content remains in the document. Or at least this tries to do so and gives up after a while. This only adjusts scores of blocks with low scores.
 
-## Why does this module exist
+## Why does this module exist?
 Removing the right amount of boilerplate is a fickle task. The model uses heuristics regarding whether a piece of content is boilerplate. The model operates on a shallow symbolic level without considering the morphological structure or the semantic meaning of content. There is a risk this shallow analysis removes good content.
 
 This function performs a second pass over the data to ensure that a minimum amount of content remains regardless of model accuracy. After this pass, only the worst offenders remain in the data. This helps counter parts of the algorithm where it is overzealous in flagging bad content.
