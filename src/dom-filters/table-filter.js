@@ -1,6 +1,5 @@
+import {node_is_leaf} from '/src/dom-filters/node-is-leaf.js';
 import {unwrap_element} from '/src/dom-filters/utils/unwrap-element.js';
-
-import {node_is_leaf} from './node-is-leaf.js';
 
 // Filters certain table elements from document content
 export function table_filter(document, table_row_scan_max) {
