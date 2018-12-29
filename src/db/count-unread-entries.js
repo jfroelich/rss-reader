@@ -1,7 +1,7 @@
 import * as entry_utils from '/src/db/entry-utils.js';
 
 export function count_unread_entries(session) {
-  return new Promise(resolve, reject) => {
+  return new Promise((resolve, reject) => {
     const txn = session.conn.transaction('entry');
     const store = txn.objectStore('entry');
     const index = store.index('readState');
