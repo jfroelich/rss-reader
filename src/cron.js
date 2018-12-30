@@ -33,8 +33,6 @@ export async function alarm_listener(alarm) {
   console.debug('Alarm wokeup:', alarm.name);
   config.write_string('last_alarm', alarm.name);
 
-  // TODO: these branches could probably all share the session open and close?
-
   if (alarm.name === 'archive') {
     // TODO: read max age from config instead of defaulting
     let max_age;
@@ -42,21 +40,7 @@ export async function alarm_listener(alarm) {
     await db.archive_entries(session, max_age);
     session.close();
   } else if (alarm.name === 'poll') {
-    if (config.read_boolean('only_poll_if_idle')) {
-      // TODO: this value should come from configuration
-      const idle_secs = 30;
-      const state = await query_idle_state(idle_secs);
-      if (state !== 'locked' || state !== 'idle') {
-        return;
-      }
-    }
-
-    const promises = [db.open_with_channel(), favicon.open()];
-    const [session, iconn] = await Promise.all(promises);
-    const poll_options = {ignore_recency_check: false, notify: true};
-    await poll_feeds(session, iconn, poll_options);
-    session.close();
-    iconn.close();
+    await handle_alarm_poll();
   } else if (alarm.name === 'remove-entries-missing-urls') {
     const session = await db.open_with_channel();
     await db.remove_lost_entries(session);
@@ -82,11 +66,34 @@ export async function alarm_listener(alarm) {
   }
 }
 
-// TODO: switch to cross platform idle state query, see
-// https://developer.mozilla.org/en-US/Add-ons/WebExtensions/API/idle/queryState
+async function handle_alarm_poll() {
+  if (config.read_boolean('only_poll_if_idle')) {
+    const idle_states = ['locked', 'idle'];
+    const idle_secs = 30;
+    const idle_state = await query_idle_state(idle_secs);
+    if(!idle_states.includes(idle_state)) {
+      console.debug('Canceling poll_feeds alarm as not idle');
+      return;
+    }
+  }
+
+  const promises = [db.open_with_channel(), favicon.open()];
+  const [session, iconn] = await Promise.all(promises);
+  const poll_options = {ignore_recency_check: false, notify: true};
+  await poll_feeds(session, iconn, poll_options);
+  session.close();
+  iconn.close();
+}
 
 function query_idle_state(idle_secs) {
-  return new Promise(res => chrome.idle.queryState(idle_secs, res));
+  return new Promise((resolve, reject) => {
+    if(typeof chrome === 'object' && typeof chrome.idle === 'object' &&
+      typeof chrome.idle.queryState === 'function') {
+      chrome.idle.queryState(idle_secs, resolve);
+    } else {
+      reject(new Error('chrome.idle unavailable'));
+    }
+  });
 }
 
 // TODO: should this check for configuration changes and delete-create changed
