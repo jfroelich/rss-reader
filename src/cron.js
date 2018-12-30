@@ -34,7 +34,6 @@ export async function alarm_listener(alarm) {
   config.write_string('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
-    // TODO: read max age from config instead of defaulting
     let max_age;
     const session = await db.open_with_channel();
     await db.archive_entries(session, max_age);
@@ -96,10 +95,6 @@ function query_idle_state(idle_secs) {
   });
 }
 
-// TODO: should this check for configuration changes and delete-create changed
-// alarms? or just overwrite everytime?
-// TODO: shouldn't calls to remove an alarm only happen based on certain upgrades
-// instead of blinding removing everything on every update?
 export function update_alarms(prev_version_string) {
   for (const alarm of alarms) {
     if (alarm.deprecated) {
