@@ -5,7 +5,3 @@ export function condense_whitespace(value) {
 export function filter_controls(value) {
   return value.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }
-
-export function filter_whitespace(value) {
-  return value.replace(/\s+/g, '');
-}
