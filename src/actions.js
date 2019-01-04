@@ -14,47 +14,59 @@ import * as notification from '/src/notification.js';
 // available, even if some of those are just simple db wrapper calls.
 
 
-export async function subscribe(
-    session, iconn, url, fetch_timeout, should_notify) {
-  if (await model_has_feed_url(session, url)) {
-    throw new ConstraintError('Found existing feed with url ' + url.href);
+export async function subscribe(session, iconn, url, fetch_timeout,
+  should_notify) {
+
+  // Check if subscribed to the input url
+  let existing_feed = await db.get_feed(session, 'url', url, true);
+  if (existing_feed) {
+    const message = 'Found existing feed with url ' + url.href;
+    throw new ConstraintError(message);
   }
 
-  const feed = await fetch_feed_without_entries(url, fetch_timeout);
-  const res_url = new URL(feed.urls[feed.urls.length - 1]);
+  // TODO: notice the awkwardness here with response vs http response. I think
+  // fetch_feed might be a bad abstraction. I think maybe what should happen
+  // is that fetch_feed be broken up into consistuent parts fetch_xml and
+  // parse_feed_from_xml
 
-  // TODO: response_is_redirect now accepts a response object, not a response
-  // url. Therefore, this needs to be able to access the response object, so
-  // fetch_feed_without_entries needs to expose this. What I should probably
-  // do is step backward, and inline the helper again, due to the shifted
-  // requirements. In the mean time this extra check is disabled and hopefully
-  // does not lead to serious problems.
+  // Propagate fetch errors as subscribe errors
+  const response = await fetch_feed(url, timeout, true, false);
+  const http_response = response.http_response;
 
-  // if (response_is_redirect(url, res_url) && await model_has_feed_url(session,
-  // res_url)) {
-  //  throw new ConstraintError(
-  //      'Found existing feed for redirected url ' + res_url.href);
-  //}
+  // If redirected, check if subscribed to the redirected url
+  if(response_is_redirect(url, http_response)) {
+    const rurl = new URL(http_response.url);
+    let existing_feed = await db.get_feed(session, 'url', rurl, true);
+    if (existing_feed) {
+      const message = 'Found existing feed with redirect url ' + rurl.href;
+      throw new ConstraintError(message);
+    }
+  }
 
+  const feed = response.feed;
   await set_feed_favicon(iconn, feed);
   db.validate_feed(feed);
   db.sanitize_feed(feed);
   feed.id = await db.create_feed(session, feed);
-  send_subscribe_notification(feed, should_notify);
+
+  if(should_notify) {
+    const feed_title = feed.title || feed.urls[feed.urls.length - 1];
+
+    // TODO: now I think notification.show should accept a composed parameter
+    // object, instead of individual params. In this case the composition is
+    // reasonable because the individual parameters are highly related
+    const note = {};
+    note.title = 'Subscribed!';
+    note.message = 'Subscribed to ' + feed_title;
+    note.url = feed.faviconURLString;
+    notification.show(note.title, note.message, note.url);
+  }
+
   return feed;
 }
 
 export function unsubscribe(session, feed_id) {
   return db.delete_feed(session, feed_id, 'unsubscribe');
-}
-
-function send_subscribe_notification(feed, should_notify) {
-  if (should_notify) {
-    const title = 'Subscribed!';
-    const feed_title = feed.title || feed.urls[feed.urls.length - 1];
-    const message = 'Subscribed to ' + feed_title;
-    notification.show(title, message, feed.faviconURLString);
-  }
 }
 
 async function set_feed_favicon(iconn, feed) {
@@ -67,20 +79,6 @@ async function set_feed_favicon(iconn, feed) {
   const do_fetch_during_lookup = false;
   feed.faviconURLString = await favicon.lookup(
       iconn, lookup_url, prefetched_document, do_fetch_during_lookup);
-}
-
-async function fetch_feed_without_entries(url, timeout) {
-  const skip_entries = true;
-  const resolve_entry_urls = false;
-  const response =
-      await fetch_feed(url, timeout, skip_entries, resolve_entry_urls);
-  return response.feed;
-}
-
-async function model_has_feed_url(session, url) {
-  const key_only = true;
-  const feed = await db.get_feed(session, 'url', url, key_only);
-  return feed ? true : false;
 }
 
 export class ConstraintError extends Error {

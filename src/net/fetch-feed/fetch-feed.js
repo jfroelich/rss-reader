@@ -52,5 +52,6 @@ export async function fetch_feed(
   const output_response = {};
   output_response.feed = feed;
   output_response.entries = parsed_feed.entries;
+  output_response.http_response = response;
   return output_response;
 }
