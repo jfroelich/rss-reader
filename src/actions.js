@@ -4,6 +4,16 @@ import {response_is_redirect} from '/src/net/fetch2.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import * as notification from '/src/notification.js';
 
+// The actions module represents a middle-layer that is above the database but
+// below the view layer. The operations here generally are functions that
+// involve the database plus some non-database functionality, such as any
+// logic.
+
+// TODO: all higher layers should be interacting with this module instead of
+// interacting with the database. This should have all the various actions
+// available, even if some of those are just simple db wrapper calls.
+
+
 export async function subscribe(
     session, iconn, url, fetch_timeout, should_notify) {
   if (await model_has_feed_url(session, url)) {
@@ -11,7 +21,6 @@ export async function subscribe(
   }
 
   const feed = await fetch_feed_without_entries(url, fetch_timeout);
-
   const res_url = new URL(feed.urls[feed.urls.length - 1]);
 
   // TODO: response_is_redirect now accepts a response object, not a response
@@ -33,6 +42,10 @@ export async function subscribe(
   feed.id = await db.create_feed(session, feed);
   send_subscribe_notification(feed, should_notify);
   return feed;
+}
+
+export function unsubscribe(session, feed_id) {
+  return db.delete_feed(session, feed_id, 'unsubscribe');
 }
 
 function send_subscribe_notification(feed, should_notify) {
@@ -68,10 +81,6 @@ async function model_has_feed_url(session, url) {
   const key_only = true;
   const feed = await db.get_feed(session, 'url', url, key_only);
   return feed ? true : false;
-}
-
-export function unsubscribe(session, feed_id) {
-  return db.delete_feed(session, feed_id, 'unsubscribe');
 }
 
 export class ConstraintError extends Error {

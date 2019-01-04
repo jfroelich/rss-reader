@@ -4,7 +4,7 @@ import * as badge from '/src/badge.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import {poll_feed} from '/src/poll/poll-feeds.js';
-import {subscribe, unsubscribe} from '/src/subscribe.js';
+import {subscribe, unsubscribe} from '/src/actions.js';
 import * as db from '/src/db/db.js';
 import {fade_element} from '/src/options-page/fade-element.js';
 
