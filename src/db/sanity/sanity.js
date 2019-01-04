@@ -102,7 +102,7 @@ export function sanitize_entry(
 
   if (entry.author) {
     let author = entry.author;
-    author = string.filter_controls(author);
+    author = filter_controls(author);
     author = replace_tags(author, '');
     author = string.condense_whitespace(author);
     author = truncate_html(author, author_max_length);
@@ -120,7 +120,7 @@ export function sanitize_entry(
 
   if (entry.title) {
     let title = entry.title;
-    title = string.filter_controls(title);
+    title = filter_controls(title);
     title = replace_tags(title, '');
     title = string.condense_whitespace(title);
     title = truncate_html(title, title_max_length);
@@ -144,7 +144,7 @@ export function sanitize_feed(feed, title_max_len, desc_max_len) {
 
   if (feed.title) {
     let title = feed.title;
-    title = string.filter_controls(title);
+    title = filter_controls(title);
     title = replace_tags(title, html_tag_replacement);
     title = string.condense_whitespace(title);
     title = truncate_html(title, title_max_len, repl_suffix);
@@ -153,7 +153,7 @@ export function sanitize_feed(feed, title_max_len, desc_max_len) {
 
   if (feed.description) {
     let desc = feed.description;
-    desc = string.filter_controls(desc);
+    desc = filter_controls(desc);
     desc = replace_tags(desc, html_tag_replacement);
     desc = string.condense_whitespace(desc);
     desc = truncate_html(desc, desc_max_len, repl_suffix);
@@ -165,6 +165,10 @@ function vassert(condition, message) {
   if (!condition) {
     throw new ValidationError(message);
   }
+}
+
+export function filter_controls(value) {
+  return value.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }
 
 export class ValidationError extends Error {
