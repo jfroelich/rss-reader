@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as string from '/src/string-utils.js';
+import {condense_whitespace} from '/src/condense-whitespace.js';
 
 export function parse_html(html) {
   assert(typeof html === 'string');
@@ -9,7 +9,7 @@ export function parse_html(html) {
 
   const error = document.querySelector('parsererror');
   if (error) {
-    const message = string.condense_whitespace(error.textContent);
+    const message = condense_whitespace(error.textContent);
     throw new Error(message);
   }
 

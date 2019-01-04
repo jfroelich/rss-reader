@@ -2,7 +2,7 @@ import assert from '/src/assert.js';
 import {unwrap_element} from '/src/dom-filters/utils/unwrap-element.js';
 import * as image_utils from '/src/dom-filters/utils/image-utils.js';
 import {node_is_leaf} from '/src/dom-filters/node-is-leaf.js';
-import * as string from '/src/string-utils.js';
+import {condense_whitespace} from '/src/condense-whitespace.js';
 import {color_contrast_filter} from '/src/dom-filters/color-contrast-filter/color-contrast-filter.js';
 import {is_hidden_inline} from '/src/dom-filters/utils/visibility.js';
 import * as attribute_utils from '/src/dom-filters/utils/attribute-utils.js';
@@ -579,7 +579,7 @@ export function node_whitespace_filter(document) {
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
     if (value.length > node_value_length_min && !node_is_ws_sensitive(node)) {
-      const new_value = string.condense_whitespace(value);
+      const new_value = condense_whitespace(value);
       if (new_value.length !== value.length) {
         node.nodeValue = new_value;
       }

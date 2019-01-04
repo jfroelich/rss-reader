@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
 import {filter_unprintables} from '/src/db/sanity/filter-unprintables.js';
 import {replace_tags} from '/src/db/sanity/replace-tags.js';
-import * as string from '/src/string-utils.js';
+import {condense_whitespace} from '/src/condense-whitespace.js';
 import truncate_html from '/src/truncate-html.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
@@ -104,7 +104,7 @@ export function sanitize_entry(
     let author = entry.author;
     author = filter_controls(author);
     author = replace_tags(author, '');
-    author = string.condense_whitespace(author);
+    author = condense_whitespace(author);
     author = truncate_html(author, author_max_length);
     entry.author = author;
   }
@@ -122,7 +122,7 @@ export function sanitize_entry(
     let title = entry.title;
     title = filter_controls(title);
     title = replace_tags(title, '');
-    title = string.condense_whitespace(title);
+    title = condense_whitespace(title);
     title = truncate_html(title, title_max_length);
     entry.title = title;
   }
@@ -146,7 +146,7 @@ export function sanitize_feed(feed, title_max_len, desc_max_len) {
     let title = feed.title;
     title = filter_controls(title);
     title = replace_tags(title, html_tag_replacement);
-    title = string.condense_whitespace(title);
+    title = condense_whitespace(title);
     title = truncate_html(title, title_max_len, repl_suffix);
     feed.title = title;
   }
@@ -155,7 +155,7 @@ export function sanitize_feed(feed, title_max_len, desc_max_len) {
     let desc = feed.description;
     desc = filter_controls(desc);
     desc = replace_tags(desc, html_tag_replacement);
-    desc = string.condense_whitespace(desc);
+    desc = condense_whitespace(desc);
     desc = truncate_html(desc, desc_max_len, repl_suffix);
     feed.description = desc;
   }
