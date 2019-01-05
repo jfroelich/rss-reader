@@ -6,14 +6,16 @@ import * as db from '/src/db/db.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
 const ONE_WEEK_MINUTES = 60 * 24 * 7;
+const ONE_HOUR_MINUTES = 60;
+const FORTNIGHT_MINUTES = ONE_WEEK_MINUTES * 2;
 
 const alarms = [
   {name: 'archive', period: HALF_DAY_MINUTES},
   {name: 'remove-entries-missing-urls', deprecated: true},
-  {name: 'poll', period: ONE_WEEK_MINUTES},
+  {name: 'poll', period: ONE_HOUR_MINUTES},
   {name: 'remove-orphaned-entries', deprecated: true},
   {name: 'remove-untyped-objects', deprecated: true},
-  {name: 'refresh-feed-icons', period: ONE_WEEK_MINUTES * 2},
+  {name: 'refresh-feed-icons', period: FORTNIGHT_MINUTES},
   {name: 'compact-favicon-db', period: ONE_WEEK_MINUTES},
   {name: 'test-install-binding-alarms', deprecated: true},
   {name: 'db-remove-orphaned-entries', deprecated: true},
