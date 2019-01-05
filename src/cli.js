@@ -20,12 +20,6 @@ async function cli_subscribe(url_string, poll = true) {
   iconn.close();
 }
 
-async function cli_archive_entries(max_age) {
-  const session = await db.open_with_channel();
-  await db.archive_entries(session, max_age);
-  session.close();
-}
-
 async function cli_refresh_icons() {
   const proms = [db.open_with_channel(), favicon.open()];
   const [session, iconn] = await Promise.all(proms);
@@ -41,18 +35,6 @@ async function cli_poll_feeds() {
   await poll_feeds(session, iconn, poll_options);
   session.close();
   iconn.close();
-}
-
-async function cli_remove_lost_entries() {
-  const session = await db.open_with_channel();
-  await db.remove_lost_entries(session);
-  session.close();
-}
-
-async function cli_remove_orphans() {
-  const session = await db.open_with_channel();
-  await db.remove_orphaned_entries(session);
-  session.close();
 }
 
 async function cli_lookup_favicon(url_string, cached) {
@@ -105,12 +87,9 @@ const cli = {
   create_alarms: cli_create_alarms,
   clear_alarms: cli_clear_alarms,
   print_alarms: cli_print_alarms,
-  archive: cli_archive_entries,
   clear_icons: cli_clear_icons,
   compact_icons: cli_compact_icons,
   install_fonts: cli_install_fonts,
-  remove_orphaned_entries: cli_remove_orphans,
-  remove_lost_entries: cli_remove_lost_entries,
   lookup_favicon: cli_lookup_favicon,
   poll_feeds: cli_poll_feeds,
   refresh_icons: cli_refresh_icons,
