@@ -9,10 +9,10 @@ const ONE_WEEK_MINUTES = 60 * 24 * 7;
 
 const alarms = [
   {name: 'archive', period: HALF_DAY_MINUTES},
-  {name: 'remove-entries-missing-urls', period: ONE_WEEK_MINUTES},
+  {name: 'remove-entries-missing-urls', deprecated: true},
   {name: 'poll', period: ONE_WEEK_MINUTES},
-  {name: 'remove-orphaned-entries', period: ONE_WEEK_MINUTES},
-  {name: 'remove-untyped-objects', period: ONE_WEEK_MINUTES},
+  {name: 'remove-orphaned-entries', deprecated: true},
+  {name: 'remove-untyped-objects', deprecated: true},
   {name: 'refresh-feed-icons', period: ONE_WEEK_MINUTES * 2},
   {name: 'compact-favicon-db', period: ONE_WEEK_MINUTES},
   {name: 'test-install-binding-alarms', deprecated: true},
@@ -40,18 +40,6 @@ export async function alarm_listener(alarm) {
     session.close();
   } else if (alarm.name === 'poll') {
     await handle_alarm_poll();
-  } else if (alarm.name === 'remove-entries-missing-urls') {
-    const session = await db.open_with_channel();
-    await db.remove_lost_entries(session);
-    session.close();
-  } else if (alarm.name === 'remove-orphaned-entries') {
-    const session = await db.open_with_channel();
-    await db.remove_orphaned_entries(session);
-    session.close();
-  } else if (alarm.name === 'remove-untyped-objects') {
-    const session = await db.open_with_channel();
-    await db.remove_untyped_objects(session);
-    session.close();
   } else if (alarm.name === 'refresh-feed-icons') {
     const proms = [await db.open_with_channel(), favicon.open()];
     const [session, iconn] = await Promise.all(proms);
