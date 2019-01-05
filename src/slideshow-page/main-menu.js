@@ -85,9 +85,6 @@ function feeds_button_onclick(event) {
   feeds_container.style.display = 'block';
 }
 
-// Initialize things on module load. Note how modules become ready only after
-// the dom is ready, so elements should be findable.
-
 const toggle_left_panel_button = document.getElementById('main-menu-button');
 toggle_left_panel_button.onclick = toggle_left_pannel_button_onclick;
 
