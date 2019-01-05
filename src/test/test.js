@@ -56,7 +56,6 @@ register_test(db_tests.mark_entry_read_test);
 register_test(db_tests.query_entries_test);
 register_test(db_tests.remove_lost_entries_test);
 register_test(db_tests.remove_orphaned_entries_test);
-register_test(db_tests.remove_untyped_objects_test);
 register_test(db_tests.sanitize_entry_content_test);
 register_test(db_tests.update_entry_test);
 register_test(db_tests.update_feed_test);

@@ -23,7 +23,6 @@ export * from '/src/db/open.js';
 export * from '/src/db/query-entries.js';
 export * from '/src/db/remove-lost-entries.js';
 export * from '/src/db/remove-orphaned-entries.js';
-export * from '/src/db/remove-untyped-objects.js';
 export * from '/src/db/remove.js';
 export * from '/src/db/sanity/sanity.js';
 export * from '/src/db/types.js';
