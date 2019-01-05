@@ -1,7 +1,13 @@
 import * as config from '/src/config.js';
 import * as extension_tab from '/src/tab.js';
 
-export function show(title, message, icon_url_string) {
+// @param note {Object} has properties name, message, and url (string), each
+// property is optional, but note itself is not optional
+export function show(note) {
+  const title = note.title || 'Untitled';
+  const message = note.message || '';
+  const icon_url_string = note.url;
+
   if (!config.read_boolean('show_notifications')) {
     return;
   }

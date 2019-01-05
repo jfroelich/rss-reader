@@ -51,15 +51,11 @@ export async function subscribe(session, iconn, url, fetch_timeout,
 
   if(should_notify) {
     const feed_title = feed.title || feed.urls[feed.urls.length - 1];
-
-    // TODO: now I think notification.show should accept a composed parameter
-    // object, instead of individual params. In this case the composition is
-    // reasonable because the individual parameters are highly related
     const note = {};
     note.title = 'Subscribed!';
     note.message = 'Subscribed to ' + feed_title;
     note.url = feed.faviconURLString;
-    notification.show(note.title, note.message, note.url);
+    notification.show(note);
   }
 
   return feed;

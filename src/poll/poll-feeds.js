@@ -51,9 +51,10 @@ export async function poll_feeds(session, iconn, options = {}) {
   }
 
   if (count) {
-    const title = 'Added articles';
-    const message = 'Added articles';
-    notification.show(title, message);
+    const note = {};
+    note.title = 'Added articles';
+    note.message = 'Added articles';
+    notification.show(note);
   }
 
   console.debug('Added %d entries', count);
@@ -103,10 +104,11 @@ export async function poll_feed(session, iconn, options = {}, feed) {
       session, iconn, rewrite_rules, options, response.entries, merged_feed);
 
   if (options.notify && count) {
-    const title = 'Added articles';
-    const message =
+    const note = {};
+    note.title = 'Added articles';
+    note.message =
         'Added ' + count + ' articles for feed ' + merged_feed.title;
-    notification.show(title, message);
+    notification.show(note);
   }
 
   return count;
