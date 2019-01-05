@@ -1,3 +1,5 @@
+import assert from '/src/assert.js';
+
 // Opens a connection to an indexedDB database. The primary benefits over using
 // indexedDB.open directly are that this works as a promise, enables a timeout,
 // and translates blocked events into errors (and still closes if ever open).
@@ -8,14 +10,9 @@
 // wanted to do that I would wrap the call to the listener here with a function
 // that first checks if blocked/timed_out and if so aborts the transaction and
 // closes, otherwise forwards to the listener.
-export async function open(name, version, upgrade_listener, timeout) {
-  if (typeof name !== 'string') {
-    throw new TypeError('Invalid database name ' + name);
-  }
-
-  if (!isNaN(timeout) && (!Number.isInteger(timeout) || timeout < 0)) {
-    throw new TypeError('Invalid connection timeout ' + timeout);
-  }
+export async function open(name, version, onupgrade, timeout) {
+  assert(typeof name === 'string');
+  assert(timeout === undefined || (Number.isInteger(timeout) && timeout >= 0));
 
   let timed_out = false;
   let timer = null;
@@ -23,27 +20,39 @@ export async function open(name, version, upgrade_listener, timeout) {
   const open_promise = new Promise((resolve, reject) => {
     let blocked = false;
     const request = indexedDB.open(name, version);
+    request.onupgradeneeded = onupgrade;
+
     request.onsuccess = function(event) {
       const conn = event.target.result;
+
+      // If we blocked, we rejected the promise earlier so just exit. The extra
+      // rejection here is irrelevant.
       if (blocked) {
-        console.debug('Closing connection %s that unblocked', conn.name);
+        console.debug('Closing connection "%s" that unblocked', conn.name);
         conn.close();
-      } else if (timed_out) {
-        console.debug('Closing connection %s opened after timeout', conn.name);
-        conn.close();
-      } else {
-        resolve(conn);
+        return;
       }
+
+      // If we timed out, settle the promise. The settle mode is irrelevant.
+      if (timed_out) {
+        console.debug('Closing connection "%s" after timeout', conn.name);
+        conn.close();
+        resolve();
+        return;
+      }
+
+      resolve(conn);
     };
 
     request.onblocked = function(event) {
+      const conn = event.target.result;
       blocked = true;
-      const error = new BlockError();
+      const message = 'Blocked connecting to ' + conn ? conn.name : 'undefined';
+      const error = new BlockError(message);
       reject(error);
     };
 
-    request.onerror = () => reject(request.error);
-    request.onupgradeneeded = upgrade_listener;
+    request.onerror = _ => reject(request.error);
   });
 
   let conn_promise;
