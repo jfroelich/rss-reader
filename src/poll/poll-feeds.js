@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {parse_html} from '/src/parse-html.js';
+import {parse_html} from '/src/utils.js';
 import {rewrite_url} from '/src/poll/rewrite-url.js';
 import {sanitize_document} from '/src/dom-filters/sandoc.js';
 import {set_base_uri} from '/src/poll/set-base-uri.js';

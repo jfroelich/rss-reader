@@ -1,4 +1,4 @@
-import * as url_utils from '/src/url-utils.js';
+import * as url_utils from '/src/utils.js';
 import {fetch_image_element, is_ephemeral_fetch_error} from '/src/net/fetch-image-element.js';
 import {AssertionError} from '/src/assert.js';
 
@@ -138,7 +138,7 @@ function find_url_dimensions(source_url) {
     return;
   }
 
-  const ext = url_utils.get_extension(source_url);
+  const ext = url_utils.url_get_extension(source_url);
   if (!ext) {
     return;
   }

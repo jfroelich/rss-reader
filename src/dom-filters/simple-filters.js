@@ -2,11 +2,10 @@ import assert from '/src/assert.js';
 import {unwrap_element} from '/src/dom-filters/utils/unwrap-element.js';
 import * as image_utils from '/src/dom-filters/utils/image-utils.js';
 import {node_is_leaf} from '/src/dom-filters/node-is-leaf.js';
-import {condense_whitespace} from '/src/condense-whitespace.js';
+import {condense_whitespace} from '/src/utils.js';
 import {color_contrast_filter} from '/src/dom-filters/color-contrast-filter/color-contrast-filter.js';
 import {is_hidden_inline} from '/src/dom-filters/utils/visibility.js';
 import * as attribute_utils from '/src/dom-filters/utils/attribute-utils.js';
-
 
 export function anchor_format_filter(document) {
   if (document.body) {

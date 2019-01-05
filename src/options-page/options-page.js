@@ -1,5 +1,5 @@
 import * as permissions from '/src/options-page/permission-utils.js';
-import truncate_html from '/src/truncate-html.js';
+import {truncate_html} from '/src/utils.js';
 import * as badge from '/src/badge.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon/favicon-control.js';

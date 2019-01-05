@@ -58,14 +58,14 @@ export async function mime_test() {
   // duplicate semicolon
   a(mime.parse_content_type('text/html;;charset=UTF-8') === 'text/html');
 
-  // is_mime_type tests
-  a(mime.is_mime_type('text/html'));
-  a(mime.is_mime_type('text/xml'));
-  a(!mime.is_mime_type(false));
-  a(!mime.is_mime_type(true));
-  a(!mime.is_mime_type(-4321));
-  a(!mime.is_mime_type('asdf'));
-  a(!mime.is_mime_type('a b c'));
-  a(!mime.is_mime_type('a b c / 123'));
-  a(!mime.is_mime_type('text\\xml'));
+  // is_valid tests
+  a(mime.is_valid('text/html'));
+  a(mime.is_valid('text/xml'));
+  a(!mime.is_valid(false));
+  a(!mime.is_valid(true));
+  a(!mime.is_valid(-4321));
+  a(!mime.is_valid('asdf'));
+  a(!mime.is_valid('a b c'));
+  a(!mime.is_valid('a b c / 123'));
+  a(!mime.is_valid('text\\xml'));
 }

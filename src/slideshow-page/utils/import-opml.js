@@ -1,5 +1,5 @@
 import * as db from '/src/db/db.js';
-import {condense_whitespace} from '/src/condense-whitespace.js';
+import * as utils from '/src/utils.js';
 
 export function prompt() {
   const input = document.createElement('input');
@@ -129,7 +129,7 @@ function parse_opml(xml_string) {
   const document = parser.parseFromString(xml_string, 'application/xml');
   const error = document.querySelector('parsererror');
   if (error) {
-    throw new ParseError(condense_whitespace(error.textContent));
+    throw new ParseError(utils.condense_whitespace(error.textContent));
   }
 
   // Need to normalize localName when document is xml-flagged

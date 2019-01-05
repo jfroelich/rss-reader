@@ -1,8 +1,7 @@
 import assert from '/src/assert.js';
 import {filter_unprintables} from '/src/db/sanity/filter-unprintables.js';
 import {replace_tags} from '/src/db/sanity/replace-tags.js';
-import {condense_whitespace} from '/src/condense-whitespace.js';
-import truncate_html from '/src/truncate-html.js';
+import {condense_whitespace, truncate_html} from '/src/utils.js';
 import * as entry_utils from '/src/db/entry-utils.js';
 import * as feed_utils from '/src/db/feed-utils.js';
 import * as types from '/src/db/types.js';

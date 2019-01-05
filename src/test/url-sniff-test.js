@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import * as sniff from '/src/poll/url-sniff.js';
-import * as url_utils from '/src/url-utils.js';
+import * as url_utils from '/src/utils.js';
 
 export async function url_sniff_test() {
   // expected binary output
@@ -54,23 +54,23 @@ export async function url_sniff_test() {
 
   // expected to find typical file name extension
   input = new URL('http://www.a.com/b.html');
-  result = url_utils.get_extension(input);
+  result = url_utils.url_get_extension(input);
   assert(result === 'html', input.href);
 
   // trailing period, should not find extension
   input = new URL('http://www.a.com/b.');
-  result = url_utils.get_extension(input);
+  result = url_utils.url_get_extension(input);
   assert(!result, input.href);
 
 
-  // TODO: after changing to use a shared get_extension helper, the behavior
-  // changed, and this test started failing. get_extension must be refactored
+  // TODO: after changing to use a shared url_get_extension helper, the behavior
+  // changed, and this test started failing. url_get_extension must be refactored
   // to be able to find .htaccess in this url. For now this assertion is
   // disabled.
 
   // leading period should find extension
   // input = new URL('http://www.a.com/.htaccess');
-  // result = url_utils.get_extension(input);
+  // result = url_utils.url_get_extension(input);
   // assert(
   //    result === 'htaccess',
   //    'Failed to find extension in url ' + input.href + ' instead found ' +
@@ -78,7 +78,7 @@ export async function url_sniff_test() {
 
   // extension too long, should not find extension
   input = new URL('http://www.a.com/b.01234567890123456789asdf');
-  result = url_utils.get_extension(input);
+  result = url_utils.url_get_extension(input);
   assert(!result, input.href);
 
   // expect to find mime type

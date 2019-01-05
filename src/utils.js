@@ -1,4 +1,10 @@
-export default function truncate_html(html_string, position, suffix) {
+import assert from '/src/assert.js';
+
+export function condense_whitespace(value) {
+  return value.replace(/\s\s+/g, ' ');
+}
+
+export function truncate_html(html_string, position, suffix) {
   if (typeof html_string !== 'string') {
     return '';
   }
@@ -47,4 +53,37 @@ export default function truncate_html(html_string, position, suffix) {
   } else {
     return document.body.innerHTML;
   }
+}
+
+export function parse_html(html) {
+  assert(typeof html === 'string');
+
+  const parser = new DOMParser();
+  const document = parser.parseFromString(html, 'text/html');
+
+  const error = document.querySelector('parsererror');
+  if (error) {
+    const message = condense_whitespace(error.textContent);
+    throw new Error(message);
+  }
+
+  return document;
+}
+
+export function url_get_extension(url) {
+  const path = url.pathname;
+
+  if (path.length > 2) {
+    const last_dot_pos_p1 = path.lastIndexOf('.') + 1;
+    if (last_dot_pos_p1 > 0 && last_dot_pos_p1 < path.length) {
+      const ext = path.substring(last_dot_pos_p1);
+      if (ext.length < 5 && is_alphanumeric(ext)) {
+        return ext;
+      }
+    }
+  }
+}
+
+export function is_alphanumeric(value) {
+  return !/[^\p{L}\d]/u.test(value);
 }

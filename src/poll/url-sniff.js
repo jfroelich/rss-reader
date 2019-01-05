@@ -1,5 +1,5 @@
 import * as mime from '/src/mime-utils.js';
-import * as url_utils from '/src/url-utils.js';
+import * as url_utils from '/src/utils.js';
 
 export const UNKNOWN_CLASS = 0;
 export const TEXT_CLASS = 1;
@@ -31,7 +31,7 @@ export function classify(url) {
     return mime_type ? mime_type_is_binary(mime_type) : UNKNOWN_CLASS;
   }
 
-  const extension = url_utils.get_extension(url);
+  const extension = url_utils.url_get_extension(url);
   if (extension) {
     const mime_type = EXTENSION_TYPE_MAP[extension];
     if (mime_type) {
@@ -74,11 +74,11 @@ export function find_mime_type_in_data_url(url) {
   }
 
   const mime_type = haystack.substring(0, sc_position);
-  return mime.is_mime_type(mime_type) ? mime_type : default_type;
+  return mime.is_valid(mime_type) ? mime_type : default_type;
 }
 
 export function mime_type_is_binary(mime_type) {
-  if (!mime.is_mime_type(mime_type)) {
+  if (!mime.is_valid(mime_type)) {
     throw new TypeError('Invalid mime type argument: ' + mime_type);
   }
 
