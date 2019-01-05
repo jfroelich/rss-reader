@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import * as cache from '/src/favicon/cache.js';
-import * as indexeddb from '/src/indexeddb-utils.js';
+import * as indexeddb from '/src/idb.js';
 
 export async function favicon_cache_open_test() {
   const db_name = favicon_cache_open_test.name;

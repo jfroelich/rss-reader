@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as indexeddb from '/src/indexeddb-utils.js';
+import * as indexeddb from '/src/idb.js';
 
 const DEFAULT_NAME = 'favicon';
 const DEFAULT_VERSION = 1;

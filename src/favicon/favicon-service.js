@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import {parse_html} from '/src/utils.js';
-import * as indexeddb from '/src/indexeddb-utils.js';
+import * as indexeddb from '/src/idb.js';
 import * as mime from '/src/mime-utils.js';
 import {fetch_html} from '/src/net/fetch-html.js';
 import {fetch2, response_is_redirect} from '/src/net/fetch2.js';
