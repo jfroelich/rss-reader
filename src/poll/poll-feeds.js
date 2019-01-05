@@ -11,7 +11,7 @@ import {fetch_html} from '/src/net/fetch-html.js';
 import {is_allowed_request} from '/src/net/fetch-policy.js';
 // TODO: import * as fetch_utils or something
 import {OfflineError, response_is_redirect, TimeoutError} from '/src/net/fetch2.js';
-import * as notification from '/src/notification.js';
+import * as notification from '/src/note.js';
 import {build as build_rewrite_rules} from '/src/poll/rewrite-rules.js';
 import * as db from '/src/db/db.js';
 

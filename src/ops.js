@@ -2,7 +2,7 @@ import {fetch_feed} from '/src/net/fetch-feed/fetch-feed.js';
 import * as db from '/src/db/db.js';
 import {response_is_redirect} from '/src/net/fetch2.js';
 import * as favicon from '/src/favicon/favicon-control.js';
-import * as notification from '/src/notification.js';
+import * as notification from '/src/note.js';
 
 // The ops module represents a middle-layer that is above the database but
 // below the view layer. The operations here generally are functions that
