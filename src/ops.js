@@ -4,13 +4,13 @@ import {response_is_redirect} from '/src/net/fetch2.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import * as notification from '/src/notification.js';
 
-// The actions module represents a middle-layer that is above the database but
+// The ops module represents a middle-layer that is above the database but
 // below the view layer. The operations here generally are functions that
 // involve the database plus some non-database functionality, such as any
 // logic.
 
 // TODO: all higher layers should be interacting with this module instead of
-// interacting with the database. This should have all the various actions
+// interacting with the database. This should have all the various ops
 // available, even if some of those are just simple db wrapper calls.
 
 
