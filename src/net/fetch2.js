@@ -1,4 +1,4 @@
-import * as mime from '/src/mime-utils.js';
+import * as mime from '/src/mime.js';
 
 // Extends the builtin fetch with timeout, response type checking, and a way to
 // explicitly reject certain urls for policy reasons. Either returns a response,

@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import {fetch_with_timeout} from '/src/net/fetch-with-timeout.js';
-import * as mime from '/src/mime-utils.js';
+import * as mime from '/src/mime.js';
 
 export async function fetch_image(url, options = {}) {
   assert(navigator && typeof navigator === 'object');

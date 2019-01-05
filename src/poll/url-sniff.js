@@ -1,4 +1,4 @@
-import * as mime from '/src/mime-utils.js';
+import * as mime from '/src/mime.js';
 import * as url_utils from '/src/utils.js';
 
 export const UNKNOWN_CLASS = 0;
