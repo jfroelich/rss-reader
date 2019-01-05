@@ -1,15 +1,30 @@
-import * as permissions from '/src/options-page/permission-utils.js';
-import {truncate_html} from '/src/utils.js';
 import * as badge from '/src/badge.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import {poll_feed} from '/src/poll/poll-feeds.js';
-import {subscribe, unsubscribe} from '/src/ops.js';
+import * as ops from '/src/ops.js';
 import * as db from '/src/db/db.js';
-import {fade_element} from '/src/options-page/fade-element.js';
+import * as utils from '/src/utils.js';
 
 // TODO: this should rely on css-based html truncation rather than calling
 // truncate_html
+
+function perm_has(perm) {
+  return new Promise(
+      resolve => chrome.permissions.contains({permissions: [perm]}, resolve));
+}
+
+function perm_request(perm) {
+  return new Promise(
+      resolve => chrome.permissions.request({permissions: [perm]}, resolve));
+}
+
+function perm_remove(perm) {
+  return new Promise(
+      resolve => chrome.permissions.remove({permissions: [perm]}, resolve));
+}
+
+
 
 let current_menu_item;
 let current_section;
@@ -63,6 +78,41 @@ channel.onmessage = function options_page_onmessage(event) {
 channel.onmessageerror = function(event) {
   console.warn(event);
 };
+
+function fade_element(element, duration_secs, delay_secs) {
+  return new Promise((resolve, reject) => {
+    if (!element) {
+      return reject(new Error('Invalid element ' + element));
+    }
+
+    if (!element.style) {
+      return reject(new Error('Cannot fade element without a style property'));
+    }
+
+    duration_secs = isNaN(duration_secs) ? 1 : duration_secs;
+    delay_secs = isNaN(delay_secs) ? 0 : delay_secs;
+
+    const style = element.style;
+    if (style.display === 'none') {
+      // If the element is hidden, it may not have an opacity set. When fading
+      // in the element by setting opacity to 1, it has to change from 0 to
+      // work.
+      style.opacity = '0';
+
+      // If the element is hidden, and its opacity is 0, make it eventually
+      // visible
+      style.display = 'block';
+    } else {
+      // If the element is visible, and we plan to hide it by setting its
+      // opacity to 0, it has to change from opacity 1 for fade to work
+      style.opacity = '1';
+    }
+
+    element.addEventListener('webkitTransitionEnd', resolve, {once: true});
+    style.transition = `opacity ${duration_secs}s ease ${delay_secs}s`;
+    style.opacity = style.opacity === '1' ? '0' : '1';
+  });
+}
 
 function subscription_monitor_show() {
   let monitor_element = document.getElementById('submon');
@@ -195,7 +245,7 @@ function feed_list_append_feed(feed) {
 
   const title_element = document.createElement('span');
   let feed_title = feed.title || 'Untitled';
-  feed_title = truncate_html(feed_title, 300);
+  feed_title = utils.truncate_html(feed_title, 300);
   title_element.textContent = feed_title;
   item_element.appendChild(title_element);
   const feed_list_element = document.getElementById('feedlist');
@@ -308,7 +358,7 @@ async function subscribe_form_onsubmit(event) {
   // TODO: move this to a helper
   const conn_promises = Promise.all([db.open_with_channel(), favicon.open()]);
   const [session, iconn] = await conn_promises;
-  const feed = await subscribe(session, iconn, subscribe_url, undefined, true);
+  const feed = await ops.subscribe(session, iconn, subscribe_url, undefined, true);
   session.close();
   iconn.close();
 
@@ -393,7 +443,7 @@ async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const session = await db.open_with_channel();
-  await unsubscribe(session, feed_id);
+  await ops.unsubscribe(session, feed_id);
   session.close();
 
   feed_list_remove_feed_by_id(feed_id);
@@ -448,9 +498,9 @@ function enable_notifications_checkbox_onclick(event) {
 
 function enable_bg_processing_checkbox_onclick(event) {
   if (event.target.checked) {
-    permissions.request('background');
+    perm_request('background');
   } else {
-    permissions.remove('background');
+    perm_remove('background');
   }
 }
 
@@ -459,7 +509,7 @@ function enable_bg_processing_checkbox_onclick(event) {
 async function enable_bg_processing_checkbox_init() {
   const checkbox = document.getElementById('enable-background');
   checkbox.onclick = enable_bg_processing_checkbox_onclick;
-  checkbox.checked = await permissions.has('background');
+  checkbox.checked = await perm_has('background');
 }
 
 function bg_image_menu_onchange(event) {
