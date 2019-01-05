@@ -16,15 +16,18 @@ export function parse_content_type(value) {
   return is_valid(type) ? type : undefined;
 }
 
-function normalize(mime_type) {
-  return filter_ws(mime_type).toLowerCase();
+function normalize(type) {
+  return typeof type === 'string' ? filter_ws(type).toLowerCase() : undefined;
 }
 
 function strip_encoding(value) {
+  if(typeof value === 'undefined') {
+    return;
+  }
   const idx = value.indexOf(';');
-  let mime_type = idx > -1 ? value.substring(0, idx) : value;
+  return idx > -1 ? value.substring(0, idx) : value;
 }
 
 function filter_ws(value) {
-  return value.replace(/\s+/g, '');
+  return typeof value === 'string' ? value.replace(/\s+/g, '') : undefined;
 }
