@@ -1,5 +1,5 @@
 import * as config from '/src/config.js';
-import * as extension_tab from '/src/tab.js';
+import * as utils from '/src/utils.js';
 
 // @param note {Object} has properties name, message, and url (string), each
 // property is optional, but note itself is not optional
@@ -35,5 +35,5 @@ async function onclick(event) {
     return;
   }
 
-  await extension_tab.open_view();
+  await utils.open_view(config);
 }

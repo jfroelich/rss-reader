@@ -1,8 +1,9 @@
 import * as badge_control from '/src/badge.js';
 import * as config_control from '/src/config-control.js';
+import * as config from '/src/config.js';
 import * as cron_control from '/src/cron.js';
 import * as db_control from '/src/db/db-control.js';
-import * as tab from '/src/tab.js';
+import * as utils from '/src/utils.js';
 
 async function channel_onmessage(event) {
   // Ensure the badge is refreshed when only the background page is loaded
@@ -22,4 +23,4 @@ chrome.runtime.onInstalled.addListener(config_control.install_listener);
 chrome.runtime.onInstalled.addListener(db_control.install_listener);
 chrome.runtime.onInstalled.addListener(cron_control.install_listener);
 chrome.runtime.onInstalled.addListener(badge_control.install_listener);
-chrome.browserAction.onClicked.addListener(tab.open_view);
+chrome.browserAction.onClicked.addListener(_ => utils.open_view(config));
