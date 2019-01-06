@@ -454,7 +454,7 @@ export async function create_feed(session, feed) {
   // This intentionally does not settle until the transaction completes
   const id = await new Promise((resolve, reject) => {
     let id = 0;
-    const txn = conn.transaction('feed', 'readwrite');
+    const txn = session.conn.transaction('feed', 'readwrite');
     txn.onerror = event => reject(event.target.error);
     txn.oncomplete = _ => resolve(id);
     const store = txn.objectStore('feed');
