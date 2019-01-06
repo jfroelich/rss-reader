@@ -1,68 +1,56 @@
-import {fetch_feed} from '/src/net/fetch-feed/fetch-feed.js';
+// This module represents a middle-layer that is above the model layer but
+// below the view layer. Generally, the operations here are functions that
+// involve the database along with some non-database functionality.
+
 import * as db from '/src/db/db.js';
-import {response_is_redirect} from '/src/net/fetch2.js';
 import * as favicon from '/src/favicon/favicon-control.js';
+import {fetch_feed} from '/src/net/fetch-feed/fetch-feed.js';
+import {response_is_redirect} from '/src/net/fetch2.js';
 import * as notification from '/src/note.js';
 import * as utils from '/src/utils.js';
 
-// The ops module represents a middle-layer that is above the database but
-// below the view layer. The operations here generally are functions that
-// involve the database plus some non-database functionality, such as any
-// logic.
-
-// TODO: all higher layers should be interacting with this module instead of
-// interacting with the database. This should have all the various ops
-// available, even if some of those are just simple db wrapper calls.
-
+// Returns an in memory OPML document object filled with the feeds from the
+// database. document_title is optional.
 export async function export_opml(document_title) {
-  // Load feeds from storage
+  const doc = create_opml_template(document_title);
+
+  // TODO: session should be a param so that export_opml is more readily
+  // testable. This will cause more caller boilerplate unfortunately.
   const session = await db.open();
   const feeds = await db.get_feeds(session, 'all', false);
   session.close();
 
-  // Map feeds into outlines
-  const outlines = [];
-  for (const feed of feeds) {
+  const outlines = feeds.map(feed => {
     const outline = {};
     outline.type = feed.type;
-
     if (feed.urls && feed.urls.length) {
       outline.xml_url = feed.urls[feed.urls.length - 1];
     }
-
     outline.title = feed.title;
     outline.description = feed.description;
     outline.html_url = feed.link;
-    outlines.push(outline);
-  }
+    return outline;
+  });
 
-  const opml_document = create_opml_template(document_title);
+  const maybe_set = function(element, name, value) {
+    if (value) element.setAttribute(name, value);
+  };
 
-  // There is no perf issue defining this per export call because of how rarely
-  // export is invoked.
-  function set_attr_if_defined(element, name, value) {
-    if (value) {
-      element.setAttribute(name, value);
-    }
-  }
+  // The document.body shortcut is html-flagged documents only
+  const body_element = doc.querySelector('body');
 
-  // Append the outlines to the document. This uses querySelector instead of
-  // document.body because that shortcut is not available for xml-flagged
-  // documents. This creates elements using the xml document instead of the
-  // document running this script so as to minimize the risk of XSS and to avoid
-  // having the xml document adopt html elements.
-  const body_element = opml_document.querySelector('body');
   for (const outline of outlines) {
-    const elm = opml_document.createElement('outline');
-    set_attr_if_defined(elm, 'type', outline.type);
-    set_attr_if_defined(elm, 'xmlUrl', outline.xml_url);
-    set_attr_if_defined(elm, 'title', outline.title);
-    set_attr_if_defined(elm, 'description', outline.description);
-    set_attr_if_defined(elm, 'htmlUrl', outline.html_url);
+    // XSS: use the xml document, not the document running this script
+    const elm = doc.createElement('outline');
+    maybe_set(elm, 'type', outline.type);
+    maybe_set(elm, 'xmlUrl', outline.xml_url);
+    maybe_set(elm, 'title', outline.title);
+    maybe_set(elm, 'description', outline.description);
+    maybe_set(elm, 'htmlUrl', outline.html_url);
     body_element.appendChild(elm);
   }
 
-  return opml_document;
+  return doc;
 }
 
 function create_opml_template(document_title) {
@@ -112,14 +100,11 @@ export async function opml_import(session, files) {
 }
 
 function opml_import_read_files(files) {
-  const promises = [];
-  for (const file of files) {
+  const promises = files.map(file => {
     const promise = opml_import_read_feeds(file);
-    // If any one file fails to be read just log an error and continue instead
-    // of having the whole thing fail.
-    const catch_promise = promise.catch(console.warn);
-    promises.push(catch_promise);
-  }
+    // Redirect per-file errors to console rather than exceptions
+    return promise.catch(console.warn);
+  });
   return Promise.all(promises);
 }
 
@@ -170,7 +155,8 @@ function opml_import_find_urls(document) {
   for (const element of elements) {
     const type = element.getAttribute('type');
     if (type_pattern.test(type)) {
-      const url = opml_import_parse_url_noexcept(element.getAttribute('xmlUrl'));
+      cosnt url_string = element.getAttribute('xmlUrl');
+      const url = opml_import_parse_url_noexcept(url_string);
       if (url) {
         urls.push(url);
       }
@@ -189,20 +175,20 @@ function opml_import_parse_url_noexcept(url_string) {
 }
 
 function file_is_opml(file) {
-  const opml_mime_types = [
+  const types = [
     'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
     'application/opml+xml'
   ];
-  return opml_mime_types.includes(file.type);
+  return types.includes(file.type);
 }
-
 
 function parse_opml(xml_string) {
   const parser = new DOMParser();
   const document = parser.parseFromString(xml_string, 'application/xml');
   const error = document.querySelector('parsererror');
   if (error) {
-    throw new OPMLParseError(utils.condense_whitespace(error.textContent));
+    const message = utils.condense_whitespace(error.textContent);
+    throw new OPMLParseError(message);
   }
 
   // Need to normalize localName when document is xml-flagged
@@ -219,9 +205,7 @@ export class OPMLParseError extends Error {
   }
 }
 
-export async function subscribe(session, iconn, url, fetch_timeout,
-  should_notify) {
-
+export async function subscribe(session, iconn, url, fetch_timeout, notify) {
   // Check if subscribed to the input url
   let existing_feed = await db.get_feed(session, 'url', url, true);
   if (existing_feed) {
@@ -254,7 +238,7 @@ export async function subscribe(session, iconn, url, fetch_timeout,
   db.sanitize_feed(feed);
   feed.id = await db.create_feed(session, feed);
 
-  if(should_notify) {
+  if(notify) {
     const feed_title = feed.title || feed.urls[feed.urls.length - 1];
     const note = {};
     note.title = 'Subscribed!';
