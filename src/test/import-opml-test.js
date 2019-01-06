@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as db from '/src/db/db.js';
+import * as db from '/src/db.js';
 import * as ops from '/src/ops.js';
 
 export async function import_opml_test() {

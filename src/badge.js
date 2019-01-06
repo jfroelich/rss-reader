@@ -1,4 +1,4 @@
-import * as db from '/src/db/db.js';
+import * as db from '/src/db.js';
 
 export function install_listener(event) {
   // Refresh for both install and update event types. While it would seem like

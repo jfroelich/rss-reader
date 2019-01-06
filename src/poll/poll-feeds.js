@@ -9,11 +9,10 @@ import * as favicon from '/src/favicon/favicon-control.js';
 import {fetch_feed} from '/src/net/fetch-feed/fetch-feed.js';
 import {fetch_html} from '/src/net/fetch-html.js';
 import {is_allowed_request} from '/src/net/fetch-policy.js';
-// TODO: import * as fetch_utils or something
-import {OfflineError, response_is_redirect, TimeoutError} from '/src/net/fetch2.js';
+import * as fetch2 from '/src/net/fetch2.js';
 import * as notification from '/src/note.js';
 import {build as build_rewrite_rules} from '/src/poll/rewrite-rules.js';
-import * as db from '/src/db/db.js';
+import * as db from '/src/db.js';
 
 
 
@@ -193,7 +192,7 @@ function handle_fetch_success(feed) {
 }
 
 async function handle_fetch_error(session, error, feed, threshold) {
-  if (error instanceof TimeoutError || error instanceof OfflineError) {
+  if (error instanceof fetch2.TimeoutError || error instanceof fetch2.OfflineError) {
     return;
   }
 
@@ -312,7 +311,7 @@ export async function poll_entry(
   if (response) {
     let url_changed = false;
     const response_url = new URL(response.url);
-    if (response_is_redirect(url, response)) {
+    if (fetch2.response_is_redirect(url, response)) {
       url_changed = true;
       db.append_entry_url(entry, response_url);
       db.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));

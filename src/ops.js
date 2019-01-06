@@ -2,7 +2,7 @@
 // below the view layer. Generally, the operations here are functions that
 // involve the database along with some non-database functionality.
 
-import * as db from '/src/db/db.js';
+import * as db from '/src/db.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import {fetch_feed} from '/src/net/fetch-feed/fetch-feed.js';
 import {response_is_redirect} from '/src/net/fetch2.js';

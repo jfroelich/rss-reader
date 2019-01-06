@@ -3,7 +3,7 @@ import * as config from '/src/config.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import {poll_feed} from '/src/poll/poll-feeds.js';
 import * as ops from '/src/ops.js';
-import * as db from '/src/db/db.js';
+import * as db from '/src/db.js';
 import * as utils from '/src/utils.js';
 
 // TODO: this should rely on css-based html truncation rather than calling

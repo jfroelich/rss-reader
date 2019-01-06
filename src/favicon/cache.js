@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as indexeddb from '/src/idb.js';
+import * as idb from '/src/idb.js';
 
 const DEFAULT_NAME = 'favicon';
 const DEFAULT_VERSION = 1;
@@ -15,7 +15,7 @@ export function Entry() {
 // Return a promise that resolves to a connection
 export function open(
     name = DEFAULT_NAME, version = DEFAULT_VERSION, timeout = DEFAULT_TIMEOUT) {
-  return indexeddb.open(name, version, on_upgrade_needed, timeout);
+  return idb.open(name, version, on_upgrade_needed, timeout);
 }
 
 // Create or upgrade the database

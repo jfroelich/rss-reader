@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import {parse_html} from '/src/utils.js';
-import * as indexeddb from '/src/idb.js';
+import * as idb from '/src/idb.js';
 import * as mime from '/src/mime.js';
 import {fetch_html} from '/src/net/fetch-html.js';
 import {fetch2, response_is_redirect} from '/src/net/fetch2.js';
@@ -257,8 +257,7 @@ FaviconService.prototype.find_candidate_urls = function(document) {
 };
 
 FaviconService.prototype.open = function() {
-  return indexeddb.open(
-      this.name, this.version, this.onupgradeneeded, this.open_timeout);
+  return idb.open(this.name, this.version, this.onupgradeneeded, this.open_timeout);
 };
 
 FaviconService.prototype.onupgradeneeded = function(event) {

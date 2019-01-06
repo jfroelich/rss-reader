@@ -1,5 +1,5 @@
 import {parse_feed} from '/src/net/fetch-feed/parse-feed.js';
-import * as db from '/src/db/db.js';
+import * as db from '/src/db.js';
 import {is_allowed_request} from '/src/net/fetch-policy.js';
 import {fetch2} from '/src/net/fetch2.js';
 

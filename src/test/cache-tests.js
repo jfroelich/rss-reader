@@ -1,20 +1,20 @@
 import assert from '/src/assert.js';
 import * as cache from '/src/favicon/cache.js';
-import * as indexeddb from '/src/idb.js';
+import * as idb from '/src/idb.js';
 
 export async function favicon_cache_open_test() {
   const db_name = favicon_cache_open_test.name;
-  await indexeddb.remove(db_name);
+  await idb.remove(db_name);
   const conn = await cache.open(db_name, undefined, 0);
   assert(typeof conn === 'object');
   assert(typeof conn.close === 'function');
   conn.close();
-  await indexeddb.remove(db_name);
+  await idb.remove(db_name);
 }
 
 export async function favicon_cache_put_find_test() {
   const db_name = favicon_cache_put_find_test.name;
-  await indexeddb.remove(db_name);
+  await idb.remove(db_name);
   const conn = await cache.open(db_name);
   const entry = new cache.Entry();
   entry.hostname = 'www.example.com';
@@ -23,12 +23,12 @@ export async function favicon_cache_put_find_test() {
   assert(found_entry);
   assert(found_entry.hostname === entry.hostname);
   conn.close();
-  await indexeddb.remove(db_name);
+  await idb.remove(db_name);
 }
 
 export async function favicon_cache_clear_test() {
   const db_name = favicon_cache_clear_test.name;
-  await indexeddb.remove(db_name);
+  await idb.remove(db_name);
   const conn = await cache.open(db_name);
 
   const num_inserted = 3;
@@ -47,14 +47,14 @@ export async function favicon_cache_clear_test() {
   assert(post_count === 0);
 
   conn.close();
-  await indexeddb.remove(db_name);
+  await idb.remove(db_name);
 }
 
 // Insert a mix of expired and non-expired entries. Then run compact and check
 // the expired entries are gone and the non-expired entries remain.
 export async function favicon_cache_compact_test() {
   const db_name = favicon_cache_compact_test.name;
-  await indexeddb.remove(db_name);
+  await idb.remove(db_name);
   const conn = await cache.open(db_name);
 
   const six_months = 1000 * 60 * 60 * 24 * 31 * 6;
@@ -88,7 +88,7 @@ export async function favicon_cache_compact_test() {
   }
 
   conn.close();
-  await indexeddb.remove(db_name);
+  await idb.remove(db_name);
 }
 
 // This is not part of the built in api. It would exist only for test purposes.

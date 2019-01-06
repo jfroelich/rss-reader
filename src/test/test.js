@@ -8,7 +8,7 @@ import {attribute_empty_filter_test} from '/src/test/attribute-empty-filter-test
 import {image_lazy_filter_test} from '/src/test/image-lazy-filter-test.js';
 import {filter_unprintables_test} from '/src/test/filter-unprintables-test.js';
 import * as image_size_filter_tests from '/src/test/image-size-filter-test.js';
-import * as indexeddb_tests from '/src/test/indexeddb-utils-test.js';
+import * as indexeddb_tests from '/src/test/idb-test.js';
 import {mime_test} from '/src/test/mime-utils-test.js';
 import {parse_feed_test} from '/src/test/parse-feed-test.js';
 import {replace_tags_test} from '/src/test/replace-tags-test.js';
@@ -31,34 +31,13 @@ register_test(color_contrast_filter_tests.color_contrast_filter_test1);
 register_test(color_contrast_filter_tests.color_contrast_filter_test2);
 register_test(color_test);
 register_test(coerce_element_test);
-register_test(db_tests.activate_feed_test);
-register_test(db_tests.archive_entries_test);
-register_test(db_tests.count_unread_entries_test);
-register_test(db_tests.count_unread_entries_by_feed_test);
-register_test(db_tests.create_entry_test);
-register_test(db_tests.create_feed_test);
-register_test(db_tests.create_feed_url_constraint_test);
-register_test(db_tests.create_feeds_test);
-register_test(db_tests.deactivate_feed_test);
-register_test(db_tests.delete_entry_test);
-register_test(db_tests.delete_feed_test);
-register_test(db_tests.entry_utils_is_entry_test);
-register_test(db_tests.entry_utils_append_entry_url_test);
-register_test(db_tests.feed_utils_is_feed_test);
-register_test(db_tests.feed_utils_append_feed_url_test);
-register_test(db_tests.get_entries_test);
-register_test(db_tests.get_entry_test);
-register_test(db_tests.get_feed_test);
-register_test(db_tests.get_feed_ids_test);
-register_test(db_tests.get_feeds_test);
-register_test(db_tests.iterate_entries_test);
-register_test(db_tests.mark_entry_read_test);
-register_test(db_tests.query_entries_test);
-register_test(db_tests.remove_lost_entries_test);
-register_test(db_tests.remove_orphaned_entries_test);
-register_test(db_tests.sanitize_entry_content_test);
-register_test(db_tests.update_entry_test);
-register_test(db_tests.update_feed_test);
+
+for(const key in db_tests) {
+  if(typeof key === 'function' && key.name.endsWith('_test')) {
+    register_test(key);
+  }
+}
+
 register_test(attribute_empty_filter_test);
 register_test(favicon_cache_tests.favicon_cache_open_test);
 register_test(favicon_cache_tests.favicon_cache_put_find_test);

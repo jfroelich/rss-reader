@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as db from '/src/db/db.js';
+import * as db from '/src/db.js';
 import {subscribe} from '/src/ops.js';
 
 // TODO: it is wrong to ping google, implement something that tests a local
