@@ -24,7 +24,7 @@ import * as config from '/src/config.js';
 import * as config_control from '/src/config-control.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon-control.js';
-import {export_opml} from '/src/export-opml.js';
+import {export_opml} from '/src/ops.js';
 import * as import_opml from '/src/import-opml.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import * as utils from '/src/utils.js';
