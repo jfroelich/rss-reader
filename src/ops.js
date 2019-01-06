@@ -205,7 +205,7 @@ export class OPMLParseError extends Error {
   }
 }
 
-export async function subscribe(session, iconn, url, fetch_timeout, notify) {
+export async function subscribe(session, iconn, url, timeout, notify) {
   // Check if subscribed to the input url
   let existing_feed = await db.get_feed(session, 'url', url, true);
   if (existing_feed) {
