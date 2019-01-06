@@ -13,9 +13,6 @@ import * as utils from '/src/utils.js';
 // database. document_title is optional.
 export async function export_opml(document_title) {
   const doc = create_opml_template(document_title);
-
-  // TODO: session should be a param so that export_opml is more readily
-  // testable. This will cause more caller boilerplate unfortunately.
   const session = await db.open();
   const feeds = await db.get_feeds(session, 'all', false);
   session.close();
@@ -213,11 +210,6 @@ export async function subscribe(session, iconn, url, timeout, notify) {
     throw new ConstraintError(message);
   }
 
-  // TODO: notice the awkwardness here with response vs http response. I think
-  // fetch_feed might be a bad abstraction. I think maybe what should happen
-  // is that fetch_feed be broken up into consistuent parts fetch_xml and
-  // parse_feed_from_xml
-
   // Propagate fetch errors as subscribe errors
   const response = await fetch_feed(url, timeout, true, false);
   const http_response = response.http_response;
@@ -266,7 +258,6 @@ async function set_feed_favicon(iconn, feed) {
       iconn, lookup_url, prefetched_document, do_fetch_during_lookup);
 }
 
-
 export async function refresh_feed_icons(session, iconn) {
   const feeds = await db.get_feeds(session, 'active', false);
   const promises = [];
@@ -299,7 +290,6 @@ async function refresh_feed_icon(session, iconn, feed) {
       delete feed.faviconURLString;
     }
 
-    // TODO: use a partial update here instead of a full feed overwrite
     await db.update_feed(session, feed, true);
   }
 }
