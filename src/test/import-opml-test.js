@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import * as db from '/src/db/db.js';
-import * as import_opml from '/src/slideshow-page/utils/import-opml.js';
+import * as ops from '/src/ops.js';
 
 export async function import_opml_test() {
   const db_name = 'import-opml-test-db';
@@ -21,7 +21,7 @@ export async function import_opml_test() {
       'xmlUrl="a://b/c"/></body></opml>';
   const file = create_opml_file('file.xml', opml_string);
 
-  const results = await import_opml.import_files(session, [file]);
+  const results = await ops.opml_import(session, [file]);
   assert(results);
   assert(results.length === 1);
   assert(db.is_valid_feed_id(results[0]));

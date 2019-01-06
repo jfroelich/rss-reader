@@ -4,6 +4,15 @@ export function condense_whitespace(value) {
   return value.replace(/\s\s+/g, ' ');
 }
 
+export function file_read_text(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsText(file);
+    reader.onload = _ => resolve(reader.result);
+    reader.onerror = _ => reject(reader.error);
+  });
+}
+
 export function truncate_html(html_string, position, suffix) {
   if (typeof html_string !== 'string') {
     return '';

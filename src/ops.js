@@ -3,6 +3,7 @@ import * as db from '/src/db/db.js';
 import {response_is_redirect} from '/src/net/fetch2.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import * as notification from '/src/note.js';
+import * as utils from '/src/utils.js';
 
 // The ops module represents a middle-layer that is above the database but
 // below the view layer. The operations here generally are functions that
@@ -12,8 +13,6 @@ import * as notification from '/src/note.js';
 // TODO: all higher layers should be interacting with this module instead of
 // interacting with the database. This should have all the various ops
 // available, even if some of those are just simple db wrapper calls.
-
-
 
 export async function export_opml(document_title) {
   // Load feeds from storage
@@ -37,10 +36,9 @@ export async function export_opml(document_title) {
     outlines.push(outline);
   }
 
-  // Create an opml document
   const opml_document = create_opml_template(document_title);
 
-  // A local helper function. There is no perf issue because of how rarely
+  // There is no perf issue defining this per export call because of how rarely
   // export is invoked.
   function set_attr_if_defined(element, name, value) {
     if (value) {
@@ -97,6 +95,128 @@ function create_opml_template(document_title) {
   const body_element = doc.createElement('body');
   doc.documentElement.appendChild(body_element);
   return doc;
+}
+
+export async function opml_import(session, files) {
+  const read_files_results = await opml_import_read_files(files);
+  const url_array = opml_import_flatten_urls(read_files_results);
+  const url_array_set = opml_import_dedup_urls(url_array);
+
+  const feeds = url_array_set.map(url => {
+    const feed = db.create_feed_object();
+    db.append_feed_url(feed, url);
+    return feed;
+  });
+
+  return db.create_feeds(session, feeds);
+}
+
+function opml_import_read_files(files) {
+  const promises = [];
+  for (const file of files) {
+    const promise = opml_import_read_feeds(file);
+    // If any one file fails to be read just log an error and continue instead
+    // of having the whole thing fail.
+    const catch_promise = promise.catch(console.warn);
+    promises.push(catch_promise);
+  }
+  return Promise.all(promises);
+}
+
+function opml_import_flatten_urls(all_files_urls) {
+  // per_file_urls may be undefined if there was a problem reading the file
+  // that generated it
+  const urls = [];
+  for (const per_file_urls of all_files_urls) {
+    if (per_file_urls) {
+      for (const url of per_file_urls) {
+        urls.push(url);
+      }
+    }
+  }
+  return urls;
+}
+
+async function opml_import_read_feeds(file) {
+  if (!file_is_opml(file)) {
+    const msg = 'Unacceptable type ' + file.type + ' for file ' + file.name;
+    throw new TypeError(msg);
+  }
+
+  if (!file.size) {
+    return [];
+  }
+
+  const file_text = await utils.file_read_text(file);
+  const document = parse_opml(file_text);
+  return opml_import_find_urls(document);
+}
+
+function opml_import_dedup_urls(urls) {
+  const url_set = [], seen = [];
+  for (const url of urls) {
+    if (!seen.includes(url.href)) {
+      url_set.push(url);
+      seen.push(url.href);
+    }
+  }
+  return url_set;
+}
+
+function opml_import_find_urls(document) {
+  const elements = document.querySelectorAll('opml > body > outline[type]');
+  const type_pattern = /^\s*(rss|rdf|feed)\s*$/i;
+  const urls = [];
+  for (const element of elements) {
+    const type = element.getAttribute('type');
+    if (type_pattern.test(type)) {
+      const url = opml_import_parse_url_noexcept(element.getAttribute('xmlUrl'));
+      if (url) {
+        urls.push(url);
+      }
+    }
+  }
+  return urls;
+}
+
+function opml_import_parse_url_noexcept(url_string) {
+  if (url_string) {
+    try {
+      return new URL(url_string);
+    } catch (error) {
+    }
+  }
+}
+
+function file_is_opml(file) {
+  const opml_mime_types = [
+    'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
+    'application/opml+xml'
+  ];
+  return opml_mime_types.includes(file.type);
+}
+
+
+function parse_opml(xml_string) {
+  const parser = new DOMParser();
+  const document = parser.parseFromString(xml_string, 'application/xml');
+  const error = document.querySelector('parsererror');
+  if (error) {
+    throw new OPMLParseError(utils.condense_whitespace(error.textContent));
+  }
+
+  // Need to normalize localName when document is xml-flagged
+  const name = document.documentElement.localName.toLowerCase();
+  if (name !== 'opml') {
+    throw new OPMLParseError('Document element is not opml: ' + name);
+  }
+  return document;
+}
+
+export class OPMLParseError extends Error {
+  constructor(message = 'Parsing error') {
+    super(message);
+  }
 }
 
 export async function subscribe(session, iconn, url, fetch_timeout,

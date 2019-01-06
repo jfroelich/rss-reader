@@ -24,8 +24,7 @@ import * as config from '/src/config.js';
 import * as config_control from '/src/config-control.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/favicon/favicon-control.js';
-import {export_opml} from '/src/ops.js';
-import * as import_opml from '/src/import-opml.js';
+import * as ops from '/src/ops.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import * as utils from '/src/utils.js';
 
@@ -531,6 +530,18 @@ function options_menu_hide() {
   menu_options.style.boxShadow = '';
 }
 
+function import_opml_prompt() {
+  const input = document.createElement('input');
+  input.setAttribute('type', 'file');
+  input.setAttribute('accept', 'application/xml');
+  input.onchange = async function(event) {
+    const session = await db.open_with_channel();
+    await ops.opml_import(session, event.target.files);
+    session.close();
+  };
+  input.click();
+}
+
 // TODO: handling all clicks and then forwarding them to click handler seems
 // dumb. I should be ignoring clicks on such buttons. Let them continue
 // progation. The buttons should instead have their own handlers.
@@ -545,11 +556,11 @@ async function options_menu_onclick(event) {
       alert('Not yet implemented, subscribe using options page');
       break;
     case 'menu-option-import':
-      import_opml.prompt();
+      import_opml_prompt();
       break;
     case 'menu-option-export':
       const document_title = 'Subscriptions';
-      const opml_document = await export_opml(document_title);
+      const opml_document = await ops.export_opml(document_title);
       const file_name = 'subscriptions.xml';
       download_opml_document(opml_document, file_name);
       break;
