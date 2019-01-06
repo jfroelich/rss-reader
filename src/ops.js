@@ -155,7 +155,7 @@ function opml_import_find_urls(document) {
   for (const element of elements) {
     const type = element.getAttribute('type');
     if (type_pattern.test(type)) {
-      cosnt url_string = element.getAttribute('xmlUrl');
+      const url_string = element.getAttribute('xmlUrl');
       const url = opml_import_parse_url_noexcept(url_string);
       if (url) {
         urls.push(url);
