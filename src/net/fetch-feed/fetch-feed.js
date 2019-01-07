@@ -1,5 +1,5 @@
 import {parse_feed} from '/src/net/fetch-feed/parse-feed.js';
-import * as db from '/src/db.js';
+import * as cdb from '/src/cdb.js';
 import {is_allowed_request} from '/src/net/fetch-policy.js';
 import {fetch2} from '/src/net/fetch2.js';
 
@@ -16,7 +16,7 @@ export async function fetch_feed(
   const parsed_feed = parse_feed(res_text, skip_entries, resolve_entry_urls);
 
   // Convert the feed from the parse format to the storage format
-  const feed = db.create_feed_object();
+  const feed = cdb.create_feed_object();
   feed.type = parsed_feed.type;
 
   if (parsed_feed.link) {
@@ -35,8 +35,8 @@ export async function fetch_feed(
   feed.description = parsed_feed.description;
   feed.datePublished = parsed_feed.date_published || new Date();
 
-  db.append_feed_url(feed, url);
-  db.append_feed_url(feed, new URL(response.url));
+  cdb.append_feed_url(feed, url);
+  cdb.append_feed_url(feed, new URL(response.url));
 
   // Set the last modified date based on the response
   const last_modified_string = response.headers.get('Last-Modified');

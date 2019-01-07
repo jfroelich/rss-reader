@@ -1,12 +1,12 @@
 import assert from '/src/assert.js';
-import * as db from '/src/db.js';
+import * as cdb from '/src/cdb.js';
 import * as ops from '/src/ops.js';
 
 export async function import_opml_test() {
   const db_name = 'import-opml-test-db';
 
   // Open without a channel, we will inject our own fake one
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
   let iconn = undefined;  // test without favicon caching support
   const messages = [];
@@ -24,14 +24,14 @@ export async function import_opml_test() {
   const results = await ops.opml_import(session, [file]);
   assert(results);
   assert(results.length === 1);
-  assert(db.is_valid_feed_id(results[0]));
+  assert(cdb.is_valid_feed_id(results[0]));
 
   assert(messages.length === 1);
   assert(messages[0].type === 'feed-created');
   assert(messages[0].id === 1);
 
   session.close();
-  await db.remove(db_name);
+  await cdb.remove(db_name);
 }
 
 function create_opml_file(name, text) {

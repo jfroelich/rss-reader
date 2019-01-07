@@ -12,7 +12,7 @@ import {is_allowed_request} from '/src/net/fetch-policy.js';
 import * as fetch2 from '/src/net/fetch2.js';
 import * as notification from '/src/note.js';
 import {build as build_rewrite_rules} from '/src/poll/rewrite-rules.js';
-import * as db from '/src/db.js';
+import * as cdb from '/src/cdb.js';
 
 
 
@@ -27,7 +27,7 @@ const default_options = {
 };
 
 function get_pollable_feeds(session) {
-  return db.get_feeds(session, 'active', false);
+  return cdb.get_feeds(session, 'active', false);
 }
 
 export async function poll_feeds(session, iconn, options = {}) {
@@ -61,7 +61,7 @@ export async function poll_feeds(session, iconn, options = {}) {
 
 // Check if a remote feed has new data and store it in the database
 export async function poll_feed(session, iconn, options = {}, feed) {
-  assert(db.is_feed(feed));
+  assert(cdb.is_feed(feed));
   assert(Array.isArray(feed.urls));
   assert(feed.urls.length > 0);
   assert(feed.active);
@@ -95,9 +95,9 @@ export async function poll_feed(session, iconn, options = {}, feed) {
 
   const merged_feed = merge_feed(feed, response.feed);
   handle_fetch_success(merged_feed);
-  db.validate_feed(merged_feed);
-  db.sanitize_feed(merged_feed);
-  await db.update_feed(session, merged_feed, true);
+  cdb.validate_feed(merged_feed);
+  cdb.sanitize_feed(merged_feed);
+  await cdb.update_feed(session, merged_feed, true);
 
   const count = await poll_entries(
       session, iconn, rewrite_rules, options, response.entries, merged_feed);
@@ -165,11 +165,11 @@ function propagate_feed_properties(feed, entries) {
 // each new feed url.
 function merge_feed(old_feed, new_feed) {
   const merged_feed =
-      Object.assign(db.create_feed_object(), old_feed, new_feed);
+      Object.assign(cdb.create_feed_object(), old_feed, new_feed);
   merged_feed.urls = [...old_feed.urls];
   if (new_feed.urls) {
     for (const url_string of new_feed.urls) {
-      db.append_feed_url(merged_feed, new URL(url_string));
+      cdb.append_feed_url(merged_feed, new URL(url_string));
     }
   }
 
@@ -212,7 +212,7 @@ async function handle_fetch_error(session, error, feed, threshold) {
   }
 
   // No need to validate/sanitize, we've had control for the entire lifetime
-  await db.update_feed(session, feed, true);
+  await cdb.update_feed(session, feed, true);
 }
 
 function dedup_entries(entries) {
@@ -259,7 +259,7 @@ function dedup_entries(entries) {
 // format. This is a cross-cutting concern so it belongs in the place where the
 // concerns meet.
 function coerce_entry(parsed_entry) {
-  const blank_entry = db.create_entry_object();
+  const blank_entry = cdb.create_entry_object();
 
   // Copy over everything
   const clone = Object.assign(blank_entry, parsed_entry);
@@ -268,7 +268,7 @@ function coerce_entry(parsed_entry) {
   delete clone.link;
   if (parsed_entry.link) {
     try {
-      db.append_entry_url(clone, new URL(parsed_entry.link));
+      cdb.append_entry_url(clone, new URL(parsed_entry.link));
     } catch (error) {
     }
   }
@@ -282,13 +282,13 @@ function coerce_entry(parsed_entry) {
 export async function poll_entry(
     session, iconn, entry, fetch_html_timeout, fetch_image_timeout,
     rewrite_rules, feed_url_string) {
-  assert(db.is_entry(entry));
+  assert(cdb.is_entry(entry));
 
   let url = new URL(entry.urls[entry.urls.length - 1]);
-  db.append_entry_url(entry, rewrite_url(url, rewrite_rules));
+  cdb.append_entry_url(entry, rewrite_url(url, rewrite_rules));
 
   url = new URL(entry.urls[entry.urls.length - 1]);
-  let existing_entry = await db.get_entry(session, 'url', url, true);
+  let existing_entry = await cdb.get_entry(session, 'url', url, true);
   if (existing_entry) {
     throw new EntryExistsError('Entry already exists for url ' + url.href);
   }
@@ -313,10 +313,10 @@ export async function poll_entry(
     const response_url = new URL(response.url);
     if (fetch2.response_is_redirect(url, response)) {
       url_changed = true;
-      db.append_entry_url(entry, response_url);
-      db.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
+      cdb.append_entry_url(entry, response_url);
+      cdb.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
       url = new URL(entry.urls[entry.urls.length - 1]);
-      existing_entry = await db.get_entry(session, 'url', url, true);
+      existing_entry = await cdb.get_entry(session, 'url', url, true);
       if (existing_entry) {
         throw new EntryExistsError(
             'Entry exists for redirected url ' + url.href);
@@ -366,9 +366,9 @@ export async function poll_entry(
 
   entry.content = document.documentElement.outerHTML;
 
-  db.sanitize_entry(entry);
-  db.validate_entry(entry);
-  return db.create_entry(session, entry);
+  cdb.sanitize_entry(entry);
+  cdb.validate_entry(entry);
+  return cdb.create_entry(session, entry);
 }
 
 // TODO: somehow store in configuration instead of here, look into

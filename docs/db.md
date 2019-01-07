@@ -1,9 +1,3 @@
-TODO: everything should be mapped through db.js. the open definition stuff should be moved into a separate helper file, open.js, perhaps even as an op. the db module is a whole, and should have a single api entry point. right now everything links directly into all the helper modules. all the helpers should actually be private so as to enforce a boundary. private helpers can link to other private helpers, but nothing outside of the db folder should link directly, it should all go through db.js
-
-In order to move into this, I want to slowly add exports to db.js for helpers, one by one.
-
-Exception is made for test modules, those can be directly accessed by the batch test runner.
-
 
 ## db.open notes
 Connects to the model. Instantiates and returns a wrapper class that serves

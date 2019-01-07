@@ -2,7 +2,7 @@
 // below the view layer. Generally, the operations here are functions that
 // involve the database along with some non-database functionality.
 
-import * as db from '/src/db.js';
+import * as cdb from '/src/cdb.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import {fetch_feed} from '/src/net/fetch-feed/fetch-feed.js';
 import {response_is_redirect} from '/src/net/fetch2.js';
@@ -13,8 +13,8 @@ import * as utils from '/src/utils.js';
 // database. document_title is optional.
 export async function export_opml(document_title) {
   const doc = create_opml_template(document_title);
-  const session = await db.open();
-  const feeds = await db.get_feeds(session, 'all', false);
+  const session = await cdb.open();
+  const feeds = await cdb.get_feeds(session, 'all', false);
   session.close();
 
   const outlines = feeds.map(feed => {
@@ -88,12 +88,12 @@ export async function opml_import(session, files) {
   const url_array_set = opml_import_dedup_urls(url_array);
 
   const feeds = url_array_set.map(url => {
-    const feed = db.create_feed_object();
-    db.append_feed_url(feed, url);
+    const feed = cdb.create_feed_object();
+    cdb.append_feed_url(feed, url);
     return feed;
   });
 
-  return db.create_feeds(session, feeds);
+  return cdb.create_feeds(session, feeds);
 }
 
 function opml_import_read_files(files) {
@@ -204,7 +204,7 @@ export class OPMLParseError extends Error {
 
 export async function subscribe(session, iconn, url, timeout, notify) {
   // Check if subscribed to the input url
-  let existing_feed = await db.get_feed(session, 'url', url, true);
+  let existing_feed = await cdb.get_feed(session, 'url', url, true);
   if (existing_feed) {
     const message = 'Found existing feed with url ' + url.href;
     throw new ConstraintError(message);
@@ -217,7 +217,7 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   // If redirected, check if subscribed to the redirected url
   if(response_is_redirect(url, http_response)) {
     const rurl = new URL(http_response.url);
-    let existing_feed = await db.get_feed(session, 'url', rurl, true);
+    let existing_feed = await cdb.get_feed(session, 'url', rurl, true);
     if (existing_feed) {
       const message = 'Found existing feed with redirect url ' + rurl.href;
       throw new ConstraintError(message);
@@ -226,9 +226,9 @@ export async function subscribe(session, iconn, url, timeout, notify) {
 
   const feed = response.feed;
   await set_feed_favicon(iconn, feed);
-  db.validate_feed(feed);
-  db.sanitize_feed(feed);
-  feed.id = await db.create_feed(session, feed);
+  cdb.validate_feed(feed);
+  cdb.sanitize_feed(feed);
+  feed.id = await cdb.create_feed(session, feed);
 
   if(notify) {
     const feed_title = feed.title || feed.urls[feed.urls.length - 1];
@@ -243,7 +243,7 @@ export async function subscribe(session, iconn, url, timeout, notify) {
 }
 
 export function unsubscribe(session, feed_id) {
-  return db.delete_feed(session, feed_id, 'unsubscribe');
+  return cdb.delete_feed(session, feed_id, 'unsubscribe');
 }
 
 async function set_feed_favicon(iconn, feed) {
@@ -259,7 +259,7 @@ async function set_feed_favicon(iconn, feed) {
 }
 
 export async function refresh_feed_icons(session, iconn) {
-  const feeds = await db.get_feeds(session, 'active', false);
+  const feeds = await cdb.get_feeds(session, 'active', false);
   const promises = [];
   for (const feed of feeds) {
     promises.push(refresh_feed_icon(session, iconn, feed));
@@ -290,7 +290,7 @@ async function refresh_feed_icon(session, iconn, feed) {
       delete feed.faviconURLString;
     }
 
-    await db.update_feed(session, feed, true);
+    await cdb.update_feed(session, feed, true);
   }
 }
 

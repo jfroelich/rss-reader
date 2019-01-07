@@ -22,7 +22,7 @@ import {fetch_html_test} from '/src/test/fetch-html-test.js';
 import {fetch2_test} from '/src/test/fetch2-test.js';
 import {import_opml_test} from '/src/test/import-opml-test.js';
 import {subscribe_test} from '/src/test/subscribe-test.js';
-import * as db_tests from '/src/test/db-tests.js';
+import * as cdb_tests from '/src/test/cdb-tests.js';
 
 const registry = [];
 register_test(article_title_test);
@@ -32,7 +32,7 @@ register_test(color_contrast_filter_tests.color_contrast_filter_test2);
 register_test(color_test);
 register_test(coerce_element_test);
 
-for(const key in db_tests) {
+for(const key in cdb_tests) {
   if(typeof key === 'function' && key.name.endsWith('_test')) {
     register_test(key);
   }

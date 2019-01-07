@@ -22,7 +22,7 @@ import assert from '/src/assert.js';
 import * as badge from '/src/badge.js';
 import * as config from '/src/config.js';
 import * as config_control from '/src/config-control.js';
-import * as db from '/src/db.js';
+import * as cdb from '/src/cdb.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import * as ops from '/src/ops.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
@@ -51,7 +51,7 @@ async function show_next_slide() {
     return;
   }
 
-  const session = await db.open_with_channel();
+  const session = await cdb.open_with_channel();
   await mark_slide_read_start(session, current_slide);
 
   const slide_unread_count = count_unread_slides();
@@ -59,7 +59,7 @@ async function show_next_slide() {
   if (slide_unread_count < 3) {
     const limit = config.read_int('initial_entry_load_limit');
     const mode = 'viewable';
-    entries = await db.get_entries(session, mode, slide_unread_count, limit);
+    entries = await cdb.get_entries(session, mode, slide_unread_count, limit);
   }
   session.close();
 
@@ -318,7 +318,7 @@ async function slide_onclick(event) {
   // the checks within mark_slide_read_start, it avoids opening the connection.
   if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
       !slide.hasAttribute('read-pending')) {
-    const session = await db.open_with_channel();
+    const session = await cdb.open_with_channel();
     await mark_slide_read_start(session, slide);
     session.close();
   }
@@ -405,7 +405,7 @@ async function mark_slide_read_start(session, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  await db.mark_entry_read(session, entry_id);
+  await cdb.mark_entry_read(session, entry_id);
 }
 
 function remove_slide(slide) {
@@ -433,7 +433,7 @@ async function refresh_button_onclick(event) {
 
   refresh_in_progress = true;
 
-  const promises = [db.open_with_channel(), favicon.open()];
+  const promises = [cdb.open_with_channel(), favicon.open()];
   const [session, iconn] = await Promise.all(promises);
   await poll_feeds(session, iconn, {ignore_recency_check: true});
   session.close();
@@ -535,7 +535,7 @@ function import_opml_prompt() {
   input.setAttribute('type', 'file');
   input.setAttribute('accept', 'application/xml');
   input.onchange = async function(event) {
-    const session = await db.open_with_channel();
+    const session = await cdb.open_with_channel();
     await ops.opml_import(session, event.target.files);
     session.close();
   };
@@ -795,9 +795,9 @@ async function onmessage(event) {
     // logic.
 
     let limit = undefined;
-    const session = await db.open();
+    const session = await cdb.open();
     const entries =
-        await db.get_entries(session, 'viewable', unread_count, limit);
+        await cdb.get_entries(session, 'viewable', unread_count, limit);
     session.close();
 
     for (const entry of entries) {
@@ -868,7 +868,7 @@ function append_slide(entry) {
 }
 
 function create_slide(entry) {
-  assert(db.is_entry(entry));
+  assert(cdb.is_entry(entry));
   assert(Array.isArray(entry.urls));
   assert(entry.urls.length > 0);
 
@@ -1223,9 +1223,9 @@ function hide_splash() {
 async function load_view() {
   show_splash();
 
-  const session = await db.open();
-  const get_entries_promise = db.get_entries(session, 'viewable', 0, 6);
-  const get_feeds_promise = db.get_feeds(session, 'all', true);
+  const session = await cdb.open();
+  const get_entries_promise = cdb.get_entries(session, 'viewable', 0, 6);
+  const get_feeds_promise = cdb.get_feeds(session, 'all', true);
   session.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)

@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as db from '/src/db.js';
+import * as cdb from '/src/cdb.js';
 import * as idb from '/src/idb.js';
 
 export async function activate_feed_test() {
@@ -12,7 +12,7 @@ export async function activate_feed_test() {
   // headache.
   await idb.remove(db_name);
 
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
   // Setup a fake channel for recording messages for later assertions. Do not
   // immediately attach it to the session because we want to ignore certain
@@ -22,10 +22,10 @@ export async function activate_feed_test() {
   channel.postMessage = message => messages.push(message);
 
   // Create an inactive feed and store it
-  const feed = db.create_feed_object();
+  const feed = cdb.create_feed_object();
   feed.active = false;
-  db.append_feed_url(feed, new URL('a://b.c'));
-  const id = await db.create_feed(session, feed);
+  cdb.append_feed_url(feed, new URL('a://b.c'));
+  const id = await cdb.create_feed(session, feed);
 
   // Now attach the channel. We wait until now to skip over create-feed
   session.channel = channel;
@@ -34,7 +34,7 @@ export async function activate_feed_test() {
   // implies quite a lot, including that the feed object was found in the
   // database, that the object was of type feed, and that the feed was not
   // already in the active state.
-  await db.activate_feed(session, id);
+  await cdb.activate_feed(session, id);
 
   // Detach the channel. Just rules out any chance of awkwardness with out of
   // order execution in this test.
@@ -45,12 +45,12 @@ export async function activate_feed_test() {
   assert(messages[0].type === 'feed-updated');
 
   // Read the feed back out of the database to investigate
-  const stored_feed = await db.db.get_feed(session, 'id', id, false);
+  const stored_feed = await cdb.get_feed(session, 'id', id, false);
 
   // Activation should not have somehow destroyed type info. For performance
   // reasons this check is NOT implicit in the db.get_feed call, so it is not
   // redundant or unreasonable to check here.
-  assert(db.is_feed(stored_feed));
+  assert(cdb.is_feed(stored_feed));
 
   // Activation should result in the active state
   assert(stored_feed.active === true);
@@ -66,7 +66,7 @@ export async function activate_feed_test() {
   // Assert that activating a feed that is already active should fail.
   let activation_error;
   try {
-    await db.activate_feed(session, id);
+    await cdb.activate_feed(session, id);
   } catch (error) {
     activation_error = error;
   }
@@ -81,7 +81,7 @@ export async function activate_feed_test() {
   const fictitious_feed_id = 123456789;
   activation_error = undefined;
   try {
-    await db.activate_feed(session, fictitious_feed_id);
+    await cdb.activate_feed(session, fictitious_feed_id);
   } catch (error) {
     activation_error = error;
   }
@@ -100,9 +100,9 @@ export async function archive_entries_test() {
   // archived
   // TODO: assert channeled messages work
   const db_name = 'archive-entries-test';
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
   const max_age = 100;
-  const ids = await db.archive_entries(session, max_age);
+  const ids = await cdb.archive_entries(session, max_age);
   session.close();
   await idb.remove(db_name);
 }
@@ -110,36 +110,36 @@ export async function archive_entries_test() {
 export async function count_unread_entries_by_feed_test() {
   const db_name = 'count-unread-entries-by-feed-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
-  const feed = db.create_feed_object();
+  const feed = cdb.create_feed_object();
   const url = new URL('http://www.example.com/feed.xml');
-  db.append_feed_url(feed, url);
-  const feed_id = await db.create_feed(session, feed);
+  cdb.append_feed_url(feed, url);
+  const feed_id = await cdb.create_feed(session, feed);
 
   const num_entries_created_per_type = 5;
   const create_promises = [];
 
   for (let i = 0; i < 2; i++) {
     const read_state =
-        i === 0 ? db.ENTRY_UNREAD : db.ENTRY_READ;
+        i === 0 ? cdb.ENTRY_UNREAD : cdb.ENTRY_READ;
 
     for (let j = 0; j < num_entries_created_per_type; j++) {
-      const entry = db.create_entry_object();
+      const entry = cdb.create_entry_object();
       entry.feed = feed_id;
       entry.readState = read_state;
-      const promise = db.create_entry(session, entry);
+      const promise = cdb.create_entry(session, entry);
       create_promises.push(promise);
     }
   }
   const entry_ids = await Promise.all(create_promises);
 
-  let unread_count = await db.count_unread_entries_by_feed(session, feed_id);
+  let unread_count = await cdb.count_unread_entries_by_feed(session, feed_id);
   assert(unread_count === num_entries_created_per_type);
 
   const non_existing_feed_id = 123456789;
   unread_count =
-      await db.count_unread_entries_by_feed(session, non_existing_feed_id);
+      await cdb.count_unread_entries_by_feed(session, non_existing_feed_id);
   assert(unread_count === 0);
 
   session.close();
@@ -148,42 +148,42 @@ export async function count_unread_entries_by_feed_test() {
 
 export async function count_unread_entries_test() {
   const db_name = 'count-unread-entries-test';
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
   // Assert that the count of an empty database is in fact 0
-  let count = await db.count_unread_entries(session);
+  let count = await cdb.count_unread_entries(session);
   assert(count === 0);
 
   // Generate some unread entries
   const insert_unread_count = 3;
   const entries_to_insert = [];
   for (let i = 0; i < insert_unread_count; i++) {
-    const entry = db.create_entry_object();
-    entry.readState = db.ENTRY_UNREAD;
-    db.append_entry_url(entry, new URL('a://b.c' + i));
+    const entry = cdb.create_entry_object();
+    entry.readState = cdb.ENTRY_UNREAD;
+    cdb.append_entry_url(entry, new URL('a://b.c' + i));
     entries_to_insert.push(entry);
   }
 
   // Generate some read entries
   const insert_read_count = 5;
   for (let i = 0; i < insert_read_count; i++) {
-    const entry = db.create_entry_object();
-    entry.readState = db.ENTRY_READ;
-    db.append_entry_url(entry, new URL('d://e.f' + i));
+    const entry = cdb.create_entry_object();
+    entry.readState = cdb.ENTRY_READ;
+    cdb.append_entry_url(entry, new URL('d://e.f' + i));
     entries_to_insert.push(entry);
   }
 
   // Store both the read and unread entries
   const insert_promises = [];
   for (const entry of entries_to_insert) {
-    const promise = db.create_entry(session, entry);
+    const promise = cdb.create_entry(session, entry);
     insert_promises.push(promise);
   }
   await Promise.all(insert_promises);
 
   // Assert the count of unread entries is equal to the number of inserted
   // unread entries.
-  count = await db.count_unread_entries(session);
+  count = await cdb.count_unread_entries(session);
   assert(count === insert_unread_count);
 
   session.close();
@@ -192,17 +192,17 @@ export async function count_unread_entries_test() {
 
 export async function create_entry_test() {
   const db_name = 'create-entry-test';
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
   // Create and store an entry in the database. Grab its generated id.
-  const entry = db.create_entry_object();
-  const id = await db.create_entry(session, entry);
+  const entry = cdb.create_entry_object();
+  const id = await cdb.create_entry(session, entry);
   // Load the entry from the database corresponding to the generated id and
   // verify the state of its properties
-  const stored_entry = await db.get_entry(session, 'id', id, false);
+  const stored_entry = await cdb.get_entry(session, 'id', id, false);
   // We should have matched an object
   assert(stored_entry);
   // The object type should not be corrupted
-  assert(db.is_entry(stored_entry));
+  assert(cdb.is_entry(stored_entry));
   // The object ids should match
   assert(stored_entry.id === id);
   session.close();
@@ -220,24 +220,24 @@ export async function create_feed_test() {
   // TODO: test it sends expected number of messages to channel
   // TODO: test that searching by a different id does not somehow match new feed
   const db_name = 'create-feed-test';
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
   // Create a dummy feed object, store it, grab its new id
-  const feed = db.create_feed_object();
+  const feed = cdb.create_feed_object();
   const feed_url = new URL('http://www.example.com/example.rss');
-  db.append_feed_url(feed, feed_url);
-  const stored_feed_id = await db.create_feed(session, feed);
+  cdb.append_feed_url(feed, feed_url);
+  const stored_feed_id = await cdb.create_feed(session, feed);
 
   // Verify the generated id looks valid
-  assert(db.is_valid_feed_id(stored_feed_id));
+  assert(cdb.is_valid_feed_id(stored_feed_id));
 
   // Verify the feed is findable by url
-  let stored_feed = await db.get_feed(session, 'url', feed_url, true);
-  assert(db.is_feed(stored_feed));
+  let stored_feed = await cdb.get_feed(session, 'url', feed_url, true);
+  assert(cdb.is_feed(stored_feed));
 
   // Verify the feed is findable by id
-  stored_feed = await db.get_feed(session, 'id', stored_feed_id, false);
-  assert(db.is_feed(stored_feed));
+  stored_feed = await cdb.get_feed(session, 'id', stored_feed_id, false);
+  assert(cdb.is_feed(stored_feed));
 
   // Test teardown
   session.close();
@@ -248,26 +248,26 @@ export async function create_feed_url_constraint_test() {
   // Test that uniqueness contraint on feed store url index causes create-feed to
   // fail as expected
   const db_name = 'create-feed-url-constraint-test';
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
   // TODO: reuse the same URL object here, do not create two url objects, it
   // just leaves db.open room for inconsistency and is less terse
 
   // Generate and store a basic feed
-  const feed1 = db.create_feed_object();
-  db.append_feed_url(
+  const feed1 = cdb.create_feed_object();
+  cdb.append_feed_url(
       feed1, new URL('http://www.example.com/example.rss'));
-  await db.create_feed(session, feed1);
+  await cdb.create_feed(session, feed1);
 
   // Generate and store a second feed with the same url
-  const feed2 = db.create_feed_object();
-  db.append_feed_url(
+  const feed2 = cdb.create_feed_object();
+  cdb.append_feed_url(
       feed2, new URL('http://www.example.com/example.rss'));
 
   // Call and trap the error. This should fail.
   let create_error;
   try {
-    await db.create_feed(session, feed2);
+    await cdb.create_feed(session, feed2);
   } catch (error) {
     create_error = error;
   }
@@ -289,25 +289,25 @@ export async function create_feed_url_constraint_test() {
 export async function create_feeds_test() {
   // TODO: test behavior when two or more feeds have identical urls
   const db_name = 'create-feeds-test';
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
   const num_feeds = 3, feeds = [];
   for (let i = 0; i < num_feeds; i++) {
-    const feed = db.create_feed_object();
-    db.append_feed_url(feed, new URL('a://b.c' + i));
+    const feed = cdb.create_feed_object();
+    cdb.append_feed_url(feed, new URL('a://b.c' + i));
     feeds.push(feed);
   }
 
   const ids = await create_feeds(session, feeds);
   assert(ids.length === num_feeds);
-  const stored_feeds = await db.get_feeds(session, 'all', false);
+  const stored_feeds = await cdb.get_feeds(session, 'all', false);
   assert(stored_feeds.length === num_feeds);
 
-  const get_proms = ids.map(id => db.get_feed(session, 'id', id, false));
+  const get_proms = ids.map(id => cdb.get_feed(session, 'id', id, false));
   const feeds_by_id = await Promise.all(get_proms);
   for (const feed of feeds_by_id) {
-    assert(db.is_feed(feed));
-    assert(db.is_valid_feed_id(feed.id));
+    assert(cdb.is_feed(feed));
+    assert(cdb.is_valid_feed_id(feed.id));
   }
 
   session.close();
@@ -319,12 +319,12 @@ export async function deactivate_feed_test() {
   // I need to test other cases and pathological cases.
   const db_name = 'deactivate-feed-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
-  const feed = db.create_feed_object();
+  const session = await cdb.open(db_name);
+  const feed = cdb.create_feed_object();
   const url = new URL('a://b.c');
-  db.append_feed_url(feed, url);
+  cdb.append_feed_url(feed, url);
   feed.active = true;
-  const feed_id = await db.create_feed(session, feed);
+  const feed_id = await cdb.create_feed(session, feed);
   const messages = [];
   const channel = {};
   channel.postMessage = message => messages.push(message);
@@ -332,11 +332,11 @@ export async function deactivate_feed_test() {
   channel.close = noop;
   session.channel = channel;
   await deactivate_feed(session, feed_id, 'testing');
-  const stored_feed = await db.get_feed(session, 'id', feed_id, false);
+  const stored_feed = await cdb.get_feed(session, 'id', feed_id, false);
   // Deactivating the feed should not somehow make it not findable by id
   assert(stored_feed);
   // Deactivating the feed should somehow not destroy type information
-  assert(db.is_feed(stored_feed));
+  assert(cdb.is_feed(stored_feed));
   // Deactivating the feed should result in the active property being the value
   // of false. Not just undefined, not just key deleted.
   assert(stored_feed.active === false);
@@ -353,27 +353,27 @@ export async function deactivate_feed_test() {
 export async function delete_entry_test() {
   const db_name = 'delete-entry-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
-  const entry = db.create_entry_object();
+  const entry = cdb.create_entry_object();
   const url = new URL('https://www.example.com');
-  db.append_entry_url(entry, url);
+  cdb.append_entry_url(entry, url);
 
-  const entry2 = db.create_entry_object();
+  const entry2 = cdb.create_entry_object();
   const url2 = new URL('https://www.example2.com');
-  db.append_entry_url(entry2, url2);
+  cdb.append_entry_url(entry2, url2);
 
-  const entry_id = await db.create_entry(session, entry);
-  const entry_id2 = await db.create_entry(session, entry2);
-  let stored_entry = await db.get_entry(session, 'id', entry_id, false);
+  const entry_id = await cdb.create_entry(session, entry);
+  const entry_id2 = await cdb.create_entry(session, entry2);
+  let stored_entry = await cdb.get_entry(session, 'id', entry_id, false);
   // Confirms the entry exists as a pre-condition
   assert(stored_entry);
-  await db.delete_entry(session, entry_id, 'test');
+  await cdb.delete_entry(session, entry_id, 'test');
   stored_entry = undefined;
-  stored_entry = await db.get_entry(session, 'id', entry_id, false);
+  stored_entry = await cdb.get_entry(session, 'id', entry_id, false);
   assert(!stored_entry);
   stored_entry = undefined;
-  stored_entry = await db.get_entry(session, 'id', entry_id2, false);
+  stored_entry = await cdb.get_entry(session, 'id', entry_id2, false);
   // We should still be able to find the second entry after deleting the first
   assert(stored_entry);
   session.close();
@@ -389,19 +389,19 @@ export async function delete_feed_test() {
 
   const db_name = 'delete-feed-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
   // Create and store a feed
-  const feed1 = db.create_feed_object();
+  const feed1 = cdb.create_feed_object();
   const url1 = new URL('http://www.example.com/foo.xml');
-  db.append_feed_url(feed1, url1);
-  const feed_id1 = await db.create_feed(session, feed1);
+  cdb.append_feed_url(feed1, url1);
+  const feed_id1 = await cdb.create_feed(session, feed1);
 
   // Create and store a second feed
-  const feed2 = db.create_feed_object();
+  const feed2 = cdb.create_feed_object();
   const url2 = new URL('http://www.example.com/bar.xml');
-  db.append_feed_url(feed2, url2);
-  const feed_id2 = await db.create_feed(session, feed2);
+  cdb.append_feed_url(feed2, url2);
+  const feed_id2 = await cdb.create_feed(session, feed2);
 
   const messages = [];
   const channel = {};
@@ -412,18 +412,18 @@ export async function delete_feed_test() {
   const delete_reason = 'test';
 
   // Remove the first feed
-  await db.delete_feed(session, feed_id1, delete_reason);
+  await cdb.delete_feed(session, feed_id1, delete_reason);
 
   // Paranoia
   session.channel = undefined;
 
   // feed1 should no longer exist in the database. I assume that trying to get
   // the feed by its id is enough of a test to confirm that.
-  const stored_feed1 = await db.get_feed(session, 'id', feed_id1, false);
+  const stored_feed1 = await cdb.get_feed(session, 'id', feed_id1, false);
   assert(!stored_feed1);
 
   // removing feed1 should not have somehow affected feed2
-  const stored_feed2 = await db.get_feed(session, 'id', feed_id2, false);
+  const stored_feed2 = await cdb.get_feed(session, 'id', feed_id2, false);
   assert(stored_feed2);
 
   // Test messaging. Because feed1 has no entries we only expect 1 message.
@@ -440,13 +440,13 @@ export async function delete_feed_test() {
   // Do this before removing the other feed so that this is tested on a
   // non-empty object store, if that ever matters?
   const fictional_feed_id = 123456789;
-  await db.delete_feed(session, fictional_feed_id, delete_reason);
+  await cdb.delete_feed(session, fictional_feed_id, delete_reason);
 
   // Remove the second feed. This should occur without error. Removing the
   // second feed after having removed the first should not fail. Calling
   // db.delete_feed without a channel should not fail. Not providing a reason
   // should not cause an error.
-  await db.delete_feed(session, feed_id2);
+  await cdb.delete_feed(session, feed_id2);
 
   // Test teardown
   session.close();
@@ -454,87 +454,87 @@ export async function delete_feed_test() {
 }
 
 export async function entry_utils_is_entry_test() {
-  const correct = db.create_entry_object();
-  assert(db.is_entry(correct));
-  assert(!db.is_feed(correct));
+  const correct = cdb.create_entry_object();
+  assert(cdb.is_entry(correct));
+  assert(!cdb.is_feed(correct));
   const nomagic = {};
-  assert(!db.is_entry(nomagic));
+  assert(!cdb.is_entry(nomagic));
 }
 
 export async function entry_utils_append_entry_url_test() {
-  const entry = db.create_entry_object();
+  const entry = cdb.create_entry_object();
   // Check our precondition
   assert(entry.urls === undefined || entry.urls.length === 0);
   // Appending the first url should lazily init urls list and increment the
   // urls count
-  db.append_entry_url(entry, new URL('a://b.c1'));
+  cdb.append_entry_url(entry, new URL('a://b.c1'));
   assert(entry.urls);
   assert(entry.urls.length === 1);
   // Appending a distinct url should increase url count
   const url2 = new URL('a://b.c2');
-  let appended = db.append_entry_url(entry, url2);
+  let appended = cdb.append_entry_url(entry, url2);
   assert(entry.urls.length === 2);
   assert(appended === true);
   // Reset, this guards against strange things like append_entry_url failing
   // to return
   appended = false;
   // Try to append a duplicate
-  appended = db.append_entry_url(entry, url2);
+  appended = cdb.append_entry_url(entry, url2);
   // Appending a duplicate url should not increase url count
   assert(entry.urls.length === 2);
   // The append should return false to indicate no append
   assert(appended === false);
   // After any number of appends, entry should still be an entry
-  assert(db.is_entry(entry));
+  assert(cdb.is_entry(entry));
 }
 
 export async function feed_utils_is_feed_test() {
-  const fcorrect = db.create_feed_object();
-  assert(db.is_feed(fcorrect));
-  assert(!db.is_entry(fcorrect));
+  const fcorrect = cdb.create_feed_object();
+  assert(cdb.is_feed(fcorrect));
+  assert(!cdb.is_entry(fcorrect));
   const nomagic = {};
-  assert(!db.is_feed(nomagic));
+  assert(!cdb.is_feed(nomagic));
 }
 
 export async function feed_utils_append_feed_url_test() {
-  const feed = db.create_feed_object();
+  const feed = cdb.create_feed_object();
   // precondition, in case create_feed_object changes its behavior
   assert(feed.urls === undefined || feed.urls.length === 0);
   // Appending the first url should lazily init urls list and increment the
   // urls count
-  db.append_feed_url(feed, new URL('a://b.c1'));
+  cdb.append_feed_url(feed, new URL('a://b.c1'));
   assert(feed.urls);
   assert(feed.urls.length === 1);
   // Appending a distinct url should increase url count
   const url2 = new URL('a://b.c2');
-  db.append_feed_url(feed, url2);
+  cdb.append_feed_url(feed, url2);
   assert(feed.urls.length === 2);
   // Appending a duplicate url should not increase url count
-  db.append_feed_url(feed, url2);
+  cdb.append_feed_url(feed, url2);
   assert(feed.urls.length === 2);
   // After appends, feed should still be a feed
-  assert(db.is_feed(feed));
+  assert(cdb.is_feed(feed));
 }
 
 export async function get_entries_test() {
   const db_name = 'get-entries-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
   // Number of entries for testing. This should be greater than one
   // because some later logic may assume that at least one entry exists.
   const n = 5;
   // Insert n entries
   const create_promises = [];
   for (let i = 0; i < n; i++) {
-    const entry = db.create_entry_object();
+    const entry = cdb.create_entry_object();
     entry.title = 'title ' + i;
-    const promise = db.create_entry(session, entry);
+    const promise = cdb.create_entry(session, entry);
     create_promises.push(promise);
   }
   await Promise.all(create_promises);
 
   // Get all entries in the database
-  const entries = await db.get_entries(session, 'all', 0, 0);
+  const entries = await cdb.get_entries(session, 'all', 0, 0);
   // We should have loaded n many entries
   assert(entries.length === n);
   // Test teardown
@@ -545,15 +545,15 @@ export async function get_entries_test() {
 export async function get_entry_test() {
   const db_name = 'get-entry-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
-  const entry = db.create_entry_object();
+  const session = await cdb.open(db_name);
+  const entry = cdb.create_entry_object();
   entry.title = 'test';
-  const entry_id = await db.create_entry(session, entry);
-  const stored_entry = await db.get_entry(session, 'id', entry_id, false);
+  const entry_id = await cdb.create_entry(session, entry);
+  const stored_entry = await cdb.get_entry(session, 'id', entry_id, false);
   assert(stored_entry);
 
   const bad_id = 123456789;
-  const bad_entry = await db.get_entry(session, 'id', bad_id, false);
+  const bad_entry = await cdb.get_entry(session, 'id', bad_id, false);
   assert(bad_entry === undefined);
   session.close();
   await idb.remove(db_name);
@@ -562,21 +562,21 @@ export async function get_entry_test() {
 export async function get_feed_ids_test() {
   const db_name = 'get-feed-ids-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
   const n = 5;
 
   // Create some feeds
   const create_promises = [];
   for (let i = 0; i < n; i++) {
-    const feed = db.create_feed_object();
+    const feed = cdb.create_feed_object();
     const url = new URL('http://www.example.com/feed' + i + '.xml');
-    db.append_feed_url(feed, url);
-    const promise = db.create_feed(session, feed);
+    cdb.append_feed_url(feed, url);
+    const promise = cdb.create_feed(session, feed);
     create_promises.push(promise);
   }
   const created_feed_ids = await Promise.all(create_promises);
-  const feed_ids = await db.get_feed_ids(session);
+  const feed_ids = await cdb.get_feed_ids(session);
   assert(feed_ids.length === created_feed_ids.length);
 
   for (const id of created_feed_ids) {
@@ -590,20 +590,20 @@ export async function get_feed_ids_test() {
 export async function get_feed_test() {
   const db_name = 'get-feed-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
-  const feed = db.create_feed_object();
+  const feed = cdb.create_feed_object();
   const url = new URL('a://b.c');
-  db.append_feed_url(feed, url);
-  const feed_id = await db.create_feed(session, feed);
+  cdb.append_feed_url(feed, url);
+  const feed_id = await cdb.create_feed(session, feed);
 
   // Precon
-  assert(db.is_valid_feed_id(feed_id));
+  assert(cdb.is_valid_feed_id(feed_id));
 
-  const stored_feed = await db.get_feed(session, 'id', feed_id, false);
+  const stored_feed = await cdb.get_feed(session, 'id', feed_id, false);
   assert(stored_feed);
 
-  const stored_feed2 = await db.get_feed(session, 'url', url, false);
+  const stored_feed2 = await cdb.get_feed(session, 'url', url, false);
   assert(stored_feed2);
   session.close();
   await idb.remove(db_name);
@@ -612,28 +612,28 @@ export async function get_feed_test() {
 export async function get_feeds_test() {
   // TODO: inline these again, not enough value
   function get_all_feeds_unsorted(session) {
-    return db.get_feeds(session, 'all', false);
+    return cdb.get_feeds(session, 'all', false);
   }
 
   function get_all_feeds_sorted(session) {
-    return db.get_feeds(session, 'all', true);
+    return cdb.get_feeds(session, 'all', true);
   }
 
   function get_active_feeds(session) {
-    return db.get_feeds(session, 'active', false);
+    return cdb.get_feeds(session, 'active', false);
   }
 
   const db_name = 'get-feeds-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
   const n = 5;           // number of feeds to store and test against
   let active_count = 0;  // track number of not-inactive
   const create_promises = [];
   for (let i = 0; i < n; i++) {
-    const feed = db.create_feed_object();
+    const feed = cdb.create_feed_object();
     const url = new URL('a://b.c' + i);
-    db.append_feed_url(feed, url);
+    cdb.append_feed_url(feed, url);
 
     // make some inactive
     if (i % 2 === 0) {
@@ -642,7 +642,7 @@ export async function get_feeds_test() {
       active_count++;
     }
 
-    const promise = db.create_feed(session, feed);
+    const promise = cdb.create_feed(session, feed);
     create_promises.push(promise);
   }
   const ids = await Promise.all(create_promises);
@@ -673,20 +673,20 @@ export async function get_feeds_test() {
 export async function iterate_entries_test() {
   const db_name = 'iterate-entries-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
   const n = 5;
   const create_promises = [];
   for (let i = 0; i < n; i++) {
-    const entry = db.create_entry_object();
+    const entry = cdb.create_entry_object();
     entry.title = 'test' + i;
-    const promise = db.create_entry(session, entry);
+    const promise = cdb.create_entry(session, entry);
     create_promises.push(promise);
   }
   const ids = await Promise.all(create_promises);
 
   let num_iterated = 0;
-  await db.iterate_entries(session, entry => {
+  await cdb.iterate_entries(session, entry => {
     assert(entry);
     num_iterated++;
   });
@@ -699,13 +699,13 @@ export async function mark_entry_read_test() {
   function noop() {}
   const db_name = 'mark-entry-read-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
-  const entry = db.create_entry_object();
-  entry.readState = db.ENTRY_UNREAD;
-  const id = await db.create_entry(session, entry);
-  let stored_entry = await db.get_entry(session, 'id', id, false);
+  const session = await cdb.open(db_name);
+  const entry = cdb.create_entry_object();
+  entry.readState = cdb.ENTRY_UNREAD;
+  const id = await cdb.create_entry(session, entry);
+  let stored_entry = await cdb.get_entry(session, 'id', id, false);
   assert(stored_entry);
-  assert(stored_entry.readState === db.ENTRY_UNREAD);
+  assert(stored_entry.readState === cdb.ENTRY_UNREAD);
 
   const messages = [];
   const channel = {};
@@ -714,13 +714,13 @@ export async function mark_entry_read_test() {
   channel.close = noop;
 
   session.channel = channel;
-  await db.mark_entry_read(session, id);
+  await cdb.mark_entry_read(session, id);
   session.channel = undefined;
 
   stored_entry = undefined;
-  stored_entry = await db.get_entry(session, 'id', id, false);
+  stored_entry = await cdb.get_entry(session, 'id', id, false);
   assert(stored_entry);
-  assert(stored_entry.readState === db.ENTRY_READ);
+  assert(stored_entry.readState === cdb.ENTRY_READ);
 
   assert(messages.length === 1);
   const first_message = messages[0];
@@ -734,48 +734,48 @@ export async function mark_entry_read_test() {
 export async function query_entries_test() {
   const db_name = 'query-entries-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
   const create_promises = [];
   let entry;
 
   // Create 5 unread entries tied to feed 1
   for (let i = 0; i < 5; i++) {
-    entry = db.create_entry_object();
-    entry.readState = db.ENTRY_UNREAD;
+    entry = cdb.create_entry_object();
+    entry.readState = cdb.ENTRY_UNREAD;
     entry.feed = 1;
     entry.datePublished = new Date();
-    const promise = db.create_entry(session, entry);
+    const promise = cdb.create_entry(session, entry);
     create_promises.push(promise);
   }
 
   // Create 5 read entries tied to feed 1
   for (let i = 0; i < 5; i++) {
-    entry = db.create_entry_object();
-    entry.readState = db.ENTRY_READ;
+    entry = cdb.create_entry_object();
+    entry.readState = cdb.ENTRY_READ;
     entry.feed = 1;
     entry.datePublished = new Date();
-    const promise = db.create_entry(session, entry);
+    const promise = cdb.create_entry(session, entry);
     create_promises.push(promise);
   }
 
   // Create 5 unread entries tied to feed 2
   for (let i = 0; i < 5; i++) {
-    entry = db.create_entry_object();
-    entry.readState = db.ENTRY_UNREAD;
+    entry = cdb.create_entry_object();
+    entry.readState = cdb.ENTRY_UNREAD;
     entry.feed = 2;
     entry.datePublished = new Date();
-    const promise = db.create_entry(session, entry);
+    const promise = cdb.create_entry(session, entry);
     create_promises.push(promise);
   }
 
   // Create 5 read entries tied to feed 2
   for (let i = 0; i < 5; i++) {
-    entry = db.create_entry_object();
-    entry.readState = db.ENTRY_READ;
+    entry = cdb.create_entry_object();
+    entry.readState = cdb.ENTRY_READ;
     entry.feed = 2;
     entry.datePublished = new Date();
-    const promise = db.create_entry(session, entry);
+    const promise = cdb.create_entry(session, entry);
     create_promises.push(promise);
   }
 
@@ -792,13 +792,13 @@ export async function query_entries_test() {
 
   // Query for all unread entries, assert that it finds the expected number of
   // entries
-  query = {read_state: db.ENTRY_UNREAD};
+  query = {read_state: cdb.ENTRY_UNREAD};
   entries = await query_entries(session, query);
   assert(entries.length === 10);
 
   // Query for all read entries, assert that it finds the expected number of
   // entries
-  query = {read_state: db.ENTRY_READ};
+  query = {read_state: cdb.ENTRY_READ};
   entries = await query_entries(session, query);
   assert(entries.length === 10);
 
@@ -877,30 +877,30 @@ export async function query_entries_test() {
   }
 
   // Query using particular feed unread only
-  query = {feed_id: 1, read_state: db.ENTRY_UNREAD};
+  query = {feed_id: 1, read_state: cdb.ENTRY_UNREAD};
   entries = await query_entries(session, query);
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === db.ENTRY_UNREAD);
+    assert(entry.readState === cdb.ENTRY_UNREAD);
   }
 
   // Feed 1 read only
-  query = {feed_id: 1, read_state: db.ENTRY_READ};
+  query = {feed_id: 1, read_state: cdb.ENTRY_READ};
   entries = await query_entries(session, query);
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === db.ENTRY_READ);
+    assert(entry.readState === cdb.ENTRY_READ);
   }
 
   // Feed 1, unread, offset 3
-  query = {feed_id: 1, read_state: db.ENTRY_UNREAD, offset: 3};
+  query = {feed_id: 1, read_state: cdb.ENTRY_UNREAD, offset: 3};
   entries = await query_entries(session, query);
   assert(entries.length === 2);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === db.ENTRY_UNREAD);
+    assert(entry.readState === cdb.ENTRY_UNREAD);
   }
 
   // Test teardown
@@ -912,7 +912,7 @@ export async function sanitize_entry_content_test() {
   // TODO: validate truncation behavior?
 
   . Create a reusable entry object for input to sub tests.
-  const entry = db.create_entry_object();
+  const entry = cdb.create_entry_object();
 
   // Test the simple ordinary usage. Here no sanitization needs to take place,
   // so test that the value is not somehow clobbered, returns a string.
@@ -939,12 +939,12 @@ export async function update_entry_test() {
 
   const db_name = 'update-entry-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
 
-  let entry = db.create_entry_object();
+  let entry = cdb.create_entry_object();
   entry.title = 'first-title';
-  const entry_id = await db.create_entry(session, entry);
+  const entry_id = await cdb.create_entry(session, entry);
 
   const messages = [];
   const channel = {};
@@ -954,13 +954,13 @@ export async function update_entry_test() {
 
   session.channel = channel;
 
-  entry = await db.get_entry(session, 'id', entry_id, false);
+  entry = await cdb.get_entry(session, 'id', entry_id, false);
   entry.title = 'second-title';
   await update_entry(session, entry);
 
   session.channel = undefined;
 
-  entry = await db.get_entry(session, 'id', entry_id, false);
+  entry = await cdb.get_entry(session, 'id', entry_id, false);
   assert(entry.title === 'second-title');
 
   assert(messages.length === 1);
@@ -980,18 +980,18 @@ export async function update_feed_test() {
 
   const db_name = 'update-feed-test';
   await idb.remove(db_name);
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
   const messages = [];
   const channel = {};
   channel.postMessage = message => messages.push(message);
   channel.close = noop;
 
-  let feed = db.create_feed_object();
+  let feed = cdb.create_feed_object();
   feed.title = 'first';
   const url = new URL('a://b.c');
-  db.append_feed_url(feed, url);
-  let new_id = await db.create_feed(session, feed);
+  cdb.append_feed_url(feed, url);
+  let new_id = await cdb.create_feed(session, feed);
   feed.id = new_id;
 
   session.channel = channel;
@@ -1002,7 +1002,7 @@ export async function update_feed_test() {
 
   session.channel = undefined;
   feed = undefined;  // paranoia
-  feed = await db.get_feed(session, 'id', new_id, false);
+  feed = await cdb.get_feed(session, 'id', new_id, false);
 
   // The title should be updated to the new title
   assert(feed.title = 'second');

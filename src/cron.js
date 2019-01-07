@@ -2,7 +2,7 @@ import * as config from '/src/config.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops.js';
-import * as db from '/src/db.js';
+import * as cdb from '/src/cdb.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
 const ONE_WEEK_MINUTES = 60 * 24 * 7;
@@ -37,13 +37,13 @@ export async function alarm_listener(alarm) {
 
   if (alarm.name === 'archive') {
     let max_age;
-    const session = await db.open_with_channel();
-    await db.archive_entries(session, max_age);
+    const session = await cdb.open_with_channel();
+    await cdb.archive_entries(session, max_age);
     session.close();
   } else if (alarm.name === 'poll') {
     await handle_alarm_poll();
   } else if (alarm.name === 'refresh-feed-icons') {
-    const proms = [await db.open_with_channel(), favicon.open()];
+    const proms = [await cdb.open_with_channel(), favicon.open()];
     const [session, iconn] = await Promise.all(proms);
     await refresh_feed_icons(session, iconn);
     session.close();
@@ -66,7 +66,7 @@ async function handle_alarm_poll() {
     }
   }
 
-  const promises = [db.open_with_channel(), favicon.open()];
+  const promises = [cdb.open_with_channel(), favicon.open()];
   const [session, iconn] = await Promise.all(promises);
   const poll_options = {ignore_recency_check: false, notify: true};
   await poll_feeds(session, iconn, poll_options);

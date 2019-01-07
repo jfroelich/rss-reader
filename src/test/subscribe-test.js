@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as db from '/src/db.js';
+import * as cdb from '/src/cdb.js';
 import {subscribe} from '/src/ops.js';
 
 // TODO: it is wrong to ping google, implement something that tests a local
@@ -8,7 +8,7 @@ import {subscribe} from '/src/ops.js';
 export async function subscribe_test() {
   // Test setup
   const db_name = 'subscribe-test';
-  const session = await db.open(db_name);
+  const session = await cdb.open(db_name);
 
   // Inject a fake channel
   const messages = [];
@@ -27,8 +27,8 @@ export async function subscribe_test() {
 
   // Test the subscription produced the desired result
   assert(feed);
-  assert(db.is_feed(feed));
-  assert(db.is_valid_feed_id(feed.id));
+  assert(cdb.is_feed(feed));
+  assert(cdb.is_valid_feed_id(feed.id));
 
   // Length may be 1 or 2 (may have redirected and captured new url)
   assert(feed.urls.length);
@@ -42,7 +42,7 @@ export async function subscribe_test() {
 
   // Test teardown
   session.close();
-  await db.remove(db_name);
+  await cdb.remove(db_name);
 }
 
 function noop() {}

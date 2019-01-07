@@ -2,7 +2,7 @@ import * as badge_control from '/src/badge.js';
 import * as config_control from '/src/config-control.js';
 import * as config from '/src/config.js';
 import * as cron_control from '/src/cron.js';
-import * as db from '/src/db.js';
+import * as cdb from '/src/cdb.js';
 import * as utils from '/src/utils.js';
 
 export async function db_install_listener(event) {
@@ -14,7 +14,7 @@ export async function db_install_listener(event) {
     let version = undefined;
     const timeout = 0;
 
-    const session = await db.open(name, version, timeout);
+    const session = await cdb.open(name, version, timeout);
     session.close();
   }
 }

@@ -1,4 +1,4 @@
-import * as db from '/src/db.js';
+import * as cdb from '/src/cdb.js';
 
 export function install_listener(event) {
   // Refresh for both install and update event types. While it would seem like
@@ -14,8 +14,8 @@ export function startup_listener(event) {
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar
 export async function refresh() {
-  const session = await db.open();
-  const count = await db.count_unread_entries(session);
+  const session = await cdb.open();
+  const count = await cdb.count_unread_entries(session);
   session.close();
 
   const text = count > 999 ? '1k+' : '' + count;
