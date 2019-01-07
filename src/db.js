@@ -527,16 +527,14 @@ export async function create_feeds(session, feeds) {
   return ids;
 }
 
-// TODO: deprecate, inline everywhere (like 1 place?)
-// TODO: before deprecate, at least move to ops.js
+// TODO: move to ops.js
 export async function deactivate_feed(session, feed_id, reason) {
   const props = {};
   props.id = feed_id;
   props.active = false;
   props.deactivateDate = new Date();
   props.deactivationReasonText = reason;
-  const overwrite_flag = false;
-  await update_feed(session, props, overwrite_flag);
+  await update_feed(session, props, false);
 }
 
 export async function delete_entry(session, id, reason) {
@@ -623,7 +621,6 @@ export function is_feed(value) {
   return value && typeof value === 'object' && value.magic === FEED_MAGIC;
 }
 
-
 export function create_entry_object() {
   return {magic: ENTRY_MAGIC};
 }
@@ -666,13 +663,11 @@ export function get_entry(session, mode = 'id', value, key_only) {
   return get_entry_internal(session.conn, mode, value, key_only);
 }
 
-// TODO: inline
 function get_entry_internal(conn, mode, value, key_only) {
   return new Promise(
       get_entry_executor.bind(null, conn, mode, value, key_only));
 }
 
-// TODO: inline
 function get_entry_executor(conn, mode, value, key_only, resolve, reject) {
   const txn = conn.transaction('entry');
   txn.onerror = event => reject(event.target.error);
@@ -712,13 +707,11 @@ export function get_entries(session, mode = 'all', offset, limit) {
   return get_entries_internal(session.conn, mode, offset, limit);
 }
 
-// TODO: inline
 function get_entries_internal(conn, mode, offset, limit) {
   return new Promise(
       get_entries_executor.bind(null, conn, mode, offset, limit));
 }
 
-// TODO: inline
 function get_entries_executor(conn, mode, offset, limit, resolve, reject) {
   const entries = [];
   let advanced = false;
@@ -774,7 +767,6 @@ function get_feed_ids_executor(conn, resolve, reject) {
   request.onsuccess = _ => resolve(request.result);
 }
 
-
 export function get_feed(session, mode = 'id', value, key_only) {
   assert(mode !== 'url' || (value && typeof value.href === 'string'));
   assert(mode !== 'id' || is_valid_feed_id(value));
@@ -783,12 +775,10 @@ export function get_feed(session, mode = 'id', value, key_only) {
   return get_feed_internal(session.conn, mode, value, key_only);
 }
 
-// TODO: inline
 function get_feed_internal(conn, mode, value, key_only) {
   return new Promise(get_feed_executor.bind(null, conn, mode, value, key_only));
 }
 
-// TODO: inline
 function get_feed_executor(conn, mode, value, key_only, resolve, reject) {
   const txn = conn.transaction('feed');
   txn.onerror = event => reject(event.target.error);
@@ -1101,82 +1091,6 @@ function query_entries_request_onsuccess(cursor_state, event) {
   cursor.continue();
 }
 
-// TODO: deprecate entirely
-export async function remove_lost_entries(session) {
-  const ids = [];
-  const handle_entry_bound = remove_lost_handle_entry.bind(null, ids);
-  await iterate_entries(session, handle_entry_bound);
-
-  if (session.channel) {
-    for (const id of ids) {
-      const message = {type: 'entry-deleted', id: id, reason: 'lost'};
-      session.channel.postMessage(message);
-    }
-  }
-
-  return ids;
-}
-
-function remove_lost_handle_entry(ids, cursor) {
-  const entry = cursor.value;
-  if (!entry.urls || !entry.urls.length) {
-    cursor.delete();
-    ids.push(entry.id);
-  }
-}
-
-// Scans the database for entries not linked to a feed and deletes them
-// TODO: deprecate entirely
-export async function remove_orphaned_entries(session) {
-  const feed_ids = await get_feed_ids(session);
-  const entry_ids = [];
-
-  // NOTE: this previously checked if feed_ids was not empty, and only iterated
-  // if not empty. This was wrong because it did not account for a database
-  // state where entries existed but feeds did not. That state seems impossible
-  // to create through normal app usage, but it is possible in the test context,
-  // so the check was removed. It is not much of an optimization anyway. Even if
-  // it was a material optimization, it is a trivial concern. Moreover it is a
-  // premature concern (overoptimizing without profiling).
-
-  await iterate_entries(session, remove_orphan_handle_entry.bind(null, entry_ids, feed_ids));
-
-  if (session.channel) {
-    for (const id of entry_ids) {
-      const message = {type: 'entry-deleted', id: id, reason: 'orphan'};
-      session.channel.postMessage(message);
-    }
-  }
-
-  return entry_ids;
-}
-
-function remove_orphan_handle_entry(entry_ids, feed_ids, cursor) {
-  const entry = cursor.value;
-
-  // Ignore invalid objects, that is some other module's concern
-  if (!is_entry(entry)) {
-    return;
-  }
-
-  // Ignore entries with a feed id that exists, these are valid entries
-  if (feed_ids.includes(entry.feed)) {
-    return;
-  }
-
-  // The entry either does not have a feed id, or does not have a valid feed id,
-  // or has a valid feed id but does not correspond to a known feed, so it is
-  // an orphan.
-
-  entry_ids.push(entry.id);
-  cursor.delete();
-}
-
-
-// TODO: change mark-entry-read to use this, in the same manner that i did for
-// how activate-feed uses update-feed. then use this base to also implement
-// support for star/unstar of entries
-
 export async function update_entry(session, entry) {
   assert(is_entry(entry));
   assert(is_valid_entry_id(entry.id));
@@ -1184,7 +1098,6 @@ export async function update_entry(session, entry) {
   // We do not assert that the entry has a url. Entries are not required to have
   // urls at the model layer. Only higher layers are concerned with imposing
   // that constraint.
-
   entry.dateUpdated = new Date();
   utils.filter_empty_properties(entry);
 
@@ -1202,13 +1115,6 @@ function update_entry_put(conn, entry, resolve, reject) {
   txn.onerror = event => reject(event.target.error);
   txn.objectStore('entry').put(entry);
 }
-
-
-// TODO: consider a stronger level of validation of incoming properties,
-// possibly using some kind of a schema of known properties. Or make this less
-// of a concern here, and more of a concern of some external validation.
-// TODO: throw the proper errors here, this is also causing activate-feed-test
-// to fail
 
 export async function update_feed(session, feed, overwrite) {
   // If overwriting, the new feed must be valid. If partial update, the new
@@ -1359,7 +1265,6 @@ function update_feed_find_onsuccess(props, reject, event) {
 
   event.target.source.put(feed);
 }
-
 
 export function validate_entry(entry) {
   assert(is_entry(entry));
