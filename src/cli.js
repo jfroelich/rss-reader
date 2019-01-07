@@ -7,7 +7,7 @@ import * as cdb from '/src/cdb.js';
 
 async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);
-  const proms = [cdb.open_with_channel(), favicon.open()];
+  const proms = [cdb.open(), favicon.open()];
   const [session, iconn] = await Promise.all(proms);
   const feed = await subscribe(session, iconn, url, options, 3000, true);
   // Do a sequential poll of the created feed
@@ -20,7 +20,7 @@ async function cli_subscribe(url_string, poll = true) {
 }
 
 async function cli_refresh_icons() {
-  const proms = [cdb.open_with_channel(), favicon.open()];
+  const proms = [cdb.open(), favicon.open()];
   const [session, iconn] = await Promise.all(proms);
   await refresh_feed_icons(session, iconn);
   session.close();
@@ -28,7 +28,7 @@ async function cli_refresh_icons() {
 }
 
 async function cli_poll_feeds() {
-  const proms = [cdb.open_with_channel(), favicon.open()];
+  const proms = [cdb.open(), favicon.open()];
   const [session, iconn] = await Promise.all(proms);
   const poll_options = {ignore_recency_check: true};
   await poll_feeds(session, iconn, poll_options);

@@ -165,7 +165,7 @@ function propagate_feed_properties(feed, entries) {
 // each new feed url.
 function merge_feed(old_feed, new_feed) {
   const merged_feed =
-      Object.assign(cdb.create_feed_object(), old_feed, new_feed);
+      Object.assign(cdb.construct_feed(), old_feed, new_feed);
   merged_feed.urls = [...old_feed.urls];
   if (new_feed.urls) {
     for (const url_string of new_feed.urls) {
@@ -259,7 +259,7 @@ function dedup_entries(entries) {
 // format. This is a cross-cutting concern so it belongs in the place where the
 // concerns meet.
 function coerce_entry(parsed_entry) {
-  const blank_entry = cdb.create_entry_object();
+  const blank_entry = cdb.construct_entry();
 
   // Copy over everything
   const clone = Object.assign(blank_entry, parsed_entry);

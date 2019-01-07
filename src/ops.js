@@ -9,6 +9,24 @@ import {response_is_redirect} from '/src/net/fetch2.js';
 import * as notification from '/src/note.js';
 import * as utils from '/src/utils.js';
 
+export function activate_feed(session, feed_id) {
+  const props = {};
+  props.id = feed_id;
+  props.active = true;
+  props.deactivateDate = undefined;
+  props.deactivationReasonText = undefined;
+  return cdb.update_feed(session, props, false);
+}
+
+export async function deactivate_feed(session, feed_id, reason) {
+  const props = {};
+  props.id = feed_id;
+  props.active = false;
+  props.deactivateDate = new Date();
+  props.deactivationReasonText = reason;
+  await cdb.update_feed(session, props, false);
+}
+
 // Returns an in memory OPML document object filled with the feeds from the
 // database. document_title is optional.
 export async function export_opml(document_title) {
@@ -88,7 +106,7 @@ export async function opml_import(session, files) {
   const url_array_set = opml_import_dedup_urls(url_array);
 
   const feeds = url_array_set.map(url => {
-    const feed = cdb.create_feed_object();
+    const feed = cdb.construct_feed();
     cdb.append_feed_url(feed, url);
     return feed;
   });
@@ -294,8 +312,4 @@ async function refresh_feed_icon(session, iconn, feed) {
   }
 }
 
-export class ConstraintError extends Error {
-  constructor(message = 'Violation of storage constraint') {
-    super(message);
-  }
-}
+export class ConstraintError extends Error {}

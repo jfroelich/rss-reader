@@ -356,7 +356,7 @@ async function subscribe_form_onsubmit(event) {
   // TODO: subscribe can now throw an error, this should catch the error and
   // show a nice error message or something instead of panic
   // TODO: move this to a helper
-  const conn_promises = Promise.all([cdb.open_with_channel(), favicon.open()]);
+  const conn_promises = Promise.all([cdb.open(), favicon.open()]);
   const [session, iconn] = await conn_promises;
   const feed = await ops.subscribe(session, iconn, subscribe_url, undefined, true);
   session.close();
@@ -386,7 +386,7 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const conn_promises = Promise.all([cdb.open_with_channel(), favicon.open()]);
+  const conn_promises = Promise.all([cdb.open(), favicon.open()]);
   const [session, iconn] = await conn_promises;
   const poll_options = {ignore_recency_check: true, notify: true};
   await poll_feed(session, iconn, poll_options, feed);
@@ -442,7 +442,7 @@ function feed_list_remove_feed_by_id(feed_id) {
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const session = await cdb.open_with_channel();
+  const session = await cdb.open();
   await ops.unsubscribe(session, feed_id);
   session.close();
 
@@ -453,8 +453,8 @@ async function unsubscribe_button_onclick(event) {
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const session = await cdb.open_with_channel();
-  await cdb.activate_feed(session, feed_id);
+  const session = await cdb.open();
+  await ops.activate_feed(session, feed_id);
   session.close();
 
   // TODO: handling the event here may be wrong, it should be done in the
@@ -474,8 +474,8 @@ async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const reason = 'manual';
-  const session = await cdb.open_with_channel();
-  await cdb.deactivate_feed(session, feed_id, reason);
+  const session = await cdb.open();
+  await ops.deactivate_feed(session, feed_id, reason);
   session.close();
 
   // Deactivate the corresponding element in the view

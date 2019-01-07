@@ -37,13 +37,13 @@ export async function alarm_listener(alarm) {
 
   if (alarm.name === 'archive') {
     let max_age;
-    const session = await cdb.open_with_channel();
+    const session = await cdb.open();
     await cdb.archive_entries(session, max_age);
     session.close();
   } else if (alarm.name === 'poll') {
     await handle_alarm_poll();
   } else if (alarm.name === 'refresh-feed-icons') {
-    const proms = [await cdb.open_with_channel(), favicon.open()];
+    const proms = [await cdb.open(), favicon.open()];
     const [session, iconn] = await Promise.all(proms);
     await refresh_feed_icons(session, iconn);
     session.close();
@@ -66,7 +66,7 @@ async function handle_alarm_poll() {
     }
   }
 
-  const promises = [cdb.open_with_channel(), favicon.open()];
+  const promises = [cdb.open(), favicon.open()];
   const [session, iconn] = await Promise.all(promises);
   const poll_options = {ignore_recency_check: false, notify: true};
   await poll_feeds(session, iconn, poll_options);

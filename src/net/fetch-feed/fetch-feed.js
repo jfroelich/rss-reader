@@ -16,7 +16,7 @@ export async function fetch_feed(
   const parsed_feed = parse_feed(res_text, skip_entries, resolve_entry_urls);
 
   // Convert the feed from the parse format to the storage format
-  const feed = cdb.create_feed_object();
+  const feed = cdb.construct_feed();
   feed.type = parsed_feed.type;
 
   if (parsed_feed.link) {
