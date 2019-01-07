@@ -68,30 +68,20 @@ class DbSession {
   }
 }
 
+// event.oldVersion is 0 when the database is being created
+// use conn.version to get the current version
 function on_upgrade_needed(event) {
   const conn = event.target.result;
   const txn = event.target.transaction;
   let feed_store, entry_store;
   const stores = conn.objectStoreNames;
 
-  // TODO: only print this if verbose flag is set or something like that,
-  // otherwise this needlessly spams the test console
-  // console.debug(
-  //    'Creating or upgrading database from version %d to %d',
-  //    event.oldVersion, conn.version);
-
-  // NOTE: event.oldVersion is 0 when the database is being created
-  // NOTE: use conn.version to get the current version
-
   if (event.oldVersion < 20) {
     const feed_store_props = {keyPath: 'id', autoIncrement: true};
     feed_store = conn.createObjectStore('feed', feed_store_props);
-
     const entry_store_props = {keyPath: 'id', autoIncrement: true};
     entry_store = conn.createObjectStore('entry', entry_store_props);
-
     feed_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
-
     entry_store.createIndex('readState', 'readState');
     entry_store.createIndex('feed', 'feed');
     entry_store.createIndex(
@@ -102,27 +92,22 @@ function on_upgrade_needed(event) {
     entry_store = txn.objectStore('entry');
   }
 
-  // Only do this if upgrading
   if (event.oldVersion > 0 && event.oldVersion < 21) {
     add_magic_to_entries(txn);
   }
 
-  // Only do this if upgrading
   if (event.oldVersion > 0 && event.oldVersion < 22) {
     add_magic_to_feeds(txn);
   }
 
-  // Only do this if upgrading
   if (event.oldVersion > 0 && event.oldVersion < 23) {
     feed_store.deleteIndex('title');
   }
 
-  // Only do this if upgrading
   if (event.oldVersion > 0 && event.oldVersion < 24) {
     add_active_field_to_feeds(feed_store);
   }
 
-  // Handle upgrading to or past version 25 from all prior versions
   if (event.oldVersion < 25) {
     // Create an index on feed id and read state. This enables fast querying
     // of unread entries per feed.
@@ -248,68 +233,60 @@ export function activate_feed(session, feed_id) {
 }
 
 export async function archive_entries(session, max_age = TWO_DAYS_MS) {
-  const ids = await archive_entries_internal(session.conn, max_age);
+  const ids = await new Promise((resolve, reject) => {
+    const entry_ids = [];
+    const txn = session.conn.transaction('entry', 'readwrite');
+    txn.oncomplete = _ => resolve(entry_ids);
+    txn.onerror = event => reject(event.target.error);
+    const store = txn.objectStore('entry');
+    const index = store.index('archiveState-readState');
+    const key_path =
+        [ENTRY_UNARCHIVED, ENTRY_READ];
+    const request = index.openCursor(key_path);
+      request.onsuccess = event => {
+      const cursor = event.target.result;
+      if (!cursor) {
+        return;
+      }
+
+      const entry = cursor.value;
+      if (!is_entry(entry)) {
+        console.warn('Not an entry', entry);
+        cursor.continue();
+        return;
+      }
+
+      if (!entry.dateCreated) {
+        console.warn('No date created', entry);
+        cursor.continue();
+        return;
+      }
+
+      const current_date = new Date();
+      const age = current_date - entry.dateCreated;
+
+      if (age < 0) {
+        console.warn('Future entry', entry);
+        cursor.continue();
+        return;
+      }
+
+      if (age > max_age) {
+        const ae = archive_entry(entry);
+        cursor.update(ae);
+        entry_ids.push(ae.id);
+      }
+
+      cursor.continue();
+    };
+  });
+
   if (session.channel) {
     for (const id of ids) {
       const message = {type: 'entry-archived', id: id};
       session.channel.postMessage(message);
     }
   }
-}
-
-function archive_entries_internal(conn, max_age) {
-  return new Promise(archive_entries_executor.bind(null, conn, max_age));
-}
-
-function archive_entries_executor(conn, max_age, resolve, reject) {
-  const entry_ids = [];
-  const txn = conn.transaction('entry', 'readwrite');
-  txn.oncomplete = _ => resolve(entry_ids);
-  txn.onerror = event => reject(event.target.error);
-
-  const store = txn.objectStore('entry');
-  const index = store.index('archiveState-readState');
-  const key_path =
-      [ENTRY_UNARCHIVED, ENTRY_READ];
-  const request = index.openCursor(key_path);
-
-  // TODO: do not nest, increase readability
-  request.onsuccess = event => {
-    const cursor = event.target.result;
-    if (!cursor) {
-      return;
-    }
-
-    const entry = cursor.value;
-    if (!is_entry(entry)) {
-      console.warn('Not an entry', entry);
-      cursor.continue();
-      return;
-    }
-
-    if (!entry.dateCreated) {
-      console.warn('No date created', entry);
-      cursor.continue();
-      return;
-    }
-
-    const current_date = new Date();
-    const age = current_date - entry.dateCreated;
-
-    if (age < 0) {
-      console.warn('Future entry', entry);
-      cursor.continue();
-      return;
-    }
-
-    if (age > max_age) {
-      const ae = archive_entry(entry);
-      cursor.update(ae);
-      entry_ids.push(ae.id);
-    }
-
-    cursor.continue();
-  };
 }
 
 function archive_entry(entry) {
@@ -328,8 +305,6 @@ function archive_entry(entry) {
   return ce;
 }
 
-// TODO: just inline this, it is not obvious why some property changes occur
-// here but not in archive-entry
 function compact_entry(entry) {
   const ce = create_entry_object();
   ce.dateCreated = entry.dateCreated;
@@ -527,7 +502,6 @@ export async function create_feeds(session, feeds) {
   return ids;
 }
 
-// TODO: move to ops.js
 export async function deactivate_feed(session, feed_id, reason) {
   const props = {};
   props.id = feed_id;
@@ -909,7 +883,7 @@ function mark_entry_read_request_onsuccess(id, reject, event) {
 
   if (!entry) {
     const message = 'No entry found with id ' + id;
-    const error = new errors.NotFoundError(message);
+    const error = new NotFoundError(message);
     reject(error);
     return;
   }
@@ -923,14 +897,14 @@ function mark_entry_read_request_onsuccess(id, reject, event) {
 
   if (entry.archiveState === ENTRY_ARCHIVED) {
     const message = 'Cannot mark archived entry as read ' + id;
-    const error = new errors.InvalidStateError(message);
+    const error = new InvalidStateError(message);
     reject(error);
     return;
   }
 
   if (entry.readState === ENTRY_READ) {
     const message = 'Cannot mark read entry as read ' + id;
-    const error = new errors.InvalidStateError(message);
+    const error = new InvalidStateError(message);
     //reject(error);
     // There is some bug with rejection here, somehow related to loading of
     // entries from the database in a fresh install with one feed, so this
@@ -1188,14 +1162,14 @@ function update_feed_find_onsuccess(props, reject, event) {
 
   if (!feed) {
     const message = 'Failed to find feed to update for id ' + props.id;
-    const error = new errors.NotFoundError(message);
+    const error = new NotFoundError(message);
     reject(error);
     return;
   }
 
   if (!is_feed(feed)) {
     const message = 'Matched object is not of type feed for id ' + props.id;
-    const error = new errors.InvalidStateError(message);
+    const error = new InvalidStateError(message);
     reject(error);
     return;
   }
@@ -1209,7 +1183,7 @@ function update_feed_find_onsuccess(props, reject, event) {
   // property in the partial use case.
   if (props.active === true && feed.active === true) {
     const message = 'Cannot activate already active feed with id ' + feed.id;
-    const error = new errors.InvalidStateError(message);
+    const error = new InvalidStateError(message);
     reject(error);
     return;
   }
@@ -1217,7 +1191,7 @@ function update_feed_find_onsuccess(props, reject, event) {
   // Similarly, should not try to deactivate an inactive feed.
   if (props.active === false && feed.active === false) {
     const message = 'Cannot deactivate inactive feed with id ' + feed.id;
-    const error = new errors.InvalidStateError(message);
+    const error = new InvalidStateError(message);
     reject(error);
     return;
   }
