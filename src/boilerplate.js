@@ -42,7 +42,7 @@ export function classify(dataset, score_block, options = {}) {
 
   let text_length = 0;
   if (document.body) {
-    text_length = utils.get_text_length(document.body.textContent);
+    text_length = get_text_length(document.body.textContent);
   }
 
   let num_elements = 0;
@@ -352,7 +352,7 @@ export function extract_features(dataset, options = {}) {
   for (const block of dataset) {
     block.element_type = block.element.localName;
     block.depth = get_node_depth(block.element);
-    block.text_length = utils.get_text_length(block.element.textContent);
+    block.text_length = get_text_length(block.element.textContent);
     block.anchor_text_length = get_anchor_text_length(block.element);
     block.list_item_count = get_list_item_count(block.element);
     block.paragraph_count = get_paragraph_count(block.element);
@@ -384,7 +384,7 @@ function get_anchor_text_length(element) {
   const anchors = element.querySelectorAll('a[href]');
   let anchor_length = 0;
   for (const anchor of anchors) {
-    const text_length = utils.get_text_length(anchor.textContent);
+    const text_length = get_text_length(anchor.textContent);
     anchor_length += text_length;
   }
   return anchor_length;
