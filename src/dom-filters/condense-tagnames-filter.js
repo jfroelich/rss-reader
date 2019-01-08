@@ -1,4 +1,4 @@
-import {coerce_element} from '/src/dom-filters/condense-tagnames-filter/coerce-element.js';
+import * as dom_filter_utils from '/src/dom-filters/dfutils.js';
 
 // Replaces certain elements with near equivalents that use fewer characters in
 // the element name, so that when a document it serialized, it contains fewer
@@ -24,6 +24,6 @@ export function condense_tagnames_filter(document, copy_attrs_flag) {
 function rename_elements(ancestor, name, new_name, copy_attrs_flag) {
   const elements = ancestor.querySelectorAll(name);
   for (const element of elements) {
-    coerce_element(element, new_name, copy_attrs_flag);
+    dom_filter_utils.coerce_element(element, new_name, copy_attrs_flag);
   }
 }

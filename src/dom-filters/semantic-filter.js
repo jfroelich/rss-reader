@@ -1,4 +1,6 @@
-import {unwrap_element} from '/src/dom-filters/utils/unwrap-element.js';
+import * as dfutils from '/src/dom-filters/dfutils.js';
+
+// TODO: move to simple filters
 
 // Filter semantic web elements from document content
 export function semantic_filter(document) {
@@ -6,7 +8,7 @@ export function semantic_filter(document) {
     const selector = 'article, aside, footer, header, main, section';
     const elements = document.body.querySelectorAll(selector);
     for (const element of elements) {
-      unwrap_element(element);
+      dfutils.unwrap_element(element);
     }
   }
 }

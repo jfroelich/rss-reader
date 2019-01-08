@@ -1,11 +1,7 @@
 import assert from '/src/assert.js';
 import * as boilerplate from '/src/boilerplate.js';
-import {unwrap_element} from '/src/dom-filters/utils/unwrap-element.js';
-import * as image_utils from '/src/dom-filters/utils/image-utils.js';
-import {node_is_leaf} from '/src/dom-filters/node-is-leaf.js';
 import {color_contrast_filter} from '/src/dom-filters/color-contrast-filter.js';
-import {is_hidden_inline} from '/src/dom-filters/utils/visibility.js';
-import * as attribute_utils from '/src/dom-filters/utils/attribute-utils.js';
+import * as dfutils from '/src/dom-filters/dfutils.js';
 import * as utils from '/src/utils.js';
 
 export function anchor_format_filter(document) {
@@ -13,7 +9,7 @@ export function anchor_format_filter(document) {
     const anchors = document.body.querySelectorAll('a');
     for (const anchor of anchors) {
       if (!anchor.hasAttribute('href')) {
-        unwrap_element(anchor);
+        dfutils.unwrap_element(anchor);
       }
     }
   }
@@ -50,7 +46,7 @@ export function anchor_script_filter(document) {
   for (const anchor of anchors) {
     const href = anchor.getAttribute('href');
     if (href && href.length > href_length_min_threshold && pattern.test(href)) {
-      unwrap_element(anchor);
+      dfutils.unwrap_element(anchor);
     }
   }
 }
@@ -78,7 +74,7 @@ export function attribute_empty_filter(document) {
     for (const element of elements) {
       const names = element.getAttributeNames();
       for (const name of names) {
-        if (!attribute_utils.is_boolean(element, name)) {
+        if (!dfutils.is_boolean(element, name)) {
           const value = element.getAttribute(name);
           if (typeof value !== 'string' || !value.trim()) {
             element.removeAttribute(name);
@@ -205,7 +201,7 @@ export function container_filter(document) {
   if (document.body) {
     const elements = document.body.querySelectorAll('div, ilayer, layer');
     for (const element of elements) {
-      unwrap_element(element);
+      dfutils.unwrap_element(element);
     }
   }
 }
@@ -250,7 +246,7 @@ export function emphasis_filter(document, max_length_threshold = 0) {
   for (const element of elements) {
     const no_ws = element.textContent.replace(/\s+/, '');
     if (no_ws.length > max_length_threshold) {
-      unwrap_element(element);
+      dfutils.unwrap_element(element);
     }
   }
 }
@@ -264,10 +260,10 @@ export function figure_filter(document) {
         if (figure.firstElementChild.localName === 'figcaption') {
           figure.remove();
         } else {
-          unwrap_element(figure);
+          dfutils.unwrap_element(figure);
         }
       } else if (child_count === 0) {
-        unwrap_element(figure);
+        dfutils.unwrap_element(figure);
       }
     }
   }
@@ -291,7 +287,7 @@ export function form_filter(document) {
   // real content, so removing it would be data loss. So unwrap instead.
   const forms = body.querySelectorAll('form');
   for (const form of forms) {
-    unwrap_element(form);
+    dfutils.unwrap_element(form);
   }
 
   // It isn't really clear to me whether labels should stay or go, but for now,
@@ -300,7 +296,7 @@ export function form_filter(document) {
   // thing they correspond to no longer exists.
   const labels = body.querySelectorAll('label');
   for (const label of labels) {
-    unwrap_element(label);
+    dfutils.unwrap_element(label);
   }
 
   // TODO: I should also consider removing label-like elements that an author
@@ -335,7 +331,7 @@ export function format_filter(document) {
   if (document.body) {
     const elements = document.body.querySelectorAll(selector);
     for (const element of elements) {
-      unwrap_element(element);
+      dfutils.unwrap_element(element);
     }
   }
 }
@@ -469,8 +465,8 @@ export function image_dead_filter(document) {
   if (document.body) {
     const images = document.body.querySelectorAll('img');
     for (const image of images) {
-      if (!image_utils.image_has_source(image)) {
-        image_utils.remove_image(image);
+      if (!dfutils.image_has_source(image)) {
+        dfutils.remove_image(image);
       }
     }
   }
@@ -487,7 +483,7 @@ export function image_lazy_filter(document) {
   if (document.body) {
     const images = document.body.getElementsByTagName('img');
     for (const image of images) {
-      if (!image_utils.image_has_source(image)) {
+      if (!dfutils.image_has_source(image)) {
         const attr_names = image.getAttributeNames();
         for (const attr_name of lazy_names) {
           if (attr_names.includes(attr_name)) {
@@ -534,7 +530,7 @@ export function nest_filter(document) {
 
   const descendant_anchors_of_anchors = document.body.querySelectorAll('a a');
   for (const descendant_anchor of descendant_anchors_of_anchors) {
-    unwrap_element(descendant_anchor);
+    dfutils.unwrap_element(descendant_anchor);
   }
 
   const captions = document.body.querySelectorAll('figcaption');
@@ -573,7 +569,7 @@ export function node_leaf_filter(document) {
     const root = document.documentElement;
     const elements = document.body.querySelectorAll('*');
     for (const element of elements) {
-      if (root.contains(element) && node_is_leaf(element)) {
+      if (root.contains(element) && dfutils.node_is_leaf(element)) {
         element.remove();
       }
     }
@@ -631,7 +627,7 @@ export function semantic_filter(document) {
     const selector = 'article, aside, footer, header, main, section';
     const elements = document.body.querySelectorAll(selector);
     for (const element of elements) {
-      unwrap_element(element);
+      dfutils.unwrap_element(element);
     }
   }
 }
@@ -672,8 +668,8 @@ export function visibility_filter(document, matte, mcr) {
 
   const elements = body.querySelectorAll('*');
   for (const element of elements) {
-    if (body.contains(element) && is_hidden_inline(element)) {
-      unwrap_element(element);
+    if (body.contains(element) && dfutils.is_hidden_inline(element)) {
+      dfutils.unwrap_element(element);
     }
   }
 

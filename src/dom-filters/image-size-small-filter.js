@@ -1,11 +1,11 @@
-import {remove_image} from '/src/dom-filters/utils/image-utils.js';
+import * as dfutils from '/src/dom-filters/dfutils.js';
 
 export function image_size_small_filter(document) {
   if (document.body) {
     const images = document.body.querySelectorAll('img');
     for (const image of images) {
       if (image_is_small(image)) {
-        remove_image(image);
+        dfutils.remove_image(image);
       }
     }
   }

@@ -1,5 +1,4 @@
-import {is_hidden_inline} from '/src/dom-filters/utils/visibility.js';
-import {remove_image} from '/src/dom-filters/utils/image-utils.js';
+import * as dfutils from '/src/dom-filters/dfutils.js';
 
 // The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
 // can be found here: https://youtu.be/rGvblGCD7qM
@@ -104,9 +103,9 @@ export function lonestar_filter(document) {
   // regarding what other filters are applied to the document.
   const images = document.body.querySelectorAll('img');
   for (const image of images) {
-    if (is_hidden_inline(image) || image_is_pixel(image) ||
+    if (dfutils.is_hidden_inline(image) || image_is_pixel(image) ||
         image_has_telemetry_source(image, document_url)) {
-      remove_image(image);
+      dfutils.remove_image(image);
     }
   }
 

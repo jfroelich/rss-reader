@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {condense_tagnames_filter} from '/src/dom-filters/condense-tagnames-filter/condense-tagnames-filter.js';
+import {condense_tagnames_filter} from '/src/dom-filters/condense-tagnames-filter.js';
 import {image_size_filter} from '/src/dom-filters/image-size-filter.js';
 import {image_size_large_filter} from '/src/dom-filters/image-size-large-filter.js';
 import {image_responsive_filter} from '/src/dom-filters/image-responsive-filter.js';
