@@ -1,10 +1,11 @@
 import assert from '/src/assert.js';
 import * as color from '/src/color.js';
-import * as css_color from '/src/dom-filters/color-contrast-filter/css-color.js';
-import * as ccf from '/src/dom-filters/color-contrast-filter/color-contrast-filter.js';
+import * as ccf from '/src/dom-filters/color-contrast-filter.js';
 
 // TODO: these tests were written to work off a live document. Instead, create
 // a local fake document, and test against it
+// TODO: overhaul these tests. I have done a quick disable for now, but given
+// how everything has changed, these need to be completely redone
 
 export async function color_contrast_filter_test1() {
   /*
@@ -39,7 +40,7 @@ export async function color_contrast_filter_test2() {
     if (value) {
       const back_color =
           ccf.element_derive_background_color(node.parentNode, matte);
-      console.debug(value, css_color.format(back_color));
+      console.debug(value, ccf.css_color_format(back_color));
     }
 
     node = it.nextNode();

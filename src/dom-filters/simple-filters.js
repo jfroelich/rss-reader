@@ -3,11 +3,10 @@ import * as boilerplate from '/src/boilerplate.js';
 import {unwrap_element} from '/src/dom-filters/utils/unwrap-element.js';
 import * as image_utils from '/src/dom-filters/utils/image-utils.js';
 import {node_is_leaf} from '/src/dom-filters/node-is-leaf.js';
-import {color_contrast_filter} from '/src/dom-filters/color-contrast-filter/color-contrast-filter.js';
+import {color_contrast_filter} from '/src/dom-filters/color-contrast-filter.js';
 import {is_hidden_inline} from '/src/dom-filters/utils/visibility.js';
 import * as attribute_utils from '/src/dom-filters/utils/attribute-utils.js';
 import * as utils from '/src/utils.js';
-
 
 export function anchor_format_filter(document) {
   if (document.body) {

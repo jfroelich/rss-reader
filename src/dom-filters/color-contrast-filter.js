@@ -1,5 +1,5 @@
+import '/third-party/tinycolor-min.js';
 import * as color from '/src/color.js';
-import * as css_color from '/src/dom-filters/color-contrast-filter/css-color.js';
 
 export const DEFAULT_MIN_CONTRAST_RATIO = 1.2;
 export const DEFAULT_MATTE = color.WHITE;
@@ -33,7 +33,7 @@ export function element_is_perceptible(
 export function element_derive_text_color(element) {
   const style = getComputedStyle(element);
   if (style) {
-    const color_value = css_color.parse(style.color);
+    const color_value = css_color_parse(style.color);
     if (typeof color_value !== 'undefined') {
       return color_value;
     }
@@ -56,7 +56,7 @@ export function element_derive_background_color_inline(element) {
   if (style) {
     const css_bgcolor = style.backgroundColor;
     if (css_bgcolor) {
-      const color_value = css_color.parse(css_bgcolor);
+      const color_value = css_color_parse(css_bgcolor);
       if (color_value) {
         return color_value;
       }
@@ -73,4 +73,25 @@ export function element_ancestors(element, include_self) {
     node = node.parentNode;
   }
   return layers;
+}
+
+
+// Parses a css color value into a color
+export function css_color_parse(value) {
+  if (typeof value === 'string' && value.length) {
+    const tc = new tinycolor(value);
+    if (tc.isValid()) {
+      return tinycolor_to_color(tc);
+    }
+  }
+}
+
+function tinycolor_to_color(tiny_color) {
+  const o = tiny_color.toRgb();
+  return color.pack(o.r, o.g, o.b, (o.a * 255) | 0);
+}
+
+export function css_color_format(value) {
+  return 'rgba(' + color.get_red(value) + ', ' + color.get_green(value) + ', ' +
+      color.get_blue(value) + ', ' + color.get_alpha(value) / 255 + ')';
 }
