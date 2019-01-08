@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import * as utils from '/src/utils.js';
-import * as dfutils from '/src/dom-filters/dfutils.js';
+import * as dfu from '/src/dom-filters/dfu.js';
 
 export async function unwrap_element_test() {
   // Assert the typical case of a simple straightforward unwrap call completes
@@ -8,7 +8,7 @@ export async function unwrap_element_test() {
   let doc =
       utils.parse_html('<html><head></head><body><div>hello</div></body></html>');
   let element = doc.querySelector('div');
-  dfutils.unwrap_element(element);
+  dfu.unwrap_element(element);
   let expected_state = '<html><head></head><body>hello</body></html>';
   let after_state = doc.documentElement.outerHTML;
   assert(after_state === expected_state);
@@ -17,7 +17,7 @@ export async function unwrap_element_test() {
   // exception
   let unwrap_null_error;
   try {
-    dfutils.unwrap_element(null, false);
+    dfu.unwrap_element(null, false);
   } catch (error) {
     unwrap_null_error = error;
   }
@@ -30,7 +30,7 @@ export async function unwrap_element_test() {
   element.remove();
   let before_state = doc.documentElement.outerHTML;
   let nag = false;  // disable the orphan warning
-  dfutils.unwrap_element(element, nag);
+  dfu.unwrap_element(element, nag);
   after_state = doc.documentElement.outerHTML;
   assert(before_state === after_state);
 
@@ -39,7 +39,7 @@ export async function unwrap_element_test() {
       '<html><head></head><body><p>before</p>' +
       '<a>hello</a><p>after</p></body></html>');
   element = doc.querySelector('a');
-  dfutils.unwrap_element(element);
+  dfu.unwrap_element(element);
   after_state = doc.documentElement.outerHTML;
   expected_state =
       '<html><head></head><body><p>before</p>hello<p>after</p></body></html>';
@@ -50,7 +50,7 @@ export async function unwrap_element_test() {
   doc = utils.parse_html(
       '<html><head></head><body>before<a>hello</a><p>after</p></body></html>');
   element = doc.querySelector('a');
-  dfutils.unwrap_element(element);
+  dfu.unwrap_element(element);
   after_state = doc.documentElement.outerHTML;
   expected_state =
       '<html><head></head><body>before hello<p>after</p></body></html>';
@@ -61,7 +61,7 @@ export async function unwrap_element_test() {
   doc = utils.parse_html(
       '<html><head></head><body><p>before</p><a>hello</a>after</body></html>');
   element = doc.querySelector('a');
-  dfutils.unwrap_element(element);
+  dfu.unwrap_element(element);
   after_state = doc.documentElement.outerHTML;
   expected_state =
       '<html><head></head><body><p>before</p>hello after</body></html>';
@@ -72,7 +72,7 @@ export async function unwrap_element_test() {
   doc = utils.parse_html(
       '<html><head></head><body>before<a>hello</a>after</body></html>');
   element = doc.querySelector('a');
-  dfutils.unwrap_element(element);
+  dfu.unwrap_element(element);
   after_state = doc.documentElement.outerHTML;
   expected_state = '<html><head></head><body>before hello after</body></html>';
   assert(after_state === expected_state);
@@ -82,7 +82,7 @@ export async function unwrap_element_test() {
   // both sides, that one space is added between the nodes to prevent merging.
   doc = utils.parse_html('<html><head></head><body>before<a></a>after</body></html>');
   element = doc.querySelector('a');
-  dfutils.unwrap_element(element);
+  dfu.unwrap_element(element);
   after_state = doc.documentElement.outerHTML;
   expected_state = '<html><head></head><body>before after</body></html>';
   assert(after_state === expected_state);
@@ -92,7 +92,7 @@ export async function unwrap_element_test() {
   doc = utils.parse_html(
       '<html><head></head><body>before<a><b>hello</b></a>after</body></html>');
   element = doc.querySelector('a');
-  dfutils.unwrap_element(element);
+  dfu.unwrap_element(element);
   after_state = doc.documentElement.outerHTML;
   expected_state =
       '<html><head></head><body>before<b>hello</b>after</body></html>';

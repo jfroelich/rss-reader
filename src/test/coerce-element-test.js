@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as dfutils from '/src/dom-filters/dfutils.js';
+import * as dfu from '/src/dom-filters/dfu.js';
 import * as utils from '/src/utils.js';
 
 export async function coerce_element_test() {
@@ -9,7 +9,7 @@ export async function coerce_element_test() {
   // Replace the as with bs
   const anchors = doc.querySelectorAll('a');
   for (const a of anchors) {
-    dfutils.coerce_element(a, 'b', true);
+    dfu.coerce_element(a, 'b', true);
   }
 
   // Assert that a was replaced with b and that no extra junk was inserted
@@ -22,7 +22,7 @@ export async function coerce_element_test() {
   // fictional elements, as c is not a standard element.
   const bolds = doc.querySelectorAll('b');
   for (const b of bolds) {
-    dfutils.coerce_element(b, 'c', true);
+    dfu.coerce_element(b, 'c', true);
   }
   expected = '<html><head></head><body><p></p><c></c></body></html>';
   assert(doc.documentElement.outerHTML === expected);

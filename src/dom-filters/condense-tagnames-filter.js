@@ -1,4 +1,4 @@
-import * as dom_filter_utils from '/src/dom-filters/dfutils.js';
+import * as dom_filter_utils from '/src/dom-filters/dfu.js';
 
 // Replaces certain elements with near equivalents that use fewer characters in
 // the element name, so that when a document it serialized, it contains fewer

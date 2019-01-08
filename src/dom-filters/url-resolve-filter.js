@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as dfutils from '/src/dom-filters/dfutils.js';
+import * as dfu from '/src/dom-filters/dfu.js';
 
 const element_url_attribute_map = {
   a: 'href',
@@ -92,7 +92,7 @@ function resolve_attr(element, base_url) {
 }
 
 function resolve_srcset(element, base_url) {
-  const descriptors = dfutils.srcset_parse(element.getAttribute('srcset'));
+  const descriptors = dfu.srcset_parse(element.getAttribute('srcset'));
 
   let change_count = 0;
   for (const descriptor of descriptors) {
@@ -104,7 +104,7 @@ function resolve_srcset(element, base_url) {
   }
 
   if (change_count) {
-    const new_value = dfutils.srcset_serialize(descriptors);
+    const new_value = dfu.srcset_serialize(descriptors);
     if (new_value) {
       element.setAttribute('srcset', new_value);
     }

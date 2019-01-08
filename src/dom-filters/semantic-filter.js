@@ -1,4 +1,4 @@
-import * as dfutils from '/src/dom-filters/dfutils.js';
+import * as dfu from '/src/dom-filters/dfu.js';
 
 // TODO: move to simple filters
 
@@ -8,7 +8,7 @@ export function semantic_filter(document) {
     const selector = 'article, aside, footer, header, main, section';
     const elements = document.body.querySelectorAll(selector);
     for (const element of elements) {
-      dfutils.unwrap_element(element);
+      dfu.unwrap_element(element);
     }
   }
 }

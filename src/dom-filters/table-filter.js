@@ -1,4 +1,4 @@
-import * as dfutils from '/src/dom-filters/dfutils.js';
+import * as dfu from '/src/dom-filters/dfu.js';
 
 // Filters certain table elements from document content
 export function table_filter(document, table_row_scan_max) {
@@ -6,7 +6,7 @@ export function table_filter(document, table_row_scan_max) {
     const elements = document.body.querySelectorAll(
         'colgroup, hgroup, multicol, tbody, tfoot, thead');
     for (const element of elements) {
-      dfutils.unwrap_element(element);
+      dfu.unwrap_element(element);
     }
 
     const tables = document.body.querySelectorAll('table');
@@ -36,7 +36,7 @@ function row_is_single_column(row) {
   // TODO: review the logic here. Is pre-decrement op correct?
 
   for (let i = 0, len = cells.length; i < len; i++) {
-    if (!dfutils.node_is_leaf(cells[i]) && ++filled_cell_count > 1) {
+    if (!dfu.node_is_leaf(cells[i]) && ++filled_cell_count > 1) {
       return false;
     }
   }
