@@ -1,9 +1,7 @@
 import assert from '/src/assert.js';
 import {condense_tagnames_filter} from '/src/dom-filters/condense-tagnames-filter.js';
 import {image_size_filter} from '/src/dom-filters/image-size-filter.js';
-import {image_size_large_filter} from '/src/dom-filters/image-size-large-filter.js';
 import {image_responsive_filter} from '/src/dom-filters/image-responsive-filter.js';
-import {image_size_small_filter} from '/src/dom-filters/image-size-small-filter.js';
 import {list_filter} from '/src/dom-filters/list-filter.js';
 import {lonestar_filter} from '/src/dom-filters/lonestar-filter.js';
 import {table_filter} from '/src/dom-filters/table-filter.js';
@@ -50,8 +48,8 @@ export async function sanitize_document(document, options = {}) {
   simple.boilerplate_filter(document);
   simple.anchor_script_filter(document);
   // TODO: compose these two filters
-  image_size_small_filter(document);
-  image_size_large_filter(document);
+  simple.image_size_small_filter(document);
+  simple.image_size_large_filter(document);
 
   condense_tagnames_filter(document, false);
   simple.head_filter(document);
