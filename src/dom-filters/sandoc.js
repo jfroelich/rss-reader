@@ -1,4 +1,4 @@
-import {boilerplate_filter} from '/src/dom-filters/boilerplate-filter/boilerplate-filter.js';
+import assert from '/src/assert.js';
 import {condense_tagnames_filter} from '/src/dom-filters/condense-tagnames-filter/condense-tagnames-filter.js';
 import {image_size_filter} from '/src/dom-filters/image-size-filter.js';
 import {image_size_large_filter} from '/src/dom-filters/image-size-large-filter.js';
@@ -11,6 +11,9 @@ import * as simple from '/src/dom-filters/simple-filters.js';
 import {url_resolve_filter} from '/src/dom-filters/url-resolve-filter.js';
 
 export async function sanitize_document(document, options = {}) {
+  assert(document instanceof Document);
+  assert(typeof options === 'object');
+
   simple.frame_filter(document);
   simple.body_filter(document);
   simple.iframe_filter(document);
@@ -44,7 +47,7 @@ export async function sanitize_document(document, options = {}) {
 
   await image_size_filter(
       document, options.image_size_timeout, options.is_allowed_request);
-  boilerplate_filter(document);
+  simple.boilerplate_filter(document);
   simple.anchor_script_filter(document);
   // TODO: compose these two filters
   image_size_small_filter(document);

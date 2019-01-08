@@ -1,11 +1,13 @@
 import assert from '/src/assert.js';
+import * as boilerplate from '/src/boilerplate.js';
 import {unwrap_element} from '/src/dom-filters/utils/unwrap-element.js';
 import * as image_utils from '/src/dom-filters/utils/image-utils.js';
 import {node_is_leaf} from '/src/dom-filters/node-is-leaf.js';
-import {condense_whitespace} from '/src/utils.js';
 import {color_contrast_filter} from '/src/dom-filters/color-contrast-filter/color-contrast-filter.js';
 import {is_hidden_inline} from '/src/dom-filters/utils/visibility.js';
 import * as attribute_utils from '/src/dom-filters/utils/attribute-utils.js';
+import * as utils from '/src/utils.js';
+
 
 export function anchor_format_filter(document) {
   if (document.body) {
@@ -156,6 +158,27 @@ export function body_filter(document) {
     const body_element = document.createElement('body');
     body_element.appendChild(error_node);
     document.documentElement.appendChild(body_element);
+  }
+}
+
+export function boilerplate_filter(document, options = {}) {
+  let dataset = boilerplate.parse_blocks(document, boilerplate.neutral_score);
+  assert(dataset);
+  dataset = boilerplate.extract_features(dataset, options);
+  assert(dataset);
+
+  dataset = boilerplate.classify(dataset, boilerplate.score_block);
+  assert(dataset);
+
+  for (const row of dataset) {
+    if (row.score < boilerplate.neutral_score) {
+      const element = boilerplate.find_block_element(document, row);
+
+      // Elements should always be found
+      assert(element);
+
+      element.remove();
+    }
   }
 }
 
@@ -578,7 +601,7 @@ export function node_whitespace_filter(document) {
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     const value = node.nodeValue;
     if (value.length > node_value_length_min && !node_is_ws_sensitive(node)) {
-      const new_value = condense_whitespace(value);
+      const new_value = utils.condense_whitespace(value);
       if (new_value.length !== value.length) {
         node.nodeValue = new_value;
       }
