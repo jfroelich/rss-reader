@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
 import {parse_html} from '/src/utils.js';
 import {rewrite_url} from '/src/poll/rewrite-url.js';
-import {sanitize_document} from '/src/dom-filters/sandoc.js';
+import {composite_document_filter} from '/src/dom-filters/composite-document-filter.js';
 import {set_base_uri} from '/src/poll/set-base-uri.js';
 import * as sniff from '/src/poll/url-sniff.js';
 import * as config from '/src/config.js';
@@ -13,7 +13,6 @@ import * as fetch2 from '/src/net/fetch2.js';
 import * as notification from '/src/note.js';
 import {build as build_rewrite_rules} from '/src/poll/rewrite-rules.js';
 import * as cdb from '/src/cdb.js';
-
 
 
 const default_options = {
@@ -362,8 +361,7 @@ export async function poll_entry(
   sd_opts.emphasis_max_length = config.read_int('emphasis_max_length');
   sd_opts.is_allowed_request = is_allowed_request;
 
-  await sanitize_document(document, sd_opts);
-
+  await composite_document_filter(document, sd_opts);
   entry.content = document.documentElement.outerHTML;
 
   cdb.sanitize_entry(entry);
