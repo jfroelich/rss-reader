@@ -21,8 +21,6 @@ export const ENTRY_ARCHIVED = 1;
 export const INVALID_ENTRY_ID = 0;
 export const INVALID_FEED_ID = 0;
 
-// TODO: deprecate, this should come from config or archive-entries should
-// just exit early if max-age is undefined
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
 export function append_entry_url(entry, url) {
@@ -50,8 +48,6 @@ export function entry_has_url(entry) {
   assert(is_entry(entry));
   return Array.isArray(entry.urls) && entry.urls.length;
 }
-
-
 
 export function construct_feed() {
   return {magic: FEED_MAGIC};
@@ -141,7 +137,7 @@ function on_upgrade_needed(event) {
   if (event.oldVersion < 26) {
     // If there may be existing entries, then ensure that all older entries have
     // a datePublished
-    if (event.oldVersion > 0) {
+    if (event.oldVersion) {
       ensure_entries_have_date_published(entry_store);
     }
 
@@ -245,7 +241,7 @@ export function archive_entries(conn, max_age = TWO_DAYS_MS) {
     const index = store.index('archiveState-readState');
     const key_path = [ENTRY_UNARCHIVED, ENTRY_READ];
     const request = index.openCursor(key_path);
-      request.onsuccess = event => {
+    request.onsuccess = event => {
       const cursor = event.target.result;
       if (!cursor) {
         return;
@@ -338,7 +334,6 @@ export function count_unread_entries_by_feed(conn, id) {
   });
 }
 
-
 export function count_unread_entries(conn) {
   return new Promise((resolve, reject) => {
     const txn = conn.transaction('entry');
@@ -350,8 +345,9 @@ export function count_unread_entries(conn) {
   });
 }
 
-// Returns a promise that resolves to the entry's new id
 export function create_entry(conn, entry) {
+  // This intentionally does not resolve until the transaction resolves
+  // because resolving when the request completes would be premature.
   return new Promise((resolve, reject) => {
     assert(is_entry(entry));
     assert(entry.id === undefined);
@@ -368,8 +364,7 @@ export function create_entry(conn, entry) {
       entry.dateCreated = new Date();
     }
 
-    // All entries need to appear in the datePublished index, so all entries
-    // must have a datePublished. If it is unknown, then default to dateCreated
+    // All entries need to appear in the datePublished index
     if (entry.datePublished === undefined) {
       entry.datePublished = entry.dateCreated;
     }
@@ -378,8 +373,6 @@ export function create_entry(conn, entry) {
     utils.filter_empty_properties(entry);
     let id;
     const txn = conn.transaction('entry', 'readwrite');
-    // This intentionally does not resolve until the transaction resolves
-    // because resolving when the request completes would be premature.
     txn.oncomplete = _ => resolve(id);
     txn.onerror = event => reject(event.target.error);
     const store = txn.objectStore('entry');
@@ -388,8 +381,8 @@ export function create_entry(conn, entry) {
   });
 }
 
-// TODO: assert against feed_has_url idiom, not its details
 export async function create_feed(conn, feed) {
+  // This intentionally does not settle until the transaction completes
   return new Promise((resolve, reject) => {
     assert(is_feed(feed));
     assert(Array.isArray(feed.urls));
@@ -397,7 +390,8 @@ export async function create_feed(conn, feed) {
     assert(typeof feed.urls[0] === 'string');
     assert(feed.urls[0].length);
     // If feed.active is true, then leave as true. If false, leave as false. But
-    // if undefined, impute true. This allows the caller to create inactive feeds
+    // if undefined, impute true. This allows the caller to create inactive
+    // feeds
     if (feed.active === undefined) {
       feed.active = true;
     }
@@ -408,7 +402,6 @@ export async function create_feed(conn, feed) {
     let id = 0;
     const txn = conn.transaction('feed', 'readwrite');
     txn.onerror = event => reject(event.target.error);
-    // This intentionally does not settle until the transaction completes
     txn.oncomplete = _ => resolve(id);
     const store = txn.objectStore('feed');
     const request = store.put(feed);
@@ -419,7 +412,6 @@ export async function create_feed(conn, feed) {
 export function create_feeds(conn, feeds) {
   return new Promise((resolve, reject) => {
     assert(feeds);
-
     for (const feed of feeds) {
       assert(is_feed(feed));
       assert(feed.urls && feed.urls.length);
@@ -427,12 +419,10 @@ export function create_feeds(conn, feeds) {
 
     for(const feed of feeds) {
       utils.filter_empty_properties(feed);
-
       // Allow explicit false
       if (feed.active === undefined) {
         feed.active = true;
       }
-
       feed.dateCreated = new Date();
       delete feed.dateUpdated;
     }
@@ -705,11 +695,7 @@ export async function mark_entry_read(conn, id) {
       if (entry.readState === ENTRY_READ) {
         const message = 'Cannot mark read entry as read ' + id;
         const error = new InvalidStateError(message);
-        //reject(error);
-        // There is some bug with rejection here, somehow related to loading of
-        // entries from the database in a fresh install with one feed, so this
-        // rejection is temporarily disabled
-        console.warn(error);
+        reject(error);
         return;
       }
 
@@ -753,9 +739,9 @@ export function query_entries(conn, query = {}) {
     request.onsuccess = function(event) {
       const cursor = event.target.result;
 
-      // This is one of two iteration stopping conditions. If there is no cursor, we
-      // are done. We might not have encountered any entries at all, or we advanced
-      // the cursor past the end.
+      // This is one of two iteration stopping conditions. If there is no
+      // cursor, we are done. We might not have encountered any entries at all,
+      // or we advanced the cursor past the end.
       if (!cursor) {
         cursor_state.callback(cursor_state.entries);
         return;
@@ -771,9 +757,10 @@ export function query_entries(conn, query = {}) {
 
       cursor_state.entries.push(cursor.value);
 
-      // If we are limited and reached the limit, then do not continue. This is also
-      // a stopping condition. Technically the condition should just be === limit,
-      // and using >= is a relaxed condition out of paranoia related to concurrency.
+      // If we are limited and reached the limit, then do not continue. This is
+      // also a stopping condition. Technically the condition should just be ===
+      // limit, and using >= is a relaxed condition out of paranoia related to
+      // concurrency.
       if (cursor_state.limit > 0 &&
           cursor_state.entries.length >= cursor_state.limit) {
         cursor_state.callback(cursor_state.entries);
@@ -795,23 +782,20 @@ function translate_direction(direction) {
   // There is no need to translate in the default case of iterating forward. So
   // we leave the output direction as undefined in that case, which will have
   // the effect of specifying undefined to openCursor later, which will then
-  // default to forward. So we only need to have an explicit value in the
+  // default to forward (next). So we only need to have an explicit value in the
   // reverse case.
   return direction === 'DESC' ? 'prev' : undefined;
 }
 
-// Compose the proper IDBRequest object based on the query values
+// Compose an IDBRequest object based on query values
 function query_entries_build_request(store, query, direction) {
   let request;
-
   // Several branches use these same two variables
   const min_date = new Date(1);
   const max_date = new Date();
-
   // Shorter alias
   const read = ENTRY_READ;
   const unread = ENTRY_UNREAD;
-
 
   if (query.feed_id === 0 || query.feed_id === undefined) {
     if (query.read_state === undefined) {
@@ -891,14 +875,13 @@ export function update_feed(conn, feed, overwrite) {
 
     // If overwriting, the feed must have a url. If partial, feed is just a bag
     // of properties.
-    // TODO: use has_url(feed) here (once it is implemented)
     if (overwrite) {
-      assert(feed.urls && feed.urls.length);
+      assert(feed_has_url(feed));
     }
 
     // If overwriting, remove unused properties. If partial, feed is just a bag
-    // of properties and undefined keys signify properties that should be removed
-    // from the old feed.
+    // of properties and undefined keys signify properties that should be
+    // removed from the old feed.
     if (overwrite) {
       utils.filter_empty_properties(feed);
     }
@@ -924,16 +907,15 @@ export function update_feed(conn, feed, overwrite) {
     // properties, and then overwrite it
     const request = store.get(feed.id);
     request.onsuccess = function(event) {
-      const prev_feed = event.target.result;
-
-      if (!prev_feed) {
+      const old_feed = event.target.result;
+      if (!old_feed) {
         const message = 'Failed to find feed to update for id ' + feed.id;
         const error = new NotFoundError(message);
         reject(error);
         return;
       }
 
-      if (!is_feed(prev_feed)) {
+      if (!is_feed(old_feed)) {
         const message = 'Matched object is not of type feed for id ' + feed.id;
         const error = new InvalidStateError(message);
         reject(error);
@@ -947,7 +929,7 @@ export function update_feed(conn, feed, overwrite) {
       // If you want to activate a feed, it must not already be active. If you
       // want to update the feed regardless, you should not have specified the
       // active property in the partial use case.
-      if (feed.active === true && prev_feed.active === true) {
+      if (feed.active === true && old_feed.active === true) {
         const message = 'Cannot activate already active feed with id ' +
           feed.id;
         const error = new InvalidStateError(message);
@@ -956,14 +938,14 @@ export function update_feed(conn, feed, overwrite) {
       }
 
       // Similarly, should not try to deactivate an inactive feed.
-      if (feed.active === false && prev_feed.active === false) {
+      if (feed.active === false && old_feed.active === false) {
         const message = 'Cannot deactivate inactive feed with id ' + feed.id;
         const error = new InvalidStateError(message);
         reject(error);
         return;
       }
 
-      // Setup any auto-transitions.
+      // Setup auto-transitions
       // When activating a feed, two other properties related to deactivation
       // should be specified as undefined to indicate intent to remove.
       if (feed.active === true) {
@@ -988,22 +970,21 @@ export function update_feed(conn, feed, overwrite) {
       // present but undefined, that means the caller's intent was to remove the
       // property.
       for (const key in feed) {
-        // There is no point in overwriting id. This is harmless, but I want to
-        // treat id as immutable.
+        // Treat id as immutable.
         if (key === 'id') {
           continue;
         }
 
         const value = feed[key];
         if (value === undefined) {
-          delete prev_feed[key];
+          delete old_feed[key];
         } else {
-          prev_feed[key] = value;
+          old_feed[key] = value;
         }
       }
 
-      prev_feed.dateUpdated = new Date();
-      event.target.source.put(prev_feed);
+      old_feed.dateUpdated = new Date();
+      event.target.source.put(old_feed);
     };
   });
 }
@@ -1162,6 +1143,8 @@ export function sanitize_feed(feed, title_max_len, desc_max_len) {
   }
 }
 
+// A utility function for throwing a custom type of error, in the style of an
+// assert call.
 function vassert(condition, message) {
   if (!condition) {
     throw new ValidationError(message);
