@@ -8,7 +8,7 @@ import {table_filter} from '/src/dom-filters/table-filter.js';
 import * as simple from '/src/dom-filters/simple-filters.js';
 import {url_resolve_filter} from '/src/dom-filters/url-resolve-filter.js';
 
-export async function sanitize_document(document, options = {}) {
+export async function composite_document_filter(document, options = {}) {
   assert(document instanceof Document);
   assert(typeof options === 'object');
 
