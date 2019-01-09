@@ -2,7 +2,7 @@ import {article_title_test} from '/src/test/article-title-test.js';
 import {coerce_element_test} from '/src/test/coerce-element-test.js';
 import * as color_contrast_filter_tests from '/src/test/color-contrast-filter-test.js';
 import {color_test} from '/src/test/color-test.js';
-import * as favicon_cache_tests from '/src/test/cache-tests.js';
+import * as favicon_tests from '/src/test/favicon-tests.js';
 import {fetch_image_test} from '/src/test/fetch-image-test.js';
 import {attribute_empty_filter_test} from '/src/test/attribute-empty-filter-test.js';
 import {image_lazy_filter_test} from '/src/test/image-lazy-filter-test.js';
