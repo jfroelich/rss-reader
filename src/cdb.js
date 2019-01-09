@@ -1,10 +1,6 @@
 import assert from '/src/assert.js';
 import * as db from '/src/db.js';
 
-// Some functionality we just re-export as is
-// NOTE: no idea if this re-export syntax is correct, need to test
-// NOTE: not even sure if it is correct to re-export these things, maybe I want
-// the caller to access the lower layer db.js for them?
 export {
   append_entry_url,
   append_feed_url,
@@ -25,7 +21,6 @@ export {
   ValidationError
 } from '/src/db.js';
 
-// A basic class representing a pair of conn and channel
 class CDBSession {
   constructor() {
     this.conn = undefined;
@@ -48,11 +43,7 @@ class CDBSession {
   }
 }
 
-export async function open(name, version, timeout, channel_name) {
-  if(!channel_name) {
-    channel_name = 'reader';
-  }
-
+export async function open(name, version, timeout, channel_name = 'reader') {
   const session = new CDBSession();
   session.channel = new BroadcastChannel(channel_name);
   session.conn = await db.open(name, version, timeout);
@@ -101,7 +92,12 @@ export async function delete_entry(session, id, reason) {
 
 export async function delete_feed(session, feed_id, reason) {
   const eids = await db.delete_feed(session.conn, feed_id);
-  session.channel.postMessage({type: 'feed-deleted', id: feed_id, reason: reason});
+  session.channel.postMessage({
+    type: 'feed-deleted',
+    id: feed_id,
+    reason: reason
+  });
+
   for (const id of eids) {
     session.channel.postMessage({
       type: 'entry-deleted',
