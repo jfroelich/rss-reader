@@ -1,4 +1,3 @@
-import assert from '/src/assert.js';
 import * as db from '/src/db.js';
 
 export {
