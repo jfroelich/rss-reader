@@ -1,15 +1,15 @@
+import * as cdb from '/src/cdb.js';
 import * as config from '/src/config-control.js';
 import * as cron_control from '/src/cron.js';
 import * as favicon from '/src/favicon/favicon-control.js';
+import * as ops from '/src/ops.js';
 import {poll_feed, poll_feeds} from '/src/poll/poll-feeds.js';
-import {refresh_feed_icons, subscribe} from '/src/ops.js';
-import * as cdb from '/src/cdb.js';
 
 async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);
   const proms = [cdb.open(), favicon.open()];
   const [session, iconn] = await Promise.all(proms);
-  const feed = await subscribe(session, iconn, url, options, 3000, true);
+  const feed = await ops.subscribe(session, iconn, url, options, 3000, true);
   // Do a sequential poll of the created feed
   if (poll) {
     const poll_options = {ignore_recency_check: true, notify: true};
@@ -22,7 +22,7 @@ async function cli_subscribe(url_string, poll = true) {
 async function cli_refresh_icons() {
   const proms = [cdb.open(), favicon.open()];
   const [session, iconn] = await Promise.all(proms);
-  await refresh_feed_icons(session, iconn);
+  await ops.refresh_feed_icons(session, iconn);
   session.close();
   iconn.close();
 }
