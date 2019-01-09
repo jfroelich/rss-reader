@@ -1,15 +1,13 @@
-import * as url_utils from '/src/utils.js';
-import {fetch_image_element, is_ephemeral_fetch_error} from '/src/net/fetch-image-element.js';
 import {AssertionError} from '/src/assert.js';
+import {fetch_image_element, is_ephemeral_fetch_error} from '/src/net/fetch-image-element.js';
+import * as utils from '/src/utils.js';
 
 // Scans the images of a document and ensures the width and height attributes
 // are set. If images are missing dimensions then this attempts to infer the
 // dimensions for each image and modifies each image element's attributes.
 export async function image_size_filter(document, timeout, is_allowed_request) {
-  // This is similar to a programmer error, but it is not invariant, so it is
-  // better to use a typical sanity check here instead of an assert.
   if (!document.baseURI) {
-    throw new TypeError('document missing baseURI');
+    throw new TypeError('document missing required baseURI');
   }
 
   // This only pays attention to image elements within body, and assumes that
@@ -24,10 +22,10 @@ export async function image_size_filter(document, timeout, is_allowed_request) {
   const images = document.body.getElementsByTagName('img');
   const promises = [];
   for (const image of images) {
-    promises.push(get_image_dims(image, timeout, is_allowed_request));
+    promises.push(derive_image_dims(image, timeout, is_allowed_request));
   }
-  const infos = await Promise.all(promises);
 
+  const infos = await Promise.all(promises);
   for (const info of infos) {
     if (info.width && info.height) {
       info.image.setAttribute('width', info.width);
@@ -36,7 +34,6 @@ export async function image_size_filter(document, timeout, is_allowed_request) {
   }
 }
 
-// Finds the dimensions of an image based on its HTML attributes
 function find_attribute_dimensions(image) {
   const info = {width: 0, height: 0};
   if (image.hasAttribute('width')) {
@@ -51,9 +48,9 @@ function find_attribute_dimensions(image) {
 }
 
 // Finds the dimensions of an image. This first looks at information that is
-// available within the document, and if that fails, then fallsback to doing
+// available within the document, and if that fails, then falls back to doing
 // a network request.
-async function get_image_dims(image, timeout, is_allowed_request) {
+async function derive_image_dims(image, timeout, is_allowed_request) {
   const attribute_info = find_attribute_dimensions(image);
   if (attribute_info.width && attribute_info.height) {
     return {
@@ -64,7 +61,7 @@ async function get_image_dims(image, timeout, is_allowed_request) {
     };
   }
 
-  const style_info = find_style_dimensions(image);
+  const style_info = derive_dims_from_style(image);
   if (style_info.width && style_info.height) {
     return {
       image: image,
@@ -92,7 +89,7 @@ async function get_image_dims(image, timeout, is_allowed_request) {
     return {image: image, reason: 'badsource'};
   }
 
-  let url_info = find_url_dimensions(source_url);
+  let url_info = derive_dims_from_url(source_url);
   if (url_info) {
     return {
       image: image,
@@ -132,13 +129,13 @@ async function get_image_dims(image, timeout, is_allowed_request) {
   return info;
 }
 
-// Try and find image dimensions from the characters of a url
-function find_url_dimensions(source_url) {
+// Try to determine an image's dimensions from the characters of its url
+function derive_dims_from_url(source_url) {
   if (source_url.protocol === 'data:') {
     return;
   }
 
-  const ext = url_utils.url_get_extension(source_url);
+  const ext = utils.url_get_extension(source_url);
   if (!ext) {
     return;
   }
@@ -148,9 +145,6 @@ function find_url_dimensions(source_url) {
     return;
   }
 
-  // TODO: this code has a ton of nested blocks and is too difficult to read
-  // and modify. Rewrite. Also, it is ok to set height even if width not set,
-  // so the height stuff does not need to happen only in the width block.
 
   const named_attr_pairs =
       [{width: 'w', height: 'h'}, {width: 'width', height: 'height'}];
@@ -178,14 +172,8 @@ function find_url_dimensions(source_url) {
 }
 
 // Attempt to find the dimensions from the element's attributes
-function find_style_dimensions(element) {
+function derive_dims_from_style(element) {
   const dimensions = {width: 0, height: 0};
-
-  // TODO: this needs to correctly handle other image size formats, like width
-  // as a percentage and such
-  // Units are implicitly ignored in parseInt, this naively assumes pixel width
-  // in all cases but that could be incorrect
-  // TODO: look into using CSSOM
 
   if (element.hasAttribute('style') && element.style) {
     const width = parseInt(element.style.width, 10);
