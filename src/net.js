@@ -75,6 +75,12 @@ export function fetch_html(url, options = {}) {
     types.push('text/plain');
   }
   opts.types = types;
+
+  // Delete non-standard options just in case the eventual native call to
+  // fetch would barf on seeing them
+  delete opts.policy;
+  delete opts.allow_text;
+
   return fetch2(url, opts, policy);
 }
 
