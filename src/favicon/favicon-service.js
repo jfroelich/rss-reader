@@ -2,8 +2,7 @@ import assert from '/src/assert.js';
 import {parse_html} from '/src/utils.js';
 import * as idb from '/src/idb.js';
 import * as mime from '/src/mime.js';
-import {fetch_html} from '/src/net.js';
-import {fetch2, response_is_redirect} from '/src/net.js';
+import * as net from '/src/net.js';
 
 export function FaviconService() {
   this.name = 'favicon-cache';
@@ -70,7 +69,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   if (!document && !this.skip_fetch) {
     try {
       const options = {timeout: this.fetch_html_timeout};
-      response = await fetch_html(url, options);
+      response = await net.fetch_html(url, options);
     } catch (error) {
       // not fatal error
       console.debug('Fetch error', url.href, error);
@@ -81,7 +80,7 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   let response_url;
   if (response && response.ok && response.url) {
     response_url = new URL(response.url);
-    if (response_is_redirect(url, response)) {
+    if (net.response_is_redirect(url, response)) {
       if (response_url.origin !== url.origin) {
         origin_url = new URL(response_url.origin);
       }
@@ -399,5 +398,5 @@ function fetch_image(url, options) {
 
   // Defer to the load's default policy by using an undefined parameter
   let undefined_policy;
-  return fetch2(url, options_clone, undefined_policy);
+  return net.fetch2(url, options_clone, undefined_policy);
 }

@@ -1,5 +1,5 @@
 import {assert, AssertionError} from '/src/assert.js';
-import {fetch_image} from '/src/net.js';
+import * as net from '/src/net.js';
 import * as idb from '/src/idb.js';
 
 const DEFAULT_NAME = 'favicon';
@@ -96,7 +96,7 @@ async function fetch_root_icon(request) {
   const fetch_options = {method: 'head', timeout: timeout};
 
   // Call without catching errors
-  const response = await fetch_image(root_icon, fetch_options);
+  const response = await net.fetch_image(root_icon, fetch_options);
 
   const content_length = response.headers.get('Content-Length');
   if (content_length) {

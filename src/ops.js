@@ -4,8 +4,7 @@
 
 import * as cdb from '/src/cdb.js';
 import * as favicon from '/src/favicon/favicon-control.js';
-import {fetch_feed} from '/src/net.js';
-import {response_is_redirect} from '/src/net.js';
+import * as net from '/src/net.js';
 import * as notification from '/src/note.js';
 import * as utils from '/src/utils.js';
 
@@ -229,11 +228,11 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   }
 
   // Propagate fetch errors as subscribe errors
-  const response = await fetch_feed(url, timeout, true, false);
+  const response = await net.fetch_feed(url, timeout, true, false);
   const http_response = response.http_response;
 
   // If redirected, check if subscribed to the redirected url
-  if(response_is_redirect(url, http_response)) {
+  if(net.response_is_redirect(url, http_response)) {
     const rurl = new URL(http_response.url);
     let existing_feed = await cdb.get_feed(session, 'url', rurl, true);
     if (existing_feed) {

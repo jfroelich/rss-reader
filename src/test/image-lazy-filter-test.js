@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
 import * as simple_filters from '/src/dom-filters/simple-filters.js';
 import {parse_html} from '/src/utils.js';
-import {fetch_html} from '/src/net.js';
+import * as net from '/src/net.js';
 
 // TODO: depending on fetch-html is a dependency violation. this cannot rely
 // on a module located in a higher layer. therefore, i need a lower layer
@@ -14,7 +14,7 @@ import {fetch_html} from '/src/net.js';
 
 export async function image_lazy_filter_test(url_string) {
   //const request_url = new URL(url_string);
-  //const response = await fetch_html(request_url);
+  //const response = await net.fetch_html(request_url);
   //const response_text = await response.text();
   //const document = parse_html(response_text);
   //simple_filters.image_lazy_filter(document);

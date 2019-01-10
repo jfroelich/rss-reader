@@ -1,5 +1,5 @@
 import {AssertionError} from '/src/assert.js';
-import {fetch_image_element, is_ephemeral_fetch_error} from '/src/net.js';
+import * as net from '/src/net.js';
 import * as utils from '/src/utils.js';
 
 // Scans the images of a document and ensures the width and height attributes
@@ -102,7 +102,7 @@ async function derive_image_dims(image, timeout, is_allowed_request) {
   let fetched_image;
   try {
     fetched_image =
-        await fetch_image_element(source_url, timeout, is_allowed_request);
+        await net.fetch_image_element(source_url, timeout, is_allowed_request);
   } catch (error) {
     // Never suppress assertion errors (programmer errors). Any catch block is
     // suspect. Here I know that, currently, fetch_image_element does
@@ -112,7 +112,7 @@ async function derive_image_dims(image, timeout, is_allowed_request) {
     }
 
     // Handle certain fetch errors, like a timeout, as non-programming errors
-    if (is_ephemeral_fetch_error(error)) {
+    if (net.is_ephemeral_fetch_error(error)) {
       return {image: image, reason: 'fetch-error'};
     }
 

@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {fetch_image} from '/src/net.js';
+import * as net from '/src/net.js';
 
 export async function fetch_image_test() {
   let path = '/src/test/fetch-image-test.png';
@@ -8,12 +8,12 @@ export async function fetch_image_test() {
 
   // Test without a timeout
   let options = {timeout: 0};
-  let response = await fetch_image(url, options);
+  let response = await net.fetch_image(url, options);
   assert(response);
 
   // Test with a timeout that should never happen
   options = {timeout: 100000};
-  response = await fetch_image(url, options);
+  response = await net.fetch_image(url, options);
   assert(response);
 
   // Test against a non-existent image
@@ -22,7 +22,7 @@ export async function fetch_image_test() {
   url = new URL(url_string);
   let error404;
   try {
-    response = await fetch_image(url, options);
+    response = await net.fetch_image(url, options);
   } catch (error) {
     error404 = error;
   }

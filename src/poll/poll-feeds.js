@@ -6,10 +6,7 @@ import {set_base_uri} from '/src/poll/set-base-uri.js';
 import * as sniff from '/src/poll/url-sniff.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon/favicon-control.js';
-import {fetch_feed} from '/src/net.js';
-import {fetch_html} from '/src/net.js';
-import {is_allowed_request} from '/src/net.js';
-import * as fetch2 from '/src/net.js';
+import * as net from '/src/net.js';
 import * as notification from '/src/note.js';
 import {build as build_rewrite_rules} from '/src/poll/rewrite-rules.js';
 import * as cdb from '/src/cdb.js';
@@ -84,7 +81,7 @@ export async function poll_feed(session, iconn, options = {}, feed) {
   const resolve_entry_urls = true;
   let response;
   try {
-    response = await fetch_feed(
+    response = await net.fetch_feed(
         tail_url, options.fetch_feed_timeout, skip_entries, resolve_entry_urls);
   } catch (error) {
     await handle_fetch_error(
@@ -191,7 +188,7 @@ function handle_fetch_success(feed) {
 }
 
 async function handle_fetch_error(session, error, feed, threshold) {
-  if (error instanceof fetch2.TimeoutError || error instanceof fetch2.OfflineError) {
+  if (error instanceof net.TimeoutError || error instanceof net.OfflineError) {
     return;
   }
 
@@ -298,7 +295,7 @@ export async function poll_entry(
   if ((url.protocol === 'http:' || url.protocol === 'https:') &&
       sniff.classify(url) !== sniff.BINARY_CLASS && !url_is_inaccessible(url)) {
     try {
-      response = await fetch_html(url, {timeout: fetch_html_timeout});
+      response = await net.fetch_html(url, {timeout: fetch_html_timeout});
     } catch (error) {
       console.debug(error);
     }
@@ -310,7 +307,7 @@ export async function poll_entry(
   if (response) {
     let url_changed = false;
     const response_url = new URL(response.url);
-    if (fetch2.response_is_redirect(url, response)) {
+    if (net.response_is_redirect(url, response)) {
       url_changed = true;
       cdb.append_entry_url(entry, response_url);
       cdb.append_entry_url(entry, rewrite_url(response_url, rewrite_rules));
@@ -359,7 +356,7 @@ export async function poll_entry(
   sd_opts.image_size_timeout = config.read_int('set_image_sizes_timeout');
   sd_opts.table_scan_max_rows = config.read_int('table_scan_max_rows');
   sd_opts.emphasis_max_length = config.read_int('emphasis_max_length');
-  sd_opts.is_allowed_request = is_allowed_request;
+  sd_opts.is_allowed_request = net.is_allowed_request;
 
   await composite_document_filter(document, sd_opts);
   entry.content = document.documentElement.outerHTML;
