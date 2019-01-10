@@ -17,14 +17,6 @@ failed to apply upgrades to new version, etc.
 @throws {Error} failed to create channel
 @return {Promise} resolves to a ModelAccess object
 
-
-Misc old notes from db.txt:
-* convert all field names to snake_case
-* consider renaming entry.feed to entry.feed_id, or, alternatively, group together
-feed id and feed title into a sub object, e.g. entry.feed.id and entry.feed.title
-
-
-
 Misc notes from old idb-model.txt:
 * when archiving entries, if an invalid entry is encountered, what should be
 done? currently this just logs a warning. instead, should it abort the

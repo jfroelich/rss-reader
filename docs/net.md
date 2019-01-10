@@ -1,3 +1,16 @@
+# fetch-feed
+Fetches a remote feed xml file. Note that this is not a generic library, this applies app-specific behavior. To get generic functionality, directly interact with the components that compose this function.
+
+This function is a composition of the following functions:
+* Fetching the contents of the remote file
+* Parsing the contents into a generic parsed-feed object
+* Coercing the generic format into the app's stored-feed format
+
+TODOs
+* conflict on whether this is fetch-xml + parse-xml + coerce-feed, or something like a specialization wrapper of fetch-xml. it is a composition, for sure. one problem with composition is the sheer amount of errors a single call can generate. but at the same time, not composing is really just shifting separate error handling into the calling client, because it is not like the number of errors decreases in the calling context.
+* test should be run on a local resource
+* test cannot accept parameters
+
 # fetch_image
 Asynchronously send an HTTP request for an image
 
@@ -36,3 +49,12 @@ Returns a `Response` object.
 * test fetching against a resource that is not an image
 * if i move the fetch calls from the control layer back to the library later there is a good chance that much of this functionality becomes redundant. Right now this is independent but I am unsure if it is worth the duplication. This module is severely identical.
 * I need to think more about the design pattern of attaching conditions to fetch. I feel like what i want is a series or chain of function calls where each function is a wrapper that attaches functionality, for example `fetch_with_image_type_check(fetch_with_timeout(native_fetch))`. I am not sure if this is the correct approach and want to think about it more. Maybe I want some hooking mechanism. Maybe each wrapper function should take as a parameter the fetch function that it wraps. Maybe this is a routine design obstacle that many people have already solved very well and I just need to research how others have approached it. I want to get away from a giant fetch function where it just hardcodes a miscellaneous bunch of extra pre and post conditions.
+
+# fetch-policy
+TODO: this should not be a parameter to better-fetch. Instead, better-fetch should
+be a generic fetch library, and then I have an app-specific wrapper fetch
+library that wraps the generic library, and within this wrapper, I introduce
+the app's fetch policy concerns. So this entire approach so far was wrong,
+because it makes it difficult to pluck out app specific crap from a generic
+lib, and better-fetch should ideally be a generic library that just adds a few more
+features to native fetch.
