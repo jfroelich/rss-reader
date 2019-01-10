@@ -255,6 +255,31 @@ function url_compare_no_hash(url1, url2) {
   return modified_url1.href === modified_url2.href;
 }
 
+// Returns a response (without reading its body).
+export function request_xml(url, options = {}) {
+  const feed_mime_types = [
+    'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
+    'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
+  ];
+
+  // Clone into a local object so as to avoid mutating input
+  const opts = Object.assign({}, options);
+
+  // Build types. Either concat, replace, or rely on the defaults.
+  let types = undefined;
+  const input_types = opts.types || [];
+  if(opts.concat_types) {
+    // TODO: dedup?
+    types = feed_mime_types.concat(input_types);
+  } else if(input_types.length) {
+    types = input_types;
+  } else {
+    types = feed_mime_types;
+  }
+  opts.types = types;
+
+  return fetch2(url, options, opts.is_allowed_request);
+}
 
 export async function fetch_feed(
     url, timeout, skip_entries = true, resolve_entry_urls = false) {
