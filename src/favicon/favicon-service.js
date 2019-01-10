@@ -2,8 +2,8 @@ import assert from '/src/assert.js';
 import {parse_html} from '/src/utils.js';
 import * as idb from '/src/idb.js';
 import * as mime from '/src/mime.js';
-import {fetch_html} from '/src/net/fetch-html.js';
-import {fetch2, response_is_redirect} from '/src/net/fetch2.js';
+import {fetch_html} from '/src/net.js';
+import {fetch2, response_is_redirect} from '/src/net.js';
 
 export function FaviconService() {
   this.name = 'favicon-cache';
@@ -69,7 +69,8 @@ FaviconService.prototype.lookup = async function favicon_lookup(url, document) {
   let response;
   if (!document && !this.skip_fetch) {
     try {
-      response = await fetch_html(url, this.fetch_html_timeout);
+      const options = {timeout: this.fetch_html_timeout};
+      response = await fetch_html(url, options);
     } catch (error) {
       // not fatal error
       console.debug('Fetch error', url.href, error);

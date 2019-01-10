@@ -1,5 +1,5 @@
 import {assert, AssertionError} from '/src/assert.js';
-import {fetch_image} from '/src/net/fetch-image.js';
+import {fetch_image} from '/src/net.js';
 import * as idb from '/src/idb.js';
 
 const DEFAULT_NAME = 'favicon';

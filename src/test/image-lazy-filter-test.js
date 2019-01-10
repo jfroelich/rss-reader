@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
 import * as simple_filters from '/src/dom-filters/simple-filters.js';
 import {parse_html} from '/src/utils.js';
-import {fetch_html} from '/src/net/fetch-html.js';
+import {fetch_html} from '/src/net.js';
 
 // TODO: depending on fetch-html is a dependency violation. this cannot rely
 // on a module located in a higher layer. therefore, i need a lower layer

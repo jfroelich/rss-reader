@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {fetch_image} from '/src/net/fetch-image.js';
+import {fetch_image} from '/src/net.js';
 
 export async function fetch_image_test() {
   let path = '/src/test/fetch-image-test.png';

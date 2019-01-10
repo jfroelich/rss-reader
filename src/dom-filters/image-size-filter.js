@@ -1,5 +1,5 @@
 import {AssertionError} from '/src/assert.js';
-import {fetch_image_element, is_ephemeral_fetch_error} from '/src/net/fetch-image-element.js';
+import {fetch_image_element, is_ephemeral_fetch_error} from '/src/net.js';
 import * as utils from '/src/utils.js';
 
 // Scans the images of a document and ensures the width and height attributes

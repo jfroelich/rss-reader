@@ -4,8 +4,8 @@
 
 import * as cdb from '/src/cdb.js';
 import * as favicon from '/src/favicon/favicon-control.js';
-import {fetch_feed} from '/src/net/fetch-feed/fetch-feed.js';
-import {response_is_redirect} from '/src/net/fetch2.js';
+import {fetch_feed} from '/src/net.js';
+import {response_is_redirect} from '/src/net.js';
 import * as notification from '/src/note.js';
 import * as utils from '/src/utils.js';
 

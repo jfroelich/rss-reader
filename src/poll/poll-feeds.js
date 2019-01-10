@@ -6,10 +6,10 @@ import {set_base_uri} from '/src/poll/set-base-uri.js';
 import * as sniff from '/src/poll/url-sniff.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon/favicon-control.js';
-import {fetch_feed} from '/src/net/fetch-feed/fetch-feed.js';
-import {fetch_html} from '/src/net/fetch-html.js';
-import {is_allowed_request} from '/src/net/fetch-policy.js';
-import * as fetch2 from '/src/net/fetch2.js';
+import {fetch_feed} from '/src/net.js';
+import {fetch_html} from '/src/net.js';
+import {is_allowed_request} from '/src/net.js';
+import * as fetch2 from '/src/net.js';
 import * as notification from '/src/note.js';
 import {build as build_rewrite_rules} from '/src/poll/rewrite-rules.js';
 import * as cdb from '/src/cdb.js';
@@ -298,7 +298,7 @@ export async function poll_entry(
   if ((url.protocol === 'http:' || url.protocol === 'https:') &&
       sniff.classify(url) !== sniff.BINARY_CLASS && !url_is_inaccessible(url)) {
     try {
-      response = await fetch_html(url, fetch_html_timeout);
+      response = await fetch_html(url, {timeout: fetch_html_timeout});
     } catch (error) {
       console.debug(error);
     }
