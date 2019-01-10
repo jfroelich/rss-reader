@@ -1,4 +1,4 @@
-import assert from '/src/assert.js';
+import {assert, AssertionError} from '/src/assert.js';
 import {parse_html} from '/src/utils.js';
 import {rewrite_url} from '/src/poll/rewrite-url.js';
 import {composite_document_filter} from '/src/dom-filters/composite-document-filter.js';
@@ -77,13 +77,21 @@ export async function poll_feed(session, iconn, options = {}, feed) {
     assert(time_since_last_fetch >= options.recency_period);
   }
 
+  const fetch_options = {};
+  fetch_options.timeout = options.fetch_feed_timeout;
+  fetch_options.skips_entries = false;
+  fetch_options.resolve_entry_urls = true;
+
   const skip_entries = false;
   const resolve_entry_urls = true;
   let response;
   try {
-    response = await net.fetch_feed(
-        tail_url, options.fetch_feed_timeout, skip_entries, resolve_entry_urls);
+    response = await net.fetch_feed(tail_url, fetch_options);
   } catch (error) {
+    if(error instanceof AssertionError) {
+      throw error;
+    }
+
     await handle_fetch_error(
         session, error, feed, options.deactivation_threshold);
     return 0;

@@ -228,7 +228,12 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   }
 
   // Propagate fetch errors as subscribe errors
-  const response = await net.fetch_feed(url, timeout, true, false);
+  const fetch_options = {
+    timeout: timeout,
+    skip_entries: true,
+    resolve_entry_urls: false
+  };
+  const response = await net.fetch_feed(url, fetch_options);
   const http_response = response.http_response;
 
   // If redirected, check if subscribed to the redirected url

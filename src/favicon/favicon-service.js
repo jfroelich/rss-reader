@@ -398,5 +398,5 @@ function fetch_image(url, options) {
 
   // Defer to the load's default policy by using an undefined parameter
   let undefined_policy;
-  return net.fetch2(url, options_clone, undefined_policy);
+  return net.better_fetch(url, options_clone);
 }

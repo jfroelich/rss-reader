@@ -29,3 +29,28 @@ export async function fetch_image_test() {
   // This should be the native error type thrown by native fetch call
   assert(error404 instanceof TypeError);
 }
+
+export async function better_fetch_test() {
+  // TODO: implement me
+}
+
+export async function fetch_feed_test() {
+  // TODO: implement me
+}
+// TODO: run on a local resource
+// TODO: cannot accept param
+
+export async function fetch_html_test() {
+  // TODO: implement me
+}
+
+/*
+async function fetch_html_test_old(url_string, timeout) {
+  const request_url = new URL(url_string);
+  const response = await net.fetch_html(request_url, {timeout: timeout});
+  console.dir(response);
+  const response_text = await response.text();
+  console.log(response_text);
+  return response;
+}
+*/

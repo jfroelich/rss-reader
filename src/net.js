@@ -43,8 +43,6 @@ export async function fetch_with_timeout(url, options = {}) {
   return response;
 }
 
-
-
 // Returns whether a given request is fetchable according to the app's policy.
 // This hardcodes the app's policy into a function. In general, only
 // http-related fetches are permitted, and not against local host. This also
@@ -78,10 +76,9 @@ export function fetch_html(url, options = {}) {
 
   // Delete non-standard options just in case the eventual native call to
   // fetch would barf on seeing them
-  delete opts.policy;
   delete opts.allow_text;
 
-  return fetch2(url, opts, policy);
+  return better_fetch(url, opts);
 }
 
 // Extends the builtin fetch with timeout, response type checking, and a way to
@@ -89,9 +86,8 @@ export function fetch_html(url, options = {}) {
 // or throws an error of some kind.
 // options.timeout - specify timeout in ms
 // options.types - optional array of strings of mime types to check against
-// is_allowed_url - function given method and url, return whether url is
-// fetchable, optional (if undefined then no policy applied)
-export async function fetch2(url, options = {}, is_allowed_request) {
+// options.is_allowed_request
+export async function better_fetch(url, options = {}) {
   if (typeof url !== 'object' || !url.href) {
     throw new TypeError('url is not a URL: ' + url);
   }
@@ -99,6 +95,8 @@ export async function fetch2(url, options = {}, is_allowed_request) {
   if (!navigator.onLine) {
     throw new OfflineError('Failed to fetch url while offline ' + url.href);
   }
+
+  const is_allowed_request = options.is_allowed_request;
 
   const request_data = {method: options.method, url: url};
   if (is_allowed_request && !is_allowed_request(request_data)) {
@@ -171,7 +169,6 @@ export async function fetch2(url, options = {}, is_allowed_request) {
 
   return response;
 }
-
 
 export async function fetch_image(url, options = {}) {
   assert(navigator && typeof navigator === 'object');
@@ -262,35 +259,24 @@ export function request_xml(url, options = {}) {
     'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
   ];
 
-  // Clone into a local object so as to avoid mutating input
-  const opts = Object.assign({}, options);
-
-  // Build types. Either concat, replace, or rely on the defaults.
-  let types = undefined;
-  const input_types = opts.types || [];
-  if(opts.concat_types) {
-    // TODO: dedup?
-    types = feed_mime_types.concat(input_types);
-  } else if(input_types.length) {
-    types = input_types;
-  } else {
-    types = feed_mime_types;
-  }
-  opts.types = types;
-
-  return fetch2(url, options, opts.is_allowed_request);
+  const opts = Object.assign({}, {types: feed_mime_types}, options);
+  return better_fetch(url, opts);
 }
 
-export async function fetch_feed(
-    url, timeout, skip_entries = true, resolve_entry_urls = false) {
+export async function fetch_feed(url, options) {
   const feed_mime_types = [
     'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
     'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
   ];
 
-  const options = {timeout: timeout, types: feed_mime_types};
-  const response = await fetch2(url, options, is_allowed_request);
+  const options = {timeout: options.timeout, types: feed_mime_types};
+  const response = await better_fetch(url, options);
   const res_text = await response.text();
+
+  const skip_entries = 'skip_entries' in options ? options.skip_entries : true;
+  const resolve_entry_urls = 'resolve_entry_urls' in options ?
+    options.resolve_entry_urls : false;
+
   const parsed_feed = parse_feed(res_text, skip_entries, resolve_entry_urls);
 
   // Convert the feed from the parse format to the storage format
