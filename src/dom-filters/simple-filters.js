@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import * as boilerplate from '/src/boilerplate.js';
-import {color_contrast_filter} from '/src/dom-filters/color-contrast-filter.js';
+import * as color from '/src/color.js';
 import * as dfu from '/src/dom-filters/dfu.js';
 import * as utils from '/src/utils.js';
 
@@ -184,6 +184,43 @@ export function breakrule_filter(document) {
     for (const br of brs) {
       br.remove();
     }
+  }
+}
+
+// Removes elements containing text that is not perceptible by calculating the
+// approximate contrast between the foreground text color and the background
+// color.
+// @param matte {color} the base background color for alpha blending, optional,
+// defaults to white
+// @param min_contrast {Number} the minimum contrast ratio, below which elements
+// are deemed not visible, optional, defaults to a conservative 1.2
+export function color_contrast_filter(document, matte, min_contrast) {
+  const body = document.body;
+  if(!body) {
+    return;
+  }
+
+  const DEFAULT_MATTE = color.WHITE;
+  if(typeof matte === 'undefined') {
+    matte = DEFAULT_MATTE;
+  }
+
+  const DEFAULT_MIN_CONTRAST = 1.2;
+  if(typeof min_contrast === 'undefined') {
+    min_contrast = DEFAULT_MIN_CONTRAST;
+  }
+
+  const it = document.createNodeIterator(body, NodeFilter.SHOW_TEXT);
+  let node = it.nextNode();
+  while (node) {
+    const element = node.parentNode;
+    const fore = dfu.element_derive_text_color(element);
+    const back = dfu.element_derive_background_color(element, matte);
+    const contrast = color.get_contrast(fore, back);
+    if(contrast < min_contrast) {
+      node.remove();
+    }
+    node = it.nextNode();
   }
 }
 

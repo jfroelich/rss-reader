@@ -1,5 +1,72 @@
 import '/third-party/parse-srcset.js';
+import '/third-party/tinycolor-min.js';
 import assert from '/src/assert.js';
+
+export function element_derive_text_color(element) {
+  const style = getComputedStyle(element);
+  if (style) {
+    const color_value = css_color_parse(style.color);
+    if (typeof color_value !== 'undefined') {
+      return color_value;
+    }
+  }
+  return color.BLACK;
+}
+
+export function element_derive_background_color(element, matte) {
+  const include_self = true;
+  const layers = element_ancestors(element, include_self);
+  const colors = layers.map(element_derive_background_color_inline);
+  return color.blend(colors.reverse(), matte);
+}
+
+export function element_derive_background_color_inline(element) {
+  // TODO: if opacity is not a channel in the color, then should this not also
+  // consider the opacity css property?
+
+  const style = element.style;
+  if (style) {
+    const css_bgcolor = style.backgroundColor;
+    if (css_bgcolor) {
+      const color_value = css_color_parse(css_bgcolor);
+      if (color_value) {
+        return color_value;
+      }
+    }
+  }
+  return color.TRANSPARENT;
+}
+
+export function element_ancestors(element, include_self) {
+  const layers = [];
+  let node = include_self ? element : element.parentNode;
+  while (node) {
+    layers.push(node);
+    node = node.parentNode;
+  }
+  return layers;
+}
+
+
+// Parses a css color value into a color
+export function css_color_parse(value) {
+  if (typeof value === 'string' && value.length) {
+    const tc = new tinycolor(value);
+    if (tc.isValid()) {
+      return tinycolor_to_color(tc);
+    }
+  }
+}
+
+export function tinycolor_to_color(tiny_color) {
+  const o = tiny_color.toRgb();
+  return color.pack(o.r, o.g, o.b, (o.a * 255) | 0);
+}
+
+export function css_color_format(value) {
+  return 'rgba(' + color.get_red(value) + ', ' + color.get_green(value) + ', ' +
+      color.get_blue(value) + ', ' + color.get_alpha(value) / 255 + ')';
+}
 
 const leaf_exception_element_names = [
   'area', 'audio',  'base', 'col',      'command', 'br',    'canvas', 'col',
