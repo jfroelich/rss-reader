@@ -233,6 +233,28 @@ export function comment_filter(document) {
   }
 }
 
+// Replaces certain elements in |document| with equivalents that use fewer
+// characters in the element name, so that when a document it serialized, it
+// contains fewer characters. |copy_attrs_flag| is optional boolean specifying
+// whether to copy html attributes when replacing an element.
+export function condense_tagnames_filter(document, copy_attrs_flag) {
+  if (!document.body) {
+    return;
+  }
+
+  const renames = [
+    {before: 'strong', after: 'b'},
+    {before: 'em', after: 'i'}
+  ];
+
+  for(const rename of renames) {
+    const elements = document.body.querySelectorAll(rename.before);
+    for(const element of elements) {
+      dfu.coerce_element(element, rename.after, copy_attrs_flag);
+    }
+  }
+}
+
 // Removes container-like elements from the document
 export function container_filter(document) {
   if (document.body) {

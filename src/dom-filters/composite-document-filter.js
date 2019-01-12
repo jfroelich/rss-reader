@@ -1,5 +1,4 @@
 import assert from '/src/assert.js';
-import {condense_tagnames_filter} from '/src/dom-filters/condense-tagnames-filter.js';
 import {image_size_filter} from '/src/dom-filters/image-size-filter.js';
 import {image_responsive_filter} from '/src/dom-filters/image-responsive-filter.js';
 import {list_filter} from '/src/dom-filters/list-filter.js';
@@ -51,7 +50,7 @@ export async function composite_document_filter(document, options = {}) {
   simple.image_size_small_filter(document);
   simple.image_size_large_filter(document);
 
-  condense_tagnames_filter(document, false);
+  simple.condense_tagnames_filter(document, false);
   simple.head_filter(document);
   simple.base_filter(document);
   simple.anchor_validity_filter(document);
