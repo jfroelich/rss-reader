@@ -2,7 +2,7 @@ import {assert, AssertionError} from '/src/assert.js';
 import {parse_html} from '/src/utils.js';
 import {rewrite_url} from '/src/poll/rewrite-url.js';
 import {composite_document_filter} from '/src/dom-filters/composite-document-filter.js';
-import {set_base_uri} from '/src/poll/set-base-uri.js';
+import {set_base_uri} from '/src/dom-filters/dfu.js';
 import * as sniff from '/src/poll/url-sniff.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon/favicon-control.js';
