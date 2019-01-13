@@ -5,7 +5,6 @@ import {list_filter} from '/src/dom-filters/list-filter.js';
 import {lonestar_filter} from '/src/dom-filters/lonestar-filter.js';
 import {table_filter} from '/src/dom-filters/table-filter.js';
 import * as simple from '/src/dom-filters/simple-filters.js';
-import {url_resolve_filter} from '/src/dom-filters/url-resolve-filter.js';
 
 export async function composite_document_filter(document, options = {}) {
   assert(document instanceof Document);
@@ -37,7 +36,7 @@ export async function composite_document_filter(document, options = {}) {
   // I do not need to do this earlier any longer. In fact I can re-imagine this
   // entirely, where this does in fact strip base elements. This could happen
   // at the end.
-  url_resolve_filter(document);
+  simple.url_resolve_filter(document);
   image_responsive_filter(document);
   lonestar_filter(document);
   simple.image_dead_filter(document);

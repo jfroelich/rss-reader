@@ -808,6 +808,94 @@ export function document_trim_filter(document) {
   }
 }
 
+// Resolves all element attribute values that contain urls in |document|. Throws
+// an error if the document has an invalid base URI.
+export function url_resolve_filter(document) {
+  // Intentionally propagate error if baseURI is invalid
+  const base_url = new URL(document.baseURI);
+  // Element name to attribute name map
+  const map = {
+    a: 'href',
+    applet: 'codebase',
+    area: 'href',
+    audio: 'src',
+    base: 'href',
+    blockquote: 'cite',
+    body: 'background',
+    button: 'formaction',
+    del: 'cite',
+    embed: 'src',
+    frame: 'src',
+    head: 'profile',
+    html: 'manifest',
+    iframe: 'src',
+    form: 'action',
+    img: 'src',
+    input: 'src',
+    ins: 'cite',
+    link: 'href',
+    object: 'data',
+    q: 'cite',
+    script: 'src',
+    source: 'src',
+    track: 'src',
+    video: 'src'
+  };
+
+  // In the first pass, select all mapped elements present anywhere in the
+  // document, and resolve attribute values per element
+  const selector = Object.keys(map).map(key => `${key}[${map[key]}]`).join(',');
+  const elements = document.querySelectorAll(selector);
+
+  for (const element of elements) {
+    const attr_name = map[element.localName];
+    if(attr_name) {
+      const attr_value = element.getAttribute(attr_name);
+      if(attr_value) {
+        try {
+          const url = new URL(attr_value, base_url);
+          if(url.href !== attr_value) {
+            element.setAttribute(attr_name, url.href);
+          }
+        } catch(error) {
+          // Ignore
+        }
+      }
+    }
+  }
+
+  // The remaining passes are body specific
+  if(!document.body) {
+    return;
+  }
+
+  const srcset_sel = 'img[srcset], source[srcset]';
+  const srcset_els = document.body.querySelectorAll(srcset_sel);
+  for (const element of srcset_els) {
+    const descs = dfu.srcset_parse(element.getAttribute('srcset'));
+
+    let change_count = 0;
+    for (const desc of descs) {
+      try {
+        const url = new URL(desc.url, base_url);
+        if(url.href.length !== desc.url.length) {
+          desc.url = url.href;
+          change_count++;
+        }
+      } catch(error) {
+        // Ignore
+      }
+    }
+
+    if (change_count) {
+      const new_value = dfu.srcset_serialize(descs);
+      if (new_value) {
+        element.setAttribute('srcset', new_value);
+      }
+    }
+  }
+}
+
 export function visibility_filter(document, matte, mcr) {
   const body = document.body;
   if (!body) {
