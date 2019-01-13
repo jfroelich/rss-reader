@@ -395,8 +395,8 @@ export function format_filter(document) {
   }
 }
 
-// Removes frame-related content from a document, including noframes content,
-// but excluding iframe-related content.
+// Removes frame-related content from a document, including noframes, but
+// not iframes.
 // TODO: the default message text for empty body should be a param
 export function frame_filter(document) {
   // A legal document should only have 1 frameset element. If it has more than
@@ -743,6 +743,112 @@ export function list_filter(document) {
     // If we reached here, we want to unwrap the list
     dfu.unwrap_element(list);
   }
+}
+
+// The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
+// can be found here: https://youtu.be/rGvblGCD7qM
+export function lonestar_filter(document) {
+  assert(document.baseURI);
+
+  const host_patterns = [
+    /\/\/.*2o7\.net\//i,
+    /\/\/ad\.doubleclick\.net\//i,
+    /\/\/ad\.linksynergy\.com\//i,
+    /\/\/analytics\.twitter\.com\//i,
+    /\/\/anon-stats\.eff\.org\//i,
+    /\/\/bat\.bing\.com\//i,
+    /\/\/b\.scorecardresearch\.com\//i,
+    /\/\/beacon\.gu-web\.net\//i,
+    /\/\/.*cloudfront\.net\//,
+    /\/\/googleads\.g\.doubleclick\.net\//i,
+    /\/\/in\.getclicky\.com\//i,
+    /\/\/insight\.adsrvr\.org\//i,
+    /\/\/me\.effectivemeasure\.net\//i,
+    /\/\/metrics\.foxnews\.com\//i,
+    /\/\/.*moatads\.com\//i,
+    /\/\/pagead2\.googlesyndication\.com\//i,
+    /\/\/pixel\.quantserve\.com\//i,
+    /\/\/pixel\.wp\.com\//i,
+    /\/\/pubads\.g\.doubleclick\.net\//i,
+    /\/\/sb\.scorecardresearch\.com\//i,
+    /\/\/stats\.bbc\.co\.uk\//i,
+    /\/\/statse\.webtrendslive\.com\//i,
+    /\/\/pixel\.wp\.com\//i,
+    /\/\/t\.co\//i,
+    /\/\/www\.facebook\.com\/tr/i
+  ];
+
+  const document_url = new URL(document.baseURI);
+
+  // Remove images that look like telemetry beacons
+  const images = document.querySelectorAll('img');
+  for (const image of images) {
+    if (lonestar_is_telemetric(image, document_url, host_patterns, false)) {
+      dfu.remove_image(image);
+    }
+  }
+
+  // Specify all hyperlink anchors as noreferrer
+  const anchors = document.querySelectorAll('a[href]');
+  for (const anchor of anchors) {
+    anchor.setAttribute('rel', 'noreferrer');
+  }
+
+  // Remove ping attributes from anchors
+  const anchors = document.querySelectorAll('a[ping]');
+  for (const anchor of anchors) {
+    anchor.removeAttribute('ping');
+  }
+}
+
+function lonestar_is_telemetric(
+  element, document_url, host_patterns, is_strict) {
+  if(dfu.is_hidden_inline(element)) {
+    return true;
+  }
+
+  // naturalWidth and naturalHeight are unavailable in inert documents
+  // TODO: also match common names for pixel images like "pixel.gif", and
+  // I think facebook uses "/p"
+  if(element.localName === 'img' && element.hasAttribute('src') &&
+    element.hasAttribute('width') && element.width < 2 &&
+    element.hasAttribute('height') && element.height < 2) {
+    return true;
+  }
+
+  if(element.localName === 'img' && element.hasAttribute('src')) {
+    const src = element.getAttribute('src');
+    let url;
+    try {
+      url = new URL(src, document_url);
+    } catch(error) {
+      // Ignore
+    }
+
+    if(url) {
+      const local_protocols = ['data:', 'mailto:', 'tel:', 'javascript:'];
+      if (!local_protocols.includes(url.protocol)) {
+        if(is_strict) {
+          if(document_url.origin !== url.origin) {
+            return true;
+          }
+        } else {
+          if(utils.url_get_upper_domain(document_url) !==
+            utils.url_get_upper_domain(url)) {
+              return true;
+          }
+        }
+      }
+
+      for (const pattern of host_patterns) {
+        if (pattern.test(src)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
 }
 
 // Searches the document for misnested elements and tries to fix each

@@ -1,6 +1,5 @@
 import assert from '/src/assert.js';
 import {image_size_filter} from '/src/dom-filters/image-size-filter.js';
-import {lonestar_filter} from '/src/dom-filters/lonestar-filter.js';
 import {table_filter} from '/src/dom-filters/table-filter.js';
 import * as simple from '/src/dom-filters/simple-filters.js';
 
@@ -36,7 +35,7 @@ export async function composite_document_filter(document, options = {}) {
   // at the end.
   simple.url_resolve_filter(document);
   simple.image_responsive_filter(document);
-  lonestar_filter(document);
+  simple.lonestar_filter(document);
   simple.image_dead_filter(document);
 
   await image_size_filter(
