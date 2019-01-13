@@ -2,6 +2,10 @@ import '/third-party/parse-srcset.js';
 import '/third-party/tinycolor-min.js';
 import assert from '/src/assert.js';
 
+export function is_list_item(node) {
+  return ['li','dd', 'dt'].includes(node.localName);
+}
+
 export function element_derive_text_color(element) {
   const style = getComputedStyle(element);
   if (style) {
@@ -351,10 +355,13 @@ function element_is_offscreen(element) {
 }
 
 // Replace |element| with its child nodes. If |nag| is true then warn when
-// unwrapping an orphaned node. |nag| is optional, defaults to true.
+// unwrapping an orphaned node.
+// TODO: what if the preceding text ends in whitespace, or the trailing text
+// starts with whitespace? should unwrap not append in that case? or what
+// if the text within the element starts or ends in whitespace?
 export function unwrap_element(element, nag = true) {
-  // Unwrapping an orphaned node is pointless. Rather than error, just exit
-  // early for caller convenience.
+  // Unwrapping an orphaned node is pointless but not necessarily a programmer
+  // error.
   if (!element.parentNode) {
     // Encourage the caller to change their behavior
     if (nag) {
@@ -365,42 +372,56 @@ export function unwrap_element(element, nag = true) {
 
   const owner = element.ownerDocument;
   const parent = element.parentNode;
-  const psib = element.previousSibling;
-  const nsib = element.nextSibling;
-  const fchild = element.firstChild;
-  const lchild = element.lastChild;
+  const prev = element.previousSibling;
+  const next = element.nextSibling;
+  const first = element.firstChild;
+  const last = element.lastChild;
   const TEXT = Node.TEXT_NODE;
   const frag = owner.createDocumentFragment();
 
+  const is_list = ['dl','ol','ul'].includes(element.localName);
+
   element.remove();
 
-  // TODO: what if the preceding text ends in whitespace, or the trailing text
-  // starts with whitespace? should unwrap not append in that case? or what
-  // if the text within the element starts or ends in whitespace?
-
-  if (psib && fchild && psib.nodeType === TEXT && fchild.nodeType === TEXT) {
+  if(prev && prev.nodeType === TEXT && first && (first.nodeType === TEXT ||
+    (is_list && first.nodeType === Node.ELEMENT_NODE && first.firstChild &&
+      first.firstChild.nodeType === TEXT))) {
     frag.appendChild(owner.createTextNode(' '));
   }
 
-  for (let node = fchild; node; node = element.firstChild) {
-    frag.appendChild(node);
+  if(is_list) {
+    for (let node = first; node; node = element.firstChild) {
+      if(node.nodeType === Node.ELEMENT_NODE && (node.localName === 'li' ||
+        node.localName === 'dd')) {
+        for(let item_node = node.firstChild; item_node;
+          item_node = node.firstChild) {
+          frag.appendChild(item_node);
+        }
+      } else {
+        frag.appendChild(node);
+      }
+    }
+  } else {
+    for (let node = first; node; node = element.firstChild) {
+      frag.appendChild(node);
+    }
   }
 
-  if (lchild && nsib && nsib.nodeType === TEXT && lchild.nodeType === TEXT) {
+  if (last && next && next.nodeType === TEXT && (last.nodeType === TEXT ||
+    (is_list && last.nodeType === Node.ELEMENT_NODE && last.lastChild &&
+      list.lastChild.nodeType === TEXT))) {
     frag.appendChild(owner.createTextNode(' '));
   }
 
-  // Create one trailing space if the element was empty between two text nodes.
-  // If an element is empty then its firstChild is falsy (and its lastChild is
-  // also falsy).
-  if (!fchild && psib && nsib && psib.nodeType === TEXT &&
-      nsib.nodeType === TEXT) {
+  // Create one space if the element was empty between two text nodes. This is
+  // separate from the other checks that require at least one child.
+  if (!first && prev && next && prev.nodeType === TEXT &&
+    next.nodeType === TEXT) {
     frag.appendChild(owner.createTextNode(' '));
   }
 
-  parent.insertBefore(frag, nsib);
+  parent.insertBefore(frag, next);
 }
-
 
 export function set_base_uri(document, url, overwrite) {
   assert(typeof document === 'object');
