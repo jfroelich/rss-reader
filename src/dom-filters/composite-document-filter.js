@@ -1,6 +1,5 @@
 import assert from '/src/assert.js';
 import {image_size_filter} from '/src/dom-filters/image-size-filter.js';
-import {image_responsive_filter} from '/src/dom-filters/image-responsive-filter.js';
 import {list_filter} from '/src/dom-filters/list-filter.js';
 import {lonestar_filter} from '/src/dom-filters/lonestar-filter.js';
 import {table_filter} from '/src/dom-filters/table-filter.js';
@@ -37,7 +36,7 @@ export async function composite_document_filter(document, options = {}) {
   // entirely, where this does in fact strip base elements. This could happen
   // at the end.
   simple.url_resolve_filter(document);
-  image_responsive_filter(document);
+  simple.image_responsive_filter(document);
   lonestar_filter(document);
   simple.image_dead_filter(document);
 

@@ -565,7 +565,7 @@ export function image_lazy_filter(document) {
 // unintentionally rule out good urls.
 // @param value {Any} should be a string but this tolerates bad input
 // @returns {Boolean}
-// TODO: move to utils
+// TODO: move to dfu.js
 function is_valid_url_string(value) {
   // The upper bound on len is an estimate, kind of a safeguard, hopefully never
   // causes a problem
@@ -573,18 +573,53 @@ function is_valid_url_string(value) {
       value.length <= 3000 && !value.trim().includes(' ');
 }
 
-// TODO: there is no real need to restrict this to body, that is pedantic. even
-// though several other filters do restrict to body, here it does not provide
-// much benefit, so I think it is ok to be unconventional. rather, the
-// primary convention should just be simplicity, not repetition of approach
-export function image_size_large_filter(document) {
-  if (document.body) {
-    const images = document.body.querySelectorAll('img');
-    for (const image of images) {
-      if (image_is_size_large(image)) {
-        image.removeAttribute('width');
-        image.removeAttribute('height');
+// Scans the document body for responsive images and conditionally replaces a
+// responsive image element's relevant attributes with properties from one of
+// its srcset descriptors. An image is responsive if it uses a srcset instead of
+// a src.
+export function image_responsive_filter(document) {
+  const selector = 'img[srcset]:not([src])';
+  const images = document.querySelectorAll(selector);
+  for(const image of images) {
+    // In the event of a parsing error, srcset_parse returns an empty array,
+    // which effectively means we do nothing in this loop
+    const descs = dfu.srcset_parse(image.getAttribute('srcset'));
+    let chosen_desc = null;
+    for(const desc of descs) {
+      if(desc.url) {
+        if(desc.w || desc.h) {
+          chosen_desc = desc;
+          break;
+        } else if(!chosen_desc) {
+          // Fallback to matching the first descriptor with a url, but continue
+          // looping until we either find a better descriptor or reach the end
+          chosen_desc = desc;
+        }
       }
+    }
+
+    if(chosen_desc) {
+      image.removeAttribute('srcset');
+      image.removeAttribute('width');
+      image.removeAttribute('height');
+
+      image.setAttribute('src', chosen_desc.url);
+      if(chosen_desc.w) {
+        image.setAttribute('width', '' + chosen_desc.w);
+      }
+      if(chosen_desc.h) {
+        image.setAttribute('height', '' + chosen_desc.h);
+      }
+    }
+  }
+}
+
+export function image_size_large_filter(document) {
+  const images = document.querySelectorAll('img');
+  for (const image of images) {
+    if (image_is_size_large(image)) {
+      image.removeAttribute('width');
+      image.removeAttribute('height');
     }
   }
 }
