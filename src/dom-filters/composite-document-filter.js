@@ -1,6 +1,5 @@
 import assert from '/src/assert.js';
 import {image_size_filter} from '/src/dom-filters/image-size-filter.js';
-import {list_filter} from '/src/dom-filters/list-filter.js';
 import {lonestar_filter} from '/src/dom-filters/lonestar-filter.js';
 import {table_filter} from '/src/dom-filters/table-filter.js';
 import * as simple from '/src/dom-filters/simple-filters.js';
@@ -61,7 +60,7 @@ export async function composite_document_filter(document, options = {}) {
   simple.semantic_filter(document);
   simple.figure_filter(document);
   simple.container_filter(document);
-  list_filter(document);
+  simple.list_filter(document);
   table_filter(document, options.table_scan_max_rows);
   simple.emphasis_filter(document, options.emphasis_max_length);
   simple.node_whitespace_filter(document);

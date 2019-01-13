@@ -699,6 +699,52 @@ function image_is_small(image) {
   return false;
 }
 
+
+// Removes empty and/or single-item lists from the document
+export function list_filter(document) {
+  const lists = document.querySelectorAll('ul, ol, dl');
+
+  for (const list of lists) {
+    const parent = list.parentNode;
+    if(!parent) {
+      continue;
+    }
+
+    // Determine if the list is empty. If empty, process. Otherwise, continue
+    // the loop to the next list.
+    if(list.firstChild) {
+      // The list has one or more child nodes. Inspect the list more closely
+      // to determine emptiness.
+      const firstElement = list.firstElementChild;
+      if(firstElement) {
+        // Of the list's child nodes, one or more are elements
+        if(firstElement.nextElementSibling) {
+          // The list has multiple child elements, it is not empty, so go to
+          // the next list
+          continue;
+        } else {
+          if(dfu.is_list_item(firstElement)) {
+            // This is a list with just one element, so we want to unwrap
+          } else {
+            // Something like
+            // <list><intermediate><item(s)/></intermediate</list>, we cannot be
+            // certain, so do not filter and go to next list
+            continue;
+          }
+        }
+      } else {
+        // We have a list with one or more child nodes, but none of them are
+        // elements, so continue to unwrap
+      }
+    } else {
+      // The list has no child nodes, so continue to unwrap
+    }
+
+    // If we reached here, we want to unwrap the list
+    dfu.unwrap_element(list);
+  }
+}
+
 // Searches the document for misnested elements and tries to fix each
 // occurrence.
 export function nest_filter(document) {
