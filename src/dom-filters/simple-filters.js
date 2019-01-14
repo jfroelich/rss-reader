@@ -5,12 +5,10 @@ import * as dfu from '/src/dom-filters/dfu.js';
 import * as utils from '/src/utils.js';
 
 export function anchor_format_filter(document) {
-  if (document.body) {
-    const anchors = document.body.querySelectorAll('a');
-    for (const anchor of anchors) {
-      if (!anchor.hasAttribute('href')) {
-        dfu.unwrap_element(anchor);
-      }
+  const anchors = document.querySelectorAll('a');
+  for (const anchor of anchors) {
+    if (!anchor.hasAttribute('href')) {
+      dfu.unwrap_element(anchor);
     }
   }
 }
