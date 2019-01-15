@@ -242,7 +242,8 @@ export function condense_tagnames_filter(document, copy_attrs_flag) {
 
   const renames = [
     {before: 'strong', after: 'b'},
-    {before: 'em', after: 'i'}
+    {before: 'em', after: 'i'},
+    {before: 'layer', after: 'div'}
   ];
 
   for(const rename of renames) {
