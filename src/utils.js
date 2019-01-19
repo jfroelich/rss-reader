@@ -286,22 +286,21 @@ function encode_first_character(string) {
   return '&#' + string.charCodeAt(0) + ';';
 }
 
-
+// Returns a new string where the publisher information has been stripped. For
+// example, in the string "Florida man shoots self - Your Florida News", the
+// algorithm would hopefully identify the publisher as "Your Florida news" and
+// then return the string "Florida man shoots self" where the publisher has been
+// filtered. |delims| is an optional array of delimiting characters that split
+// the title between content and publisher. |min_title_length| is a threshold
+// below which any filtering is rejected.
 export function filter_publisher(title, delims, min_title_length) {
   assert(typeof title === 'string');
-
   const default_delims = ['-', '|', ':'];
-
-  // TODO: maybe this should be a stricter sanity check. |delims| should be
-  // either null, undefined, or an array. Anything else should be a type error.
   if (!Array.isArray(delims)) {
     delims = default_delims;
   }
 
   const default_min_title_length = 20;
-
-  // TODO: like above, perhaps this should only allow null, undefined, and
-  // positive integer, and anything else should be an error, not a substitution
   if (isNaN(min_title_length)) {
     min_title_length = default_min_title_length;
   } else {
@@ -327,14 +326,6 @@ export function filter_publisher(title, delims, min_title_length) {
     return title;
   }
 
-  // TODO: this could be smarter, this is just first draft, well, it
-  // is now like the 6th revision of this module, but this is the first attempt
-  // at using the index of tokens instead of input string length
-  // TODO: use a loop with only one exit condition
-  // TODO: if i is defined outside of the loop's scope, then we can just move
-  // i along like a cursor, and the loop's exit condition leaves i at some
-  // point
-
   let delimiter_index = -1;
   for (let i = tokens.length - 2; i > -1; i--) {
     const token = tokens[i];
@@ -351,12 +342,6 @@ export function filter_publisher(title, delims, min_title_length) {
   // Regardless of the number of words in the full title, if the publisher we
   // find has too many words, the delimiter probably did not delimit the
   // publisher, so bail out.
-  // TODO: this rule can be implicit in the above loop by limiting the number
-  // of iterations before exiting.
-  // TODO: the number of words in the publisher is a metric that is used again
-  // later in this function, so maybe it makes more sense to store it in a
-  // variable to avoid the cost of recalculation and to use named values instead
-  // of expressions.
   if (tokens.length - delimiter_index - 1 > 5) {
     return title;
   }
@@ -365,12 +350,6 @@ export function filter_publisher(title, delims, min_title_length) {
   // then we should not filter out the publisher, because this indicates a
   // false positive identification of the delimiter, most of the time,
   // empirically.
-  // TODO: i am not satisfied with the clarity here, there is anxiety about
-  // off by 1 error
-  // TODO: what is more accurate? character count or word count
-  // TODO: is it simpler and safer to count pub words by subtracting non pub
-  // words from total? again, off by 1 anxiety.
-
   const non_pub_word_count = delimiter_index;
   const pub_word_count = tokens.length - delimiter_index - 1;
   if (non_pub_word_count < pub_word_count) {
@@ -388,7 +367,6 @@ function tokenize_words(string) {
   // be trimmed but we cannot rely on that so we have to accept the overhead.
   return string.trim().split(/\s+/g);
 }
-
 
 // NOTE: ignores port
 export function url_get_upper_domain(url) {
