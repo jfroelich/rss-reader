@@ -21,7 +21,7 @@ function normalize(type) {
 }
 
 function strip_encoding(value) {
-  if(typeof value === 'undefined') {
+  if (typeof value === 'undefined') {
     return;
   }
   const idx = value.indexOf(';');

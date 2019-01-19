@@ -1,9 +1,9 @@
 import * as badge from '/src/badge.js';
+import * as cdb from '/src/cdb.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon/favicon-control.js';
-import {poll_feed} from '/src/poll/poll-feeds.js';
 import * as ops from '/src/ops.js';
-import * as cdb from '/src/cdb.js';
+import {poll_feed} from '/src/poll/poll-feeds.js';
 import * as utils from '/src/utils.js';
 
 // TODO: this should rely on css-based html truncation rather than calling
@@ -358,7 +358,8 @@ async function subscribe_form_onsubmit(event) {
   // TODO: move this to a helper
   const conn_promises = Promise.all([cdb.open(), favicon.open()]);
   const [session, iconn] = await conn_promises;
-  const feed = await ops.subscribe(session, iconn, subscribe_url, undefined, true);
+  const feed =
+      await ops.subscribe(session, iconn, subscribe_url, undefined, true);
   session.close();
   iconn.close();
 

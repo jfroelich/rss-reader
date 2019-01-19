@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
 import {image_size_filter} from '/src/dom-filters/image-size-filter.js';
-import {table_filter} from '/src/dom-filters/table-filter.js';
 import * as simple from '/src/dom-filters/simple-filters.js';
+import {table_filter} from '/src/dom-filters/table-filter.js';
 
 export async function composite_document_filter(document, options = {}) {
   assert(document instanceof Document);
@@ -45,7 +45,6 @@ export async function composite_document_filter(document, options = {}) {
   // TODO: compose these two filters
   simple.image_size_small_filter(document);
   simple.image_size_large_filter(document);
-
   simple.condense_tagnames_filter(document, false);
   simple.head_filter(document);
   simple.base_filter(document);

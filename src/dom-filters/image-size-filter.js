@@ -107,7 +107,7 @@ async function derive_image_dims(image, timeout, is_allowed_request) {
     // Never suppress assertion errors (programmer errors). Any catch block is
     // suspect. Here I know that, currently, fetch_image_element does
     // assertions, so this check is correct.
-    if(error instanceof AssertionError) {
+    if (error instanceof AssertionError) {
       throw error;
     }
 

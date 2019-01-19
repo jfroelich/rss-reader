@@ -3,7 +3,7 @@ import '/third-party/tinycolor-min.js';
 import assert from '/src/assert.js';
 
 export function is_list_item(node) {
-  return ['li','dd', 'dt'].includes(node.localName);
+  return ['li', 'dd', 'dt'].includes(node.localName);
 }
 
 export function element_derive_text_color(element) {
@@ -270,7 +270,7 @@ export function srcset_serialize(descriptors) {
 
 // Returns true if an element is hidden
 export function is_hidden_inline(element) {
-  if(element_input_is_hidden(element)) {
+  if (element_input_is_hidden(element)) {
     return true;
   }
 
@@ -300,9 +300,9 @@ export function is_hidden_inline(element) {
 // TODO: consider element.matches('input[type="hidden"]')?
 function element_input_is_hidden(element) {
   const name = element.localName;
-  if(name === 'input') {
+  if (name === 'input') {
     const type = element.getAttribute('type');
-    if(type && type.trim().toLowerCase() === 'hidden') {
+    if (type && type.trim().toLowerCase() === 'hidden') {
       return true;
     }
   }
@@ -379,22 +379,23 @@ export function unwrap_element(element, nag = true) {
   const TEXT = Node.TEXT_NODE;
   const frag = owner.createDocumentFragment();
 
-  const is_list = ['dl','ol','ul'].includes(element.localName);
+  const is_list = ['dl', 'ol', 'ul'].includes(element.localName);
 
   element.remove();
 
-  if(prev && prev.nodeType === TEXT && first && (first.nodeType === TEXT ||
-    (is_list && first.nodeType === Node.ELEMENT_NODE && first.firstChild &&
-      first.firstChild.nodeType === TEXT))) {
+  if (prev && prev.nodeType === TEXT && first &&
+      (first.nodeType === TEXT ||
+       (is_list && first.nodeType === Node.ELEMENT_NODE && first.firstChild &&
+        first.firstChild.nodeType === TEXT))) {
     frag.appendChild(owner.createTextNode(' '));
   }
 
-  if(is_list) {
+  if (is_list) {
     for (let node = first; node; node = element.firstChild) {
-      if(node.nodeType === Node.ELEMENT_NODE && (node.localName === 'li' ||
-        node.localName === 'dd')) {
-        for(let item_node = node.firstChild; item_node;
-          item_node = node.firstChild) {
+      if (node.nodeType === Node.ELEMENT_NODE &&
+          (node.localName === 'li' || node.localName === 'dd')) {
+        for (let item_node = node.firstChild; item_node;
+             item_node = node.firstChild) {
           frag.appendChild(item_node);
         }
       } else {
@@ -407,16 +408,17 @@ export function unwrap_element(element, nag = true) {
     }
   }
 
-  if (last && next && next.nodeType === TEXT && (last.nodeType === TEXT ||
-    (is_list && last.nodeType === Node.ELEMENT_NODE && last.lastChild &&
-      list.lastChild.nodeType === TEXT))) {
+  if (last && next && next.nodeType === TEXT &&
+      (last.nodeType === TEXT ||
+       (is_list && last.nodeType === Node.ELEMENT_NODE && last.lastChild &&
+        list.lastChild.nodeType === TEXT))) {
     frag.appendChild(owner.createTextNode(' '));
   }
 
   // Create one space if the element was empty between two text nodes. This is
   // separate from the other checks that require at least one child.
   if (!first && prev && next && prev.nodeType === TEXT &&
-    next.nodeType === TEXT) {
+      next.nodeType === TEXT) {
     frag.appendChild(owner.createTextNode(' '));
   }
 
@@ -456,7 +458,8 @@ export function set_base_uri(document, url, overwrite) {
     return;
   }
 
-  let base = document.querySelector('base[href]');;
+  let base = document.querySelector('base[href]');
+  ;
   if (!base) {
     base = document.createElement('base');
     base.setAttribute('href', url.href);

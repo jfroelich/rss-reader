@@ -1,24 +1,6 @@
 import * as db from '/src/db.js';
 
-export {
-  append_entry_url,
-  append_feed_url,
-  construct_entry,
-  construct_feed,
-  entry_has_url,
-  feed_has_url,
-  is_entry,
-  is_feed,
-  is_valid_entry_id,
-  is_valid_feed_id,
-  sanitize_entry,
-  sanitize_feed,
-  validate_entry,
-  validate_feed,
-  InvalidStateError,
-  NotFoundError,
-  ValidationError
-} from '/src/db.js';
+export {append_entry_url, append_feed_url, construct_entry, construct_feed, entry_has_url, feed_has_url, InvalidStateError, is_entry, is_feed, is_valid_entry_id, is_valid_feed_id, NotFoundError, sanitize_entry, sanitize_feed, validate_entry, validate_feed, ValidationError} from '/src/db.js';
 
 class CDBSession {
   constructor() {
@@ -91,19 +73,12 @@ export async function delete_entry(session, id, reason) {
 
 export async function delete_feed(session, feed_id, reason) {
   const eids = await db.delete_feed(session.conn, feed_id);
-  session.channel.postMessage({
-    type: 'feed-deleted',
-    id: feed_id,
-    reason: reason
-  });
+  session.channel.postMessage(
+      {type: 'feed-deleted', id: feed_id, reason: reason});
 
   for (const id of eids) {
-    session.channel.postMessage({
-      type: 'entry-deleted',
-      id: id,
-      reason: reason,
-      feed_id: feed_id
-    });
+    session.channel.postMessage(
+        {type: 'entry-deleted', id: id, reason: reason, feed_id: feed_id});
   }
 }
 
@@ -147,9 +122,6 @@ export async function update_entry(session, entry) {
 
 export async function update_feed(session, feed, overwrite) {
   await db.update_feed(session.conn, feed, overwrite);
-  session.channel.postMessage({
-    type: 'feed-updated',
-    id: feed.id,
-    feed: overwrite ? undefined : feed
-  });
+  session.channel.postMessage(
+      {type: 'feed-updated', id: feed.id, feed: overwrite ? undefined : feed});
 }

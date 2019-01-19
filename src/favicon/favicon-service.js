@@ -1,8 +1,8 @@
 import assert from '/src/assert.js';
-import {parse_html} from '/src/utils.js';
 import * as idb from '/src/idb.js';
 import * as mime from '/src/mime.js';
 import * as net from '/src/net.js';
+import {parse_html} from '/src/utils.js';
 
 export function FaviconService() {
   this.name = 'favicon-cache';
@@ -257,7 +257,8 @@ FaviconService.prototype.find_candidate_urls = function(document) {
 };
 
 FaviconService.prototype.open = function() {
-  return idb.open(this.name, this.version, this.onupgradeneeded, this.open_timeout);
+  return idb.open(
+      this.name, this.version, this.onupgradeneeded, this.open_timeout);
 };
 
 FaviconService.prototype.onupgradeneeded = function(event) {

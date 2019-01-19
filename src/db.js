@@ -417,7 +417,7 @@ export function create_feeds(conn, feeds) {
       assert(feed.urls && feed.urls.length);
     }
 
-    for(const feed of feeds) {
+    for (const feed of feeds) {
       utils.filter_empty_properties(feed);
       // Allow explicit false
       if (feed.active === undefined) {
@@ -930,8 +930,8 @@ export function update_feed(conn, feed, overwrite) {
       // want to update the feed regardless, you should not have specified the
       // active property in the partial use case.
       if (feed.active === true && old_feed.active === true) {
-        const message = 'Cannot activate already active feed with id ' +
-          feed.id;
+        const message =
+            'Cannot activate already active feed with id ' + feed.id;
         const error = new InvalidStateError(message);
         reject(error);
         return;
@@ -997,8 +997,7 @@ export function validate_entry(entry) {
   vassert(entry.feed === undefined || is_valid_feed_id(entry.feed));
   vassert(entry.urls === undefined || Array.isArray(entry.urls));
   vassert(
-      entry.readState === undefined ||
-      entry.readState === ENTRY_READ ||
+      entry.readState === undefined || entry.readState === ENTRY_READ ||
       entry.readState === ENTRY_UNREAD);
   vassert(
       entry.archiveState === undefined ||
@@ -1152,8 +1151,7 @@ function vassert(condition, message) {
 }
 
 function is_valid_read_state(state) {
-  return state === undefined || state === ENTRY_READ ||
-      state === ENTRY_UNREAD
+  return state === undefined || state === ENTRY_READ || state === ENTRY_UNREAD
 }
 
 function is_valid_offset(offset) {

@@ -256,15 +256,15 @@ export async function is_feed_test() {
 
 export async function append_feed_url_test() {
   const feed = db.construct_feed();
-  assert(!db.feed_has_url(feed)); // precondition
-  db.append_feed_url(feed, new URL('a://b.c1')); // insert first
-  assert(db.feed_has_url(feed)); // expect change
+  assert(!db.feed_has_url(feed));                 // precondition
+  db.append_feed_url(feed, new URL('a://b.c1'));  // insert first
+  assert(db.feed_has_url(feed));                  // expect change
   const url2 = new URL('a://b.c2');
-  db.append_feed_url(feed, url2); // insert second
-  assert(feed.urls.length === 2); // expect increment
-  db.append_feed_url(feed, url2); // insert duplicate
-  assert(feed.urls.length === 2); // expect no change
-  assert(db.is_feed(feed)); // modifications preserved type
+  db.append_feed_url(feed, url2);  // insert second
+  assert(feed.urls.length === 2);  // expect increment
+  db.append_feed_url(feed, url2);  // insert duplicate
+  assert(feed.urls.length === 2);  // expect no change
+  assert(db.is_feed(feed));        // modifications preserved type
 }
 
 export async function get_entry_test() {

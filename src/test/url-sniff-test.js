@@ -64,9 +64,9 @@ export async function url_sniff_test() {
 
 
   // TODO: after changing to use a shared url_get_extension helper, the behavior
-  // changed, and this test started failing. url_get_extension must be refactored
-  // to be able to find .htaccess in this url. For now this assertion is
-  // disabled.
+  // changed, and this test started failing. url_get_extension must be
+  // refactored to be able to find .htaccess in this url. For now this assertion
+  // is disabled.
 
   // leading period should find extension
   // input = new URL('http://www.a.com/.htaccess');

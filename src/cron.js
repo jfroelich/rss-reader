@@ -1,8 +1,8 @@
+import * as cdb from '/src/cdb.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon/favicon-control.js';
-import {poll_feeds} from '/src/poll/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops.js';
-import * as cdb from '/src/cdb.js';
+import {poll_feeds} from '/src/poll/poll-feeds.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
 const ONE_WEEK_MINUTES = 60 * 24 * 7;
@@ -60,7 +60,7 @@ async function handle_alarm_poll() {
     const idle_states = ['locked', 'idle'];
     const idle_secs = 30;
     const idle_state = await query_idle_state(idle_secs);
-    if(!idle_states.includes(idle_state)) {
+    if (!idle_states.includes(idle_state)) {
       console.debug('Canceling poll_feeds alarm as not idle');
       return;
     }
@@ -76,8 +76,8 @@ async function handle_alarm_poll() {
 
 function query_idle_state(idle_secs) {
   return new Promise((resolve, reject) => {
-    if(typeof chrome === 'object' && typeof chrome.idle === 'object' &&
-      typeof chrome.idle.queryState === 'function') {
+    if (typeof chrome === 'object' && typeof chrome.idle === 'object' &&
+        typeof chrome.idle.queryState === 'function') {
       chrome.idle.queryState(idle_secs, resolve);
     } else {
       reject(new Error('chrome.idle unavailable'));

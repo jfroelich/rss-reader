@@ -1,6 +1,6 @@
 import {assert, AssertionError} from '/src/assert.js';
-import * as net from '/src/net.js';
 import * as idb from '/src/idb.js';
+import * as net from '/src/net.js';
 
 const DEFAULT_NAME = 'favicon';
 const DEFAULT_VERSION = 1;

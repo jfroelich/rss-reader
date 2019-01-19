@@ -22,8 +22,8 @@ export async function indexeddb_test() {
 // indexedDB does in fact tolerate storing objects created by new Func(){}.
 export async function indexeddb_function_object_test() {
   // Create a really basic database with an object store
-  const conn = await idb.open(
-      'idb-function-object-test', undefined, function(event) {
+  const conn =
+      await idb.open('idb-function-object-test', undefined, function(event) {
         const request = event.target;
         const db = request.result;
         if (!db.objectStoreNames.contains('objects')) {

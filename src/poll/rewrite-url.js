@@ -5,6 +5,5 @@ export function rewrite_url(url, rules) {
     prev = next;
     next = rule(prev) || prev;
   }
-
   return next;
 }

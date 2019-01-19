@@ -69,7 +69,7 @@ export async function open(name, version, onupgrade, timeout) {
   if (!conn) {
     timed_out = true;
     const message =
-      'Failed to connect to db "' + name + '" within ' + timeout + ' ms';
+        'Failed to connect to db "' + name + '" within ' + timeout + ' ms';
     throw new TimeoutError(message);
   }
 

@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
-import {parse_html} from '/src/utils.js';
 import {attribute_empty_filter} from '/src/dom-filters/simple-filters.js';
+import {parse_html} from '/src/utils.js';
 
 export async function attribute_empty_filter_test() {
   // Simple empty non-boolean attribute in body

@@ -1,17 +1,12 @@
-
-// TODO: append-slide should be relying on css-based truncation rather than calling
-// truncate_html
-
-// BUG: create_article_title_element is double encoding entities, so entities
-// show up in the value. I partially fixed by not escaping ampersand but that's
-// not the correct solution.
-
+// TODO: append-slide should be relying on css-based truncation rather than
+// calling truncate_html BUG: create_article_title_element is double encoding
+// entities, so entities show up in the value. I partially fixed by not escaping
+// ampersand but that's not the correct solution.
 // TODO: the creation of a slide element, and the appending of a slide element,
 // should be two separate tasks. This will increase flexibility and maybe
 // clarity. append_slide should accept a slide element, not an entry. It is
 // confusing that this function is named append_slide, but it accepts an entry,
 // not a slide, which is just plain bad naming.
-
 // TODO: the default duration should come from localStorage, and be stored
 // in localStorage instead of maintained here in module scope, and should be
 // accessed using config module io operations. Duration should be a configurable
@@ -20,9 +15,9 @@
 
 import assert from '/src/assert.js';
 import * as badge from '/src/badge.js';
-import * as config from '/src/config.js';
-import * as config_control from '/src/config-control.js';
 import * as cdb from '/src/cdb.js';
+import * as config_control from '/src/config-control.js';
+import * as config from '/src/config.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import * as ops from '/src/ops.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
@@ -31,13 +26,13 @@ import * as utils from '/src/utils.js';
 
 const splash_element = document.getElementById('initial-loading-panel');
 const feeds_container = document.getElementById('feeds-container');
-if(feeds_container) {
-    feeds_container.onclick = feeds_container_onclick;
+if (feeds_container) {
+  feeds_container.onclick = feeds_container_onclick;
 } else {
   console.warn('could not find feeds-container');
 }
 
-let duration = 0.16;// Slide animation speed (smaller is faster)
+let duration = 0.16;  // Slide animation speed (smaller is faster)
 let channel;
 let refresh_in_progress = false;
 const no_articles_element = document.getElementById('no-entries-message');

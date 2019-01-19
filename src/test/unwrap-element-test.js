@@ -1,12 +1,12 @@
 import assert from '/src/assert.js';
-import * as utils from '/src/utils.js';
 import * as dfu from '/src/dom-filters/dfu.js';
+import * as utils from '/src/utils.js';
 
 export async function unwrap_element_test() {
   // Assert the typical case of a simple straightforward unwrap call completes
   // as expected
-  let doc =
-      utils.parse_html('<html><head></head><body><div>hello</div></body></html>');
+  let doc = utils.parse_html(
+      '<html><head></head><body><div>hello</div></body></html>');
   let element = doc.querySelector('div');
   dfu.unwrap_element(element);
   let expected_state = '<html><head></head><body>hello</body></html>';
@@ -25,7 +25,8 @@ export async function unwrap_element_test() {
 
   // Assert that unwrapping an element that has no parent node does not trigger
   // an exception and leaves the document in its expected state (untouched)
-  doc = utils.parse_html('<html><head></head><body><div>hello</div></body></html>');
+  doc = utils.parse_html(
+      '<html><head></head><body><div>hello</div></body></html>');
   element = doc.querySelector('div');
   element.remove();
   let before_state = doc.documentElement.outerHTML;
@@ -80,7 +81,8 @@ export async function unwrap_element_test() {
   // Assert that when there is nothing (neither text nodes or other nodes)
   // within the element being unwrapped, and there are adjacent text nodes on
   // both sides, that one space is added between the nodes to prevent merging.
-  doc = utils.parse_html('<html><head></head><body>before<a></a>after</body></html>');
+  doc = utils.parse_html(
+      '<html><head></head><body>before<a></a>after</body></html>');
   element = doc.querySelector('a');
   dfu.unwrap_element(element);
   after_state = doc.documentElement.outerHTML;

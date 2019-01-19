@@ -274,8 +274,8 @@ export async function fetch_feed(url, options) {
   const res_text = await response.text();
 
   const skip_entries = 'skip_entries' in options ? options.skip_entries : true;
-  const resolve_entry_urls = 'resolve_entry_urls' in options ?
-    options.resolve_entry_urls : false;
+  const resolve_entry_urls =
+      'resolve_entry_urls' in options ? options.resolve_entry_urls : false;
 
   const parsed_feed = parse_feed(res_text, skip_entries, resolve_entry_urls);
 
@@ -332,8 +332,8 @@ export async function fetch_feed(url, options) {
 // @param timeout {Number}
 // @param is_allowed_request {Function} optional, is given a request-like
 // object, throws a policy error if the function returns false
-export async function fetch_image_element(url, timeout = 0,
-  is_allowed_request) {
+export async function fetch_image_element(
+    url, timeout = 0, is_allowed_request) {
   assert(url instanceof URL);
 
   const request_data = {method: 'GET', url: url};

@@ -16,14 +16,17 @@ export async function article_title_test() {
   // non-default delim
   assert(filter_publisher('Hello ; World') === 'Hello ; World');
   // double delim
-  assert(filter_publisher('Hello - World Hello abcd - World') ===
-    'Hello - World Hello abcd');
+  assert(
+      filter_publisher('Hello - World Hello abcd - World') ===
+      'Hello - World Hello abcd');
   // mixed double delim
-  assert(filter_publisher('Hello : World Hello abcd - World') ===
-    'Hello : World Hello abcd');
+  assert(
+      filter_publisher('Hello : World Hello abcd - World') ===
+      'Hello : World Hello abcd');
   // input too short retains input
-  assert(filter_publisher('Hello World - Big News Org') ===
-    'Hello World - Big News Org');
+  assert(
+      filter_publisher('Hello World - Big News Org') ===
+      'Hello World - Big News Org');
   // really short
   assert(filter_publisher('a - Big News Org') === 'a - Big News Org');
   // short title long publisher
@@ -41,7 +44,7 @@ export async function article_title_test() {
   // too many words after delim
   assert(
       filter_publisher(
-        'Hello World Hello World - Too Many Words In Tail Found') ===
+          'Hello World Hello World - Too Many Words In Tail Found') ===
       'Hello World Hello World - Too Many Words In Tail Found');
   // basic positive case
   assert(

@@ -294,7 +294,7 @@ export function filter_publisher(title, delims, min_title_length) {
 
   // TODO: maybe this should be a stricter sanity check. |delims| should be
   // either null, undefined, or an array. Anything else should be a type error.
-  if(!Array.isArray(delims)) {
+  if (!Array.isArray(delims)) {
     delims = default_delims;
   }
 
@@ -302,17 +302,17 @@ export function filter_publisher(title, delims, min_title_length) {
 
   // TODO: like above, perhaps this should only allow null, undefined, and
   // positive integer, and anything else should be an error, not a substitution
-  if(isNaN(min_title_length)) {
+  if (isNaN(min_title_length)) {
     min_title_length = default_min_title_length;
   } else {
     assert(min_title_length >= 0);
   }
 
-  if(title.length < min_title_length) {
+  if (title.length < min_title_length) {
     return title;
   }
 
-  if(delims.length < 1) {
+  if (delims.length < 1) {
     return title;
   }
 
@@ -323,7 +323,7 @@ export function filter_publisher(title, delims, min_title_length) {
   // are individual tokens here, and multiple consecutive delimiters will
   // constitute only one token. Note that this also implicitly handles the 0
   // tokens case.
-  if(tokens.length < 4) {
+  if (tokens.length < 4) {
     return title;
   }
 
@@ -336,15 +336,15 @@ export function filter_publisher(title, delims, min_title_length) {
   // point
 
   let delimiter_index = -1;
-  for(let i = tokens.length - 2; i > -1; i--) {
+  for (let i = tokens.length - 2; i > -1; i--) {
     const token = tokens[i];
-    if(delims.includes(token)) {
+    if (delims.includes(token)) {
       delimiter_index = i;
       break;
     }
   }
 
-  if(delimiter_index === -1) {
+  if (delimiter_index === -1) {
     return title;
   }
 
@@ -357,7 +357,7 @@ export function filter_publisher(title, delims, min_title_length) {
   // later in this function, so maybe it makes more sense to store it in a
   // variable to avoid the cost of recalculation and to use named values instead
   // of expressions.
-  if(tokens.length - delimiter_index - 1 > 5) {
+  if (tokens.length - delimiter_index - 1 > 5) {
     return title;
   }
 
@@ -373,7 +373,7 @@ export function filter_publisher(title, delims, min_title_length) {
 
   const non_pub_word_count = delimiter_index;
   const pub_word_count = tokens.length - delimiter_index - 1;
-  if(non_pub_word_count < pub_word_count) {
+  if (non_pub_word_count < pub_word_count) {
     return title;
   }
 

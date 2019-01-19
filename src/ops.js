@@ -237,7 +237,7 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   const http_response = response.http_response;
 
   // If redirected, check if subscribed to the redirected url
-  if(net.response_is_redirect(url, http_response)) {
+  if (net.response_is_redirect(url, http_response)) {
     const rurl = new URL(http_response.url);
     let existing_feed = await cdb.get_feed(session, 'url', rurl, true);
     if (existing_feed) {
@@ -252,7 +252,7 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   cdb.sanitize_feed(feed);
   feed.id = await cdb.create_feed(session, feed);
 
-  if(notify) {
+  if (notify) {
     const feed_title = feed.title || feed.urls[feed.urls.length - 1];
     const note = {};
     note.title = 'Subscribed!';

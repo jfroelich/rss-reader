@@ -123,7 +123,7 @@ export function base_filter(document) {
 // element using querySelectorAll
 export function blacklist_filter(document, blacklist) {
   // Exit early when there is no work to do. Tolerate bad param (Postel).
-  if(!Array.isArray(blacklist) || blacklist.length < 1) {
+  if (!Array.isArray(blacklist) || blacklist.length < 1) {
     return;
   }
 
@@ -194,17 +194,17 @@ export function breakrule_filter(document) {
 // are deemed not visible, optional, defaults to a conservative 1.2
 export function color_contrast_filter(document, matte, min_contrast) {
   const body = document.body;
-  if(!body) {
+  if (!body) {
     return;
   }
 
   const DEFAULT_MATTE = color.WHITE;
-  if(typeof matte === 'undefined') {
+  if (typeof matte === 'undefined') {
     matte = DEFAULT_MATTE;
   }
 
   const DEFAULT_MIN_CONTRAST = 1.2;
-  if(typeof min_contrast === 'undefined') {
+  if (typeof min_contrast === 'undefined') {
     min_contrast = DEFAULT_MIN_CONTRAST;
   }
 
@@ -215,7 +215,7 @@ export function color_contrast_filter(document, matte, min_contrast) {
     const fore = dfu.element_derive_text_color(element);
     const back = dfu.element_derive_background_color(element, matte);
     const contrast = color.get_contrast(fore, back);
-    if(contrast < min_contrast) {
+    if (contrast < min_contrast) {
       node.remove();
     }
     node = it.nextNode();
@@ -241,14 +241,13 @@ export function condense_tagnames_filter(document, copy_attrs_flag) {
   }
 
   const renames = [
-    {before: 'strong', after: 'b'},
-    {before: 'em', after: 'i'},
+    {before: 'strong', after: 'b'}, {before: 'em', after: 'i'},
     {before: 'layer', after: 'div'}
   ];
 
-  for(const rename of renames) {
+  for (const rename of renames) {
     const elements = document.body.querySelectorAll(rename.before);
-    for(const element of elements) {
+    for (const element of elements) {
       dfu.coerce_element(element, rename.after, copy_attrs_flag);
     }
   }
@@ -579,17 +578,17 @@ function is_valid_url_string(value) {
 export function image_responsive_filter(document) {
   const selector = 'img[srcset]:not([src])';
   const images = document.querySelectorAll(selector);
-  for(const image of images) {
+  for (const image of images) {
     // In the event of a parsing error, srcset_parse returns an empty array,
     // which effectively means we do nothing in this loop
     const descs = dfu.srcset_parse(image.getAttribute('srcset'));
     let chosen_desc = null;
-    for(const desc of descs) {
-      if(desc.url) {
-        if(desc.w || desc.h) {
+    for (const desc of descs) {
+      if (desc.url) {
+        if (desc.w || desc.h) {
           chosen_desc = desc;
           break;
-        } else if(!chosen_desc) {
+        } else if (!chosen_desc) {
           // Fallback to matching the first descriptor with a url, but continue
           // looping until we either find a better descriptor or reach the end
           chosen_desc = desc;
@@ -597,16 +596,16 @@ export function image_responsive_filter(document) {
       }
     }
 
-    if(chosen_desc) {
+    if (chosen_desc) {
       image.removeAttribute('srcset');
       image.removeAttribute('width');
       image.removeAttribute('height');
 
       image.setAttribute('src', chosen_desc.url);
-      if(chosen_desc.w) {
+      if (chosen_desc.w) {
         image.setAttribute('width', '' + chosen_desc.w);
       }
-      if(chosen_desc.h) {
+      if (chosen_desc.h) {
         image.setAttribute('height', '' + chosen_desc.h);
       }
     }
@@ -705,24 +704,24 @@ export function list_filter(document) {
 
   for (const list of lists) {
     const parent = list.parentNode;
-    if(!parent) {
+    if (!parent) {
       continue;
     }
 
     // Determine if the list is empty. If empty, process. Otherwise, continue
     // the loop to the next list.
-    if(list.firstChild) {
+    if (list.firstChild) {
       // The list has one or more child nodes. Inspect the list more closely
       // to determine emptiness.
       const firstElement = list.firstElementChild;
-      if(firstElement) {
+      if (firstElement) {
         // Of the list's child nodes, one or more are elements
-        if(firstElement.nextElementSibling) {
+        if (firstElement.nextElementSibling) {
           // The list has multiple child elements, it is not empty, so go to
           // the next list
           continue;
         } else {
-          if(dfu.is_list_item(firstElement)) {
+          if (dfu.is_list_item(firstElement)) {
             // This is a list with just one element, so we want to unwrap
           } else {
             // Something like
@@ -801,40 +800,40 @@ export function lonestar_filter(document) {
 }
 
 function lonestar_is_telemetric(
-  element, document_url, host_patterns, is_strict) {
-  if(dfu.is_hidden_inline(element)) {
+    element, document_url, host_patterns, is_strict) {
+  if (dfu.is_hidden_inline(element)) {
     return true;
   }
 
   // naturalWidth and naturalHeight are unavailable in inert documents
   // TODO: also match common names for pixel images like "pixel.gif", and
   // I think facebook uses "/p"
-  if(element.localName === 'img' && element.hasAttribute('src') &&
-    element.hasAttribute('width') && element.width < 2 &&
-    element.hasAttribute('height') && element.height < 2) {
+  if (element.localName === 'img' && element.hasAttribute('src') &&
+      element.hasAttribute('width') && element.width < 2 &&
+      element.hasAttribute('height') && element.height < 2) {
     return true;
   }
 
-  if(element.localName === 'img' && element.hasAttribute('src')) {
+  if (element.localName === 'img' && element.hasAttribute('src')) {
     const src = element.getAttribute('src');
     let url;
     try {
       url = new URL(src, document_url);
-    } catch(error) {
+    } catch (error) {
       // Ignore
     }
 
-    if(url) {
+    if (url) {
       const local_protocols = ['data:', 'mailto:', 'tel:', 'javascript:'];
       if (!local_protocols.includes(url.protocol)) {
-        if(is_strict) {
-          if(document_url.origin !== url.origin) {
+        if (is_strict) {
+          if (document_url.origin !== url.origin) {
             return true;
           }
         } else {
-          if(utils.url_get_upper_domain(document_url) !==
-            utils.url_get_upper_domain(url)) {
-              return true;
+          if (utils.url_get_upper_domain(document_url) !==
+              utils.url_get_upper_domain(url)) {
+            return true;
           }
         }
       }
@@ -1035,15 +1034,15 @@ export function url_resolve_filter(document) {
 
   for (const element of elements) {
     const attr_name = map[element.localName];
-    if(attr_name) {
+    if (attr_name) {
       const attr_value = element.getAttribute(attr_name);
-      if(attr_value) {
+      if (attr_value) {
         try {
           const url = new URL(attr_value, base_url);
-          if(url.href !== attr_value) {
+          if (url.href !== attr_value) {
             element.setAttribute(attr_name, url.href);
           }
-        } catch(error) {
+        } catch (error) {
           // Ignore
         }
       }
@@ -1051,7 +1050,7 @@ export function url_resolve_filter(document) {
   }
 
   // The remaining passes are body specific
-  if(!document.body) {
+  if (!document.body) {
     return;
   }
 
@@ -1064,11 +1063,11 @@ export function url_resolve_filter(document) {
     for (const desc of descs) {
       try {
         const url = new URL(desc.url, base_url);
-        if(url.href.length !== desc.url.length) {
+        if (url.href.length !== desc.url.length) {
           desc.url = url.href;
           change_count++;
         }
-      } catch(error) {
+      } catch (error) {
         // Ignore
       }
     }

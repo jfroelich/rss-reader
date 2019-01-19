@@ -65,6 +65,4 @@ export async function base_uri_test() {
   url = new URL('http://www.example.com');
   set_base_uri(doc, url);
   assert(doc.baseURI === 'http://www.example.com/foo%20%20bar');
-
-
 }

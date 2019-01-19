@@ -1,16 +1,15 @@
 import {assert, AssertionError} from '/src/assert.js';
-import {parse_html} from '/src/utils.js';
-import {rewrite_url} from '/src/poll/rewrite-url.js';
+import * as cdb from '/src/cdb.js';
+import * as config from '/src/config.js';
 import {composite_document_filter} from '/src/dom-filters/composite-document-filter.js';
 import {set_base_uri} from '/src/dom-filters/dfu.js';
-import * as sniff from '/src/poll/url-sniff.js';
-import * as config from '/src/config.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import * as net from '/src/net.js';
 import * as notification from '/src/note.js';
 import {build as build_rewrite_rules} from '/src/poll/rewrite-rules.js';
-import * as cdb from '/src/cdb.js';
-
+import {rewrite_url} from '/src/poll/rewrite-url.js';
+import * as sniff from '/src/poll/url-sniff.js';
+import {parse_html} from '/src/utils.js';
 
 const default_options = {
   ignore_recency_check: false,
@@ -88,7 +87,7 @@ export async function poll_feed(session, iconn, options = {}, feed) {
   try {
     response = await net.fetch_feed(tail_url, fetch_options);
   } catch (error) {
-    if(error instanceof AssertionError) {
+    if (error instanceof AssertionError) {
       throw error;
     }
 
@@ -109,8 +108,7 @@ export async function poll_feed(session, iconn, options = {}, feed) {
   if (options.notify && count) {
     const note = {};
     note.title = 'Added articles';
-    note.message =
-        'Added ' + count + ' articles for feed ' + merged_feed.title;
+    note.message = 'Added ' + count + ' articles for feed ' + merged_feed.title;
     notification.show(note);
   }
 
@@ -168,8 +166,7 @@ function propagate_feed_properties(feed, entries) {
 // needs to be fixed. First copy over the old feed's urls, then try and append
 // each new feed url.
 function merge_feed(old_feed, new_feed) {
-  const merged_feed =
-      Object.assign(cdb.construct_feed(), old_feed, new_feed);
+  const merged_feed = Object.assign(cdb.construct_feed(), old_feed, new_feed);
   merged_feed.urls = [...old_feed.urls];
   if (new_feed.urls) {
     for (const url_string of new_feed.urls) {

@@ -1,8 +1,8 @@
 import * as badge_control from '/src/badge.js';
+import * as cdb from '/src/cdb.js';
 import * as config_control from '/src/config-control.js';
 import * as config from '/src/config.js';
 import * as cron_control from '/src/cron.js';
-import * as cdb from '/src/cdb.js';
 import * as utils from '/src/utils.js';
 
 export async function db_install_listener(event) {
