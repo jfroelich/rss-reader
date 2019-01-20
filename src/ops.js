@@ -5,7 +5,7 @@
 import * as cdb from '/src/cdb.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import * as net from '/src/net.js';
-import * as notification from '/src/note.js';
+import * as note from '/src/note.js';
 import * as utils from '/src/utils.js';
 
 export function activate_feed(session, feed_id) {
@@ -254,11 +254,11 @@ export async function subscribe(session, iconn, url, timeout, notify) {
 
   if (notify) {
     const feed_title = feed.title || feed.urls[feed.urls.length - 1];
-    const note = {};
-    note.title = 'Subscribed!';
-    note.message = 'Subscribed to ' + feed_title;
-    note.url = feed.faviconURLString;
-    notification.show(note);
+    const notif = {};
+    notif.title = 'Subscribed!';
+    notif.message = 'Subscribed to ' + feed_title;
+    notif.url = feed.faviconURLString;
+    note.show(notif);
   }
 
   return feed;

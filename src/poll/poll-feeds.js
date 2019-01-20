@@ -5,7 +5,7 @@ import {composite_document_filter} from '/src/dom-filters/composite-document-fil
 import {set_base_uri} from '/src/dom-filters/dfu.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import * as net from '/src/net.js';
-import * as notification from '/src/note.js';
+import * as note from '/src/note.js';
 import {build as build_rewrite_rules} from '/src/poll/rewrite-rules.js';
 import {rewrite_url} from '/src/poll/rewrite-url.js';
 import * as sniff from '/src/poll/url-sniff.js';
@@ -48,7 +48,7 @@ export async function poll_feeds(session, iconn, options = {}) {
     const note = {};
     note.title = 'Added articles';
     note.message = 'Added articles';
-    notification.show(note);
+    note.show(note);
   }
 
   console.debug('Added %d entries', count);
@@ -109,7 +109,7 @@ export async function poll_feed(session, iconn, options = {}, feed) {
     const note = {};
     note.title = 'Added articles';
     note.message = 'Added ' + count + ' articles for feed ' + merged_feed.title;
-    notification.show(note);
+    note.show(note);
   }
 
   return count;
