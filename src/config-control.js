@@ -1,3 +1,9 @@
+// regarding update_config, updates get fired for many reasons, such as when
+// reloading the extension from the extensions page. This does not indicate a
+// version change. Removing legacy keys should be based on extension version
+// change. I always forget what this is, and might use it in the future: `const
+// previous_version_string = event.previousVersion;`
+
 import * as color from '/src/color.js';
 import * as config from '/src/config.js';
 
