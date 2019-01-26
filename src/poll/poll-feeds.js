@@ -3,7 +3,7 @@ import * as cdb from '/src/cdb.js';
 import * as config from '/src/config.js';
 import {composite_document_filter} from '/src/dom-filters.js';
 import {set_base_uri} from '/src/dom-utils.js';
-import * as favicon from '/src/favicon/favicon-control.js';
+import * as favicon from '/src/favicon.js';
 import * as net from '/src/net.js';
 import * as note from '/src/note.js';
 import {build as build_rewrite_rules} from '/src/poll/rewrite-rules.js';
@@ -419,9 +419,11 @@ function url_is_inaccessible(url) {
 
 async function update_entry_icon(iconn, entry, document) {
   const lookup_url = new URL(entry.urls[entry.urls.length - 1]);
-  const fetch = false;
-  const icon_url_string =
-      await favicon.lookup(iconn, lookup_url, document, fetch);
+  const request = new favicon.LookupRequest();
+  request.conn = iconn;
+  request.url = lookup_url;
+  request.document = document;
+  const icon_url_string = await favicon.lookup(request);
   if (icon_url_string) {
     entry.faviconURLString = icon_url_string;
   }

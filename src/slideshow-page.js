@@ -18,7 +18,7 @@ import * as badge from '/src/badge.js';
 import * as cdb from '/src/cdb.js';
 import * as config_control from '/src/config-control.js';
 import * as config from '/src/config.js';
-import * as favicon from '/src/favicon/favicon-control.js';
+import * as favicon from '/src/favicon.js';
 import * as ops from '/src/ops.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import * as utils from '/src/utils.js';

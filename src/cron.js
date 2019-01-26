@@ -1,6 +1,6 @@
 import * as cdb from '/src/cdb.js';
 import * as config from '/src/config.js';
-import * as favicon from '/src/favicon/favicon-control.js';
+import * as favicon from '/src/favicon.js';
 import {refresh_feed_icons} from '/src/ops.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 
@@ -49,7 +49,9 @@ export async function alarm_listener(alarm) {
     session.close();
     iconn.close();
   } else if (alarm.name === 'compact-favicon-db') {
-    await favicon.compact();
+    const conn = await favicon.open();
+    await favicon.compact(conn);
+    conn.close();
   } else {
     console.warn('Unhandled alarm', alarm.name);
   }

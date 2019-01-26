@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as favicon from '/src/favicon/favicon.js';
+import * as favicon from '/src/favicon.js';
 import * as idb from '/src/idb.js';
 
 export async function favicon_cache_open_test() {
@@ -13,9 +13,8 @@ export async function favicon_cache_open_test() {
 }
 
 export async function favicon_cache_put_find_test() {
-  const db_name = favicon_cache_put_find_test.name;
-  await idb.remove(db_name);
-  const conn = await favicon.open(db_name);
+  await idb.remove(favicon_cache_put_find_test.name);
+  const conn = await favicon.open(favicon_cache_put_find_test.name);
   const entry = new favicon.Entry();
   entry.hostname = 'www.example.com';
   const put_result = await favicon.put_entry(conn, entry);
@@ -23,13 +22,12 @@ export async function favicon_cache_put_find_test() {
   assert(found_entry);
   assert(found_entry.hostname === entry.hostname);
   conn.close();
-  await idb.remove(db_name);
+  await idb.remove(favicon_cache_put_find_test.name);
 }
 
 export async function favicon_cache_clear_test() {
-  const db_name = favicon_cache_clear_test.name;
-  await idb.remove(db_name);
-  const conn = await favicon.open(db_name);
+  await idb.remove(favicon_cache_clear_test.name);
+  const conn = await favicon.open(favicon_cache_clear_test.name);
 
   const num_inserted = 3;
   const create_promises = [];
@@ -47,7 +45,7 @@ export async function favicon_cache_clear_test() {
   assert(post_count === 0);
 
   conn.close();
-  await idb.remove(db_name);
+  await idb.remove(favicon_cache_clear_test.name);
 }
 
 // Insert a mix of expired and non-expired entries. Then run compact and check

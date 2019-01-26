@@ -1,7 +1,7 @@
 import * as cdb from '/src/cdb.js';
 import * as config from '/src/config-control.js';
 import * as cron_control from '/src/cron.js';
-import * as favicon from '/src/favicon/favicon-control.js';
+import * as favicon from '/src/favicon.js';
 import * as ops from '/src/ops.js';
 import {poll_feed, poll_feeds} from '/src/poll/poll-feeds.js';
 
@@ -37,18 +37,12 @@ async function cli_poll_feeds() {
 }
 
 async function cli_lookup_favicon(url_string, cached) {
-  let document, fetch_flag = true;
-  const url = new URL(url_string);
-  let conn;
-  if (cached) {
-    conn = await favicon.open();
-  }
-  const icon_url_string = await favicon.lookup(conn, url, document, fetch_flag);
-  if (cached && conn) {
-    conn.close();
-  }
-
-  return icon_url_string;
+  const request = new favicon.LookupRequest();
+  request.conn = cached ? await favicon.open() : undefined;
+  request.url = new URL(url_string);
+  const result = await favicon.lookup(request);
+  cached && request.conn && request.conn.close();
+  return result;
 }
 
 function cli_print_alarms() {
@@ -71,11 +65,15 @@ function cli_create_alarms() {
 }
 
 function cli_clear_icons() {
-  return favicon.clear();
+  const conn = await favicon.open();
+  return favicon.clear(conn);
+  conn.close();
 }
 
 function cli_compact_icons() {
-  return favicon.compact();
+  const conn = await favicon.open();
+  return favicon.compact(conn);
+  conn.close();
 }
 
 function cli_install_fonts() {

@@ -3,7 +3,7 @@
 // involve the database along with some non-database functionality.
 
 import * as cdb from '/src/cdb.js';
-import * as favicon from '/src/favicon/favicon-control.js';
+import * as favicon from '/src/favicon.js';
 import * as net from '/src/net.js';
 import * as note from '/src/note.js';
 import * as utils from '/src/utils.js';
@@ -273,11 +273,34 @@ async function set_feed_favicon(iconn, feed) {
     return;
   }
 
-  const lookup_url = favicon.create_lookup_url(feed);
-  let prefetched_document = undefined;
-  const do_fetch_during_lookup = false;
-  feed.faviconURLString = await favicon.lookup(
-      iconn, lookup_url, prefetched_document, do_fetch_during_lookup);
+  const lookup_url = get_feed_favicon_lookup_url(feed);
+  const request = new favicon.LookupRequest();
+  request.url = lookup_url;
+  feed.faviconURLString = await favicon.lookup(request);
+}
+
+// Create the url to use for lookups given a database feed object
+export function get_feed_favicon_lookup_url(feed) {
+  if (feed.link) {
+    return new URL(feed.link);
+  }
+
+  if (!feed.urls) {
+    return;
+  }
+
+  if (!feed.urls.length) {
+    return;
+  }
+
+  const url_string = feed.urls[feed.urls.length - 1];
+  if (!url_string) {
+    return;
+  }
+
+  // Throw if url_string is invalid or relative
+  const tail_url = new URL(url_string);
+  return new URL(tail_url.origin);
 }
 
 export async function refresh_feed_icons(session, iconn) {
@@ -295,15 +318,15 @@ async function refresh_feed_icon(session, iconn, feed) {
     return;
   }
 
-  const lookup_url = favicon.create_lookup_url(feed);
+  const lookup_url = get_feed_favicon_lookup_url(feed);
   if (!lookup_url) {
     return;
   }
 
-  let doc = undefined;
-  let fetch_flag = true;
-  const icon_url_string =
-      await favicon.lookup(iconn, lookup_url, doc, fetch_flag);
+  const request = new favicon.LookupRequest();
+  request.conn = iconn;
+  request.url = lookup_url;
+  const icon_url_string = await favicon.lookup(request);
 
   if (feed.faviconURLString !== icon_url_string) {
     if (icon_url_string) {
