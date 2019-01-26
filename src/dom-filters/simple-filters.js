@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
 import * as boilerplate from '/src/boilerplate.js';
 import * as color from '/src/color.js';
-import * as dfu from '/src/dom-filters/dom-utils.js';
+import * as dfu from '/src/dom-utils.js';
 import * as utils from '/src/utils.js';
 
 export function anchor_format_filter(document) {

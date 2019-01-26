@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as dfu from '/src/dom-filters/dom-utils.js';
+import * as dfu from '/src/dom-utils.js';
 import * as utils from '/src/utils.js';
 
 export async function unwrap_element_test() {

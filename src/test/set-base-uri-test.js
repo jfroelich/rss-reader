@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {set_base_uri} from '/src/dom-filters/dom-utils.js';
+import {set_base_uri} from '/src/dom-utils.js';
 
 export async function base_uri_test() {
   // If a document has no base elements, and overwrite is true, then this should
