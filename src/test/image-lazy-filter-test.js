@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as simple_filters from '/src/dom-filters/simple-filters.js';
+import * as simple_filters from '/src/dom-filters.js';
 import * as net from '/src/net.js';
 import {parse_html} from '/src/utils.js';
 

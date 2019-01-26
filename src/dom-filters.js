@@ -3,8 +3,80 @@ import * as boilerplate from '/src/boilerplate.js';
 import * as color from '/src/color.js';
 import * as dfu from '/src/dom-utils.js';
 import * as net from '/src/net.js';
-
 import * as utils from '/src/utils.js';
+
+// Applies most of the filters in the proper order to the document
+export async function composite_document_filter(document, options = {}) {
+  assert(document instanceof Document);
+  assert(typeof options === 'object');
+
+  frame_filter(document);
+  body_filter(document);
+  iframe_filter(document);
+  comment_filter(document);
+  visibility_filter(document, options.contrast_matte, options.contrast_ratio);
+  const blacklist_general = [
+    'applet', 'audio',  'basefont', 'bgsound', 'command',  'datalist',
+    'dialog', 'embed',  'isindex',  'link',    'math',     'meta',
+    'object', 'output', 'param',    'path',    'progress', 'spacer',
+    'style',  'svg',    'title',    'video',   'xmp'
+  ];
+  blacklist_filter(document, blacklist_general);
+  script_filter(document);
+
+  // This should occur before canonicalizing urls, because it may set attributes
+  // that need to be canonicalized that previously did not exist, and would be
+  // missed by the url_resolve_filter filter. This was previously a bug.
+  image_lazy_filter(document);
+
+  // This should occur before setting image sizes
+  // TODO: actually the above comment is no longer true, right? Reverify. If
+  // I am using baseURI now, and set-image-sizes uses baseURI, then technically
+  // I do not need to do this earlier any longer. In fact I can re-imagine this
+  // entirely, where this does in fact strip base elements. This could happen
+  // at the end.
+  url_resolve_filter(document);
+  image_responsive_filter(document);
+  lonestar_filter(document);
+  image_dead_filter(document);
+
+  await image_size_filter(
+      document, options.image_size_timeout, options.is_allowed_request);
+  boilerplate_filter(document);
+  anchor_script_filter(document);
+  // TODO: compose these two filters
+  image_size_small_filter(document);
+  image_size_large_filter(document);
+  condense_tagnames_filter(document, false);
+  head_filter(document);
+  base_filter(document);
+  anchor_validity_filter(document);
+  anchor_format_filter(document);
+  form_filter(document);
+  breakrule_filter(document);
+  horizontal_rule_filter(document);
+  format_filter(document);
+  nest_filter(document);
+  semantic_filter(document);
+  figure_filter(document);
+  container_filter(document);
+  list_filter(document);
+  table_filter(document, options.table_scan_max_rows);
+  emphasis_filter(document, options.emphasis_max_length);
+  node_whitespace_filter(document);
+  node_leaf_filter(document);
+  document_trim_filter(document);
+
+  const attribute_whitelist = {
+    a: ['href', 'name', 'title', 'rel'],
+    iframe: ['src'],
+    source: ['media', 'sizes', 'srcset', 'src', 'type'],
+    img: ['src', 'alt', 'title', 'srcset', 'width', 'height']
+  };
+  attribute_unknown_filter(document, attribute_whitelist);
+  // TODO: move this up to before some of the other attribute filters?
+  attribute_empty_filter(document);
+}
 
 export function anchor_format_filter(document) {
   const anchors = document.querySelectorAll('a');

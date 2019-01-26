@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import {attribute_empty_filter} from '/src/dom-filters/simple-filters.js';
+import {attribute_empty_filter} from '/src/dom-filters.js';
 import {parse_html} from '/src/utils.js';
 
 export async function attribute_empty_filter_test() {
