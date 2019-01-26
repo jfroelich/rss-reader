@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
 import * as boilerplate from '/src/boilerplate.js';
 import * as color from '/src/color.js';
-import * as dfu from '/src/dom-filters/dom-filter-utils.js';
+import * as dfu from '/src/dom-filters/dom-utils.js';
 import * as utils from '/src/utils.js';
 
 export function anchor_format_filter(document) {
@@ -563,7 +563,7 @@ export function image_lazy_filter(document) {
 // unintentionally rule out good urls.
 // @param value {Any} should be a string but this tolerates bad input
 // @returns {Boolean}
-// TODO: move to dom-filter-utils.js
+// TODO: move to dom-utils.js
 function is_valid_url_string(value) {
   // The upper bound on len is an estimate, kind of a safeguard, hopefully never
   // causes a problem
@@ -961,6 +961,39 @@ export function semantic_filter(document) {
     const elements = document.body.querySelectorAll(selector);
     for (const element of elements) {
       dfu.unwrap_element(element);
+    }
+  }
+}
+
+// Filters certain table elements from document content
+export function table_filter(document, row_scan_max) {
+  const elements = document.querySelectorAll(
+      'colgroup, hgroup, multicol, tbody, tfoot, thead');
+  for (const element of elements) {
+    dfu.unwrap_element(element);
+  }
+
+  const tables = document.querySelectorAll('table');
+  for (const table of tables) {
+    const rows = table.rows;
+    const limit = Math.min(rows.length, row_scan_max);
+    let is_single_column = true;
+    for (let i = 0; i < limit && is_single_column; i++) {
+      const cells = rows[i].cells;
+      let filled = 0;
+      for (let j = 0; j < cells.length; j++) {
+        if (!dfu.node_is_leaf(cells[i])) {
+          filled++;
+          if (filled > 1) {
+            is_single_column = false;
+            break;
+          }
+        }
+      }
+    }
+
+    if (is_single_column) {
+      dfu.unwrap_element(table);
     }
   }
 }

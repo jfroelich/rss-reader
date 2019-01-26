@@ -359,38 +359,59 @@ function element_is_offscreen(element) {
 // TODO: what if the preceding text ends in whitespace, or the trailing text
 // starts with whitespace? should unwrap not append in that case? or what
 // if the text within the element starts or ends in whitespace?
-export function unwrap_element(element, nag = true) {
-  // Unwrapping an orphaned node is pointless but not necessarily a programmer
-  // error.
+// TODO: we do not need to append a space if the preceding node is a text node
+// that ends in a space, and similarly if the subsequent node is a text node
+// that starts with a space, we can just let the normalize-text algorithm do
+// the merge.
+export function unwrap_element(element) {
   if (!element.parentNode) {
-    // Encourage the caller to change their behavior
-    if (nag) {
-      console.warn('Tried to unwrap orphaned element', element.outerHTML);
-    }
     return;
   }
 
-  const owner = element.ownerDocument;
+  const doc = element.ownerDocument;
   const parent = element.parentNode;
   const prev = element.previousSibling;
   const next = element.nextSibling;
+
+  // TODO: do these need to be different for a table? They do logically, but
+  // does it matter at all? The later code maybe just ignores these for tables.
   const first = element.firstChild;
   const last = element.lastChild;
-  const TEXT = Node.TEXT_NODE;
-  const frag = owner.createDocumentFragment();
 
+  const TEXT = Node.TEXT_NODE;
+  const frag = doc.createDocumentFragment();
+
+  const is_table = element.localName === 'table';
   const is_list = ['dl', 'ol', 'ul'].includes(element.localName);
 
+  // Detach upfront in case of live dom
   element.remove();
 
-  if (prev && prev.nodeType === TEXT && first &&
+  if (is_table) {
+    // For now, just get unwrap handling tables and always append
+    frag.appendChild(doc.createTextNode(' '));
+  } else if (
+      prev && prev.nodeType === TEXT && first &&
       (first.nodeType === TEXT ||
        (is_list && first.nodeType === Node.ELEMENT_NODE && first.firstChild &&
         first.firstChild.nodeType === TEXT))) {
-    frag.appendChild(owner.createTextNode(' '));
+    frag.appendChild(doc.createTextNode(' '));
   }
 
-  if (is_list) {
+  // TODO: does for..of work on table.rows and table.rows[n].cells?
+
+  if (is_table) {
+    const row_count = table.rows.length;
+    for (let i = 0; i < row_count; i++) {
+      const row = rows[i];
+      for (let j = 0, clen = row.cells.length; j < clen; j++) {
+        const cell = row.cells[j];
+        for (let node = cell.firstChild; node; node = cell.firstChild) {
+          parent.insertBefore(node, table);
+        }
+      }
+    }
+  } else if (is_list) {
     for (let node = first; node; node = element.firstChild) {
       if (node.nodeType === Node.ELEMENT_NODE &&
           (node.localName === 'li' || node.localName === 'dd')) {
@@ -408,18 +429,22 @@ export function unwrap_element(element, nag = true) {
     }
   }
 
-  if (last && next && next.nodeType === TEXT &&
+  if (is_table) {
+    // For now, just get table unwrap working and always append
+    frag.appendChild(doc.createTextNode(' '));
+  } else if (
+      last && next && next.nodeType === TEXT &&
       (last.nodeType === TEXT ||
        (is_list && last.nodeType === Node.ELEMENT_NODE && last.lastChild &&
         list.lastChild.nodeType === TEXT))) {
-    frag.appendChild(owner.createTextNode(' '));
+    frag.appendChild(doc.createTextNode(' '));
   }
 
   // Create one space if the element was empty between two text nodes. This is
   // separate from the other checks that require at least one child.
   if (!first && prev && next && prev.nodeType === TEXT &&
       next.nodeType === TEXT) {
-    frag.appendChild(owner.createTextNode(' '));
+    frag.appendChild(doc.createTextNode(' '));
   }
 
   parent.insertBefore(frag, next);

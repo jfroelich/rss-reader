@@ -2,7 +2,7 @@ import {assert, AssertionError} from '/src/assert.js';
 import * as cdb from '/src/cdb.js';
 import * as config from '/src/config.js';
 import {composite_document_filter} from '/src/dom-filters/composite-document-filter.js';
-import {set_base_uri} from '/src/dom-filters/dom-filter-utils.js';
+import {set_base_uri} from '/src/dom-filters/dom-utils.js';
 import * as favicon from '/src/favicon/favicon-control.js';
 import * as net from '/src/net.js';
 import * as note from '/src/note.js';

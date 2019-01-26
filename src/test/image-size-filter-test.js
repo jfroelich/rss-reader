@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import * as dfu from '/src/dom-filters/dom-filter-utils.js';
+import * as dfu from '/src/dom-filters/dom-utils.js';
 import {image_size_filter} from '/src/dom-filters/image-size-filter.js';
 import * as utils from '/src/utils.js';
 
