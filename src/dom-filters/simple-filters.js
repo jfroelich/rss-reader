@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
 import * as boilerplate from '/src/boilerplate.js';
 import * as color from '/src/color.js';
-import * as dfu from '/src/dom-filters/dfu.js';
+import * as dfu from '/src/dom-filters/dom-filter-utils.js';
 import * as utils from '/src/utils.js';
 
 export function anchor_format_filter(document) {
@@ -563,7 +563,7 @@ export function image_lazy_filter(document) {
 // unintentionally rule out good urls.
 // @param value {Any} should be a string but this tolerates bad input
 // @returns {Boolean}
-// TODO: move to dfu.js
+// TODO: move to dom-filter-utils.js
 function is_valid_url_string(value) {
   // The upper bound on len is an estimate, kind of a safeguard, hopefully never
   // causes a problem

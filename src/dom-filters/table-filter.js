@@ -1,4 +1,4 @@
-import * as dfu from '/src/dom-filters/dfu.js';
+import * as dfu from '/src/dom-filters/dom-filter-utils.js';
 
 // Filters certain table elements from document content
 export function table_filter(document, table_row_scan_max) {
