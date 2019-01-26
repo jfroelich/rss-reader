@@ -1,26 +1,24 @@
 import * as dfu from '/src/dom-filters/dom-filter-utils.js';
 
 // Filters certain table elements from document content
-export function table_filter(document, table_row_scan_max) {
-  if (document.body) {
-    const elements = document.body.querySelectorAll(
-        'colgroup, hgroup, multicol, tbody, tfoot, thead');
-    for (const element of elements) {
-      dfu.unwrap_element(element);
-    }
+export function table_filter(document, row_scan_max) {
+  const elements = document.querySelectorAll(
+      'colgroup, hgroup, multicol, tbody, tfoot, thead');
+  for (const element of elements) {
+    dfu.unwrap_element(element);
+  }
 
-    const tables = document.body.querySelectorAll('table');
-    for (const table of tables) {
-      if (table_element_is_single_column(table, table_row_scan_max)) {
-        table_element_unwrap(table);
-      }
+  const tables = document.querySelectorAll('table');
+  for (const table of tables) {
+    if (table_element_is_single_column(table, row_scan_max)) {
+      table_element_unwrap(table);
     }
   }
 }
 
-function table_element_is_single_column(table, table_row_scan_max) {
+function table_element_is_single_column(table, row_scan_max) {
   const rows = table.rows;
-  const safe_limit = Math.min(rows.length, table_row_scan_max);
+  const safe_limit = Math.min(rows.length, row_scan_max);
   for (let i = 0; i < safe_limit; i++) {
     if (!row_is_single_column(rows[i])) {
       return false;
@@ -34,7 +32,6 @@ function row_is_single_column(row) {
   let filled_cell_count = 0;
 
   // TODO: review the logic here. Is pre-decrement op correct?
-
   for (let i = 0, len = cells.length; i < len; i++) {
     if (!dfu.node_is_leaf(cells[i]) && ++filled_cell_count > 1) {
       return false;
