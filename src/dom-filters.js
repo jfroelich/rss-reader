@@ -1,7 +1,7 @@
 import {assert, AssertionError} from '/src/assert.js';
 import * as boilerplate from '/src/boilerplate.js';
 import * as color from '/src/color.js';
-import * as dfu from '/src/dom-utils.js';
+import * as dom_utils from '/src/dom-utils.js';
 import * as net from '/src/net.js';
 import * as utils from '/src/utils.js';
 
@@ -23,23 +23,11 @@ export async function composite_document_filter(document, options = {}) {
   ];
   blacklist_filter(document, blacklist_general);
   script_filter(document);
-
-  // This should occur before canonicalizing urls, because it may set attributes
-  // that need to be canonicalized that previously did not exist, and would be
-  // missed by the url_resolve_filter filter. This was previously a bug.
   image_lazy_filter(document);
-
-  // This should occur before setting image sizes
-  // TODO: actually the above comment is no longer true, right? Reverify. If
-  // I am using baseURI now, and set-image-sizes uses baseURI, then technically
-  // I do not need to do this earlier any longer. In fact I can re-imagine this
-  // entirely, where this does in fact strip base elements. This could happen
-  // at the end.
   url_resolve_filter(document);
   image_responsive_filter(document);
   lonestar_filter(document);
   image_dead_filter(document);
-
   await image_size_filter(
       document, options.image_size_timeout, options.is_allowed_request);
   boilerplate_filter(document);
@@ -66,7 +54,6 @@ export async function composite_document_filter(document, options = {}) {
   node_whitespace_filter(document);
   node_leaf_filter(document);
   document_trim_filter(document);
-
   const attribute_whitelist = {
     a: ['href', 'name', 'title', 'rel'],
     iframe: ['src'],
@@ -74,7 +61,6 @@ export async function composite_document_filter(document, options = {}) {
     img: ['src', 'alt', 'title', 'srcset', 'width', 'height']
   };
   attribute_unknown_filter(document, attribute_whitelist);
-  // TODO: move this up to before some of the other attribute filters?
   attribute_empty_filter(document);
 }
 
@@ -82,131 +68,86 @@ export function anchor_format_filter(document) {
   const anchors = document.querySelectorAll('a');
   for (const anchor of anchors) {
     if (!anchor.hasAttribute('href')) {
-      dfu.unwrap_element(anchor);
+      dom_utils.unwrap_element(anchor);
     }
   }
 }
 
+// TODO: write a test that explicitly checks matching of browser behavior
 export function anchor_script_filter(document) {
-  const href_length_min_threshold = 'javascript:'.length;
-
-  // This pattern is compared against an href attribute value. If it matches
-  // then the function concludes the anchor is a script anchor. Leading
-  // whitespace is allowed. However, whitespace preceding the colon is not
-  // allowed. I believe this matches browser behavior.
-  // TODO: write a test that explicitly checks matching of browser behavior
+  const threshold = 'javascript:'.length;
   const pattern = /^\s*javascript:/i;
-
-  // This makes no assumption the document is well-formed, as in, has an html
-  // body tag. Analysis is restricted to body. If no body then nothing to do. I
-  // assume that an anchor outside of the body is not displayed. This actually
-  // might be inaccurate if the browser does things like shift in-body-only
-  // elements that are located outside of body into body.
-  if (!document.body) {
-    return;
-  }
-
-  // Using a selector that includes the attribute qualifier matches fewer
-  // anchors then the general anchor selector. An anchor without an href is of
-  // no concern here. Doing the has-href check here is substantially faster
-  // than calling getAttribute. getAttribute is surprisingly slow.
-  const anchor_selector = 'a[href]';
-  const anchors = document.body.querySelectorAll(anchor_selector);
-
-  // The href test avoids the case of a no-value attribute and empty string
-  // The length check reduces the number of expensive calls to regex.test
+  const anchors = document.querySelectorAll('a[href]');
   for (const anchor of anchors) {
     const href = anchor.getAttribute('href');
-    if (href && href.length > href_length_min_threshold && pattern.test(href)) {
-      dfu.unwrap_element(anchor);
+    if (href && href.length > threshold && pattern.test(href)) {
+      dom_utils.unwrap_element(anchor);
     }
   }
 }
 
 export function anchor_validity_filter(document) {
-  const invalid = /^\s*https?:\/\/#/i;
-
-  if (document.body) {
-    const anchors = document.body.querySelectorAll('a');
-    for (const anchor of anchors) {
-      const href_value = anchor.getAttribute('href');
-      if (href_value && invalid.test(href_value)) {
-        anchor.remove();
-      }
+  const pattern = /^\s*https?:\/\/#/i;
+  const anchors = document.querySelectorAll('a');
+  for (const anchor of anchors) {
+    const href_value = anchor.getAttribute('href');
+    if (href_value && pattern.test(href_value)) {
+      anchor.remove();
     }
   }
 }
 
-// TODO: rename to something like attribute-value-filter, or
-// attribute-value-length-filter?
 // TODO: consider aggregating with other attribute filters
 export function attribute_empty_filter(document) {
-  if (document.body) {
-    const elements = document.body.getElementsByTagName('*');
-    for (const element of elements) {
-      const names = element.getAttributeNames();
-      for (const name of names) {
-        if (!dfu.is_boolean(element, name)) {
-          const value = element.getAttribute(name);
-          if (typeof value !== 'string' || !value.trim()) {
-            element.removeAttribute(name);
-          }
+  for (const element of document.querySelectorAll('*')) {
+    for (const name of element.getAttributeNames()) {
+      if (!dom_utils.is_boolean(element, name)) {
+        const value = element.getAttribute(name);
+        if (!value || !value.trim()) {
+          element.removeAttribute(name);
         }
       }
     }
   }
 }
 
-// Removes certain attributes from all elements in a document.
-// This applies to the whole document, not just body.
-// @param whitelist {Object} each property is element name, each value is array
-// of retainable attribute names
-// TODO: rename to something like attribute-name-whitelist-filter?
+// Removes certain attributes from all elements in a document. |whitelist| is
+// an object map where each key is element name and each value is array of
+// names of retainable attributes.
 export function attribute_unknown_filter(document, whitelist) {
   assert(typeof whitelist === 'object');
-  // Not restricted to body
   const elements = document.getElementsByTagName('*');
   for (const element of elements) {
-    filter_element_unknown_attributes(element, whitelist);
-  }
-}
-
-function filter_element_unknown_attributes(element, whitelist) {
-  const attr_names = element.getAttributeNames();
-  if (attr_names.length) {
-    const whitelisted_names = whitelist[element.localName] || [];
-    for (const attribute_name of attr_names) {
-      if (!whitelisted_names.includes(attribute_name)) {
-        element.removeAttribute(attribute_name);
+    const names = element.getAttributeNames();
+    if (names.length) {
+      const good_names = whitelist[element.localName] || [];
+      for (const name of names) {
+        if (!good_names.includes(name)) {
+          element.removeAttribute(name);
+        }
       }
     }
   }
 }
 
 export function base_filter(document) {
-  // Not restricted to body
-  const bases = document.querySelectorAll('base');
-  for (const base of bases) {
+  for (const base of document.querySelectorAll('base')) {
     base.remove();
   }
 }
 
-// Filters blacklisted elements from document content.
-// @param blacklist {Array} an array of names of elements, each name should be
-// a string that corresponds to what would be used in a selector to match an
-// element using querySelectorAll
+// |blacklist| is an array of element names.
 export function blacklist_filter(document, blacklist) {
-  // Exit early when there is no work to do. Tolerate bad param (Postel).
-  if (!Array.isArray(blacklist) || blacklist.length < 1) {
+  assert(Array.isArray(blacklist));
+  if (blacklist.length < 1) {
     return;
   }
 
-  // Find all occurrences of all element names in the list and remove them
-  const document_element = document.documentElement;
-  const selector = blacklist.join(',');
-  const elements = document.querySelectorAll(selector);
+  // The contains check is a questionable optimization that tries to avoid doing
+  // dom work on detached subtrees
+  const elements = document.querySelectorAll(blacklist.join(','));
   for (const element of elements) {
-    if (document_element.contains(element)) {
+    if (document.documentElement.contains(element)) {
       element.remove();
     }
   }
@@ -233,29 +174,21 @@ export function boilerplate_filter(document, options = {}) {
   assert(dataset);
   dataset = boilerplate.extract_features(dataset, options);
   assert(dataset);
-
   dataset = boilerplate.classify(dataset, boilerplate.score_block);
   assert(dataset);
-
   for (const row of dataset) {
     if (row.score < boilerplate.neutral_score) {
       const element = boilerplate.find_block_element(document, row);
-
-      // Elements should always be found
       assert(element);
-
       element.remove();
     }
   }
 }
 
-// Remove consecutive <br>s
 export function breakrule_filter(document) {
-  if (document.body) {
-    const brs = document.body.querySelectorAll('br + br');
-    for (const br of brs) {
-      br.remove();
-    }
+  const subsequent_brs = document.querySelectorAll('br + br');
+  for (const br of subsequent_brs) {
+    br.remove();
   }
 }
 
@@ -286,8 +219,8 @@ export function color_contrast_filter(document, matte, min_contrast) {
   let node = it.nextNode();
   while (node) {
     const element = node.parentNode;
-    const fore = dfu.element_derive_text_color(element);
-    const back = dfu.element_derive_bgcolor(element, matte);
+    const fore = dom_utils.element_derive_text_color(element);
+    const back = dom_utils.element_derive_bgcolor(element, matte);
     const contrast = color.get_contrast(fore, back);
     if (contrast < min_contrast) {
       node.remove();
@@ -310,30 +243,23 @@ export function comment_filter(document) {
 // contains fewer characters. |copy_attrs_flag| is optional boolean specifying
 // whether to copy html attributes when replacing an element.
 export function condense_tagnames_filter(document, copy_attrs_flag) {
-  if (!document.body) {
-    return;
-  }
-
   const renames = [
     {before: 'strong', after: 'b'}, {before: 'em', after: 'i'},
     {before: 'layer', after: 'div'}
   ];
-
   for (const rename of renames) {
-    const elements = document.body.querySelectorAll(rename.before);
+    const elements = document.querySelectorAll(rename.before);
     for (const element of elements) {
-      dfu.coerce_element(element, rename.after, copy_attrs_flag);
+      dom_utils.coerce_element(element, rename.after, copy_attrs_flag);
     }
   }
 }
 
 // Removes container-like elements from the document
 export function container_filter(document) {
-  if (document.body) {
-    const elements = document.body.querySelectorAll('div, ilayer, layer');
-    for (const element of elements) {
-      dfu.unwrap_element(element);
-    }
+  const elements = document.querySelectorAll('div, ilayer, layer');
+  for (const element of elements) {
+    dom_utils.unwrap_element(element);
   }
 }
 
@@ -367,67 +293,48 @@ export function emphasis_filter(document, max_length_threshold = 0) {
     return;
   }
 
-  // Analysis is restricted to elements within body.
-  if (!document.body) {
-    return;
-  }
-
   const selector = 'b, big, em, i, strong, mark, u';
-  const elements = document.body.querySelectorAll(selector);
+  const elements = document.querySelectorAll(selector);
   for (const element of elements) {
     const no_ws = element.textContent.replace(/\s+/, '');
     if (no_ws.length > max_length_threshold) {
-      dfu.unwrap_element(element);
+      dom_utils.unwrap_element(element);
     }
   }
 }
 
 export function figure_filter(document) {
-  if (document.body) {
-    const figures = document.body.querySelectorAll('figure');
-    for (const figure of figures) {
-      const child_count = figure.childElementCount;
-      if (child_count === 1) {
-        if (figure.firstElementChild.localName === 'figcaption') {
-          figure.remove();
-        } else {
-          dfu.unwrap_element(figure);
-        }
-      } else if (child_count === 0) {
-        dfu.unwrap_element(figure);
+  for (const figure of document.querySelectorAll('figure')) {
+    const child_count = figure.childElementCount;
+    if (child_count === 1) {
+      if (figure.firstElementChild.localName === 'figcaption') {
+        // caption without an image, remove it all
+        figure.remove();
+      } else {
+        dom_utils.unwrap_element(figure);
       }
+    } else if (child_count === 0) {
+      dom_utils.unwrap_element(figure);
     }
   }
 }
 
 // Removes or changes form-related elements from the document
+// TODO: remove reliance on body, just search everywhere
 export function form_filter(document) {
-  // Note I am not certain whether document.body is cached. I assume it is, but
-  // I later do a potentially large amount of removals and have some paranoia.
-  // For now, given the separate benefit of using a shorter alias, I cache it
-  // in a local variable.
   const body = document.body;
-
-  // This analysis is restricted to the content area of the document. If there
-  // is no content area as designated by body then there is nothing to do.
   if (!body) {
     return;
   }
 
-  // The form element itself often contains a substantial amount of actual
-  // real content, so removing it would be data loss. So unwrap instead.
   const forms = body.querySelectorAll('form');
   for (const form of forms) {
-    dfu.unwrap_element(form);
+    dom_utils.unwrap_element(form);
   }
 
-  // It isn't really clear to me whether labels should stay or go, but for now,
-  // error on the safe side and unwrap instead of remove.
-  // TODO: eventually revisit. It may be stupid to leave labels visible when the
-  // thing they correspond to no longer exists.
   const labels = body.querySelectorAll('label');
   for (const label of labels) {
-    dfu.unwrap_element(label);
+    dom_utils.unwrap_element(label);
   }
 
   // TODO: I should also consider removing label-like elements that an author
@@ -462,7 +369,7 @@ export function format_filter(document) {
   if (document.body) {
     const elements = document.body.querySelectorAll(selector);
     for (const element of elements) {
-      dfu.unwrap_element(element);
+      dom_utils.unwrap_element(element);
     }
   }
 }
@@ -596,13 +503,16 @@ export function image_dead_filter(document) {
   if (document.body) {
     const images = document.body.querySelectorAll('img');
     for (const image of images) {
-      if (!dfu.image_has_source(image)) {
-        dfu.remove_image(image);
+      if (!dom_utils.image_has_source(image)) {
+        dom_utils.remove_image(image);
       }
     }
   }
 }
 
+// This should occur before canonicalizing urls, because it may set attributes
+// that need to be canonicalized that previously did not exist, and would be
+// missed by the url_resolve_filter filter. This was previously a bug.
 export function image_lazy_filter(document) {
   const lazy_names = [
     'big-src', 'load-src', 'data-src', 'data-src-full16x9', 'data-src-large',
@@ -614,7 +524,7 @@ export function image_lazy_filter(document) {
   if (document.body) {
     const images = document.body.getElementsByTagName('img');
     for (const image of images) {
-      if (!dfu.image_has_source(image)) {
+      if (!dom_utils.image_has_source(image)) {
         const attr_names = image.getAttributeNames();
         for (const attr_name of lazy_names) {
           if (attr_names.includes(attr_name)) {
@@ -655,7 +565,7 @@ export function image_responsive_filter(document) {
   for (const image of images) {
     // In the event of a parsing error, srcset_parse returns an empty array,
     // which effectively means we do nothing in this loop
-    const descs = dfu.srcset_parse(image.getAttribute('srcset'));
+    const descs = dom_utils.srcset_parse(image.getAttribute('srcset'));
     let chosen_desc = null;
     for (const desc of descs) {
       if (desc.url) {
@@ -796,7 +706,7 @@ export function image_size_small_filter(document) {
     const images = document.body.querySelectorAll('img');
     for (const image of images) {
       if (image_is_small(image)) {
-        dfu.remove_image(image);
+        dom_utils.remove_image(image);
       }
     }
   }
@@ -862,7 +772,7 @@ export function list_filter(document) {
           // the next list
           continue;
         } else {
-          if (dfu.is_list_item(firstElement)) {
+          if (dom_utils.is_list_item(firstElement)) {
             // This is a list with just one element, so we want to unwrap
           } else {
             // Something like
@@ -880,7 +790,7 @@ export function list_filter(document) {
     }
 
     // If we reached here, we want to unwrap the list
-    dfu.unwrap_element(list);
+    dom_utils.unwrap_element(list);
   }
 }
 
@@ -923,7 +833,7 @@ export function lonestar_filter(document) {
   const images = document.querySelectorAll('img');
   for (const image of images) {
     if (lonestar_is_telemetric(image, document_url, host_patterns, false)) {
-      dfu.remove_image(image);
+      dom_utils.remove_image(image);
     }
   }
 
@@ -942,7 +852,7 @@ export function lonestar_filter(document) {
 
 function lonestar_is_telemetric(
     element, document_url, host_patterns, is_strict) {
-  if (dfu.is_hidden_inline(element)) {
+  if (dom_utils.is_hidden_inline(element)) {
     return true;
   }
 
@@ -1005,7 +915,7 @@ export function nest_filter(document) {
 
   const descendant_anchors_of_anchors = document.body.querySelectorAll('a a');
   for (const descendant_anchor of descendant_anchors_of_anchors) {
-    dfu.unwrap_element(descendant_anchor);
+    dom_utils.unwrap_element(descendant_anchor);
   }
 
   const captions = document.body.querySelectorAll('figcaption');
@@ -1044,7 +954,7 @@ export function node_leaf_filter(document) {
     const root = document.documentElement;
     const elements = document.body.querySelectorAll('*');
     for (const element of elements) {
-      if (root.contains(element) && dfu.node_is_leaf(element)) {
+      if (root.contains(element) && dom_utils.node_is_leaf(element)) {
         element.remove();
       }
     }
@@ -1101,7 +1011,7 @@ export function semantic_filter(document) {
     const selector = 'article, aside, footer, header, main, section';
     const elements = document.body.querySelectorAll(selector);
     for (const element of elements) {
-      dfu.unwrap_element(element);
+      dom_utils.unwrap_element(element);
     }
   }
 }
@@ -1111,7 +1021,7 @@ export function table_filter(document, row_scan_max) {
   const elements = document.querySelectorAll(
       'colgroup, hgroup, multicol, tbody, tfoot, thead');
   for (const element of elements) {
-    dfu.unwrap_element(element);
+    dom_utils.unwrap_element(element);
   }
 
   const tables = document.querySelectorAll('table');
@@ -1123,7 +1033,7 @@ export function table_filter(document, row_scan_max) {
       const cells = rows[i].cells;
       let filled = 0;
       for (let j = 0; j < cells.length; j++) {
-        if (!dfu.node_is_leaf(cells[i])) {
+        if (!dom_utils.node_is_leaf(cells[i])) {
           filled++;
           if (filled > 1) {
             is_single_column = false;
@@ -1134,7 +1044,7 @@ export function table_filter(document, row_scan_max) {
     }
 
     if (is_single_column) {
-      dfu.unwrap_element(table);
+      dom_utils.unwrap_element(table);
     }
   }
 }
@@ -1231,7 +1141,7 @@ export function url_resolve_filter(document) {
   const srcset_sel = 'img[srcset], source[srcset]';
   const srcset_els = document.body.querySelectorAll(srcset_sel);
   for (const element of srcset_els) {
-    const descs = dfu.srcset_parse(element.getAttribute('srcset'));
+    const descs = dom_utils.srcset_parse(element.getAttribute('srcset'));
 
     let change_count = 0;
     for (const desc of descs) {
@@ -1247,7 +1157,7 @@ export function url_resolve_filter(document) {
     }
 
     if (change_count) {
-      const new_value = dfu.srcset_serialize(descs);
+      const new_value = dom_utils.srcset_serialize(descs);
       if (new_value) {
         element.setAttribute('srcset', new_value);
       }
@@ -1263,8 +1173,8 @@ export function visibility_filter(document, matte, mcr) {
 
   const elements = body.querySelectorAll('*');
   for (const element of elements) {
-    if (body.contains(element) && dfu.is_hidden_inline(element)) {
-      dfu.unwrap_element(element);
+    if (body.contains(element) && dom_utils.is_hidden_inline(element)) {
+      dom_utils.unwrap_element(element);
     }
   }
 
