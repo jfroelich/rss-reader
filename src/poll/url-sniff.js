@@ -13,6 +13,9 @@ export const application_text_types = [
   'application/vnd.mozilla.xul+xml', 'application/xhtml+xml', 'application/xml'
 ];
 
+// Classifies a resource as binary, text, or unknown. The function returns
+// unknown when it is not confident in the results. The function guesses the
+// class of the resource purely by looking at its url.
 export function classify(url) {
   if (!(url instanceof URL)) {
     throw new TypeError('url is not a URL');

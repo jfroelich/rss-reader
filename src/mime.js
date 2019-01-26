@@ -1,3 +1,6 @@
+// Provides helpers for interacting with purported mime-type values. A mime-type
+// is a specialized type of string.
+
 export const MIME_TYPE_MIN_LENGTH = 7;
 export const MIME_TYPE_MAX_LENGTH = 100;
 
