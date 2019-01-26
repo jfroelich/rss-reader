@@ -1,7 +1,9 @@
-import assert from '/src/assert.js';
+import {assert, AssertionError} from '/src/assert.js';
 import * as boilerplate from '/src/boilerplate.js';
 import * as color from '/src/color.js';
 import * as dfu from '/src/dom-utils.js';
+import * as net from '/src/net.js';
+
 import * as utils from '/src/utils.js';
 
 export function anchor_format_filter(document) {
@@ -610,6 +612,73 @@ export function image_responsive_filter(document) {
       }
     }
   }
+}
+
+// Tries to set width/height attributes for all images in document
+export function image_size_filter(document, timeout, is_allowed_request) {
+  assert(document.baseURI);
+
+  async function proc_image(image) {
+    if (image.hasAttribute('width') && image.hasAttribute('height')) {
+      return;
+    }
+
+    let width = 0, height = 0;
+
+    // Check inline css
+    if (element.style && element.hasAttribute('style')) {
+      width = parseInt(element.style.width, 10);
+      height = parseInt(element.style.height, 10);
+      if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
+        image.setAttribute('width', width);
+        image.setAttribute('height', height);
+        return;
+      } else {
+        width = height = 0;
+      }
+    }
+
+    if (!image.src) {
+      return;
+    }
+
+    let url;
+    try {
+      url = new URL(image.src);
+    } catch (error) {
+      return;
+    }
+
+    // Check characters in url
+    const exts = ['jpg', 'gif', 'svg', 'jpg', 'bmp', 'png'];
+    const pairs = [{w: 'w', h: 'h'}, {w: 'width', h: 'height'}];
+    if (url.protocol !== 'data:' &&
+        exts.includes(utils.url_get_extension(url))) {
+      for (const pair of pairs) {
+        width = parseInt(url.searchParams.get(pairs.w), 10);
+        height = parseInt(url.searchParams.get(pairs.h), 10);
+        if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
+          image.setAttribute('width', width);
+          image.setAttribute('height', height);
+          return;
+        }
+      }
+    }
+
+    try {
+      const fimg =
+          await net.fetch_image_element(url, timeout, is_allowed_request);
+      image.setAttribute('width', fimg.width);
+      image.setAttribute('height', fimg.height);
+    } catch (error) {
+      if (error instanceof AssertionError) {
+        throw error;
+      }
+    }
+  }
+
+  const images = document.querySelectorAll('img');
+  return Promise.all(Array.prototype.map.call(images, proc_image));
 }
 
 export function image_size_large_filter(document) {

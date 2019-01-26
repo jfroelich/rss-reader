@@ -1,5 +1,4 @@
 import assert from '/src/assert.js';
-import {image_size_filter} from '/src/dom-filters/image-size-filter.js';
 import * as simple from '/src/dom-filters/simple-filters.js';
 
 export async function composite_document_filter(document, options = {}) {
@@ -37,7 +36,7 @@ export async function composite_document_filter(document, options = {}) {
   simple.lonestar_filter(document);
   simple.image_dead_filter(document);
 
-  await image_size_filter(
+  await simple.image_size_filter(
       document, options.image_size_timeout, options.is_allowed_request);
   simple.boilerplate_filter(document);
   simple.anchor_script_filter(document);

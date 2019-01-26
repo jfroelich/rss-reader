@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
+import {image_size_filter} from '/src/dom-filters/simple-filters.js';
 import * as dfu from '/src/dom-utils.js';
-import {image_size_filter} from '/src/dom-filters/image-size-filter.js';
 import * as utils from '/src/utils.js';
 
 // Assert the ordinary case of a basic html document with an image with unknown
