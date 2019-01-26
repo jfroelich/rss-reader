@@ -17,17 +17,15 @@ export function element_derive_text_color(element) {
   return color.BLACK;
 }
 
-export function element_derive_background_color(element, matte) {
+export function element_derive_bgcolor(element, matte) {
   const include_self = true;
   const layers = element_ancestors(element, include_self);
-  const colors = layers.map(element_derive_background_color_inline);
+  const colors = layers.map(element_derive_bgcolor_inline);
   return color.blend(colors.reverse(), matte);
 }
 
-export function element_derive_background_color_inline(element) {
-  // TODO: if opacity is not a channel in the color, then should this not also
-  // consider the opacity css property?
-
+// TODO: analyze css opacity?
+export function element_derive_bgcolor_inline(element) {
   const style = element.style;
   if (style) {
     const css_bgcolor = style.backgroundColor;

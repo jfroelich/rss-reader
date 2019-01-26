@@ -213,7 +213,7 @@ export function color_contrast_filter(document, matte, min_contrast) {
   while (node) {
     const element = node.parentNode;
     const fore = dfu.element_derive_text_color(element);
-    const back = dfu.element_derive_background_color(element, matte);
+    const back = dfu.element_derive_bgcolor(element, matte);
     const contrast = color.get_contrast(fore, back);
     if (contrast < min_contrast) {
       node.remove();
