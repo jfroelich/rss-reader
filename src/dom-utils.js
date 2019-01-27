@@ -1,6 +1,7 @@
 import '/third-party/parse-srcset.js';
 import '/third-party/tinycolor-min.js';
-import assert from '/src/assert.js';
+import {assert} from '/src/assert.js';
+import * as color from '/src/color.js';
 
 // Only minor validation for speed. Tolerates bad input. This isn't intended to
 // be the most accurate classification. Instead, it is intended to easily find

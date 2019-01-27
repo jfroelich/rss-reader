@@ -1,4 +1,4 @@
-import assert from '/src/assert.js';
+import {assert} from '/src/assert.js';
 import * as favicon from '/src/favicon.js';
 import * as idb from '/src/idb.js';
 

@@ -106,6 +106,8 @@ function create_opml_template(document_title) {
 }
 
 export async function opml_import(session, files) {
+  console.debug('Importing %d OPML files', files.length);
+
   const read_files_results = await opml_import_read_files(files);
   const url_array = opml_import_flatten_urls(read_files_results);
   const url_array_set = opml_import_dedup_urls(url_array);
@@ -120,7 +122,8 @@ export async function opml_import(session, files) {
 }
 
 function opml_import_read_files(files) {
-  const promises = files.map(file => {
+  // FileList does not support map
+  const promises = Array.prototype.map.call(files, file => {
     const promise = opml_import_read_feeds(file);
     // Redirect per-file errors to console rather than exceptions
     return promise.catch(console.warn);

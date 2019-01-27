@@ -1,4 +1,4 @@
-import assert from '/src/assert.js';
+import {assert} from '/src/assert.js';
 
 export function filter_unprintables(value) {
   if (typeof value !== 'string') {

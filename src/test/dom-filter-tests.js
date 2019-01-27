@@ -1,4 +1,4 @@
-import assert from '/src/assert.js';
+import {assert} from '/src/assert.js';
 import * as color from '/src/color.js';
 import * as dom_filters from '/src/dom-filters.js';
 import * as dom_utils from '/src/dom-utils.js';

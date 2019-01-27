@@ -61,6 +61,8 @@ export async function poll_feed(session, iconn, options = {}, feed) {
   assert(feed.urls.length > 0);
   assert(feed.active);
 
+  console.debug('Polling feed with url', feed.urls[feed.urls.length - 1]);
+
   // TODO: this collection of rules should not be rebuilt per feed, so rules
   // should be a parameter to this function
   const rewrite_rules = build_rewrite_rules();
@@ -78,7 +80,7 @@ export async function poll_feed(session, iconn, options = {}, feed) {
 
   const fetch_options = {};
   fetch_options.timeout = options.fetch_feed_timeout;
-  fetch_options.skips_entries = false;
+  fetch_options.skip_entries = false;
   fetch_options.resolve_entry_urls = true;
 
   const skip_entries = false;
@@ -88,6 +90,7 @@ export async function poll_feed(session, iconn, options = {}, feed) {
     response = await net.fetch_feed(tail_url, fetch_options);
   } catch (error) {
     if (error instanceof AssertionError) {
+      console.warn('Assertion failed', error);
       throw error;
     }
 
@@ -355,15 +358,23 @@ export async function poll_entry(
 
   set_base_uri(document, url);
 
-  const sd_opts = {};
-  sd_opts.contrast_matte = config.read_int('contrast_default_matte');
-  sd_opts.contrast_ratio = config.read_float('min_contrast_ratio');
-  sd_opts.image_size_timeout = config.read_int('set_image_sizes_timeout');
-  sd_opts.table_scan_max_rows = config.read_int('table_scan_max_rows');
-  sd_opts.emphasis_max_length = config.read_int('emphasis_max_length');
-  sd_opts.is_allowed_request = net.is_allowed_request;
+  const filter_options = {};
+  filter_options.contrast_matte = config.read_int('contrast_default_matte');
+  filter_options.contrast_ratio = config.read_float('min_contrast_ratio');
+  filter_options.image_size_timeout =
+      config.read_int('set_image_sizes_timeout');
+  filter_options.table_scan_max_rows = config.read_int('table_scan_max_rows');
+  filter_options.emphasis_max_length = config.read_int('emphasis_max_length');
+  filter_options.is_allowed_request = net.is_allowed_request;
 
-  await composite_document_filter(document, sd_opts);
+  if (!Number.isInteger(filter_options.emphasis_max_length)) {
+    console.error(
+        'bug, emphasis_max_length not an integer?',
+        filter_options.emphasis_max_length);
+    filter_options.emphasis_max_length = 300;
+  }
+
+  await composite_document_filter(document, filter_options);
   entry.content = document.documentElement.outerHTML;
 
   cdb.sanitize_entry(entry);

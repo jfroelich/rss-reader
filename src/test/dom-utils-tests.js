@@ -1,4 +1,4 @@
-import assert from '/src/assert.js';
+import {assert} from '/src/assert.js';
 import * as dom_utils from '/src/dom-utils.js';
 import * as utils from '/src/utils.js';
 

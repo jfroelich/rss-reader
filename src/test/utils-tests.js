@@ -1,8 +1,7 @@
-import assert from '/src/assert.js';
+import {assert} from '/src/assert.js';
 import * as utils from '/src/utils.js';
 
 export async function replace_tags_test() {}
-
 
 // TODO: store input-ouput pairs then simply iterate
 // TODO: store input/output in a json file, then change this test to load the

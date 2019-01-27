@@ -13,7 +13,7 @@
 // option customizable by the user, because slide animation speed can be a real
 // tactile encumbrance
 
-import assert from '/src/assert.js';
+import {assert} from '/src/assert.js';
 import * as cdb from '/src/cdb.js';
 import * as config_control from '/src/config-control.js';
 import * as config from '/src/config.js';
@@ -433,8 +433,12 @@ function import_opml_prompt() {
   input.setAttribute('type', 'file');
   input.setAttribute('accept', 'application/xml');
   input.onchange = async function(event) {
+    // For unknown reason we must grab this before the await, otherwise error.
+    // This behavior changed sometime around Chrome 72 without warning
+    const files = event.target.files;
     const session = await cdb.open();
-    await ops.opml_import(session, event.target.files);
+    console.debug('Connected, about to import %d files', files.length);
+    await ops.opml_import(session, files);
     session.close();
   };
   input.click();

@@ -1,4 +1,4 @@
-import assert from '/src/assert.js';
+import {assert} from '/src/assert.js';
 import * as cdb from '/src/cdb.js';
 import * as mime from '/src/mime.js';
 import {parse_feed} from '/src/parse-feed.js';
@@ -269,8 +269,8 @@ export async function fetch_feed(url, options) {
     'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
   ];
 
-  const options = {timeout: options.timeout, types: feed_mime_types};
-  const response = await better_fetch(url, options);
+  const opts = {timeout: options.timeout, types: feed_mime_types};
+  const response = await better_fetch(url, opts);
   const res_text = await response.text();
 
   const skip_entries = 'skip_entries' in options ? options.skip_entries : true;

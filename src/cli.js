@@ -64,13 +64,13 @@ function cli_create_alarms() {
   console.debug('Created alarms');
 }
 
-function cli_clear_icons() {
+async function cli_clear_icons() {
   const conn = await favicon.open();
   return favicon.clear(conn);
   conn.close();
 }
 
-function cli_compact_icons() {
+async function cli_compact_icons() {
   const conn = await favicon.open();
   return favicon.compact(conn);
   conn.close();

@@ -74,10 +74,11 @@ export async function lookup(request) {
 
   // Memoize a failed lookup
   console.debug(
-      'lookup failed', hostname, entry.failures ? entry.failures + 1 : 1);
+      'lookup failed', hostname,
+      (entry && entry.failures) ? entry.failures + 1 : 1);
   const failure = new Entry();
   failure.hostname = hostname;
-  failure.failures = entry && entry.failures ? entry.failures + 1 : 1;
+  failure.failures = (entry && entry.failures) ? entry.failures + 1 : 1;
   failure.icon_url = entry ? entry.icon_url : undefined;
   const now = new Date();
   failure.expires = new Date(now.getTime() + 2 * ONE_MONTH_MS);

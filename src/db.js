@@ -1,4 +1,4 @@
-import assert from '/src/assert.js';
+import {assert} from '/src/assert.js';
 import * as idb from '/src/idb.js';
 import * as utils from '/src/utils.js';
 

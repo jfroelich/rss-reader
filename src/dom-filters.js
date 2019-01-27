@@ -249,7 +249,15 @@ export function container_filter(document) {
 // optional cutoff for determining whether an element is over-emphasized, where
 // length is whitespace-adjusted.
 export function emphasis_filter(document, threshold = 0) {
-  assert(Number.isInteger(threshold) && threshold >= 0);
+  // Bug fix, NaN requires different treatment than undefined
+  if (isNaN(threshold)) {
+    threshold = 0;
+  }
+
+  assert(typeof threshold === 'number');
+  assert(Number.isInteger(threshold));
+  assert(threshold >= 0);
+
   if (threshold > 0) {
     const selector = 'b, big, em, i, strong, mark, u';
     const elements = document.querySelectorAll(selector);
@@ -492,9 +500,9 @@ export function image_size_filter(document, timeout, is_allowed_request) {
     let width = 0, height = 0;
 
     // Check inline css
-    if (element.style && element.hasAttribute('style')) {
-      width = parseInt(element.style.width, 10);
-      height = parseInt(element.style.height, 10);
+    if (image.style && image.hasAttribute('style')) {
+      width = parseInt(image.style.width, 10);
+      height = parseInt(image.style.height, 10);
       if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
         image.setAttribute('width', width);
         image.setAttribute('height', height);
@@ -689,8 +697,8 @@ export function lonestar_filter(document) {
   }
 
   // Remove ping attributes from anchors
-  const anchors = document.querySelectorAll('a[ping]');
-  for (const anchor of anchors) {
+  const ping_anchors = document.querySelectorAll('a[ping]');
+  for (const anchor of ping_anchors) {
     anchor.removeAttribute('ping');
   }
 }
