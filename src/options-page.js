@@ -1,4 +1,3 @@
-import * as badge from '/src/badge.js';
 import * as cdb from '/src/cdb.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon.js';
@@ -49,7 +48,7 @@ channel.onmessage = function options_page_onmessage(event) {
   const badge_types =
       ['entry-created', 'entry-updated', 'entry-deleted', 'entry-read'];
   if (badge_types.includes(type)) {
-    badge.refresh();
+    ops.badge_refresh();
   }
 
   if (type === 'feed-activated') {

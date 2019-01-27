@@ -1,12 +1,18 @@
-// This module represents a middle-layer that is above the model layer but
-// below the view layer. Generally, the operations here are functions that
-// involve the database along with some non-database functionality.
-
 import * as cdb from '/src/cdb.js';
 import * as favicon from '/src/favicon.js';
 import * as net from '/src/net.js';
 import * as note from '/src/note.js';
 import * as utils from '/src/utils.js';
+
+// Refreshes the unread count displayed the badge in Chrome's toolbar
+export async function badge_refresh() {
+  const session = await cdb.open();
+  const count = await cdb.count_unread_entries(session);
+  session.close();
+
+  const text = count > 999 ? '1k+' : '' + count;
+  chrome.browserAction.setBadgeText({text: text});
+}
 
 export function activate_feed(session, feed_id) {
   const props = {};

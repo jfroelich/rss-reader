@@ -14,7 +14,6 @@
 // tactile encumbrance
 
 import assert from '/src/assert.js';
-import * as badge from '/src/badge.js';
 import * as cdb from '/src/cdb.js';
 import * as config_control from '/src/config-control.js';
 import * as config from '/src/config.js';
@@ -636,7 +635,7 @@ async function onmessage(event) {
   const badge_types =
       ['entry-created', 'entry-updated', 'entry-deleted', 'entry-read'];
   if (badge_types.includes(message.type)) {
-    badge.refresh();  // intentionally unawaited
+    ops.badge_refresh();  // intentionally unawaited
   }
 
   // Type handlers are ordered by estimated frequency. Using if-blocks because I
