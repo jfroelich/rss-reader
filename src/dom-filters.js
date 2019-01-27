@@ -32,7 +32,6 @@ export async function composite_document_filter(document, options = {}) {
       document, options.image_size_timeout, options.is_allowed_request);
   boilerplate_filter(document);
   anchor_script_filter(document);
-  // TODO: compose these two filters
   image_size_small_filter(document);
   image_size_large_filter(document);
   condense_tagnames_filter(document, false);
@@ -73,7 +72,6 @@ export function anchor_format_filter(document) {
   }
 }
 
-// TODO: write a test that explicitly checks matching of browser behavior
 export function anchor_script_filter(document) {
   const threshold = 'javascript:'.length;
   const pattern = /^\s*javascript:/i;
@@ -97,7 +95,6 @@ export function anchor_validity_filter(document) {
   }
 }
 
-// TODO: consider aggregating with other attribute filters
 export function attribute_empty_filter(document) {
   for (const element of document.querySelectorAll('*')) {
     for (const name of element.getAttributeNames()) {
@@ -143,8 +140,6 @@ export function blacklist_filter(document, blacklist) {
     return;
   }
 
-  // The contains check is a questionable optimization that tries to avoid doing
-  // dom work on detached subtrees
   const elements = document.querySelectorAll(blacklist.join(','));
   for (const element of elements) {
     if (document.documentElement.contains(element)) {
@@ -154,11 +149,6 @@ export function blacklist_filter(document, blacklist) {
 }
 
 // Ensures that a document has a body element
-// TODO: this should not assume the frame filter ran, right now this does not
-// create body when encountering frameset which is misleading, filters should
-// be designed so as to be maximally independent and not rely on filter call
-// order (not assume some other filters ran before)
-// TODO: this needs a name that clarifies what it does, it is not obvious
 export function body_filter(document) {
   if (!document.body) {
     const message = 'This document has no content';
@@ -194,28 +184,20 @@ export function breakrule_filter(document) {
 
 // Removes elements containing text that is not perceptible by calculating the
 // approximate contrast between the foreground text color and the background
-// color.
-// @param matte {color} the base background color for alpha blending, optional,
-// defaults to white
-// @param min_contrast {Number} the minimum contrast ratio, below which elements
-// are deemed not visible, optional, defaults to a conservative 1.2
+// color. |matte| is an optional base background color used for alpha blending.
+// |min_contrast| is an optional minimum ratio determine whether contrast is too
+// low, defaults to a conservative threshold.
 export function color_contrast_filter(document, matte, min_contrast) {
-  const body = document.body;
-  if (!body) {
-    return;
-  }
-
-  const DEFAULT_MATTE = color.WHITE;
   if (typeof matte === 'undefined') {
-    matte = DEFAULT_MATTE;
+    matte = color.WHITE;
   }
 
-  const DEFAULT_MIN_CONTRAST = 1.2;
   if (typeof min_contrast === 'undefined') {
-    min_contrast = DEFAULT_MIN_CONTRAST;
+    min_contrast = 1.2;
   }
 
-  const it = document.createNodeIterator(body, NodeFilter.SHOW_TEXT);
+  const it = document.createNodeIterator(
+      document.documentElement, NodeFilter.SHOW_TEXT);
   let node = it.nextNode();
   while (node) {
     const element = node.parentNode;
@@ -263,42 +245,18 @@ export function container_filter(document) {
   }
 }
 
-// Explores document content searching for segments of emphasized text, such as
-// bold, italicized, or underlined text. If a segment is found that is longer
-// than the specified threshold, then the segment is de-emphasized (the emphasis
-// element is removed but its descendant nodes remain).
-//
-// Currently, this ignores CSS rules due to the cost of computing styles. A
-// future implementation may consider computed style.
-//
-// A substantial amount of content on the Internet is written poorly. Many
-// authors get carried away with underlining everything. Sometimes emphasis is
-// used for other purposes than conventional use, such as simple visual style.
-//
-// @param document {Document} the document to analyze
-// @param max_length_threshold {Number} an optional integer representing a
-// threshold of text length above which a segment of emphasized text is
-// considered too long. Note that when calculating the length of some emphasized
-// text for comparison against this threshold, only the non-whitespace length is
-// used.
-// @error {Error} if document is not a Document
-// @error {Error} if the text length parameter is not a positive integer
-export function emphasis_filter(document, max_length_threshold = 0) {
-  assert(Number.isInteger(max_length_threshold) && max_length_threshold >= 0);
-
-  // 0 means indefinite emphasis is allowed, which means no filtering should
-  // occur at all. Technically this function should not have been called because
-  // it was pointless but this should not cause an error.
-  if (max_length_threshold === 0) {
-    return;
-  }
-
-  const selector = 'b, big, em, i, strong, mark, u';
-  const elements = document.querySelectorAll(selector);
-  for (const element of elements) {
-    const no_ws = element.textContent.replace(/\s+/, '');
-    if (no_ws.length > max_length_threshold) {
-      dom_utils.unwrap_element(element);
+// Filters out emphasis-related elements that are too long. |threshold| is an
+// optional cutoff for determining whether an element is over-emphasized, where
+// length is whitespace-adjusted.
+export function emphasis_filter(document, threshold = 0) {
+  assert(Number.isInteger(threshold) && threshold >= 0);
+  if (threshold > 0) {
+    const selector = 'b, big, em, i, strong, mark, u';
+    const elements = document.querySelectorAll(selector);
+    for (const element of elements) {
+      if (element.textContent.replace(/\s+/, '').length > threshold) {
+        dom_utils.unwrap_element(element);
+      }
     }
   }
 }
@@ -319,43 +277,22 @@ export function figure_filter(document) {
   }
 }
 
-// Removes or changes form-related elements from the document
-// TODO: remove reliance on body, just search everywhere
 export function form_filter(document) {
-  const body = document.body;
-  if (!body) {
-    return;
+  const selector =
+      'button, fieldset, input, optgroup, option, select, textarea';
+  const elements = document.querySelectorAll(selector);
+  for (const element of elements) {
+    if (document.documentElement.contains(element)) {
+      element.remove();
+    }
   }
 
-  const forms = body.querySelectorAll('form');
-  for (const form of forms) {
-    dom_utils.unwrap_element(form);
-  }
-
-  const labels = body.querySelectorAll('label');
-  for (const label of labels) {
+  for (const label of document.querySelectorAll('label')) {
     dom_utils.unwrap_element(label);
   }
 
-  // TODO: I should also consider removing label-like elements that an author
-  // did not use a label for. I think there are several instances of where an
-  // author does something like use a span, or a neighboring table cell. This
-  // might be too difficult to pull off, or require so much processing that it
-  // is not worth it.
-  // While the selector string is invariant to function calls I prefer to define
-  // it here, near where it is used, instead of defining it at module scope.
-  // This is similar to the style of declaring variables within loop bodies. I
-  // assume that if it is a performance issue the js engine is smart enough to
-  // hoist.
-  const selector =
-      'button, fieldset, input, optgroup, option, select, textarea';
-  const form_related_elements = body.querySelectorAll(selector);
-  // The contains check avoids removing already-removed elements. It is worth
-  // the cost to avoid the more expensive removal operations.
-  for (const element of form_related_elements) {
-    if (body.contains(element)) {
-      element.remove();
-    }
+  for (const form of document.querySelectorAll('form')) {
+    dom_utils.unwrap_element(form);
   }
 }
 
@@ -365,35 +302,23 @@ export function format_filter(document) {
     'mark', 'marquee', 'meter', 'nobr', 'span', 'big', 'blink', 'font',
     'plaintext', 'small', 'tt'
   ].join(',');
-
-  if (document.body) {
-    const elements = document.body.querySelectorAll(selector);
-    for (const element of elements) {
-      dom_utils.unwrap_element(element);
-    }
+  const elements = document.querySelectorAll(selector);
+  for (const element of elements) {
+    dom_utils.unwrap_element(element);
   }
 }
 
 // Removes frame-related content from a document, including noframes, but
 // not iframes.
-// TODO: the default message text for empty body should be a param
 export function frame_filter(document) {
-  // A legal document should only have 1 frameset element. If it has more than
-  // one, we ignore the rest after the first. If there is no frameset element
-  // in the document, ensure no other frame-related elements remain, and exit.
-  // We are intentionally not using the document.body shortcut because of the
-  // extra complexity with xml documents and how frameset matches the shortcut.
   const frameset_element = document.querySelector('frameset');
   if (!frameset_element) {
-    // Ensure no frame elements located outside of frameset remain in malformed
-    // html
+    // Still account for malformed cases
     const frame_elements = document.querySelectorAll('frame');
     for (const frame_element of frame_elements) {
       frame_element.remove();
     }
 
-    // Ensure no noframes elements located outside of frameset remain in
-    // malformed html
     const noframes_elements = document.querySelectorAll('noframes');
     for (const noframes_element of noframes_elements) {
       noframes_element.remove();
@@ -402,8 +327,6 @@ export function frame_filter(document) {
     return;
   }
 
-  // NOTE: the following transformations are not optimized for live document
-  // modification. In other words, assume the document is inert.
 
   // If there is a frameset, first look for an existing body element. Do not
   // use the document.body shortcut because it will match frameset. This is
@@ -478,34 +401,18 @@ export function head_filter(document) {
   }
 }
 
-// Removes iframe elements
 export function iframe_filter(document) {
-  if (document.body) {
-    const frames = document.body.querySelectorAll('iframe');
-    for (const frame of frames) {
-      frame.remove();
-    }
+  const frames = document.querySelectorAll('iframe');
+  for (const frame of frames) {
+    frame.remove();
   }
 }
 
-// Removes dead images from the document. An image is 'dead' if it is
-// unfetchable. One reason that an image is unfetchable is when an image does
-// not have an associated source. Note this does not actually test if the image
-// is fetchable, this only examines whether the image looks unfetchable based
-// on its html.
-//
-// A future implementation might consider fetching. But there are some problems
-// with that at the moment considering the overlap between this filter and the
-// filter that sets the width and height of images when the dimensions are
-// missing, and lack of clarity regarding browser caching of image requests,
-// and in particular, concurrent image requests.
+// Removes dead images from the document (e.g. no detectable associated url)
 export function image_dead_filter(document) {
-  if (document.body) {
-    const images = document.body.querySelectorAll('img');
-    for (const image of images) {
-      if (!dom_utils.image_has_source(image)) {
-        dom_utils.remove_image(image);
-      }
+  for (const image of document.querySelectorAll('img')) {
+    if (!dom_utils.image_has_source(image)) {
+      dom_utils.remove_image(image);
     }
   }
 }
@@ -521,19 +428,17 @@ export function image_lazy_filter(document) {
     'data-adaptive-image', 'data-imgsrc', 'data-default-src', 'data-hi-res-src'
   ];
 
-  if (document.body) {
-    const images = document.body.getElementsByTagName('img');
-    for (const image of images) {
-      if (!dom_utils.image_has_source(image)) {
-        const attr_names = image.getAttributeNames();
-        for (const attr_name of lazy_names) {
-          if (attr_names.includes(attr_name)) {
-            const lazy_attr_value = image.getAttribute(attr_name);
-            if (is_valid_url_string(lazy_attr_value)) {
-              image.removeAttribute(attr_name);
-              image.setAttribute('src', lazy_attr_value);
-              break;
-            }
+  const images = document.querySelectorAll('img');
+  for (const image of images) {
+    if (!dom_utils.image_has_source(image)) {
+      const attr_names = image.getAttributeNames();
+      for (const name of lazy_names) {
+        if (attr_names.includes(name)) {
+          const value = image.getAttribute(name);
+          if (dom_utils.is_valid_url_string(value)) {
+            image.removeAttribute(name);
+            image.setAttribute('src', value);
+            break;
           }
         }
       }
@@ -541,30 +446,11 @@ export function image_lazy_filter(document) {
   }
 }
 
-// Only minor validation for speed. Tolerates bad input. This isn't intended to
-// be the most accurate classification. Instead, it is intended to easily find
-// bad urls and rule them out as invalid, even though some slip through, and not
-// unintentionally rule out good urls.
-// @param value {Any} should be a string but this tolerates bad input
-// @returns {Boolean}
-// TODO: move to dom-utils.js
-function is_valid_url_string(value) {
-  // The upper bound on len is an estimate, kind of a safeguard, hopefully never
-  // causes a problem
-  return typeof value === 'string' && value.length > 1 &&
-      value.length <= 3000 && !value.trim().includes(' ');
-}
-
-// Scans the document body for responsive images and conditionally replaces a
-// responsive image element's relevant attributes with properties from one of
-// its srcset descriptors. An image is responsive if it uses a srcset instead of
-// a src.
+// Set the src/width/height attributes for images that only provide srcset
 export function image_responsive_filter(document) {
   const selector = 'img[srcset]:not([src])';
   const images = document.querySelectorAll(selector);
   for (const image of images) {
-    // In the event of a parsing error, srcset_parse returns an empty array,
-    // which effectively means we do nothing in this loop
     const descs = dom_utils.srcset_parse(image.getAttribute('srcset'));
     let chosen_desc = null;
     for (const desc of descs) {
@@ -573,9 +459,7 @@ export function image_responsive_filter(document) {
           chosen_desc = desc;
           break;
         } else if (!chosen_desc) {
-          // Fallback to matching the first descriptor with a url, but continue
-          // looping until we either find a better descriptor or reach the end
-          chosen_desc = desc;
+          chosen_desc = desc;  // continue searching
         }
       }
     }
@@ -596,9 +480,9 @@ export function image_responsive_filter(document) {
   }
 }
 
-// Tries to set width/height attributes for all images in document
+// Tries to set width/height attributes for all images
 export function image_size_filter(document, timeout, is_allowed_request) {
-  assert(document.baseURI);
+  assert(document.baseURI);  // we rely on img.src getter validity
 
   async function proc_image(image) {
     if (image.hasAttribute('width') && image.hasAttribute('height')) {
@@ -702,54 +586,19 @@ function image_is_size_large(image) {
 }
 
 export function image_size_small_filter(document) {
-  if (document.body) {
-    const images = document.body.querySelectorAll('img');
-    for (const image of images) {
-      if (image_is_small(image)) {
-        dom_utils.remove_image(image);
-      }
+  for (const image of document.querySelectorAll('img')) {
+    if (image_is_small(image)) {
+      dom_utils.remove_image(image);
     }
   }
 }
 
 function image_is_small(image) {
-  const width_string = image.getAttribute('width');
-  if (!width_string) {
-    return false;
-  }
-
-  const height_string = image.getAttribute('height');
-  if (!height_string) {
-    return false;
-  }
-
-  const width_int = parseInt(width_string, 10);
-  if (isNaN(width_int)) {
-    return false;
-  }
-
-  const height_int = parseInt(height_string, 10);
-  if (isNaN(height_int)) {
-    return false;
-  }
-
-  if (width_int < 3) {
-    return false;
-  }
-
-  if (height_int < 3) {
-    return false;
-  }
-
-  if (width_int < 33 && height_int < 33) {
-    return true;
-  }
-
-  return false;
+  return image.width > 2 && image.width < 33 && image.height > 2 &&
+      image.height < 33;
 }
 
-
-// Removes empty and/or single-item lists from the document
+// Remove empty/single-item lists
 export function list_filter(document) {
   const lists = document.querySelectorAll('ul, ol, dl');
 
@@ -759,11 +608,8 @@ export function list_filter(document) {
       continue;
     }
 
-    // Determine if the list is empty. If empty, process. Otherwise, continue
-    // the loop to the next list.
     if (list.firstChild) {
-      // The list has one or more child nodes. Inspect the list more closely
-      // to determine emptiness.
+      // The list has one or more child nodes.
       const firstElement = list.firstElementChild;
       if (firstElement) {
         // Of the list's child nodes, one or more are elements
@@ -789,7 +635,6 @@ export function list_filter(document) {
       // The list has no child nodes, so continue to unwrap
     }
 
-    // If we reached here, we want to unwrap the list
     dom_utils.unwrap_element(list);
   }
 }
@@ -903,29 +748,25 @@ function lonestar_is_telemetric(
 // Searches the document for misnested elements and tries to fix each
 // occurrence.
 export function nest_filter(document) {
-  if (!document.body) {
-    return;
-  }
-
-  const nested_hr_elements =
-      document.body.querySelectorAll('ul > hr, ol > hr, dl > hr');
-  for (const hr of nested_hr_elements) {
+  const hrs_within_lists =
+      document.querySelectorAll('ul > hr, ol > hr, dl > hr');
+  for (const hr of hrs_within_lists) {
     hr.remove();
   }
 
-  const descendant_anchors_of_anchors = document.body.querySelectorAll('a a');
-  for (const descendant_anchor of descendant_anchors_of_anchors) {
+  const nested_anchors = document.querySelectorAll('a a');
+  for (const descendant_anchor of nested_anchors) {
     dom_utils.unwrap_element(descendant_anchor);
   }
 
-  const captions = document.body.querySelectorAll('figcaption');
+  const captions = document.querySelectorAll('figcaption');
   for (const caption of captions) {
     if (!caption.parentNode.closest('figure')) {
       caption.remove();
     }
   }
 
-  const sources = document.body.querySelectorAll('source');
+  const sources = document.querySelectorAll('source');
   for (const source of sources) {
     if (!source.parentNode.closest('audio, picture, video')) {
       source.remove();
@@ -936,7 +777,7 @@ export function nest_filter(document) {
   const block_selector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
   const inline_selector = 'a, span, b, strong, i';
 
-  const blocks = document.body.querySelectorAll(block_selector);
+  const blocks = document.querySelectorAll(block_selector);
   for (const block of blocks) {
     const ancestor = block.closest(inline_selector);
     if (ancestor && ancestor.parentNode) {
@@ -950,69 +791,43 @@ export function nest_filter(document) {
 }
 
 export function node_leaf_filter(document) {
-  if (document.body) {
-    const root = document.documentElement;
-    const elements = document.body.querySelectorAll('*');
-    for (const element of elements) {
-      if (root.contains(element) && dom_utils.node_is_leaf(element)) {
-        element.remove();
-      }
+  const root = document.documentElement;
+  const elements = document.querySelectorAll('*');
+  for (const element of elements) {
+    if (root.contains(element) && dom_utils.node_is_leaf(element)) {
+      element.remove();
     }
   }
 }
 
-// Filters certain whitespace from a document. This scans the text nodes of a
-// document and modifies certain text nodes.
+// Filters certain whitespace from node values
 export function node_whitespace_filter(document) {
-  if (!document.body) {
-    return;
-  }
-
-  // TODO: inline
-  function node_is_ws_sensitive(node) {
-    return node.parentNode.closest(
-        'code, pre, ruby, script, style, textarea, xmp');
-  }
-
-  // Ignore node values shorter than this length
-  const node_value_length_min = 3;
-
-  const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
+  const ws_sense = 'code, pre, ruby, script, style, textarea, xmp';
+  const it = document.createNodeIterator(
+      document.documentElement, NodeFilter.SHOW_TEXT);
   for (let node = it.nextNode(); node; node = it.nextNode()) {
-    const value = node.nodeValue;
-    if (value.length > node_value_length_min && !node_is_ws_sensitive(node)) {
-      const new_value = utils.condense_whitespace(value);
-      if (new_value.length !== value.length) {
-        node.nodeValue = new_value;
+    const val = node.nodeValue;
+    if (val.length > 3 && !node.parentNode.closest(ws_sense)) {
+      const new_val = utils.condense_whitespace(val);
+      if (new_val.length !== val.length) {
+        node.nodeValue = new_val;
       }
     }
   }
 }
 
 export function script_filter(document) {
-  // Remove noscripts
-  // TODO: consider transform instead?
-  if (document.body) {
-    const noscripts = document.body.querySelectorAll('noscript');
-    for (const noscript of noscripts) {
-      noscript.remove();
-    }
-  }
-
-  // Not restricted to body
-  const scripts = document.querySelectorAll('script');
-  for (const script of scripts) {
-    script.remove();
+  const elements = document.querySelectorAll('noscript, script');
+  for (const element of elements) {
+    element.remove();
   }
 }
 
 export function semantic_filter(document) {
-  if (document.body) {
-    const selector = 'article, aside, footer, header, main, section';
-    const elements = document.body.querySelectorAll(selector);
-    for (const element of elements) {
-      dom_utils.unwrap_element(element);
-    }
+  const selector = 'article, aside, footer, header, main, section';
+  const elements = document.querySelectorAll(selector);
+  for (const element of elements) {
+    dom_utils.unwrap_element(element);
   }
 }
 
@@ -1080,9 +895,7 @@ export function document_trim_filter(document) {
 // Resolves all element attribute values that contain urls in |document|. Throws
 // an error if the document has an invalid base URI.
 export function url_resolve_filter(document) {
-  // Intentionally propagate error if baseURI is invalid
   const base_url = new URL(document.baseURI);
-  // Element name to attribute name map
   const map = {
     a: 'href',
     applet: 'codebase',
@@ -1133,13 +946,11 @@ export function url_resolve_filter(document) {
     }
   }
 
-  // The remaining passes are body specific
-  if (!document.body) {
-    return;
-  }
+  // TODO: also do this in the first pass somehow, e.g. store * as value in
+  // map and that means it is special handling
 
   const srcset_sel = 'img[srcset], source[srcset]';
-  const srcset_els = document.body.querySelectorAll(srcset_sel);
+  const srcset_els = document.querySelectorAll(srcset_sel);
   for (const element of srcset_els) {
     const descs = dom_utils.srcset_parse(element.getAttribute('srcset'));
 
@@ -1166,14 +977,9 @@ export function url_resolve_filter(document) {
 }
 
 export function visibility_filter(document, matte, mcr) {
-  const body = document.body;
-  if (!body) {
-    return;
-  }
-
-  const elements = body.querySelectorAll('*');
-  for (const element of elements) {
-    if (body.contains(element) && dom_utils.is_hidden_inline(element)) {
+  for (const element of document.querySelectorAll('*')) {
+    if (document.documentElement.contains(element) &&
+        dom_utils.is_hidden_inline(element)) {
       dom_utils.unwrap_element(element);
     }
   }
