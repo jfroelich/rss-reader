@@ -2,6 +2,19 @@ import '/third-party/parse-srcset.js';
 import '/third-party/tinycolor-min.js';
 import assert from '/src/assert.js';
 
+// Only minor validation for speed. Tolerates bad input. This isn't intended to
+// be the most accurate classification. Instead, it is intended to easily find
+// bad urls and rule them out as invalid, even though some slip through, and not
+// unintentionally rule out good urls.
+// @param value {Any} should be a string but this tolerates bad input
+// @returns {Boolean}
+function is_valid_url_string(value) {
+  // The upper bound on len is an estimate, kind of a safeguard, hopefully never
+  // causes a problem
+  return typeof value === 'string' && value.length > 1 &&
+      value.length <= 3000 && !value.trim().includes(' ');
+}
+
 export function is_list_item(node) {
   return ['li', 'dd', 'dt'].includes(node.localName);
 }
