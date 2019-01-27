@@ -5,14 +5,7 @@ import * as ops from '/src/ops.js';
 
 export async function activate_feed_test() {
   const db_name = 'ops-activate-feed-test';
-
-  // I am not using try/finally to ensure the database is removed at the end of
-  // the test when an exception occurs. It leaves the database as existing,
-  // which then causes ripple effect errors here when reusing the existing
-  // database. So just delete the database if it exists first to avoid the
-  // headache.
   await idb.remove(db_name);
-
   const session = await cdb.open(db_name);
 
   // Setup a fake channel for recording messages for later assertions. Do not
@@ -88,7 +81,6 @@ export async function activate_feed_test() {
   }
   assert(activation_error);
 
-  // Test teardown
   session.close();
   await idb.remove(db_name);
 }
@@ -122,8 +114,7 @@ export async function deactivate_feed_test() {
 }
 
 export async function import_opml_test() {
-  function noop() {}
-
+  // TODO: inline
   function create_opml_file(name, text) {
     const file = new Blob([text], {type: 'application/xml'});
     file.name = name;
@@ -143,7 +134,7 @@ export async function import_opml_test() {
   session.channel = {
     name: 'import-opml-test',
     postMessage: message => messages.push(message),
-    close: noop
+    close: function() {}
   };
 
   const opml_string = '<opml version="2.0"><body><outline type="feed" ' +
@@ -165,8 +156,6 @@ export async function import_opml_test() {
 }
 
 export async function subscribe_test() {
-  function noop() {}
-  // Test setup
   const db_name = 'subscribe-test';
   await idb.remove(db_name);
   const session = await cdb.open(db_name);
@@ -176,7 +165,7 @@ export async function subscribe_test() {
   session.channel = {
     name: 'channel-stub',
     postMessage: message => messages.push(message),
-    close: noop
+    close: function() {}
   };
 
   const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
@@ -201,7 +190,6 @@ export async function subscribe_test() {
   assert(messages[0].type === 'feed-created');
   assert(messages[0].id === feed.id);
 
-  // Test teardown
   session.close();
   await idb.remove(db_name);
 }
