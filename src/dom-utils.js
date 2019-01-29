@@ -9,7 +9,7 @@ import * as color from '/src/color.js';
 // unintentionally rule out good urls.
 // @param value {Any} should be a string but this tolerates bad input
 // @returns {Boolean}
-function is_valid_url_string(value) {
+export function is_valid_url_string(value) {
   // The upper bound on len is an estimate, kind of a safeguard, hopefully never
   // causes a problem
   return typeof value === 'string' && value.length > 1 &&
@@ -410,16 +410,16 @@ export function unwrap_element(element) {
     frag.appendChild(doc.createTextNode(' '));
   }
 
-  // TODO: does for..of work on table.rows and table.rows[n].cells?
+  // TODO: does for..of work on element.rows and element.rows[n].cells?
 
   if (is_table) {
-    const row_count = table.rows.length;
+    const row_count = element.rows.length;
     for (let i = 0; i < row_count; i++) {
       const row = rows[i];
       for (let j = 0, clen = row.cells.length; j < clen; j++) {
         const cell = row.cells[j];
         for (let node = cell.firstChild; node; node = cell.firstChild) {
-          parent.insertBefore(node, table);
+          parent.insertBefore(node, element);
         }
       }
     }

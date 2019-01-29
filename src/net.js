@@ -117,13 +117,29 @@ export async function better_fetch(url, options = {}) {
   assert(timeout instanceof Deadline);
 
   const fetch_promise = fetch(url.href, merged_options);
-  const response = await timeout.isDefinite() ?
-      Promise.race([fetch_promise, sleep(timeout)]) :
-      fetch_promise;
+
+  // NOTE: do not use the ternary operator with await because the precedence
+  // of evaluation may cause the await to await on the synchronous non-promise
+  // condition itself, not the result of the condition, and this leads to
+  // response being unawaited and not of type Response. To avoid this, just
+  // do not use ternary together with await. Previously a bug.
+  // Btw, surprising that await can be used on sync and there is no warn.
+  let response;
+  if (timeout.isDefinite()) {
+    response = await Promise.race([fetch_promise, sleep(timeout)]);
+  } else {
+    response = await fetch_promise;
+  }
 
   if (!response) {
     throw new TimeoutError('Timed out trying to fetch ' + url.href);
   }
+
+  // If response is defined, then it must be of type Response or there is
+  // some kind of programming error present. This assert validates the
+  // above logic (which previously had a surprise bug with ternary op + await).
+  assert(
+      response instanceof Response, 'response is not a Response: ' + response);
 
   if (!response.ok) {
     const error_message_parts = [

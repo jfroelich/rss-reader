@@ -34,7 +34,15 @@ export async function poll_feeds(session, iconn, options = {}) {
   const promises = [];
   for (const feed of feeds) {
     const promise = poll_feed(session, iconn, options, feed);
-    const catch_promise = promise.catch(console.warn);
+    const catch_promise = promise.catch(error => {
+      // Fail on assertion, but skip over non-assertion with only warning
+      if (error instanceof AssertionError) {
+        throw error;
+      } else {
+        console.warn(error);
+        // return undefined intentionally
+      }
+    });
     promises.push(promise);
   }
   const results = await Promise.all(promises);
@@ -47,13 +55,14 @@ export async function poll_feeds(session, iconn, options = {}) {
   }
 
   if (count) {
-    const note = {};
-    note.title = 'Added articles';
-    note.message = 'Added articles';
-    note.show(note);
+    console.debug('Possibly showing poll-feeds notification');
+    const notif = {};
+    notif.title = 'Added articles';
+    notif.message = 'Added articles';
+    note.show(notif);
   }
 
-  console.debug('Added %d entries', count);
+  console.debug('poll-feeds completed. Added %d entries.', count);
 }
 
 // Check if a remote feed has new data and store it in the database
@@ -63,7 +72,8 @@ export async function poll_feed(session, iconn, options = {}, feed) {
   assert(feed.urls.length > 0);
   assert(feed.active);
 
-  console.debug('Polling feed with url', feed.urls[feed.urls.length - 1]);
+  // TEMP: enable for trace debugging
+  console.debug('Polling', feed.urls[feed.urls.length - 1]);
 
   // TODO: this collection of rules should not be rebuilt per feed, so rules
   // should be a parameter to this function
@@ -71,13 +81,22 @@ export async function poll_feed(session, iconn, options = {}, feed) {
 
   const tail_url = new URL(feed.urls[feed.urls.length - 1]);
 
-  if (!options.ignore_recency_check && feed.dateFetched) {
+  // TODO: why is this check per feed and not per poll-feeds operation? I am
+  // unsure whether that was a correct design decision. Investigate and review.
+  if (!options.ignore_recency_check && options.recency_period &&
+      feed.dateFetched) {
     const current_date = new Date();
     const time_since_last_fetch = current_date - feed.dateFetched;
-    // TODO: it is wrong to use assert here, these assertions are not guarding
-    // against programmer errors
-    assert(time_since_last_fetch >= 0);
-    assert(time_since_last_fetch >= options.recency_period);
+
+    if (time_since_last_fetch < 0) {
+      throw new Error('Invalid time since last fetch ' + time_since_last_fetch);
+    }
+
+    if (time_since_last_fetch < options.recency_period) {
+      throw new Error(
+          'Poll ran too recently ' + time_since_last_fetch + ' ' +
+          options.recency_period);
+    }
   }
 
   const fetch_options = {};
@@ -92,7 +111,6 @@ export async function poll_feed(session, iconn, options = {}, feed) {
     response = await net.fetch_feed(tail_url, fetch_options);
   } catch (error) {
     if (error instanceof AssertionError) {
-      console.warn('Assertion failed', error);
       throw error;
     }
 
@@ -111,10 +129,11 @@ export async function poll_feed(session, iconn, options = {}, feed) {
       session, iconn, rewrite_rules, options, response.entries, merged_feed);
 
   if (options.notify && count) {
-    const note = {};
-    note.title = 'Added articles';
-    note.message = 'Added ' + count + ' articles for feed ' + merged_feed.title;
-    note.show(note);
+    const notif = {};
+    notif.title = 'Added articles';
+    notif.message =
+        'Added ' + count + ' articles for feed ' + merged_feed.title;
+    note.show(notif);
   }
 
   return count;
@@ -141,12 +160,13 @@ async function poll_entries(
 }
 
 function poll_entry_onerror(error) {
-  if (error instanceof EntryExistsError) {
+  if (error instanceof AssertionError) {
+    // Never trap assertion failure at poll layer
+    throw error;
+  } else if (error instanceof EntryExistsError) {
     // ignore it, this is a routine exit condition
   } else {
-    // Use warn because errors are not critical and not handled, just logged
-    // Note no difference here between programming error and typical errors
-    // like fetch error, parse error
+    // Unknown error type, probably role is informative not logical
     console.warn(error);
   }
 }
@@ -198,7 +218,15 @@ function handle_fetch_success(feed) {
 }
 
 async function handle_fetch_error(session, error, feed, threshold) {
+  // Avoid incrementing error count for programming error
+  if (error instanceof AssertionError) {
+    throw error;
+  }
+
+  // Ignore ephemeral errors that do not suggest the resource is unreachable
+  // indefintely
   if (error instanceof net.TimeoutError || error instanceof net.OfflineError) {
+    console.debug('Ignoring ephemeral fetch error', error);
     return;
   }
 
@@ -276,6 +304,11 @@ function coerce_entry(parsed_entry) {
     try {
       cdb.append_entry_url(clone, new URL(parsed_entry.link));
     } catch (error) {
+      if (error instanceof AssertionError) {
+        throw error;
+      } else {
+        // ignore
+      }
     }
   }
 
@@ -307,7 +340,11 @@ export async function poll_entry(
     try {
       response = await net.fetch_html(url, {timeout: fetch_html_timeout});
     } catch (error) {
-      console.debug(error);
+      if (error instanceof AssertionError) {
+        throw error;
+      } else {
+        console.debug(error);
+      }
     }
   }
 
@@ -334,16 +371,24 @@ export async function poll_entry(
       response_text = await response.text();
       document = parse_html(response_text);
     } catch (error) {
-      console.debug(error);
+      if (error instanceof AssertionError) {
+        throw error;
+      } else {
+        console.debug(error);
+      }
     }
   } else {
     try {
       document = parse_html(entry.content);
     } catch (error) {
-      console.debug(error);
-      document = window.document.implementation.createHTMLDocument();
-      document.documentElement.innerHTML =
-          '<html><body>Malformed content (unsafe to display)</body></html>';
+      if (error instanceof AssertionError) {
+        throw error;
+      } else {
+        console.debug(error);
+        document = window.document.implementation.createHTMLDocument();
+        document.documentElement.innerHTML =
+            '<html><body>Malformed content (unsafe to display)</body></html>';
+      }
     }
   }
 
@@ -363,22 +408,30 @@ export async function poll_entry(
   const filter_options = {};
   filter_options.contrast_matte = config.read_int('contrast_default_matte');
   filter_options.contrast_ratio = config.read_float('min_contrast_ratio');
-  filter_options.image_size_timeout =
-      config.read_int('set_image_sizes_timeout');
-  filter_options.table_scan_max_rows = config.read_int('table_scan_max_rows');
-  filter_options.emphasis_max_length = config.read_int('emphasis_max_length');
-  filter_options.is_allowed_request = net.is_allowed_request;
 
-  if (!Number.isInteger(filter_options.emphasis_max_length)) {
-    console.error(
-        'bug, emphasis_max_length not an integer?',
-        filter_options.emphasis_max_length);
-    filter_options.emphasis_max_length = 300;
+  // Deserialize from config as a Deadline, not a raw int
+  const config_set_image_sz_to = config.read_int('set_image_sizes_timeout');
+  if (!isNaN(config_set_image_sz_to)) {
+    filter_options.image_size_timeout = new Deadline(config_set_image_sz_to);
   }
 
-  await composite_document_filter(document, filter_options);
-  entry.content = document.documentElement.outerHTML;
+  filter_options.table_scan_max_rows = config.read_int('table_scan_max_rows');
 
+  // NOTE: may be NaN if not set or invalid value, only set if valid, this
+  // was previously a bug
+  const config_emph_max_len = config.read_int('emphasis_max_length');
+  if (!isNaN(config_emph_max_len)) {
+    filter_options.emphasis_max_length = config_emph_max_len;
+  }
+
+  filter_options.is_allowed_request = net.is_allowed_request;
+  await composite_document_filter(document, filter_options);
+
+  assert(
+      document.documentElement,
+      'document is missing document element? ' + document);
+
+  entry.content = document.documentElement.outerHTML;
   cdb.sanitize_entry(entry);
   cdb.validate_entry(entry);
   return cdb.create_entry(session, entry);

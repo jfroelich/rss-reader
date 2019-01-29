@@ -1,10 +1,11 @@
 import {assert, AssertionError} from '/src/assert.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as idb from '/src/idb.js';
 import * as net from '/src/net.js';
 
 const DEFAULT_NAME = 'favicon';
 const DEFAULT_VERSION = 1;
-const DEFAULT_TIMEOUT = 500;
+const DEFAULT_TIMEOUT = new Deadline(500);
 
 const ONE_MONTH_MS = 1000 * 60 * 60 * 24 * 30;
 const DEFAULT_MAX_FAILURE_COUNT = 3;
@@ -77,7 +78,7 @@ export async function lookup(request) {
 
   // Memoize a failed lookup
   console.debug(
-      'lookup failed', hostname,
+      'lookup failed to hostname %s with failure count %d', hostname,
       (entry && entry.failures) ? entry.failures + 1 : 1);
   const failure = new Entry();
   failure.hostname = hostname;
@@ -165,6 +166,7 @@ export function Entry() {
 // Return a promise that resolves to a connection
 export function open(
     name = DEFAULT_NAME, version = DEFAULT_VERSION, timeout = DEFAULT_TIMEOUT) {
+  console.debug('favicon.open', name, version, timeout);
   return idb.open(name, version, on_upgrade_needed, timeout);
 }
 

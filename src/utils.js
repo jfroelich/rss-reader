@@ -1,5 +1,15 @@
 import {assert} from '/src/assert.js';
 
+export function query_idle_state(idle_secs) {
+  return new Promise((resolve, reject) => {
+    if (chrome && chrome.idle && chrome.idle.queryState) {
+      chrome.idle.queryState(idle_secs, resolve);
+    } else {
+      reject(new Error('chrome.idle unavailable'));
+    }
+  });
+}
+
 export function filter_unprintables(value) {
   if (typeof value !== 'string') {
     return value;
@@ -226,6 +236,12 @@ export function truncate_html(html_string, position, suffix) {
 
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     node.remove();
+  }
+
+  // TEMP: researching possible issue
+  if (!document.documentElement) {
+    console.warn('Undefined document element?');
+    return '';
   }
 
   if (/<html/i.test(html_string)) {

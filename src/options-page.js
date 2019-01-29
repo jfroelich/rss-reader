@@ -243,7 +243,7 @@ function feed_list_append_feed(feed) {
   }
 
   const title_element = document.createElement('span');
-  let feed_title = feed.title || 'Untitled';
+  let feed_title = feed.title || feed.urls[feed.urls.length - 1];
   feed_title = utils.truncate_html(feed_title, 300);
   title_element.textContent = feed_title;
   item_element.appendChild(title_element);
@@ -280,7 +280,8 @@ async function feed_list_item_onclick(event) {
   session.close();
 
   const title_element = document.getElementById('details-title');
-  title_element.textContent = feed.title || feed.link || 'Untitled';
+  title_element.textContent =
+      feed.title || feed.link || feed.urls[feed.urls.length - 1];
 
   const favicon_element = document.getElementById('details-favicon');
   if (feed.faviconURLString) {
@@ -402,7 +403,7 @@ async function feed_list_init() {
   for (const feed of feeds) {
     // TODO: I think this is actually a concern of feed_list_append_feed? I do
     // not think this needs to be done here, but not sure
-    feed.title = feed.title || 'Untitled';
+    feed.title = feed.title || feed.urls[feed.urls.length - 1];
     feed_list_append_feed(feed);
   }
 
