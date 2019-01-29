@@ -1,11 +1,12 @@
 import assert from '/src/assert.js';
 import * as cdb from '/src/cdb.js';
+import {INDEFINITE} from '/src/deadline.js';
 import * as idb from '/src/idb.js';
 
 export async function cdb_delete_feed_test() {
   const db_name = 'cdb-delete-feed-test';
   await idb.remove(db_name);
-  const session = await cdb.open(db_name);
+  const session = await cdb.open(db_name, undefined, INDEFINITE);
   const feed1 = cdb.construct_feed();
   const url1 = new URL('http://www.example.com/foo.xml');
   cdb.append_feed_url(feed1, url1);

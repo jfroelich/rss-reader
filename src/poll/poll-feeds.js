@@ -1,6 +1,7 @@
 import {assert, AssertionError} from '/src/assert.js';
 import * as cdb from '/src/cdb.js';
 import * as config from '/src/config.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {composite_document_filter} from '/src/dom-filters.js';
 import {set_base_uri} from '/src/dom-utils.js';
 import * as favicon from '/src/favicon.js';
@@ -11,12 +12,13 @@ import {rewrite_url} from '/src/poll/rewrite-url.js';
 import * as sniff from '/src/poll/url-sniff.js';
 import {parse_html} from '/src/utils.js';
 
+// TODO: load defaults from config at start of poll instead of hardcoding
 const default_options = {
   ignore_recency_check: false,
   recency_period: 5 * 60 * 1000,
-  fetch_feed_timeout: 5000,
-  fetch_html_timeout: 5000,
-  fetch_image_timeout: 3000,
+  fetch_feed_timeout: new Deadline(5000),
+  fetch_html_timeout: new Deadline(5000),
+  fetch_image_timeout: new Deadline(3000),
   deactivation_threshold: 10,
   notify: true
 };

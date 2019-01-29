@@ -1,4 +1,5 @@
 import {assert} from '/src/assert.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
 
 // Opens a connection to an indexedDB database. The primary benefits over using
 // indexedDB.open directly are that this works as a promise, enables a timeout,
@@ -10,9 +11,9 @@ import {assert} from '/src/assert.js';
 // wanted to do that I would wrap the call to the listener here with a function
 // that first checks if blocked/timed_out and if so aborts the transaction and
 // closes, otherwise forwards to the listener.
-export async function open(name, version, onupgrade, timeout) {
+export async function open(name, version, onupgrade, timeout = INDEFINITE) {
   assert(typeof name === 'string');
-  assert(timeout === undefined || (Number.isInteger(timeout) && timeout >= 0));
+  assert(timeout instanceof Deadline);
 
   let timed_out = false;
   let timer = null;
@@ -35,7 +36,8 @@ export async function open(name, version, onupgrade, timeout) {
 
       // If we timed out, settle the promise. The settle mode is irrelevant.
       if (timed_out) {
-        console.debug('Closing connection "%s" after timeout', conn.name);
+        console.debug(
+            'Closing connection "%s" after timeout %s', conn.name, deadline);
         conn.close();
         resolve();
         return;
@@ -56,9 +58,9 @@ export async function open(name, version, onupgrade, timeout) {
   });
 
   let conn_promise;
-  if (timeout) {
+  if (timeout !== INDEFINITE) {
     const timeout_promise = new Promise(resolve => {
-      timer = setTimeout(resolve, timeout);
+      timer = setTimeout(resolve, timeout.toInt());
     });
     conn_promise = Promise.race([open_promise, timeout_promise]);
   } else {

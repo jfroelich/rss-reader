@@ -5,16 +5,9 @@ import * as cron_control from '/src/cron.js';
 import * as ops from '/src/ops.js';
 import * as utils from '/src/utils.js';
 
-export async function db_install_listener(event) {
+async function db_install_listener(event) {
   if (event.reason === 'install') {
-    // We pass an explicit timeout of 0, meaning indefinite or no timeout,
-    // because this is potentially a database upgrade that can take a long time
-    // it will almost always timeout otherwise
-    let name = undefined;
-    let version = undefined;
-    const timeout = 0;
-
-    const session = await cdb.open(name, version, timeout);
+    const session = await cdb.open();
     session.close();
   }
 }

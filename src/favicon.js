@@ -11,9 +11,9 @@ const DEFAULT_MAX_FAILURE_COUNT = 3;
 
 export function LookupRequest() {
   this.url = undefined;
+  this.timeout = INDEFINITE;
   this.document = undefined;
   this.conn = undefined;
-  this.fetch_image_timeout = 0;
   this.min_image_size = 30;
   this.max_image_size = 10240;
   this.max_failure_count = DEFAULT_MAX_FAILURE_COUNT;
@@ -21,6 +21,9 @@ export function LookupRequest() {
 
 export async function lookup(request) {
   assert(is_valid_lookup_request(request));
+
+  assert(request.timeout instanceof Deadline);
+
   const conn = request.conn;
   const hostname = request.url.hostname;
 
@@ -90,7 +93,7 @@ async function fetch_root_icon(request) {
   const url = request.url;
   const min_size = request.min_image_size;
   const max_size = request.max_image_size;
-  const timeout = request.fetch_image_timeout;
+  const timeout = request.timeout;
 
   const root_icon = new URL(url.origin + '/favicon.ico');
 

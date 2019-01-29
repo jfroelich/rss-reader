@@ -1,5 +1,7 @@
 import {assert} from '/src/assert.js';
 import * as cdb from '/src/cdb.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
+import {APP_DEFAULT, PERMITTED} from '/src/fetch-policy.js';
 import * as mime from '/src/mime.js';
 import {parse_feed} from '/src/parse-feed.js';
 
@@ -12,19 +14,20 @@ export async function fetch_with_timeout(url, options = {}) {
   assert(url instanceof URL);
   assert(typeof options === 'object');
 
-  // Clone options because we may modify it and strive for purity.
+  // We plan to mutate options prefetch, so clone it to avoid surprising the
+  // caller
   const local_options = Object.assign({}, options);
 
-  // Move timeout from options into a local variable
-  let timeout = 0;
-  if ('timeout' in local_options) {
+  // Move timeout from options into a local
+  let timeout = INDEFINITE;
+  if (local_options.timeout) {
     timeout = local_options.timeout;
-    assert(Number.isInteger(timeout) && timeout >= 0);
+    assert(timeout instanceof Deadline);
     delete local_options.timeout;
   }
 
   let response;
-  if (timeout) {
+  if (timeout.isDefinite()) {
     const timed_promise = sleep(timeout);
     const response_promise = fetch(url.href, local_options);
     const promises = [timed_promise, response_promise];
@@ -43,31 +46,9 @@ export async function fetch_with_timeout(url, options = {}) {
   return response;
 }
 
-// Returns whether a given request is fetchable according to the app's policy.
-// This hardcodes the app's policy into a function. In general, only
-// http-related fetches are permitted, and not against local host. This also
-// disallows embedded credentials explicitly despite that being an implicit
-// constraint imposed by the native fetch.
-// This function represents the app's default fetch policy. Callers can
-// optionally provide a different policy to fetch functions provided they
-// follow this signature.
-export function is_allowed_request(request) {
-  const method = request.method || 'GET';
-  const url = request.url;
-
-  const allowed_protocols = ['data', 'http', 'https'];
-  const allowed_methods = ['GET', 'HEAD'];
-
-  const protocol = url.protocol.substring(0, url.protocol.length - 1);
-
-  return allowed_protocols.includes(protocol) && url.hostname !== 'localhost' &&
-      url.hostname !== '127.0.0.1' && !url.username && !url.password &&
-      allowed_methods.includes(method.toUpperCase());
-}
-
 export function fetch_html(url, options = {}) {
   const opts = Object.assign({}, options);
-  const policy = options.policy || is_allowed_request;
+  const policy = options.policy || APP_DEFAULT;
   const types = ['text/html'];
   if (options.allow_text) {
     types.push('text/plain');
@@ -81,10 +62,9 @@ export function fetch_html(url, options = {}) {
   return better_fetch(url, opts);
 }
 
-// Extends the builtin fetch with timeout, response type checking, and a way to
-// explicitly reject certain urls for policy reasons. Either returns a response,
-// or throws an error of some kind.
-// options.timeout - specify timeout in ms
+// Extends the builtin fetch with timeout, Accept validation, and policy
+// constraints. Returns a response or throws an error.
+// options.timeout - specify timeout as Deadline
 // options.types - optional array of strings of mime types to check against
 // options.is_allowed_request
 export async function better_fetch(url, options = {}) {
@@ -96,10 +76,10 @@ export async function better_fetch(url, options = {}) {
     throw new OfflineError('Failed to fetch url while offline ' + url.href);
   }
 
-  const is_allowed_request = options.is_allowed_request;
+  const is_allowed_request = options.is_allowed_request || PERMITTED;
 
   const request_data = {method: options.method, url: url};
-  if (is_allowed_request && !is_allowed_request(request_data)) {
+  if (!is_allowed_request(request_data)) {
     const message =
         ['Refusing to request url', url.href, 'with method', options.method];
     throw new PolicyError(message.join(' '));
@@ -134,16 +114,12 @@ export async function better_fetch(url, options = {}) {
     delete merged_options.types;
   }
 
-  const untimed = typeof timeout === 'undefined';
-  if (!untimed) {
-    if (!Number.isInteger(timeout) || timeout < 0) {
-      throw new TypeError('timeout is not a positive integer');
-    }
-  }
+  assert(timeout instanceof Deadline);
 
   const fetch_promise = fetch(url.href, merged_options);
-  const response = await (
-      untimed ? fetch_promise : Promise.race([fetch_promise, sleep(timeout)]));
+  const response = await timeout.isDefinite() ?
+      Promise.race([fetch_promise, sleep(timeout)]) :
+      fetch_promise;
 
   if (!response) {
     throw new TimeoutError('Timed out trying to fetch ' + url.href);
@@ -231,9 +207,9 @@ export async function fetch_image(url, options = {}) {
 
 // Returns a promise that resolves to undefined after a given amount of
 // milliseconds.
-function sleep(ms = 0) {
-  assert(Number.isInteger(ms) && ms >= 0);
-  return new Promise(resolve => setTimeout(resolve, ms));
+function sleep(delay = INDEFINITE) {
+  assert(delay instanceof Deadline);
+  return new Promise(resolve => setTimeout(resolve, delay.toInt()));
 }
 
 // Return whether the response url is "different" than the request url,
@@ -268,6 +244,8 @@ export async function fetch_feed(url, options) {
     'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
     'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
   ];
+
+  assert(options.timeout === undefined || options.timeout instanceof Deadline);
 
   const opts = {timeout: options.timeout, types: feed_mime_types};
   const response = await better_fetch(url, opts);
@@ -333,23 +311,21 @@ export async function fetch_feed(url, options) {
 // @param is_allowed_request {Function} optional, is given a request-like
 // object, throws a policy error if the function returns false
 export async function fetch_image_element(
-    url, timeout = 0, is_allowed_request) {
+    url, timeout = INDEFINITE, is_allowed_request = PERMITTED) {
   assert(url instanceof URL);
+  assert(timeout instanceof Deadline);
+  assert(is_allowed_request instanceof Function);
 
   const request_data = {method: 'GET', url: url};
-  if (is_allowed_request && !is_allowed_request(request_data)) {
+  if (!is_allowed_request(request_data)) {
     throw new PolicyError('Refused to fetch ' + url.href);
   }
-
   const fpromise = fetch_image_element_promise(url);
   const contestants = timeout ? [fpromise, sleep(timeout)] : [fpromise];
   const image = await Promise.race(contestants);
-
-  // Image is undefined when sleep won
   if (!image) {
     throw new TimeoutError('Timed out fetching ' + url.href);
   }
-
   return image;
 }
 
@@ -362,7 +338,8 @@ export async function fetch_image_element(
 // whether the document is live or inert. Documents created by DOMParser and
 // XMLHttpRequest are inert. In an inert document the src setter method does not
 // work.
-function fetch_image_element_promise(url, is_allowed_request) {
+// TODO: actually obey policy?
+function fetch_image_element_promise(url, is_allowed_request = PERMITTED) {
   return new Promise((resolve, reject) => {
     const proxy = new Image();
     proxy.src = url.href;

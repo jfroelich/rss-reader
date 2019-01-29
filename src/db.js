@@ -1,10 +1,11 @@
 import {assert} from '/src/assert.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as idb from '/src/idb.js';
 import * as utils from '/src/utils.js';
 
 const DEFAULT_NAME = 'reader';
 const DEFAULT_VERSION = 29;
-const DEFAULT_TIMEOUT = 500;
+
 
 export const ENTRY_MAGIC = 0xdeadbeef;
 export const FEED_MAGIC = 0xfeedfeed;
@@ -69,19 +70,10 @@ export function append_feed_url(feed, url) {
 
 // Returns a promise that resolves to a new database connection or rejects with
 // an error.
-export function open(name, version, timeout) {
-  if (name === undefined) {
-    name = DEFAULT_NAME;
-  }
-
-  if (version === undefined) {
-    version = DEFAULT_VERSION;
-  }
-
-  if (timeout === undefined) {
-    timeout = DEFAULT_TIMEOUT;
-  }
-
+// NOTE: previously timeout was 500ms, but it makes more sense to default to
+// untimed. 500 should come from app preferences in higher layer
+export function open(
+    name = DEFAULT_NAME, version = DEFAULT_VERSION, timeout = INDEFINITE) {
   return idb.open(name, version, on_upgrade_needed, timeout);
 }
 

@@ -1,4 +1,5 @@
 import * as db from '/src/db.js';
+import {INDEFINITE} from '/src/deadline.js';
 
 export {append_entry_url, append_feed_url, construct_entry, construct_feed, entry_has_url, feed_has_url, InvalidStateError, is_entry, is_feed, is_valid_entry_id, is_valid_feed_id, NotFoundError, sanitize_entry, sanitize_feed, validate_entry, validate_feed, ValidationError} from '/src/db.js';
 
@@ -24,7 +25,8 @@ class CDBSession {
   }
 }
 
-export async function open(name, version, timeout, channel_name = 'reader') {
+export async function open(
+    name, version, timeout = INDEFINITE, channel_name = 'reader') {
   const session = new CDBSession();
   session.channel = new BroadcastChannel(channel_name);
   session.conn = await db.open(name, version, timeout);

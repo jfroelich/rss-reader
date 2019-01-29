@@ -1,6 +1,7 @@
 import {assert, AssertionError} from '/src/assert.js';
 import * as boilerplate from '/src/boilerplate.js';
 import * as color from '/src/color.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as dom_utils from '/src/dom-utils.js';
 import * as net from '/src/net.js';
 import * as utils from '/src/utils.js';
@@ -489,7 +490,8 @@ export function image_responsive_filter(document) {
 }
 
 // Tries to set width/height attributes for all images
-export function image_size_filter(document, timeout, is_allowed_request) {
+export function image_size_filter(
+    document, timeout = INDEFINITE, is_allowed_request) {
   assert(document.baseURI);  // we rely on img.src getter validity
 
   async function proc_image(image) {
