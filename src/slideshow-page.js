@@ -56,7 +56,12 @@ async function show_next_slide() {
   const slide_unread_count = count_unread_slides();
   let entries = [];
   if (slide_unread_count < 3) {
-    const limit = config.read_int('initial_entry_load_limit');
+    let limit = undefined;
+    const config_limit = config.read_int('initial_entry_load_limit');
+    if (!isNaN(config_limit)) {
+      limit = config_limit;
+    }
+
     const mode = 'viewable';
     entries = await cdb.get_entries(session, mode, slide_unread_count, limit);
   }

@@ -11,6 +11,12 @@ export async function composite_document_filter(document, options = {}) {
   assert(document instanceof Document);
   assert(typeof options === 'object');
 
+  // Filters operate on the assumption that the baseURI for the document is
+  // valid. Minimally verify that assumption.
+  // TODO: perhaps improve, e.g. rule out chrome-extension:// and things that
+  // indicate programming mistakes
+  assert(document.baseURI);
+
   frame_filter(document);
   body_filter(document);
   iframe_filter(document);
@@ -29,8 +35,12 @@ export async function composite_document_filter(document, options = {}) {
   image_responsive_filter(document);
   lonestar_filter(document);
   image_dead_filter(document);
+
+  // console.debug('Setting image sizes for document', document.baseURI);
   await image_size_filter(
       document, options.image_size_timeout, options.is_allowed_request);
+  // console.debug('Completed setting image sizes for document',
+  // document.baseURI);
   boilerplate_filter(document);
   anchor_script_filter(document);
   image_size_small_filter(document);

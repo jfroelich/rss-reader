@@ -2,15 +2,15 @@ import {assert, AssertionError} from '/src/assert.js';
 import * as cdb from '/src/cdb.js';
 import * as config from '/src/config.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
-import {composite_document_filter} from '/src/dom-filters.js';
-import {set_base_uri} from '/src/dom-utils.js';
+import * as dom_filters from '/src/dom-filters.js';
+import * as dom_utils from '/src/dom-utils.js';
 import * as favicon from '/src/favicon.js';
 import * as net from '/src/net.js';
 import * as note from '/src/note.js';
 import {build as build_rewrite_rules} from '/src/poll/rewrite-rules.js';
 import {rewrite_url} from '/src/poll/rewrite-url.js';
 import * as sniff from '/src/poll/url-sniff.js';
-import {parse_html} from '/src/utils.js';
+import * as utils from '/src/utils.js';
 
 // TODO: load defaults from config at start of poll instead of hardcoding
 const default_options = {
@@ -23,30 +23,27 @@ const default_options = {
   notify: true
 };
 
-function get_pollable_feeds(session) {
-  return cdb.get_feeds(session, 'active', false);
-}
+export async function poll_feeds(session, iconn, input_options = {}) {
+  // Clone options into a local object so that modifications do not produce
+  // side effects on parameters and avoid caller surprise
+  const options = Object.assign({}, default_options, input_options);
 
-export async function poll_feeds(session, iconn, options = {}) {
-  options = Object.assign({}, default_options, options);
+  // Load feeds that are pollable from the database in natural order
+  const feeds = await cdb.get_feeds(session, 'active', false);
+  console.debug('Loaded %d feeds for polling', feeds.length);
 
-  const feeds = await get_pollable_feeds(session);
-  const promises = [];
-  for (const feed of feeds) {
-    const promise = poll_feed(session, iconn, options, feed);
-    const catch_promise = promise.catch(error => {
-      // Fail on assertion, but skip over non-assertion with only warning
-      if (error instanceof AssertionError) {
-        throw error;
-      } else {
-        console.warn(error);
-        // return undefined intentionally
-      }
-    });
-    promises.push(promise);
-  }
+  // Concurrently poll each feed
+  const promises = feeds.map(feed => {
+    return poll_feed(session, iconn, options, feed);
+  });
+
+  // Wait for all poll-feed promises to settle
   const results = await Promise.all(promises);
 
+  // TEMP: researching poll issue
+  console.debug('All feeds polled');
+
+  // Calculate the total number of entries added across all feeds.
   let count = 0;
   for (const result of results) {
     if (result) {
@@ -73,7 +70,7 @@ export async function poll_feed(session, iconn, options = {}, feed) {
   assert(feed.active);
 
   // TEMP: enable for trace debugging
-  console.debug('Polling', feed.urls[feed.urls.length - 1]);
+  console.debug('Polling feed', feed.urls[feed.urls.length - 1]);
 
   // TODO: this collection of rules should not be rebuilt per feed, so rules
   // should be a parameter to this function
@@ -83,7 +80,11 @@ export async function poll_feed(session, iconn, options = {}, feed) {
 
   // TODO: why is this check per feed and not per poll-feeds operation? I am
   // unsure whether that was a correct design decision. Investigate and review.
-  if (!options.ignore_recency_check && options.recency_period &&
+
+  // TEMP: disabled recency limit during debugging.This is not the best way to
+  // debug but trying to do this quickly and with no effort
+
+  if (false && !options.ignore_recency_check && options.recency_period &&
       feed.dateFetched) {
     const current_date = new Date();
     const time_since_last_fetch = current_date - feed.dateFetched;
@@ -110,19 +111,36 @@ export async function poll_feed(session, iconn, options = {}, feed) {
   try {
     response = await net.fetch_feed(tail_url, fetch_options);
   } catch (error) {
+    // Never swallow assertion errors
     if (error instanceof AssertionError) {
       throw error;
     }
 
     await handle_fetch_error(
         session, error, feed, options.deactivation_threshold);
+    console.debug(
+        'Exiting poll-feed for feed %s due to non-fatal fetch error',
+        feed.urls[feed.urls.length - 1]);
     return 0;
   }
 
   const merged_feed = merge_feed(feed, response.feed);
-  handle_fetch_success(merged_feed);
+
+  // If we were successful, ensure that the error metrics are updated
+  if ('errorCount' in merged_feed) {
+    if (typeof merged_feed.errorCount === 'number') {
+      if (merged_feed.errorCount > 0) {
+        merged_feed.errorCount--;
+      }
+    } else {
+      delete merged_feed.errorCount;
+    }
+  }
+
   cdb.validate_feed(merged_feed);
   cdb.sanitize_feed(merged_feed);
+
+  console.debug('Updating feed in db', feed.urls[feed.urls.length - 1]);
   await cdb.update_feed(session, merged_feed, true);
 
   const count = await poll_entries(
@@ -136,42 +154,23 @@ export async function poll_feed(session, iconn, options = {}, feed) {
     note.show(notif);
   }
 
+  console.debug(
+      'Completed polling feed %s, added %d entries',
+      feed.urls[feed.urls.length - 1], count);
   return count;
 }
 
 async function poll_entries(
     session, iconn, rewrite_rules, options, entries, feed) {
   const feed_url_string = feed.urls[feed.urls.length - 1];
+
+  // TEMP: investigating poll issue
+  console.debug('Polling %d entries for feed', entries.length, feed_url_string);
+
   const coerced_entries = entries.map(coerce_entry);
   entries = dedup_entries(coerced_entries);
-  propagate_feed_properties(feed, entries);
 
-  const poll_entry_promises = [];
-  for (const entry of entries) {
-    const promise = poll_entry(
-        session, iconn, entry, options.fetch_html_timeout,
-        options.fetch_image_timeout, rewrite_rules, feed_url_string);
-    const catch_promise = promise.catch(poll_entry_onerror);
-    poll_entry_promises.push(catch_promise);
-  }
-  const new_entry_ids = await Promise.all(poll_entry_promises);
-  const count = new_entry_ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
-  return count;
-}
-
-function poll_entry_onerror(error) {
-  if (error instanceof AssertionError) {
-    // Never trap assertion failure at poll layer
-    throw error;
-  } else if (error instanceof EntryExistsError) {
-    // ignore it, this is a routine exit condition
-  } else {
-    // Unknown error type, probably role is informative not logical
-    console.warn(error);
-  }
-}
-
-function propagate_feed_properties(feed, entries) {
+  // Propagate feed properties to entries
   for (const entry of entries) {
     entry.feed = feed.id;
     entry.feedTitle = feed.title;
@@ -181,6 +180,21 @@ function propagate_feed_properties(feed, entries) {
       entry.datePublished = feed.datePublished;
     }
   }
+
+  // Concurrently poll all entries
+  const poll_entry_promises = entries.map(entry => {
+    return poll_entry(
+        session, iconn, entry, options.fetch_html_timeout,
+        options.fetch_image_timeout, rewrite_rules, feed_url_string);
+  });
+
+  const new_entry_ids = await Promise.all(poll_entry_promises);
+  const count = new_entry_ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
+
+  console.debug(
+      'Completed polling entries for feed %s, added %d entries',
+      feed_url_string, count);
+  return count;
 }
 
 // Returns a new object that results from merging the old feed with the new
@@ -202,24 +216,12 @@ function merge_feed(old_feed, new_feed) {
   return merged_feed;
 }
 
-function handle_fetch_success(feed) {
-  if ('errorCount' in feed) {
-    if (typeof feed.errorCount === 'number') {
-      if (feed.errorCount > 0) {
-        feed.errorCount--;
-        return true;
-      }
-    } else {
-      delete feed.errorCount;
-      return true;
-    }
-  }
-  return false;
-}
-
 async function handle_fetch_error(session, error, feed, threshold) {
   // Avoid incrementing error count for programming error
   if (error instanceof AssertionError) {
+    // TEMP: researching issue in case error swallowed
+    console.error('Assertion error', error);
+
     throw error;
   }
 
@@ -234,8 +236,9 @@ async function handle_fetch_error(session, error, feed, threshold) {
   feed.errorCount = Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;
 
   console.debug(
-      'Incremented error count for feed', feed.title, feed.errorCount);
-  console.debug(error);
+      'Incremented error count for feed', feed.urls[feed.urls.length - 1],
+      feed.errorCount);
+  console.debug('Encountered problem polling entry', error);
 
   // Auto-deactivate on threshold breach
   if (feed.errorCount > threshold) {
@@ -318,10 +321,15 @@ function coerce_entry(parsed_entry) {
 // Processes an entry and possibly adds it to the database. Attempts to fetch
 // the full text of the entry. Either returns the added entry id, or throws an
 // error.
+// TODO: there are just too many parameters to this function
 export async function poll_entry(
     session, iconn, entry, fetch_html_timeout, fetch_image_timeout,
     rewrite_rules, feed_url_string) {
   assert(cdb.is_entry(entry));
+  // TODO: use entry.has_url or something like this
+  assert(Array.isArray(entry.urls) && entry.urls.length);
+
+  console.debug('poll-entry', entry.urls[entry.urls.length - 1]);
 
   let url = new URL(entry.urls[entry.urls.length - 1]);
   cdb.append_entry_url(entry, rewrite_url(url, rewrite_rules));
@@ -329,7 +337,8 @@ export async function poll_entry(
   url = new URL(entry.urls[entry.urls.length - 1]);
   let existing_entry = await cdb.get_entry(session, 'url', url, true);
   if (existing_entry) {
-    throw new EntryExistsError('Entry already exists for url ' + url.href);
+    console.debug('entry already exists', url.href);
+    return 0;
   }
 
   // Fetch the entry full text. Reuse the url from above since it has not
@@ -338,6 +347,7 @@ export async function poll_entry(
   if ((url.protocol === 'http:' || url.protocol === 'https:') &&
       sniff.classify(url) !== sniff.BINARY_CLASS && !url_is_inaccessible(url)) {
     try {
+      console.debug('Poll entry fetch', url.href, fetch_html_timeout);
       response = await net.fetch_html(url, {timeout: fetch_html_timeout});
     } catch (error) {
       if (error instanceof AssertionError) {
@@ -361,15 +371,15 @@ export async function poll_entry(
       url = new URL(entry.urls[entry.urls.length - 1]);
       existing_entry = await cdb.get_entry(session, 'url', url, true);
       if (existing_entry) {
-        throw new EntryExistsError(
-            'Entry exists for redirected url ' + url.href);
+        console.debug('entry redirect already exists', url.href);
+        return 0;
       }
     }
 
     let response_text;
     try {
       response_text = await response.text();
-      document = parse_html(response_text);
+      document = utils.parse_html(response_text);
     } catch (error) {
       if (error instanceof AssertionError) {
         throw error;
@@ -379,7 +389,7 @@ export async function poll_entry(
     }
   } else {
     try {
-      document = parse_html(entry.content);
+      document = utils.parse_html(entry.content);
     } catch (error) {
       if (error instanceof AssertionError) {
         throw error;
@@ -401,9 +411,22 @@ export async function poll_entry(
 
   assert(document);
 
-  await update_entry_icon(iconn, entry, document);
+  // TODO: this could also be the source of the hang
+  console.debug('Setting entry favicon', entry.urls[entry.urls.length - 1]);
+  const lookup_url = new URL(entry.urls[entry.urls.length - 1]);
+  const lookup_request = new favicon.LookupRequest();
+  lookup_request.conn = iconn;
+  lookup_request.url = lookup_url;
+  lookup_request.document = document;
+  const icon_url_string = await favicon.lookup(lookup_request);
+  if (icon_url_string) {
+    entry.faviconURLString = icon_url_string;
+  }
+  console.debug(
+      'Completed entry set favicon', entry.urls[entry.urls.length - 1]);
 
-  set_base_uri(document, url);
+
+  dom_utils.set_base_uri(document, url);
 
   const filter_options = {};
   filter_options.contrast_matte = config.read_int('contrast_default_matte');
@@ -425,7 +448,15 @@ export async function poll_entry(
   }
 
   filter_options.is_allowed_request = net.is_allowed_request;
-  await composite_document_filter(document, filter_options);
+
+  // TEMP: researching issue with poll hanging
+  console.debug(
+      'Filtering document for entry', entry.urls[entry.urls.length - 1]);
+
+  await dom_filters.composite_document_filter(document, filter_options);
+
+  console.debug(
+      'Filtered document for entry', entry.urls[entry.urls.length - 1]);
 
   assert(
       document.documentElement,
@@ -434,6 +465,8 @@ export async function poll_entry(
   entry.content = document.documentElement.outerHTML;
   cdb.sanitize_entry(entry);
   cdb.validate_entry(entry);
+
+  console.debug('Storing entry in db', entry.urls[entry.urls.length - 1]);
   return cdb.create_entry(session, entry);
 }
 
@@ -481,24 +514,4 @@ function url_is_inaccessible(url) {
     }
   }
   return false;
-}
-
-async function update_entry_icon(iconn, entry, document) {
-  const lookup_url = new URL(entry.urls[entry.urls.length - 1]);
-  const request = new favicon.LookupRequest();
-  request.conn = iconn;
-  request.url = lookup_url;
-  request.document = document;
-  const icon_url_string = await favicon.lookup(request);
-  if (icon_url_string) {
-    entry.faviconURLString = icon_url_string;
-  }
-}
-
-function noop() {}
-
-export class EntryExistsError extends Error {
-  constructor(message = 'Entry already exists') {
-    super(message);
-  }
 }
