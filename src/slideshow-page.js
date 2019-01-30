@@ -1,18 +1,3 @@
-// TODO: append-slide should be relying on css-based truncation rather than
-// calling truncate_html BUG: create_article_title_element is double encoding
-// entities, so entities show up in the value. I partially fixed by not escaping
-// ampersand but that's not the correct solution.
-// TODO: the creation of a slide element, and the appending of a slide element,
-// should be two separate tasks. This will increase flexibility and maybe
-// clarity. append_slide should accept a slide element, not an entry. It is
-// confusing that this function is named append_slide, but it accepts an entry,
-// not a slide, which is just plain bad naming.
-// TODO: the default duration should come from localStorage, and be stored
-// in localStorage instead of maintained here in module scope, and should be
-// accessed using config module io operations. Duration should be a configurable
-// option customizable by the user, because slide animation speed can be a real
-// tactile encumbrance
-
 import {assert} from '/src/assert.js';
 import * as cdb from '/src/cdb.js';
 import * as config_control from '/src/config-control.js';
@@ -21,7 +6,6 @@ import * as favicon from '/src/favicon.js';
 import * as ops from '/src/ops.js';
 import {poll_feeds} from '/src/poll/poll-feeds.js';
 import * as utils from '/src/utils.js';
-
 
 const splash_element = document.getElementById('initial-loading-panel');
 const feeds_container = document.getElementById('feeds-container');
@@ -37,8 +21,6 @@ let refresh_in_progress = false;
 const no_articles_element = document.getElementById('no-entries-message');
 let current_slide = null;
 let active_transition_count = 0;
-
-
 
 async function show_next_slide() {
   if (get_active_transition_count()) {
@@ -128,7 +110,6 @@ function show_prev_slide() {
   set_current_slide(previous_slide);
 }
 
-
 function get_current_slide() {
   return current_slide;
 }
@@ -159,7 +140,6 @@ function decrement_active_transition_count() {
     active_transition_count--;
   }
 }
-
 
 async function slide_onclick(event) {
   // Only intercept left clicks
@@ -792,7 +772,6 @@ function create_slide(entry) {
   slide.appendChild(slide_pad_wrap);
   return slide;
 }
-
 
 function create_article_title_element(entry) {
   const title_element = document.createElement('a');
