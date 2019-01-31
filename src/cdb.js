@@ -1,7 +1,29 @@
 import * as db from '/src/db.js';
 import {INDEFINITE} from '/src/deadline.js';
 
-export {append_entry_url, append_feed_url, construct_entry, construct_feed, entry_has_url, feed_has_url, InvalidStateError, is_entry, is_feed, is_valid_entry_id, is_valid_feed_id, NotFoundError, sanitize_entry, sanitize_feed, validate_entry, validate_feed, ValidationError} from '/src/db.js';
+// clang-format off
+export {
+  append_entry_url,
+  append_feed_url,
+  construct_entry,
+  construct_feed,
+  entry_has_url,
+  feed_get_url,
+  feed_has_url,
+  InvalidStateError,
+  is_entry,
+  is_feed,
+  is_valid_entry_id,
+  is_valid_feed_id,
+  NotFoundError,
+  sanitize_entry,
+  sanitize_feed,
+  validate_entry,
+  validate_feed,
+  ValidationError
+} from '/src/db.js';
+
+// clang-format on
 
 class CDBSession {
   constructor() {

@@ -6,7 +6,6 @@ import * as utils from '/src/utils.js';
 const DEFAULT_NAME = 'reader';
 const DEFAULT_VERSION = 29;
 
-
 export const ENTRY_MAGIC = 0xdeadbeef;
 export const FEED_MAGIC = 0xfeedfeed;
 
@@ -24,6 +23,7 @@ export const INVALID_FEED_ID = 0;
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
+// |url| should be of type URL.
 export function append_entry_url(entry, url) {
   assert(is_entry(entry));
   return append_url_common(entry, url);
@@ -66,6 +66,13 @@ export function feed_has_url(feed) {
 export function append_feed_url(feed, url) {
   assert(is_feed(feed));
   return append_url_common(feed, url);
+}
+
+// Get the tail url as a string
+export function feed_get_url(feed) {
+  assert(is_feed(feed));
+  assert(feed_has_url(feed));
+  return feed.urls[feed.urls.length - 1];
 }
 
 // Returns a promise that resolves to a new database connection or rejects with
@@ -1157,7 +1164,9 @@ function is_valid_limit(limit) {
 }
 
 function append_url_common(object, url) {
-  assert(typeof url.href === 'string');
+  assert(object);
+  assert(object.magic === FEED_MAGIC || object.magic === ENTRY_MAGIC);
+  assert(url instanceof URL);
 
   const normal_url_string = url.href;
   if (object.urls) {

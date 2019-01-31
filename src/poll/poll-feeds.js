@@ -65,24 +65,26 @@ export async function poll_feeds(session, iconn, input_options = {}) {
 // Check if a remote feed has new data and store it in the database
 export async function poll_feed(session, iconn, options = {}, feed) {
   assert(cdb.is_feed(feed));
-  assert(Array.isArray(feed.urls));
-  assert(feed.urls.length > 0);
-  assert(feed.active);
 
-  // TEMP: enable for trace debugging
-  console.debug('Polling feed', feed.urls[feed.urls.length - 1]);
+  if (!cdb.feed_has_url(feed)) {
+    console.warn('Tried to poll feed without url', feed);
+    return 0;
+  }
 
-  // TODO: this collection of rules should not be rebuilt per feed, so rules
-  // should be a parameter to this function
+  if (!feed.active) {
+    console.warn('Tried to poll feed that is inactive', feed);
+    return 0;
+  }
+
+  // TEMP: enable for trace debugging issue with poll hang
+  console.debug('Polling feed', cdb.feed_get_url(feed));
+
   const rewrite_rules = build_rewrite_rules();
-
-  const tail_url = new URL(feed.urls[feed.urls.length - 1]);
-
-  // TODO: why is this check per feed and not per poll-feeds operation? I am
-  // unsure whether that was a correct design decision. Investigate and review.
+  const tail_url = new URL(cdb.feed_get_url(feed));
 
   // TEMP: disabled recency limit during debugging.This is not the best way to
-  // debug but trying to do this quickly and with no effort
+  // debug but trying to do this quickly and with no effort. Remove the
+  // false && here to reenable.
 
   if (false && !options.ignore_recency_check && options.recency_period &&
       feed.dateFetched) {
@@ -90,23 +92,27 @@ export async function poll_feed(session, iconn, options = {}, feed) {
     const time_since_last_fetch = current_date - feed.dateFetched;
 
     if (time_since_last_fetch < 0) {
-      throw new Error('Invalid time since last fetch ' + time_since_last_fetch);
+      console.debug('Poll ran too recently, elapsed is negative');
+      return 0;
     }
 
     if (time_since_last_fetch < options.recency_period) {
-      throw new Error(
-          'Poll ran too recently ' + time_since_last_fetch + ' ' +
-          options.recency_period);
+      console.debug('Poll ran too recently');
+      return 0;
     }
   }
 
+  // Fetch the feed
   const fetch_options = {};
   fetch_options.timeout = options.fetch_feed_timeout;
   fetch_options.skip_entries = false;
   fetch_options.resolve_entry_urls = true;
-
   const skip_entries = false;
   const resolve_entry_urls = true;
+
+  // TODO: fetch feed yields an object, not a Response, and I confused myself
+  // already. Rename response here to fetch_result
+
   let response;
   try {
     response = await net.fetch_feed(tail_url, fetch_options);
@@ -116,13 +122,21 @@ export async function poll_feed(session, iconn, options = {}, feed) {
       throw error;
     }
 
-    await handle_fetch_error(
+    await handle_fetch_feed_error(
         session, error, feed, options.deactivation_threshold);
-    console.debug(
-        'Exiting poll-feed for feed %s due to non-fatal fetch error',
-        feed.urls[feed.urls.length - 1]);
+    console.warn('poll-feed fetch error', cdb.feed_get_url(feed), error);
     return 0;
   }
+
+  assert(typeof response === 'object');
+
+  // Temp: debugging
+  if (!(response.http_response instanceof Response)) {
+    console.warn('Invalid response fetching feed');
+    console.dir(response);
+    return 0;
+  }
+
 
   const merged_feed = merge_feed(feed, response.feed);
 
@@ -140,11 +154,46 @@ export async function poll_feed(session, iconn, options = {}, feed) {
   cdb.validate_feed(merged_feed);
   cdb.sanitize_feed(merged_feed);
 
-  console.debug('Updating feed in db', feed.urls[feed.urls.length - 1]);
+  console.debug('Updating feed in db', cdb.feed_get_url(feed));
   await cdb.update_feed(session, merged_feed, true);
 
-  const count = await poll_entries(
-      session, iconn, rewrite_rules, options, response.entries, merged_feed);
+  // const count = await poll_entries(
+  //    session, iconn, rewrite_rules, options, response.entries, merged_feed);
+
+  const feed_url_string = cdb.feed_get_url(merged_feed);
+
+  // TEMP: investigating poll issue
+  console.debug(
+      'Polling %d entries for feed', response.entries.length, feed_url_string);
+
+  const coerced_entries = entries.map(coerce_entry);
+  const entries = dedup_entries(coerced_entries);
+
+  // Propagate feed properties to entries
+  for (const entry of entries) {
+    entry.feed = merged_feed.id;
+    entry.feedTitle = merged_feed.title;
+    entry.faviconURLString = merged_feed.faviconURLString;
+    if (merged_feed.datePublished && !entry.datePublished) {
+      entry.datePublished = merged_feed.datePublished;
+    }
+  }
+
+  // TEMP: track index of each entry for debugging
+  let entry_index = 0;
+
+  // Concurrently poll all entries
+  const poll_entry_promises = entries.map(entry => {
+    const promise = poll_entry(
+        session, iconn, entry, options.fetch_html_timeout,
+        options.fetch_image_timeout, rewrite_rules, feed_url_string,
+        entry_index, entries.length);
+    entry_index++;
+    return promise;
+  });
+
+  const new_entry_ids = await Promise.all(poll_entry_promises);
+  const count = new_entry_ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
 
   if (options.notify && count) {
     const notif = {};
@@ -155,47 +204,11 @@ export async function poll_feed(session, iconn, options = {}, feed) {
   }
 
   console.debug(
-      'Completed polling feed %s, added %d entries',
-      feed.urls[feed.urls.length - 1], count);
+      'Completed polling feed %s, added %d entries', cdb.feed_get_url(feed),
+      count);
   return count;
 }
 
-async function poll_entries(
-    session, iconn, rewrite_rules, options, entries, feed) {
-  const feed_url_string = feed.urls[feed.urls.length - 1];
-
-  // TEMP: investigating poll issue
-  console.debug('Polling %d entries for feed', entries.length, feed_url_string);
-
-  const coerced_entries = entries.map(coerce_entry);
-  entries = dedup_entries(coerced_entries);
-
-  // Propagate feed properties to entries
-  for (const entry of entries) {
-    entry.feed = feed.id;
-    entry.feedTitle = feed.title;
-    entry.faviconURLString = feed.faviconURLString;
-
-    if (feed.datePublished && !entry.datePublished) {
-      entry.datePublished = feed.datePublished;
-    }
-  }
-
-  // Concurrently poll all entries
-  const poll_entry_promises = entries.map(entry => {
-    return poll_entry(
-        session, iconn, entry, options.fetch_html_timeout,
-        options.fetch_image_timeout, rewrite_rules, feed_url_string);
-  });
-
-  const new_entry_ids = await Promise.all(poll_entry_promises);
-  const count = new_entry_ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
-
-  console.debug(
-      'Completed polling entries for feed %s, added %d entries',
-      feed_url_string, count);
-  return count;
-}
 
 // Returns a new object that results from merging the old feed with the new
 // feed. Fields from the new feed take precedence, except for urls, which are
@@ -216,7 +229,7 @@ function merge_feed(old_feed, new_feed) {
   return merged_feed;
 }
 
-async function handle_fetch_error(session, error, feed, threshold) {
+async function handle_fetch_feed_error(session, error, feed, threshold) {
   // Avoid incrementing error count for programming error
   if (error instanceof AssertionError) {
     // TEMP: researching issue in case error swallowed
@@ -236,37 +249,35 @@ async function handle_fetch_error(session, error, feed, threshold) {
   feed.errorCount = Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;
 
   console.debug(
-      'Incremented error count for feed', feed.urls[feed.urls.length - 1],
-      feed.errorCount);
-  console.debug('Encountered problem polling entry', error);
+      'Incremented error count for feed', cdb.feed_get_url(feed),
+      feed.errorCount, error);
 
   // Auto-deactivate on threshold breach
   if (feed.errorCount > threshold) {
-    console.debug('Deactivating feed', feed.urls[feed.urls.length - 1]);
+    console.debug('Deactivating feed', cdb.feed_get_url(feed));
     feed.active = false;
     feed.deactivationReasonText = 'fetch';
     feed.deactivationDate = new Date();
   }
 
+  console.debug('updating feed in handle-fetch-error');
   // No need to validate/sanitize, we've had control for the entire lifetime
   await cdb.update_feed(session, feed, true);
 }
 
 function dedup_entries(entries) {
-  if (!entries) {
-    console.warn('entries is not defined but should be');
-    return [];
-  }
+  assert(Array.isArray(entries));
 
   const distinct_entries = [];
   const seen_url_strings = [];
 
   for (const entry of entries) {
     if (!entry) {
-      console.warn('undefined entry in entries list');
+      console.warn('Skipping undefined entry in entries list');
       continue;
     }
 
+    // TODO: use cdb.entry_has_url
     if (!entry.urls || entry.urls.length < 1) {
       distinct_entries.push(entry);
       continue;
@@ -282,6 +293,9 @@ function dedup_entries(entries) {
 
     if (!url_is_seen) {
       distinct_entries.push(entry);
+
+      // TODO: do not naively push all, that makes seen grow larger than it
+      // needs to be because it creates dupes
       seen_url_strings.push(...entry.urls);
     }
   }
@@ -289,16 +303,14 @@ function dedup_entries(entries) {
   return distinct_entries;
 }
 
-// Reformat a parsed entry as a storable entry. The input object is cloned so as
-// to avoid modification of input (purity).
-// NOTE: I moved this out of entry.js because this has knowledge of both
-// parse-format and storage-format. entry.js should be naive regarding parse
-// format. This is a cross-cutting concern so it belongs in the place where the
-// concerns meet.
+// Convert a parsed entry into a cdb-formatted entry
 function coerce_entry(parsed_entry) {
   const blank_entry = cdb.construct_entry();
 
-  // Copy over everything
+  // TODO: now that this function is no longer in a separate lib, maybe the
+  // clone is just silly.
+
+  // Clone to avoid mutation
   const clone = Object.assign(blank_entry, parsed_entry);
 
   // Then convert the link property to a url in the urls property
@@ -324,13 +336,17 @@ function coerce_entry(parsed_entry) {
 // TODO: there are just too many parameters to this function
 export async function poll_entry(
     session, iconn, entry, fetch_html_timeout, fetch_image_timeout,
-    rewrite_rules, feed_url_string) {
+    rewrite_rules, feed_url_string, entry_index, num_entries) {
   assert(cdb.is_entry(entry));
-  // TODO: use entry.has_url or something like this
+  // TODO: implement and use cdb.entry_has_url
   assert(Array.isArray(entry.urls) && entry.urls.length);
 
-  console.debug('poll-entry', entry.urls[entry.urls.length - 1]);
+  // TODO: implement and use cdb.entry_get_url
+  console.debug(
+      'Polling entry', entry.urls[entry.urls.length - 1], entry_index,
+      num_entries);
 
+  // TODO: implement and use cdb.entry_get_url
   let url = new URL(entry.urls[entry.urls.length - 1]);
   cdb.append_entry_url(entry, rewrite_url(url, rewrite_rules));
 

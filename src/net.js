@@ -118,17 +118,12 @@ export async function better_fetch(url, options = {}) {
 
   const fetch_promise = fetch(url.href, merged_options);
 
-  // NOTE: do not use the ternary operator with await because the precedence
-  // of evaluation may cause the await to await on the synchronous non-promise
-  // condition itself, not the result of the condition, and this leads to
-  // response being unawaited and not of type Response. To avoid this, just
-  // do not use ternary together with await. Previously a bug.
-  // Btw, surprising that await can be used on sync and there is no warn.
   let response;
   if (timeout.isDefinite()) {
     response = await Promise.race([fetch_promise, sleep(timeout)]);
   } else {
     response = await fetch_promise;
+    assert(response);
   }
 
   if (!response) {
@@ -225,7 +220,15 @@ export async function fetch_image(url, options = {}) {
 // milliseconds.
 function sleep(delay = INDEFINITE) {
   assert(delay instanceof Deadline);
-  return new Promise(resolve => setTimeout(resolve, delay.toInt()));
+  const time = delay.toInt();
+  assert(Number.isInteger(time));
+  return new Promise(resolve => {
+    const timer_id = setTimeout(function() {
+      resolve(undefined);
+    }, time);
+    // Very explicit, do not do something like return timer id
+    return undefined;
+  });
 }
 
 // Return whether the response url is "different" than the request url,
