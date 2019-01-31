@@ -2,7 +2,7 @@ import * as cdb from '/src/cdb.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon.js';
 import {refresh_feed_icons} from '/src/ops.js';
-import {poll_feeds} from '/src/poll/poll-feeds.js';
+import {PollOperation} from '/src/poll/poll-feeds.js';
 import * as utils from '/src/utils.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
@@ -65,15 +65,20 @@ async function handle_alarm_poll() {
     const idle_secs = 30;
     const idle_state = await utils.query_idle_state(idle_secs);
     if (!idle_states.includes(idle_state)) {
-      console.debug('Canceling poll_feeds alarm as not idle');
+      console.debug('Canceling poll-feeds alarm as not idle');
       return;
     }
   }
 
   const promises = [cdb.open(), favicon.open()];
   const [session, iconn] = await Promise.all(promises);
-  const poll_options = {ignore_recency_check: false, notify: true};
-  await poll_feeds(session, iconn, poll_options);
+
+  const poll = new PollOperation();
+  poll.session = session;
+  poll.iconn = iconn;
+  poll.ignore_recency_check = false;
+  poll.notify = true;
+  await poll.run();
   session.close();
   iconn.close();
 }

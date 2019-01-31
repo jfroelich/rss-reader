@@ -75,6 +75,12 @@ export function feed_get_url(feed) {
   return feed.urls[feed.urls.length - 1];
 }
 
+export function entry_get_url(entry) {
+  assert(is_entry(entry));
+  assert(entry_has_url(entry));
+  return entry.urls[entry.urls.length - 1];
+}
+
 // Returns a promise that resolves to a new database connection or rejects with
 // an error.
 // NOTE: previously timeout was 500ms, but it makes more sense to default to

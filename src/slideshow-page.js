@@ -4,7 +4,7 @@ import * as config_control from '/src/config-control.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon.js';
 import * as ops from '/src/ops.js';
-import {poll_feeds} from '/src/poll/poll-feeds.js';
+import {PollOperation} from '/src/poll/poll-feeds.js';
 import * as utils from '/src/utils.js';
 
 const splash_element = document.getElementById('initial-loading-panel');
@@ -318,7 +318,12 @@ async function refresh_button_onclick(event) {
 
   const promises = [cdb.open(), favicon.open()];
   const [session, iconn] = await Promise.all(promises);
-  await poll_feeds(session, iconn, {ignore_recency_check: true});
+
+  const poll = new PollOperation();
+  poll.session = session;
+  poll.iconn = iconn;
+  poll.ignore_recency_check = true;
+  await poll.run();
   session.close();
   iconn.close();
 

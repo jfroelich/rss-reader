@@ -7,6 +7,7 @@ export {
   append_feed_url,
   construct_entry,
   construct_feed,
+  entry_get_url,
   entry_has_url,
   feed_get_url,
   feed_has_url,

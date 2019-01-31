@@ -3,7 +3,7 @@ import * as config from '/src/config-control.js';
 import * as cron_control from '/src/cron.js';
 import * as favicon from '/src/favicon.js';
 import * as ops from '/src/ops.js';
-import {poll_feed, poll_feeds} from '/src/poll/poll-feeds.js';
+import {PollOperation} from '/src/poll/poll-feeds.js';
 
 async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);
@@ -12,8 +12,12 @@ async function cli_subscribe(url_string, poll = true) {
   const feed = await ops.subscribe(session, iconn, url, options, 3000, true);
   // Do a sequential poll of the created feed
   if (poll) {
-    const poll_options = {ignore_recency_check: true, notify: true};
-    await poll_feed(session, iconn, poll_options, feed);
+    const op = new PollOperation();
+    op.session = session;
+    op.iconn = iconn;
+    op.ignore_recency_check = true;
+    op.notify = true;
+    await op.poll_feed(feed);
   }
   session.close();
   iconn.close();
@@ -30,8 +34,12 @@ async function cli_refresh_icons() {
 async function cli_poll_feeds() {
   const proms = [cdb.open(), favicon.open()];
   const [session, iconn] = await Promise.all(proms);
-  const poll_options = {ignore_recency_check: true};
-  await poll_feeds(session, iconn, poll_options);
+
+  const poll = new PollOperation();
+  poll.session = session;
+  poll.iconn = iconn;
+  poll.ignore_recency_check = true;
+  await poll.run();
   session.close();
   iconn.close();
 }
