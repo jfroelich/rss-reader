@@ -154,7 +154,7 @@ export async function poll_feed(session, iconn, options = {}, feed) {
   cdb.validate_feed(merged_feed);
   cdb.sanitize_feed(merged_feed);
 
-  console.debug('Updating feed in db', cdb.feed_get_url(feed));
+  console.debug('Updating feed in db', cdb.feed_get_url(merged_feed));
   await cdb.update_feed(session, merged_feed, true);
 
   // const count = await poll_entries(
@@ -204,8 +204,8 @@ export async function poll_feed(session, iconn, options = {}, feed) {
   }
 
   console.debug(
-      'Completed polling feed %s, added %d entries', cdb.feed_get_url(feed),
-      count);
+      'Completed polling feed %s, added %d entries',
+      cdb.feed_get_url(merged_feed), count);
   return count;
 }
 
@@ -229,8 +229,12 @@ function merge_feed(old_feed, new_feed) {
   return merged_feed;
 }
 
+// TODO: inline
 async function handle_fetch_feed_error(session, error, feed, threshold) {
-  // Avoid incrementing error count for programming error
+  // TODO: this will be solved once inlined, but this check is redundant
+  // with the calling context check
+  // Avoid incrementing error count for programming error, and avoid silencing
+  // the error
   if (error instanceof AssertionError) {
     // TEMP: researching issue in case error swallowed
     console.error('Assertion error', error);
@@ -493,33 +497,7 @@ const inaccessible_content_descriptors = [
   {pattern: /productforums\.google\.com$/i, reason: 'script-generated'},
   {pattern: /groups\.google\.com$/i, reason: 'script-generated'},
   {pattern: /nytimes\.com$/i, reason: 'paywall'},
-  {pattern: /wsj\.com$/i, reason: 'paywall'},
-  {pattern: /heraldsun\.com\.au$/i, reason: 'requires-cookies'},
-  {pattern: /ripe\.net$/i, reason: 'requires-cookies'},
-  {pattern: /foxnews\.com$/i, reason: 'fake'},
-  {pattern: /breitbart\.com$/i, reason: 'fake'},
-  {pattern: /infowars\.com$/i, reason: 'fake'},
-  {pattern: /drudgereport\.com$/i, reason: 'fake'},
-  {pattern: /globalresearch\.ca$/i, reason: 'fake'},
-  {pattern: /rt\.com$/i, reason: 'fake'},
-  {pattern: /theblaze\.com$/i, reason: 'fake'},
-  {pattern: /dailycaller\.com$/i, reason: 'fake'},
-  {pattern: /dailywire\.com$/i, reason: 'fake'},
-  {pattern: /ijr\.com$/i, reason: 'fake'},
-  {pattern: /lifezette\.com$/i, reason: 'fake'},
-  {pattern: /thegatewaypundit\.com$/i, reason: 'fake'},
-  {pattern: /newsmax\.com$/i, reason: 'fake'},
-  {pattern: /oann\.com$/i, reason: 'fake'},
-  {pattern: /pjmedia\.com$/i, reason: 'fake'},
-  {pattern: /rsbnetwork\.com$/i, reason: 'fake'},
-  {pattern: /thefederalist\.com$/i, reason: 'fake'},
-  {pattern: /therebel\.media$/i, reason: 'fake'},
-  {pattern: /freebeacon\.com$/i, reason: 'fake'},
-  {pattern: /twitchy\.com$/i, reason: 'fake'},
-  {pattern: /michellemalkin\.com$/i, reason: 'fake'},
-  {pattern: /truthrevolt\.org$/i, reason: 'fake'},
-  {pattern: /wnd\.com$/i, reason: 'fake'},
-  {pattern: /redstate\.com$/i, reason: 'fake'}
+  {pattern: /wsj\.com$/i, reason: 'paywall'}
 ];
 
 function url_is_inaccessible(url) {
