@@ -17,7 +17,6 @@ async function channel_onmessage(event) {
   const types =
       ['entry-created', 'entry-updated', 'entry-deleted', 'entry-read'];
   if (event.isTrusted && event.data && types.includes(event.data.type)) {
-    console.debug('Refreshing badge in background (may involve new db conn)');
     ops.badge_refresh();
   }
 }

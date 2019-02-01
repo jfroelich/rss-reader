@@ -12,14 +12,8 @@ import {Deadline, INDEFINITE} from '/src/deadline.js';
 // that first checks if blocked/timed_out and if so aborts the transaction and
 // closes, otherwise forwards to the listener.
 export async function open(name, version, onupgrade, timeout = INDEFINITE) {
-  console.debug(
-      'idb.open', name, version, onupgrade ? onupgrade.name : 'undefined',
-      timeout.toString());
-
-  assert(typeof name === 'string', 'idb.open name is not a string: ' + name);
-  assert(
-      timeout instanceof Deadline,
-      'idb.open invalid timeout param: ' + timeout);
+  assert(typeof name === 'string');
+  assert(timeout instanceof Deadline);
 
   let timed_out = false;
   let timer = null;
