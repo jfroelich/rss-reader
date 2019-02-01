@@ -12,18 +12,6 @@ import {rewrite_url} from '/src/poll/rewrite-url.js';
 import * as sniff from '/src/poll/url-sniff.js';
 import * as utils from '/src/utils.js';
 
-// Current bugs:
-// 1) idb.open getting called hundreds of times
-// 2) set-base-uri somehow not working
-// 3) run never finishes
-// 4) dom error in table-filter
-// 5) errors in composite filter somehow not causing everything to fail
-// 6) due to base uri error this might be doing something really really really
-// strange like storing the project itself as entries. Like it is literally
-// storing the script itself as "document" because somehow the local fethed
-// document is being swapped with the script document that is executing, this
-// starts a recursion loop and could explain the idb.open calls
-
 export class PollOperation {
   constructor() {
     this.ignore_recency_check = false;
@@ -84,8 +72,6 @@ export class PollOperation {
     assert(this instanceof PollOperation);
     assert(cdb.is_feed(feed));
 
-    console.debug('Polling feed', cdb.feed_get_url(feed));
-
     if (!cdb.feed_has_url(feed)) {
       return 0;
     }
@@ -110,12 +96,9 @@ export class PollOperation {
       // If failed to fetch with temp error, stop processing the feed and exit
       if (error instanceof net.TimeoutError ||
           error instanceof net.OfflineError) {
-        console.debug('Ephemeral fetch error', error);
         return 0;
       }
 
-      // TEMP: researching issue
-      console.debug('unknown fetch error', error);
 
       feed.errorCount =
           Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;
@@ -126,7 +109,6 @@ export class PollOperation {
         feed.deactivationDate = new Date();
       }
 
-      console.debug('Updating feed error count', feed);
       await cdb.update_feed(this.session, feed, true);
       return 0;
     }
@@ -161,11 +143,8 @@ export class PollOperation {
       }
     }
 
-    let counter = 0;
     const promises = entries.map(
-        entry => this.poll_entry(
-            entry, cdb.feed_get_url(feed), counter++, entries.length),
-        this);
+        (entry => this.poll_entry(entry, cdb.feed_get_url(feed))), this);
     const ids = await Promise.all(promises);
     const count = ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
 
@@ -186,13 +165,10 @@ export class PollOperation {
   // the full text of the entry. Either returns the added entry id, or throws an
   // error.
   // TODO: if feed_url_string not in use, should not be param
-  async poll_entry(entry, feed_url_string, entry_index, num_entries) {
+  async poll_entry(entry, feed_url_string) {
     assert(this instanceof PollOperation);
     assert(cdb.is_entry(entry));
     assert(cdb.entry_has_url(entry));
-
-    console.debug(
-        'Polling entry', cdb.entry_get_url(entry), entry_index, num_entries);
 
     cdb.append_entry_url(
         entry,
@@ -218,7 +194,7 @@ export class PollOperation {
         if (error instanceof AssertionError) {
           throw error;
         } else {
-          console.debug('error fetching entry html', error);
+          // Ignore
         }
       }
     }
@@ -242,7 +218,6 @@ export class PollOperation {
         url = new URL(cdb.entry_get_url(entry));
         let existing = await cdb.get_entry(this.session, 'url', url, true);
         if (existing) {
-          console.debug('entry redirect already exists', url.href);
           return 0;
         }
       }
@@ -255,7 +230,7 @@ export class PollOperation {
         if (error instanceof AssertionError) {
           throw error;
         } else {
-          console.debug(error);
+          // ignore
         }
       }
     } else {
@@ -265,7 +240,6 @@ export class PollOperation {
         if (error instanceof AssertionError) {
           throw error;
         } else {
-          console.debug(error);
           doc = window.document.implementation.createHTMLDocument();
           doc.documentElement.innerHTML =
               '<html><body>Malformed content</body></html>';
@@ -275,9 +249,8 @@ export class PollOperation {
 
     assert(doc instanceof Document);
 
-    console.debug('Setting document baseURI to', cdb.entry_get_url(entry));
+    const old_base_uri = doc.baseURI;
     dom_utils.set_base_uri(doc, new URL(cdb.entry_get_url(entry)));
-    console.debug('base uri is now', doc.baseURI);
 
     // If title was not present in the feed xml, try and pull it from content
     if (!entry.title) {
@@ -319,23 +292,24 @@ export class PollOperation {
 
     filter_options.is_allowed_request = net.is_allowed_request;
 
-    console.debug(
-        'Filtering document for entry with url %s and baseURI %s',
-        cdb.entry_get_url(entry), doc.baseURI);
-
     const composite_promise =
         dom_filters.composite_document_filter(doc, filter_options);
     await composite_promise;
-    console.debug('Filtered document for entry', cdb.entry_get_url(entry));
     assert(doc.documentElement);
 
     entry.content = doc.documentElement.outerHTML;
     cdb.sanitize_entry(entry);
     cdb.validate_entry(entry);
 
-    console.debug('Creating entry in db', cdb.entry_get_url(entry));
-    const id = await cdb.create_entry(this.session, entry);
-    return id;
+    // We do not need to await but I am for now due to what seems like an
+    // unrelated error but may be related, the await rules out this having
+    // anything to do with it
+    return await this.create_entry(entry);
+  }
+
+  create_entry(entry) {
+    assert(cdb.is_entry(entry));
+    return cdb.create_entry(this.session, entry);
   }
 
   polled_recently(last_fetch_date) {
@@ -392,7 +366,6 @@ export class PollOperation {
 
     for (const entry of entries) {
       if (!entry) {
-        console.warn('Skipping undefined entry in entries list');
         continue;
       }
 

@@ -41,7 +41,7 @@ export async function lookup(request) {
 
   const icon_url = search_document(request.document);
   if (icon_url) {
-    console.debug('Found favicon in document', icon_url);
+    // console.debug('Found favicon in document', icon_url);
     const entry = new Entry();
     entry.hostname = hostname;
     entry.icon_url = icon_url;
@@ -77,9 +77,9 @@ export async function lookup(request) {
   }
 
   // Memoize a failed lookup
-  console.debug(
-      'lookup failed to hostname %s with failure count %d', hostname,
-      (entry && entry.failures) ? entry.failures + 1 : 1);
+  // console.debug(
+  //    'lookup failed to hostname %s with failure count %d', hostname,
+  //    (entry && entry.failures) ? entry.failures + 1 : 1);
   const failure = new Entry();
   failure.hostname = hostname;
   failure.failures = (entry && entry.failures) ? entry.failures + 1 : 1;

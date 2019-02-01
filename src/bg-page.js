@@ -17,6 +17,7 @@ async function channel_onmessage(event) {
   const types =
       ['entry-created', 'entry-updated', 'entry-deleted', 'entry-read'];
   if (event.isTrusted && event.data && types.includes(event.data.type)) {
+    console.debug('Refreshing badge in background (may involve new db conn)');
     ops.badge_refresh();
   }
 }
@@ -30,6 +31,7 @@ chrome.runtime.onStartup.addListener(event => {
   ops.badge_refresh();
 });
 
+// TODO: inline these here again, got carried away with logical cohesion
 chrome.runtime.onInstalled.addListener(config_control.install_listener);
 chrome.runtime.onInstalled.addListener(db_install_listener);
 chrome.runtime.onInstalled.addListener(cron_control.install_listener);

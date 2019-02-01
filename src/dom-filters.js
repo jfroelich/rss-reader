@@ -6,114 +6,53 @@ import * as dom_utils from '/src/dom-utils.js';
 import * as net from '/src/net.js';
 import * as utils from '/src/utils.js';
 
-// TODO: there is something strange with naming things document going on,
-// do not use the name document here
-
-// Ok, finally think I figured it out. It is the head filter. I set the
-// base uri, but then remove the head element, which unsets the base uri.
-// I think that is the problem.
-
-// Applies most of the filters in the proper order to the document
 export async function composite_document_filter(doc, options = {}) {
   assert(doc instanceof Document);
+  assert(dom_utils.has_valid_base_uri(doc));
   assert(typeof options === 'object');
 
-  if (doc.baseURI ===
-      'chrome-extension://cekbbkiaeappphfcafnamnadjhemnbmp/background.html') {
-    throw new Error('doc.baseURI set to extension url?!?!');
-  }
-
-  assert(typeof doc.baseURI === 'string');
-  assert(doc.baseURI.length);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
-
   frame_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   body_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   iframe_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   comment_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   visibility_filter(doc, options.contrast_matte, options.contrast_ratio);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
-  const blacklist_general = [
+
+  const bad_element_names = [
     'applet', 'audio',  'basefont', 'bgsound', 'command',  'datalist',
     'dialog', 'embed',  'isindex',  'link',    'math',     'meta',
     'object', 'output', 'param',    'path',    'progress', 'spacer',
     'style',  'svg',    'title',    'video',   'xmp'
   ];
-  blacklist_filter(doc, blacklist_general);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  blacklist_filter(doc, bad_element_names);
   script_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   image_lazy_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
-
   url_resolve_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
-
   image_responsive_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   lonestar_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
-
   image_dead_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   await image_size_filter(
       doc, options.image_size_timeout, options.is_allowed_request);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   boilerplate_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   anchor_script_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   image_size_small_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   image_size_large_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   condense_tagnames_filter(doc, false);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
-
   anchor_validity_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   anchor_format_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   form_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   breakrule_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   horizontal_rule_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   format_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   nest_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
-
   semantic_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   figure_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   container_filter(doc);
-  console.debug('applied container filter', doc.baseURI);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
   list_filter(doc);
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
-  console.debug('applied list filter', doc.baseURI);
-
   table_filter(doc, options.table_scan_max_rows);
-
-  console.debug('applied table filter', doc.baseURI);
-
   emphasis_filter(doc, options.emphasis_max_length);
   node_whitespace_filter(doc);
   node_leaf_filter(doc);
-
-  console.debug('applied leaf filter', doc.baseURI);
-
   document_trim_filter(doc);
-
-  console.debug('applied trim filter', doc.baseURI);
-
   const attribute_whitelist = {
     a: ['href', 'name', 'title', 'rel'],
     iframe: ['src'],
@@ -122,10 +61,6 @@ export async function composite_document_filter(doc, options = {}) {
   };
   attribute_unknown_filter(doc, attribute_whitelist);
   attribute_empty_filter(doc);
-
-  // This removes base elements, which causes document.baseURI to revert to
-  // some unset value, so this cannot be done until near the end, or at least,
-  // after anything that relies on baseURI validity.
   base_filter(doc);
   head_filter(doc);
 }
@@ -625,8 +560,6 @@ async function image_size_filter_process_image(
     if (error instanceof AssertionError) {
       throw error;
     }
-
-    console.debug(error);
   }
 }
 
@@ -934,7 +867,7 @@ export function table_filter(doc, row_scan_max) {
       const cells = rows[i].cells;
       let filled = 0;
       for (let j = 0; j < cells.length; j++) {
-        if (!dom_utils.node_is_leaf(cells[i])) {
+        if (!dom_utils.node_is_leaf(cells[j])) {
           filled++;
           if (filled > 1) {
             is_single_column = false;
@@ -1063,12 +996,14 @@ export function url_resolve_filter(doc) {
 }
 
 export function visibility_filter(doc, matte, mcr) {
-  for (const element of doc.querySelectorAll('*')) {
+  const elements = doc.querySelectorAll('*');
+  for (const element of elements) {
     if (doc.documentElement.contains(element) &&
         dom_utils.is_hidden_inline(element)) {
       dom_utils.unwrap_element(element);
     }
   }
 
-  color_contrast_filter(doc, matte, mcr);
+  // temp disabled debuggin poll hang, problem might be unwrap above
+  // color_contrast_filter(doc, matte, mcr);
 }

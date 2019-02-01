@@ -181,7 +181,7 @@ export async function fetch_image(url, options = {}) {
   assert(
       typeof method === 'string' &&
       supported_methods.includes(method.toLowerCase()));
-  console.debug(method.toUpperCase(), url.href);
+  // console.debug(method.toUpperCase(), url.href);
 
   if (!navigator.onLine) {
     throw new OfflineError('Offline when trying to fetch ' + url.href);
@@ -212,7 +212,7 @@ export async function fetch_image(url, options = {}) {
     }
   }
 
-  console.debug(response.status, response.statusText, url.href);
+  // console.debug(response.status, response.statusText, url.href);
   return response;
 }
 

@@ -216,7 +216,7 @@ export function truncate_html(html_string, position, suffix) {
   const doc = parser.parseFromString(html_string, 'text/html');
   const parser_error = doc.querySelector('parsererror');
   if (parser_error) {
-    return 'Unsafe malformed html string';
+    return '<html><body>Unsafe HTML</body></html>';
   }
 
   const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
@@ -236,12 +236,6 @@ export function truncate_html(html_string, position, suffix) {
 
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     node.remove();
-  }
-
-  // TEMP: researching possible issue
-  if (!doc.documentElement) {
-    console.warn('Undefined doc element?');
-    return '';
   }
 
   if (/<html/i.test(html_string)) {

@@ -396,7 +396,6 @@ export function unwrap_element(element) {
   // Move the child content into the fragment
   // TODO: does for..of work on element.rows and element.rows[n].cells?
   if (is_table) {
-    console.debug('unwrapping table', element.outerHTML);
     for (let i = 0; i < element.rows.length; i++) {
       for (let j = 0, row = element.rows[i]; j < row.cells.length; j++) {
         for (let cell = row.cells[j], node = cell.firstChild; node;

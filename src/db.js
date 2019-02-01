@@ -1100,7 +1100,9 @@ export function sanitize_entry(
     // We cannot use filter_controls because that matches \r\n. This was
     // previously the source of a bug
     content = utils.filter_unprintables(content);
-    content = utils.truncate_html(content, content_max_length);
+
+    // Temporarily disabled while debugging poll-feeds issue
+    // content = utils.truncate_html(content, content_max_length);
     entry.content = content;
   }
 

@@ -20,8 +20,8 @@ export function show(note) {
   const default_icon = chrome.extension.getURL('/images/rss_icon_trans.gif');
   details.icon = note.url || default_icon;
 
-  const note = new Notification(title, details);
-  note.addEventListener('click', event => {
+  const notification = new Notification(title, details);
+  notification.addEventListener('click', event => {
     try {
       const hwnd = window.open();
       hwnd.close();

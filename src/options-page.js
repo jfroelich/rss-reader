@@ -2,11 +2,13 @@ import * as cdb from '/src/cdb.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon.js';
 import * as ops from '/src/ops.js';
-import {poll_feed} from '/src/poll/poll-feeds.js';
+import {PollOperation} from '/src/poll/poll-feeds.js';
 import * as utils from '/src/utils.js';
 
 // TODO: this should rely on css-based html truncation rather than calling
 // truncate_html
+// TODO: feeds can be added (such as by opml-import) through slideshow or
+// other pages, the feed-list displayed here needs to dynamically update
 
 function perm_has(perm) {
   return new Promise(
@@ -389,8 +391,13 @@ async function subscribe_form_onsubmit(event) {
 async function after_subscribe_poll_feed_async(feed) {
   const conn_promises = Promise.all([cdb.open(), favicon.open()]);
   const [session, iconn] = await conn_promises;
-  const poll_options = {ignore_recency_check: true, notify: true};
-  await poll_feed(session, iconn, poll_options, feed);
+
+  const op = new PollOperation();
+  op.session = session;
+  op.iconn = iconn;
+  op.ignore_recency_check = true;
+  op.notify = true;
+  await op.poll_feed(feed);
   session.close();
   iconn.close();
 }
