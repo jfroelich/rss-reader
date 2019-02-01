@@ -35,19 +35,19 @@ export function replace_tags(html, replacement) {
     return html;
   }
 
-  let document;
+  let doc;
   try {
-    document = parse_html(html);
+    doc = parse_html(html);
   } catch (error) {
     console.debug(error);
     return 'Unsafe html';
   }
 
   if (!replacement) {
-    return document.body.textContent;
+    return doc.body.textContent;
   }
 
-  const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
+  const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   const node_values = [];
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     node_values.push(node.nodeValue);
@@ -213,13 +213,13 @@ export function truncate_html(html_string, position, suffix) {
   }
 
   const parser = new DOMParser();
-  const document = parser.parseFromString(html_string, 'text/html');
-  const parser_error = document.querySelector('parsererror');
+  const doc = parser.parseFromString(html_string, 'text/html');
+  const parser_error = doc.querySelector('parsererror');
   if (parser_error) {
     return 'Unsafe malformed html string';
   }
 
-  const it = document.createNodeIterator(document.body, NodeFilter.SHOW_TEXT);
+  const it = doc.createNodeIterator(doc.body, NodeFilter.SHOW_TEXT);
   let total_length = 0;
 
   for (let node = it.nextNode(); node; node = it.nextNode()) {
@@ -239,15 +239,15 @@ export function truncate_html(html_string, position, suffix) {
   }
 
   // TEMP: researching possible issue
-  if (!document.documentElement) {
-    console.warn('Undefined document element?');
+  if (!doc.documentElement) {
+    console.warn('Undefined doc element?');
     return '';
   }
 
   if (/<html/i.test(html_string)) {
-    return document.documentElement.outerHTML;
+    return doc.documentElement.outerHTML;
   } else {
-    return document.body.innerHTML;
+    return doc.body.innerHTML;
   }
 }
 
@@ -259,15 +259,15 @@ export function parse_html(html) {
   assert(typeof html === 'string');
 
   const parser = new DOMParser();
-  const document = parser.parseFromString(html, 'text/html');
+  const doc = parser.parseFromString(html, 'text/html');
 
-  const error = document.querySelector('parsererror');
+  const error = doc.querySelector('parsererror');
   if (error) {
     const message = condense_whitespace(error.textContent);
     throw new Error(message);
   }
 
-  return document;
+  return doc;
 }
 
 export function url_get_extension(url) {

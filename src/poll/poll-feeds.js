@@ -6,11 +6,23 @@ import * as dom_filters from '/src/dom-filters.js';
 import * as dom_utils from '/src/dom-utils.js';
 import * as favicon from '/src/favicon.js';
 import * as net from '/src/net.js';
-import * as note from '/src/note.js';
+import * as notification_module from '/src/note.js';
 import * as rewrite_rules from '/src/poll/rewrite-rules.js';
 import {rewrite_url} from '/src/poll/rewrite-url.js';
 import * as sniff from '/src/poll/url-sniff.js';
 import * as utils from '/src/utils.js';
+
+// Current bugs:
+// 1) idb.open getting called hundreds of times
+// 2) set-base-uri somehow not working
+// 3) run never finishes
+// 4) dom error in table-filter
+// 5) errors in composite filter somehow not causing everything to fail
+// 6) due to base uri error this might be doing something really really really
+// strange like storing the project itself as entries. Like it is literally
+// storing the script itself as "document" because somehow the local fethed
+// document is being swapped with the script document that is executing, this
+// starts a recursion loop and could explain the idb.open calls
 
 export class PollOperation {
   constructor() {
@@ -62,7 +74,7 @@ export class PollOperation {
       const notif = {};
       notif.title = 'Added articles';
       notif.message = 'Added ' + count + ' articles';
-      note.show(notif);
+      notification_module.show(notif);
     }
 
     console.debug('Run completed, added %d entries', count);
@@ -82,10 +94,9 @@ export class PollOperation {
       return 0;
     }
 
-    // NOTE: temporarily disabled during refactor/debug
-    // if(this.polled_recently(feed.dateFetched)) {
-    //  return 0;
-    //}
+    if (this.polled_recently(feed.dateFetched)) {
+      return 0;
+    }
 
     let fetch_result;
     try {
@@ -117,14 +128,6 @@ export class PollOperation {
 
       console.debug('Updating feed error count', feed);
       await cdb.update_feed(this.session, feed, true);
-      return 0;
-    }
-
-    console.debug('fetch feed result:', fetch_result);
-
-    // TEMP: debugging
-    if (fetch_result === undefined) {
-      console.warn('Undefined fetch-feed result');
       return 0;
     }
 
@@ -170,7 +173,7 @@ export class PollOperation {
       const notif = {};
       notif.title = 'Added articles';
       notif.message = 'Added ' + count + ' articles for feed ' + feed.title;
-      note.show(notif);
+      notification_module.show(notif);
     }
 
     console.debug(
@@ -198,7 +201,6 @@ export class PollOperation {
     let existing = await cdb.get_entry(
         this.session, 'url', new URL(cdb.entry_get_url(entry)), true);
     if (existing) {
-      console.debug('Entry exists', cdb.entry_get_url(entry));
       return 0;
     }
 
@@ -223,7 +225,11 @@ export class PollOperation {
 
     // If we fetched and redirected, append the post-redirect response url, and
     // reapply url rewriting.
-    let document;
+
+    // NOTE: there is something really strange going, so do not use a variable
+    // named document here to try to flesh out the bug
+
+    let doc;
     if (response) {
       let url_changed = false;
       url = new URL(cdb.entry_get_url(entry));
@@ -244,7 +250,7 @@ export class PollOperation {
       let response_text;
       try {
         response_text = await response.text();
-        document = utils.parse_html(response_text);
+        doc = utils.parse_html(response_text);
       } catch (error) {
         if (error instanceof AssertionError) {
           throw error;
@@ -254,51 +260,48 @@ export class PollOperation {
       }
     } else {
       try {
-        document = utils.parse_html(entry.content);
+        doc = utils.parse_html(entry.content);
       } catch (error) {
         if (error instanceof AssertionError) {
           throw error;
         } else {
           console.debug(error);
-          document = window.document.implementation.createHTMLDocument();
-          document.documentElement.innerHTML =
+          doc = window.document.implementation.createHTMLDocument();
+          doc.documentElement.innerHTML =
               '<html><body>Malformed content</body></html>';
         }
       }
     }
 
-    if (document && !entry.title) {
-      const title_element = document.querySelector('html > head > title');
+    assert(doc instanceof Document);
+
+    console.debug('Setting document baseURI to', cdb.entry_get_url(entry));
+    dom_utils.set_base_uri(doc, new URL(cdb.entry_get_url(entry)));
+    console.debug('base uri is now', doc.baseURI);
+
+    // If title was not present in the feed xml, try and pull it from content
+    if (!entry.title) {
+      const title_element = doc.querySelector('html > head > title');
       if (title_element) {
         entry.title = title_element.textContent.trim();
       }
     }
 
-    assert(document);
+    // Set the entry's favicon
     const lookup_url = new URL(cdb.entry_get_url(entry));
     const lookup_request = new favicon.LookupRequest();
     lookup_request.conn = this.iconn;
     lookup_request.url = lookup_url;
-    lookup_request.document = document;
+    lookup_request.document = doc;
     const icon_url_string = await favicon.lookup(lookup_request);
     if (icon_url_string) {
       entry.faviconURLString = icon_url_string;
     }
 
-    dom_utils.set_base_uri(document, new URL(cdb.entry_get_url(entry)));
-
-
-    // BUG: so the hang is definitely happening somewhere in filtering
-    // TEMP
-    if (true) {
-      console.debug('temp skipping doc filtering', cdb.entry_get_url(entry));
-      return 0;
-    }
-
+    // Filter the document content
     const filter_options = {};
     filter_options.contrast_matte = config.read_int('contrast_default_matte');
     filter_options.contrast_ratio = config.read_float('min_contrast_ratio');
-
     // Deserialize from config as a Deadline, not a raw int
     const config_set_image_sz_to = config.read_int('set_image_sizes_timeout');
     if (!isNaN(config_set_image_sz_to)) {
@@ -316,12 +319,17 @@ export class PollOperation {
 
     filter_options.is_allowed_request = net.is_allowed_request;
 
-    console.debug('Filtering document for entry', cdb.entry_get_url(entry));
-    await dom_filters.composite_document_filter(document, filter_options);
-    console.debug('Filtered document for entry', cdb.entry_get_url(entry));
-    assert(document.documentElement);
+    console.debug(
+        'Filtering document for entry with url %s and baseURI %s',
+        cdb.entry_get_url(entry), doc.baseURI);
 
-    entry.content = document.documentElement.outerHTML;
+    const composite_promise =
+        dom_filters.composite_document_filter(doc, filter_options);
+    await composite_promise;
+    console.debug('Filtered document for entry', cdb.entry_get_url(entry));
+    assert(doc.documentElement);
+
+    entry.content = doc.documentElement.outerHTML;
     cdb.sanitize_entry(entry);
     cdb.validate_entry(entry);
 
@@ -331,15 +339,15 @@ export class PollOperation {
   }
 
   polled_recently(last_fetch_date) {
+    if (!last_fetch_date) {
+      return false;
+    }
+
     if (this.ignore_recency_check) {
       return false;
     }
 
     if (!this.recency_period) {
-      return false;
-    }
-
-    if (!last_fetch_date) {
       return false;
     }
 

@@ -30,12 +30,12 @@ export async function lookup(request) {
 
   let entry = await find_entry(conn, hostname);
   if (entry && entry.icon_url && !entry_is_expired(entry)) {
-    console.debug('Hit valid', hostname, entry.icon_url);
+    // console.debug('Hit valid', hostname, entry.icon_url);
     return entry.icon_url;
   }
 
   if (entry && entry.failures > request.max_failure_count) {
-    console.debug('Hit but invalid', hostname);
+    // console.debug('Hit but invalid', hostname);
     return;
   }
 

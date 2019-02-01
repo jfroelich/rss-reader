@@ -19,8 +19,8 @@ export function classify(dataset, score_block, options = {}) {
     return dataset;
   }
 
-  const document = dataset[0].element.ownerDocument;
-  assert(typeof document === 'object');
+  const doc = dataset[0].element.ownerDocument;
+  assert(typeof doc === 'object');
   assert(typeof score_block === 'function');
 
   const tail_size = isNaN(options.tail_size) ? 0.2 : options.tail_size;
@@ -41,13 +41,13 @@ export function classify(dataset, score_block, options = {}) {
   minimum_content_threshold = minimum_content_threshold / 100;
 
   let text_length = 0;
-  if (document.body) {
-    text_length = get_text_length(document.body.textContent);
+  if (doc.body) {
+    text_length = get_text_length(doc.body.textContent);
   }
 
   let num_elements = 0;
-  if (document.body) {
-    num_elements = document.body.getElementsByTagName('*').length;
+  if (doc.body) {
+    num_elements = doc.body.getElementsByTagName('*').length;
   }
   const front_max = (tail_size * num_elements) | 0;
   const end_min = num_elements - front_max;
@@ -74,9 +74,9 @@ export function classify(dataset, score_block, options = {}) {
 }
 
 // Given a scored dataset representing a document, annotate the document
-export function annotate_document(document, dataset) {
+export function annotate_document(doc, dataset) {
   for (const block of dataset) {
-    const element = find_block_element(document, block);
+    const element = find_block_element(doc, block);
     if (!element) {
       continue;
     }
@@ -96,10 +96,10 @@ export function annotate_document(document, dataset) {
 }
 
 // Given a block, get its represented element
-export function find_block_element(document, block) {
+export function find_block_element(doc, block) {
   // TODO: for now, cheat, but maybe use something like element index
   assert(block.element);
-  assert(block.element.ownerDocument === document);
+  assert(block.element.ownerDocument === doc);
   return block.element;
 }
 
@@ -251,8 +251,8 @@ export function Block(element, initial_score = 0, element_index = -1) {
 // constructor first then remove it here.
 
 // Given a document, produce an array of blocks
-export function parse_blocks(document, neutral_score) {
-  if (!document.body) {
+export function parse_blocks(doc, neutral_score) {
+  if (!doc.body) {
     return [];
   }
 
@@ -268,7 +268,7 @@ export function parse_blocks(document, neutral_score) {
   // all-elements index so that we can find which element corresponds to which
   // block later (if and once I remove the element property from a block).
 
-  const elements = document.body.getElementsByTagName('*');
+  const elements = doc.body.getElementsByTagName('*');
   const blocks = [];
   for (let element_index = 0, len = elements.length; element_index < len;
        element_index++) {

@@ -64,7 +64,7 @@ export async function open(name, version, onupgrade, timeout = INDEFINITE) {
   });
 
   let conn_promise;
-  if (timeout !== INDEFINITE) {
+  if (timeout.isDefinite()) {
     const timeout_promise = new Promise(resolve => {
       timer = setTimeout(resolve, timeout.toInt());
     });

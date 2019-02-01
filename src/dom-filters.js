@@ -6,76 +6,132 @@ import * as dom_utils from '/src/dom-utils.js';
 import * as net from '/src/net.js';
 import * as utils from '/src/utils.js';
 
+// TODO: there is something strange with naming things document going on,
+// do not use the name document here
+
+// Ok, finally think I figured it out. It is the head filter. I set the
+// base uri, but then remove the head element, which unsets the base uri.
+// I think that is the problem.
+
 // Applies most of the filters in the proper order to the document
-export async function composite_document_filter(document, options = {}) {
-  assert(document instanceof Document);
+export async function composite_document_filter(doc, options = {}) {
+  assert(doc instanceof Document);
   assert(typeof options === 'object');
 
-  // Filters operate on the assumption that the baseURI for the document is
-  // valid. Minimally verify that assumption.
-  // TODO: perhaps improve, e.g. rule out chrome-extension:// and things that
-  // indicate programming mistakes
-  assert(document.baseURI);
+  if (doc.baseURI ===
+      'chrome-extension://cekbbkiaeappphfcafnamnadjhemnbmp/background.html') {
+    throw new Error('doc.baseURI set to extension url?!?!');
+  }
 
-  frame_filter(document);
-  body_filter(document);
-  iframe_filter(document);
-  comment_filter(document);
-  visibility_filter(document, options.contrast_matte, options.contrast_ratio);
+  assert(typeof doc.baseURI === 'string');
+  assert(doc.baseURI.length);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+
+  frame_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  body_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  iframe_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  comment_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  visibility_filter(doc, options.contrast_matte, options.contrast_ratio);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
   const blacklist_general = [
     'applet', 'audio',  'basefont', 'bgsound', 'command',  'datalist',
     'dialog', 'embed',  'isindex',  'link',    'math',     'meta',
     'object', 'output', 'param',    'path',    'progress', 'spacer',
     'style',  'svg',    'title',    'video',   'xmp'
   ];
-  blacklist_filter(document, blacklist_general);
-  script_filter(document);
-  image_lazy_filter(document);
-  url_resolve_filter(document);
-  image_responsive_filter(document);
-  lonestar_filter(document);
-  image_dead_filter(document);
+  blacklist_filter(doc, blacklist_general);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  script_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  image_lazy_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
 
-  // console.debug('Setting image sizes for document', document.baseURI);
+  url_resolve_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+
+  image_responsive_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  lonestar_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+
+  image_dead_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
   await image_size_filter(
-      document, options.image_size_timeout, options.is_allowed_request);
-  // console.debug('Completed setting image sizes for document',
-  // document.baseURI);
-  boilerplate_filter(document);
-  anchor_script_filter(document);
-  image_size_small_filter(document);
-  image_size_large_filter(document);
-  condense_tagnames_filter(document, false);
-  head_filter(document);
-  base_filter(document);
-  anchor_validity_filter(document);
-  anchor_format_filter(document);
-  form_filter(document);
-  breakrule_filter(document);
-  horizontal_rule_filter(document);
-  format_filter(document);
-  nest_filter(document);
-  semantic_filter(document);
-  figure_filter(document);
-  container_filter(document);
-  list_filter(document);
-  table_filter(document, options.table_scan_max_rows);
-  emphasis_filter(document, options.emphasis_max_length);
-  node_whitespace_filter(document);
-  node_leaf_filter(document);
-  document_trim_filter(document);
+      doc, options.image_size_timeout, options.is_allowed_request);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  boilerplate_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  anchor_script_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  image_size_small_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  image_size_large_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  condense_tagnames_filter(doc, false);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+
+  anchor_validity_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  anchor_format_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  form_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  breakrule_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  horizontal_rule_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  format_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  nest_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+
+  semantic_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  figure_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  container_filter(doc);
+  console.debug('applied container filter', doc.baseURI);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  list_filter(doc);
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  console.debug('applied list filter', doc.baseURI);
+
+  table_filter(doc, options.table_scan_max_rows);
+
+  console.debug('applied table filter', doc.baseURI);
+
+  emphasis_filter(doc, options.emphasis_max_length);
+  node_whitespace_filter(doc);
+  node_leaf_filter(doc);
+
+  console.debug('applied leaf filter', doc.baseURI);
+
+  document_trim_filter(doc);
+
+  console.debug('applied trim filter', doc.baseURI);
+
   const attribute_whitelist = {
     a: ['href', 'name', 'title', 'rel'],
     iframe: ['src'],
     source: ['media', 'sizes', 'srcset', 'src', 'type'],
     img: ['src', 'alt', 'title', 'srcset', 'width', 'height']
   };
-  attribute_unknown_filter(document, attribute_whitelist);
-  attribute_empty_filter(document);
+  attribute_unknown_filter(doc, attribute_whitelist);
+  attribute_empty_filter(doc);
+
+  // This removes base elements, which causes document.baseURI to revert to
+  // some unset value, so this cannot be done until near the end, or at least,
+  // after anything that relies on baseURI validity.
+  base_filter(doc);
+  head_filter(doc);
 }
 
-export function anchor_format_filter(document) {
-  const anchors = document.querySelectorAll('a');
+export function anchor_format_filter(doc) {
+  const anchors = doc.querySelectorAll('a');
   for (const anchor of anchors) {
     if (!anchor.hasAttribute('href')) {
       dom_utils.unwrap_element(anchor);
@@ -83,10 +139,10 @@ export function anchor_format_filter(document) {
   }
 }
 
-export function anchor_script_filter(document) {
+export function anchor_script_filter(doc) {
   const threshold = 'javascript:'.length;
   const pattern = /^\s*javascript:/i;
-  const anchors = document.querySelectorAll('a[href]');
+  const anchors = doc.querySelectorAll('a[href]');
   for (const anchor of anchors) {
     const href = anchor.getAttribute('href');
     if (href && href.length > threshold && pattern.test(href)) {
@@ -95,9 +151,9 @@ export function anchor_script_filter(document) {
   }
 }
 
-export function anchor_validity_filter(document) {
+export function anchor_validity_filter(doc) {
   const pattern = /^\s*https?:\/\/#/i;
-  const anchors = document.querySelectorAll('a');
+  const anchors = doc.querySelectorAll('a');
   for (const anchor of anchors) {
     const href_value = anchor.getAttribute('href');
     if (href_value && pattern.test(href_value)) {
@@ -106,8 +162,8 @@ export function anchor_validity_filter(document) {
   }
 }
 
-export function attribute_empty_filter(document) {
-  for (const element of document.querySelectorAll('*')) {
+export function attribute_empty_filter(doc) {
+  for (const element of doc.querySelectorAll('*')) {
     for (const name of element.getAttributeNames()) {
       if (!dom_utils.is_boolean(element, name)) {
         const value = element.getAttribute(name);
@@ -122,9 +178,9 @@ export function attribute_empty_filter(document) {
 // Removes certain attributes from all elements in a document. |whitelist| is
 // an object map where each key is element name and each value is array of
 // names of retainable attributes.
-export function attribute_unknown_filter(document, whitelist) {
+export function attribute_unknown_filter(doc, whitelist) {
   assert(typeof whitelist === 'object');
-  const elements = document.getElementsByTagName('*');
+  const elements = doc.getElementsByTagName('*');
   for (const element of elements) {
     const names = element.getAttributeNames();
     if (names.length) {
@@ -138,40 +194,40 @@ export function attribute_unknown_filter(document, whitelist) {
   }
 }
 
-export function base_filter(document) {
-  for (const base of document.querySelectorAll('base')) {
+export function base_filter(doc) {
+  for (const base of doc.querySelectorAll('base')) {
     base.remove();
   }
 }
 
 // |blacklist| is an array of element names.
-export function blacklist_filter(document, blacklist) {
+export function blacklist_filter(doc, blacklist) {
   assert(Array.isArray(blacklist));
   if (blacklist.length < 1) {
     return;
   }
 
-  const elements = document.querySelectorAll(blacklist.join(','));
+  const elements = doc.querySelectorAll(blacklist.join(','));
   for (const element of elements) {
-    if (document.documentElement.contains(element)) {
+    if (doc.documentElement.contains(element)) {
       element.remove();
     }
   }
 }
 
 // Ensures that a document has a body element
-export function body_filter(document) {
-  if (!document.body) {
+export function body_filter(doc) {
+  if (!doc.body) {
     const message = 'This document has no content';
-    const error_node = document.createTextNode(message);
-    const body_element = document.createElement('body');
+    const error_node = doc.createTextNode(message);
+    const body_element = doc.createElement('body');
     body_element.appendChild(error_node);
-    document.documentElement.appendChild(body_element);
+    doc.documentElement.appendChild(body_element);
   }
 }
 
-export function boilerplate_filter(document, options = {}) {
-  let dataset = boilerplate.parse_blocks(document, boilerplate.neutral_score);
+export function boilerplate_filter(doc, options = {}) {
+  let dataset = boilerplate.parse_blocks(doc, boilerplate.neutral_score);
   assert(dataset);
   dataset = boilerplate.extract_features(dataset, options);
   assert(dataset);
@@ -179,15 +235,15 @@ export function boilerplate_filter(document, options = {}) {
   assert(dataset);
   for (const row of dataset) {
     if (row.score < boilerplate.neutral_score) {
-      const element = boilerplate.find_block_element(document, row);
+      const element = boilerplate.find_block_element(doc, row);
       assert(element);
       element.remove();
     }
   }
 }
 
-export function breakrule_filter(document) {
-  const subsequent_brs = document.querySelectorAll('br + br');
+export function breakrule_filter(doc) {
+  const subsequent_brs = doc.querySelectorAll('br + br');
   for (const br of subsequent_brs) {
     br.remove();
   }
@@ -198,7 +254,7 @@ export function breakrule_filter(document) {
 // color. |matte| is an optional base background color used for alpha blending.
 // |min_contrast| is an optional minimum ratio determine whether contrast is too
 // low, defaults to a conservative threshold.
-export function color_contrast_filter(document, matte, min_contrast) {
+export function color_contrast_filter(doc, matte, min_contrast) {
   if (typeof matte === 'undefined') {
     matte = color.WHITE;
   }
@@ -207,8 +263,7 @@ export function color_contrast_filter(document, matte, min_contrast) {
     min_contrast = 1.2;
   }
 
-  const it = document.createNodeIterator(
-      document.documentElement, NodeFilter.SHOW_TEXT);
+  const it = doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_TEXT);
   let node = it.nextNode();
   while (node) {
     const element = node.parentNode;
@@ -223,34 +278,34 @@ export function color_contrast_filter(document, matte, min_contrast) {
 }
 
 // Removes all HTML comment nodes from the document
-export function comment_filter(document) {
-  const it = document.createNodeIterator(
-      document.documentElement, NodeFilter.SHOW_COMMENT);
+export function comment_filter(doc) {
+  const it =
+      doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_COMMENT);
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     node.remove();
   }
 }
 
-// Replaces certain elements in |document| with equivalents that use fewer
+// Replaces certain elements in |doc| with equivalents that use fewer
 // characters in the element name, so that when a document it serialized, it
 // contains fewer characters. |copy_attrs_flag| is optional boolean specifying
 // whether to copy html attributes when replacing an element.
-export function condense_tagnames_filter(document, copy_attrs_flag) {
+export function condense_tagnames_filter(doc, copy_attrs_flag) {
   const renames = [
     {before: 'strong', after: 'b'}, {before: 'em', after: 'i'},
     {before: 'layer', after: 'div'}
   ];
   for (const rename of renames) {
-    const elements = document.querySelectorAll(rename.before);
+    const elements = doc.querySelectorAll(rename.before);
     for (const element of elements) {
       dom_utils.coerce_element(element, rename.after, copy_attrs_flag);
     }
   }
 }
 
-// Removes container-like elements from the document
-export function container_filter(document) {
-  const elements = document.querySelectorAll('div, ilayer, layer');
+// Removes container-like elements from the doc
+export function container_filter(doc) {
+  const elements = doc.querySelectorAll('div, ilayer, layer');
   for (const element of elements) {
     dom_utils.unwrap_element(element);
   }
@@ -259,7 +314,7 @@ export function container_filter(document) {
 // Filters out emphasis-related elements that are too long. |threshold| is an
 // optional cutoff for determining whether an element is over-emphasized, where
 // length is whitespace-adjusted.
-export function emphasis_filter(document, threshold = 0) {
+export function emphasis_filter(doc, threshold = 0) {
   // Bug fix, NaN requires different treatment than undefined
   if (isNaN(threshold)) {
     threshold = 0;
@@ -271,7 +326,7 @@ export function emphasis_filter(document, threshold = 0) {
 
   if (threshold > 0) {
     const selector = 'b, big, em, i, strong, mark, u';
-    const elements = document.querySelectorAll(selector);
+    const elements = doc.querySelectorAll(selector);
     for (const element of elements) {
       if (element.textContent.replace(/\s+/, '').length > threshold) {
         dom_utils.unwrap_element(element);
@@ -280,8 +335,8 @@ export function emphasis_filter(document, threshold = 0) {
   }
 }
 
-export function figure_filter(document) {
-  for (const figure of document.querySelectorAll('figure')) {
+export function figure_filter(doc) {
+  for (const figure of doc.querySelectorAll('figure')) {
     const child_count = figure.childElementCount;
     if (child_count === 1) {
       if (figure.firstElementChild.localName === 'figcaption') {
@@ -296,32 +351,32 @@ export function figure_filter(document) {
   }
 }
 
-export function form_filter(document) {
+export function form_filter(doc) {
   const selector =
       'button, fieldset, input, optgroup, option, select, textarea';
-  const elements = document.querySelectorAll(selector);
+  const elements = doc.querySelectorAll(selector);
   for (const element of elements) {
-    if (document.documentElement.contains(element)) {
+    if (doc.documentElement.contains(element)) {
       element.remove();
     }
   }
 
-  for (const label of document.querySelectorAll('label')) {
+  for (const label of doc.querySelectorAll('label')) {
     dom_utils.unwrap_element(label);
   }
 
-  for (const form of document.querySelectorAll('form')) {
+  for (const form of doc.querySelectorAll('form')) {
     dom_utils.unwrap_element(form);
   }
 }
 
-export function format_filter(document) {
+export function format_filter(doc) {
   const selector = [
     'abbr', 'acronym', 'center', 'data', 'details', 'help', 'insert', 'legend',
     'mark', 'marquee', 'meter', 'nobr', 'span', 'big', 'blink', 'font',
     'plaintext', 'small', 'tt'
   ].join(',');
-  const elements = document.querySelectorAll(selector);
+  const elements = doc.querySelectorAll(selector);
   for (const element of elements) {
     dom_utils.unwrap_element(element);
   }
@@ -329,16 +384,16 @@ export function format_filter(document) {
 
 // Removes frame-related content from a document, including noframes, but
 // not iframes.
-export function frame_filter(document) {
-  const frameset_element = document.querySelector('frameset');
+export function frame_filter(doc) {
+  const frameset_element = doc.querySelector('frameset');
   if (!frameset_element) {
     // Still account for malformed cases
-    const frame_elements = document.querySelectorAll('frame');
+    const frame_elements = doc.querySelectorAll('frame');
     for (const frame_element of frame_elements) {
       frame_element.remove();
     }
 
-    const noframes_elements = document.querySelectorAll('noframes');
+    const noframes_elements = doc.querySelectorAll('noframes');
     for (const noframes_element of noframes_elements) {
       noframes_element.remove();
     }
@@ -353,7 +408,7 @@ export function frame_filter(document) {
   // so that it is setup for reuse. If there is no body, create one in replace
   // of the original frameset.
 
-  let body_element = document.querySelectorAll('body');
+  let body_element = doc.querySelectorAll('body');
   if (body_element) {
     frameset_element.remove();
 
@@ -369,9 +424,9 @@ export function frame_filter(document) {
     // have a frameset and no body, create a new body element in place of the
     // frameset. This will detach the existing frameset. Again this assumes
     // there is only one frameset.
-    body_element = document.createElement('body');
+    body_element = doc.createElement('body');
     // Confusing parameter order note: replaceChild(new child, old child)
-    document.documentElement.replaceChild(body_element, frameset_element);
+    doc.documentElement.replaceChild(body_element, frameset_element);
   }
 
   // Now look for noframes elements within the detached frameset, and if found,
@@ -386,7 +441,7 @@ export function frame_filter(document) {
 
   // Ensure nothing frame related remains, as a minimal filter guarantee, given
   // the possibility of malformed html
-  const elements = document.querySelectorAll('frame, frameset, noframes');
+  const elements = doc.querySelectorAll('frame, frameset, noframes');
   for (const element of elements) {
     element.remove();
   }
@@ -394,7 +449,7 @@ export function frame_filter(document) {
   // Avoid producing an empty body without an explanation
   if (!body_element.firstChild) {
     const message = 'Unable to display document because it uses HTML frames';
-    const node = document.createTextNode(message);
+    const node = doc.createTextNode(message);
     body_element.appendChild(node);
   }
 }
@@ -402,34 +457,34 @@ export function frame_filter(document) {
 // Filters certain horizontal rule elements from document content
 // Look for all <hr><hr> sequences and remove the second one. Naive in that it
 // does not fully account for new document state as hrs removed.
-export function horizontal_rule_filter(document) {
-  if (document.body) {
-    const hrs = document.body.querySelectorAll('hr + hr');
+export function horizontal_rule_filter(doc) {
+  if (doc.body) {
+    const hrs = doc.body.querySelectorAll('hr + hr');
     for (const hr of hrs) {
       hr.remove();
     }
   }
 }
 
-export function head_filter(document) {
+export function head_filter(doc) {
   // TODO: clarify whether a document can have multiple head elements by
   // locating and citing the spec
-  const head_elements = document.querySelectorAll('head');
+  const head_elements = doc.querySelectorAll('head');
   for (const head_element of head_elements) {
     head_element.remove();
   }
 }
 
-export function iframe_filter(document) {
-  const frames = document.querySelectorAll('iframe');
+export function iframe_filter(doc) {
+  const frames = doc.querySelectorAll('iframe');
   for (const frame of frames) {
     frame.remove();
   }
 }
 
 // Removes dead images from the document (e.g. no detectable associated url)
-export function image_dead_filter(document) {
-  for (const image of document.querySelectorAll('img')) {
+export function image_dead_filter(doc) {
+  for (const image of doc.querySelectorAll('img')) {
     if (!dom_utils.image_has_source(image)) {
       dom_utils.remove_image(image);
     }
@@ -439,7 +494,7 @@ export function image_dead_filter(document) {
 // This should occur before canonicalizing urls, because it may set attributes
 // that need to be canonicalized that previously did not exist, and would be
 // missed by the url_resolve_filter filter. This was previously a bug.
-export function image_lazy_filter(document) {
+export function image_lazy_filter(doc) {
   const lazy_names = [
     'big-src', 'load-src', 'data-src', 'data-src-full16x9', 'data-src-large',
     'data-original-desktop', 'data-baseurl', 'data-flickity-lazyload',
@@ -447,7 +502,7 @@ export function image_lazy_filter(document) {
     'data-adaptive-image', 'data-imgsrc', 'data-default-src', 'data-hi-res-src'
   ];
 
-  const images = document.querySelectorAll('img');
+  const images = doc.querySelectorAll('img');
   for (const image of images) {
     if (!dom_utils.image_has_source(image)) {
       const attr_names = image.getAttributeNames();
@@ -466,9 +521,9 @@ export function image_lazy_filter(document) {
 }
 
 // Set the src/width/height attributes for images that only provide srcset
-export function image_responsive_filter(document) {
+export function image_responsive_filter(doc) {
   const selector = 'img[srcset]:not([src])';
-  const images = document.querySelectorAll(selector);
+  const images = doc.querySelectorAll(selector);
   for (const image of images) {
     const descs = dom_utils.srcset_parse(image.getAttribute('srcset'));
     let chosen_desc = null;
@@ -501,74 +556,82 @@ export function image_responsive_filter(document) {
 
 // Tries to set width/height attributes for all images
 export function image_size_filter(
-    document, timeout = INDEFINITE, is_allowed_request) {
-  assert(document.baseURI);  // we rely on img.src getter validity
+    doc, timeout = INDEFINITE, is_allowed_request) {
+  assert(doc.baseURI);
+  assert(timeout instanceof Deadline);
+  const images = doc.querySelectorAll('img');
+  const promises = [];
+  for (const image of images) {
+    const promise = image_size_filter_process_image(
+        image, doc, timeout, is_allowed_request);
+    promises.push(promise);
+  }
+  return Promise.all(promises);
+}
 
-  async function proc_image(image) {
-    if (image.hasAttribute('width') && image.hasAttribute('height')) {
+async function image_size_filter_process_image(
+    image, doc, timeout, is_allowed_request) {
+  if (image.hasAttribute('width') && image.hasAttribute('height')) {
+    return;
+  }
+
+  let width = 0, height = 0;
+
+  // Check inline css
+  if (image.style && image.hasAttribute('style')) {
+    width = parseInt(image.style.width, 10);
+    height = parseInt(image.style.height, 10);
+    if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
+      image.setAttribute('width', width);
+      image.setAttribute('height', height);
       return;
+    } else {
+      width = height = 0;
     }
+  }
 
-    let width = 0, height = 0;
+  if (!image.src) {
+    return;
+  }
 
-    // Check inline css
-    if (image.style && image.hasAttribute('style')) {
-      width = parseInt(image.style.width, 10);
-      height = parseInt(image.style.height, 10);
+  let url;
+  try {
+    url = new URL(image.src);
+  } catch (error) {
+    return;
+  }
+
+  // Check characters in url
+  const exts = ['jpg', 'gif', 'svg', 'jpg', 'bmp', 'png'];
+  const pairs = [{w: 'w', h: 'h'}, {w: 'width', h: 'height'}];
+  if (url.protocol !== 'data:' && exts.includes(utils.url_get_extension(url))) {
+    for (const pair of pairs) {
+      width = parseInt(url.searchParams.get(pairs.w), 10);
+      height = parseInt(url.searchParams.get(pairs.h), 10);
       if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
         image.setAttribute('width', width);
         image.setAttribute('height', height);
         return;
-      } else {
-        width = height = 0;
-      }
-    }
-
-    if (!image.src) {
-      return;
-    }
-
-    let url;
-    try {
-      url = new URL(image.src);
-    } catch (error) {
-      return;
-    }
-
-    // Check characters in url
-    const exts = ['jpg', 'gif', 'svg', 'jpg', 'bmp', 'png'];
-    const pairs = [{w: 'w', h: 'h'}, {w: 'width', h: 'height'}];
-    if (url.protocol !== 'data:' &&
-        exts.includes(utils.url_get_extension(url))) {
-      for (const pair of pairs) {
-        width = parseInt(url.searchParams.get(pairs.w), 10);
-        height = parseInt(url.searchParams.get(pairs.h), 10);
-        if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
-          image.setAttribute('width', width);
-          image.setAttribute('height', height);
-          return;
-        }
-      }
-    }
-
-    try {
-      const fimg =
-          await net.fetch_image_element(url, timeout, is_allowed_request);
-      image.setAttribute('width', fimg.width);
-      image.setAttribute('height', fimg.height);
-    } catch (error) {
-      if (error instanceof AssertionError) {
-        throw error;
       }
     }
   }
 
-  const images = document.querySelectorAll('img');
-  return Promise.all(Array.prototype.map.call(images, proc_image));
+  try {
+    const fimg =
+        await net.fetch_image_element(url, timeout, is_allowed_request);
+    image.setAttribute('width', fimg.width);
+    image.setAttribute('height', fimg.height);
+  } catch (error) {
+    if (error instanceof AssertionError) {
+      throw error;
+    }
+
+    console.debug(error);
+  }
 }
 
-export function image_size_large_filter(document) {
-  const images = document.querySelectorAll('img');
+export function image_size_large_filter(doc) {
+  const images = doc.querySelectorAll('img');
   for (const image of images) {
     if (image_is_size_large(image)) {
       image.removeAttribute('width');
@@ -605,8 +668,8 @@ function image_is_size_large(image) {
   return false;
 }
 
-export function image_size_small_filter(document) {
-  for (const image of document.querySelectorAll('img')) {
+export function image_size_small_filter(doc) {
+  for (const image of doc.querySelectorAll('img')) {
     if (image_is_small(image)) {
       dom_utils.remove_image(image);
     }
@@ -619,8 +682,13 @@ function image_is_small(image) {
 }
 
 // Remove empty/single-item lists
-export function list_filter(document) {
-  const lists = document.querySelectorAll('ul, ol, dl');
+export function list_filter(doc) {
+  assert(typeof doc.baseURI === 'string');
+  assert(
+      !doc.baseURI.startsWith('chrome-extension:'),
+      'bad baseURI somehow ' + doc.baseURI);
+
+  const lists = doc.querySelectorAll('ul, ol, dl');
 
   for (const list of lists) {
     const parent = list.parentNode;
@@ -661,8 +729,8 @@ export function list_filter(document) {
 
 // The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
 // can be found here: https://youtu.be/rGvblGCD7qM
-export function lonestar_filter(document) {
-  assert(document.baseURI);
+export function lonestar_filter(doc) {
+  assert(doc.baseURI);
 
   const host_patterns = [
     /\/\/.*2o7\.net\//i,
@@ -692,10 +760,10 @@ export function lonestar_filter(document) {
     /\/\/www\.facebook\.com\/tr/i
   ];
 
-  const document_url = new URL(document.baseURI);
+  const document_url = new URL(doc.baseURI);
 
   // Remove images that look like telemetry beacons
-  const images = document.querySelectorAll('img');
+  const images = doc.querySelectorAll('img');
   for (const image of images) {
     if (lonestar_is_telemetric(image, document_url, host_patterns, false)) {
       dom_utils.remove_image(image);
@@ -703,13 +771,13 @@ export function lonestar_filter(document) {
   }
 
   // Specify all hyperlink anchors as noreferrer
-  const anchors = document.querySelectorAll('a[href]');
+  const anchors = doc.querySelectorAll('a[href]');
   for (const anchor of anchors) {
     anchor.setAttribute('rel', 'noreferrer');
   }
 
   // Remove ping attributes from anchors
-  const ping_anchors = document.querySelectorAll('a[ping]');
+  const ping_anchors = doc.querySelectorAll('a[ping]');
   for (const anchor of ping_anchors) {
     anchor.removeAttribute('ping');
   }
@@ -767,26 +835,25 @@ function lonestar_is_telemetric(
 
 // Searches the document for misnested elements and tries to fix each
 // occurrence.
-export function nest_filter(document) {
-  const hrs_within_lists =
-      document.querySelectorAll('ul > hr, ol > hr, dl > hr');
+export function nest_filter(doc) {
+  const hrs_within_lists = doc.querySelectorAll('ul > hr, ol > hr, dl > hr');
   for (const hr of hrs_within_lists) {
     hr.remove();
   }
 
-  const nested_anchors = document.querySelectorAll('a a');
+  const nested_anchors = doc.querySelectorAll('a a');
   for (const descendant_anchor of nested_anchors) {
     dom_utils.unwrap_element(descendant_anchor);
   }
 
-  const captions = document.querySelectorAll('figcaption');
+  const captions = doc.querySelectorAll('figcaption');
   for (const caption of captions) {
     if (!caption.parentNode.closest('figure')) {
       caption.remove();
     }
   }
 
-  const sources = document.querySelectorAll('source');
+  const sources = doc.querySelectorAll('source');
   for (const source of sources) {
     if (!source.parentNode.closest('audio, picture, video')) {
       source.remove();
@@ -797,7 +864,7 @@ export function nest_filter(document) {
   const block_selector = 'blockquote, h1, h2, h3, h4, h5, h6, p';
   const inline_selector = 'a, span, b, strong, i';
 
-  const blocks = document.querySelectorAll(block_selector);
+  const blocks = doc.querySelectorAll(block_selector);
   for (const block of blocks) {
     const ancestor = block.closest(inline_selector);
     if (ancestor && ancestor.parentNode) {
@@ -810,9 +877,9 @@ export function nest_filter(document) {
   }
 }
 
-export function node_leaf_filter(document) {
-  const root = document.documentElement;
-  const elements = document.querySelectorAll('*');
+export function node_leaf_filter(doc) {
+  const root = doc.documentElement;
+  const elements = doc.querySelectorAll('*');
   for (const element of elements) {
     if (root.contains(element) && dom_utils.node_is_leaf(element)) {
       element.remove();
@@ -821,10 +888,9 @@ export function node_leaf_filter(document) {
 }
 
 // Filters certain whitespace from node values
-export function node_whitespace_filter(document) {
+export function node_whitespace_filter(doc) {
   const ws_sense = 'code, pre, ruby, script, style, textarea, xmp';
-  const it = document.createNodeIterator(
-      document.documentElement, NodeFilter.SHOW_TEXT);
+  const it = doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_TEXT);
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     const val = node.nodeValue;
     if (val.length > 3 && !node.parentNode.closest(ws_sense)) {
@@ -836,30 +902,30 @@ export function node_whitespace_filter(document) {
   }
 }
 
-export function script_filter(document) {
-  const elements = document.querySelectorAll('noscript, script');
+export function script_filter(doc) {
+  const elements = doc.querySelectorAll('noscript, script');
   for (const element of elements) {
     element.remove();
   }
 }
 
-export function semantic_filter(document) {
+export function semantic_filter(doc) {
   const selector = 'article, aside, footer, header, main, section';
-  const elements = document.querySelectorAll(selector);
+  const elements = doc.querySelectorAll(selector);
   for (const element of elements) {
     dom_utils.unwrap_element(element);
   }
 }
 
 // Filters certain table elements from document content
-export function table_filter(document, row_scan_max) {
-  const elements = document.querySelectorAll(
-      'colgroup, hgroup, multicol, tbody, tfoot, thead');
+export function table_filter(doc, row_scan_max) {
+  const elements =
+      doc.querySelectorAll('colgroup, hgroup, multicol, tbody, tfoot, thead');
   for (const element of elements) {
     dom_utils.unwrap_element(element);
   }
 
-  const tables = document.querySelectorAll('table');
+  const tables = doc.querySelectorAll('table');
   for (const table of tables) {
     const rows = table.rows;
     const limit = Math.min(rows.length, row_scan_max);
@@ -884,12 +950,12 @@ export function table_filter(document, row_scan_max) {
   }
 }
 
-export function document_trim_filter(document) {
-  if (document.body) {
-    const first_child = document.body.firstChild;
+export function document_trim_filter(doc) {
+  if (doc.body) {
+    const first_child = doc.body.firstChild;
     if (first_child) {
       trim_filter_step(first_child, 'nextSibling');
-      const last_child = document.body.lastChild;
+      const last_child = doc.body.lastChild;
       if (last_child && last_child !== first_child) {
         trim_filter_step(last_child, 'previousSibling');
       }
@@ -914,8 +980,8 @@ export function document_trim_filter(document) {
 
 // Resolves all element attribute values that contain urls in |document|. Throws
 // an error if the document has an invalid base URI.
-export function url_resolve_filter(document) {
-  const base_url = new URL(document.baseURI);
+export function url_resolve_filter(doc) {
+  const base_url = new URL(doc.baseURI);
   const map = {
     a: 'href',
     applet: 'codebase',
@@ -947,7 +1013,7 @@ export function url_resolve_filter(document) {
   // In the first pass, select all mapped elements present anywhere in the
   // document, and resolve attribute values per element
   const selector = Object.keys(map).map(key => `${key}[${map[key]}]`).join(',');
-  const elements = document.querySelectorAll(selector);
+  const elements = doc.querySelectorAll(selector);
 
   for (const element of elements) {
     const attr_name = map[element.localName];
@@ -970,7 +1036,7 @@ export function url_resolve_filter(document) {
   // map and that means it is special handling
 
   const srcset_sel = 'img[srcset], source[srcset]';
-  const srcset_els = document.querySelectorAll(srcset_sel);
+  const srcset_els = doc.querySelectorAll(srcset_sel);
   for (const element of srcset_els) {
     const descs = dom_utils.srcset_parse(element.getAttribute('srcset'));
 
@@ -996,13 +1062,13 @@ export function url_resolve_filter(document) {
   }
 }
 
-export function visibility_filter(document, matte, mcr) {
-  for (const element of document.querySelectorAll('*')) {
-    if (document.documentElement.contains(element) &&
+export function visibility_filter(doc, matte, mcr) {
+  for (const element of doc.querySelectorAll('*')) {
+    if (doc.documentElement.contains(element) &&
         dom_utils.is_hidden_inline(element)) {
       dom_utils.unwrap_element(element);
     }
   }
 
-  color_contrast_filter(document, matte, mcr);
+  color_contrast_filter(doc, matte, mcr);
 }

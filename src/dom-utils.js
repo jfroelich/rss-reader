@@ -415,11 +415,11 @@ export function unwrap_element(element) {
   if (is_table) {
     const row_count = element.rows.length;
     for (let i = 0; i < row_count; i++) {
-      const row = rows[i];
+      const row = element.rows[i];
       for (let j = 0, clen = row.cells.length; j < clen; j++) {
         const cell = row.cells[j];
         for (let node = cell.firstChild; node; node = cell.firstChild) {
-          parent.insertBefore(node, element);
+          frag.appendChild(node);
         }
       }
     }
@@ -462,22 +462,27 @@ export function unwrap_element(element) {
   parent.insertBefore(frag, next);
 }
 
-export function set_base_uri(document, url, overwrite) {
-  assert(typeof document === 'object');
+export function set_base_uri(doc, url, overwrite) {
+  assert(typeof doc === 'object');
   assert(typeof url === 'object');
-  assert(url.href);
+  assert(typeof url.href === 'string');
 
-  let head = document.querySelector('head');
-  const body = document.querySelector('body');
+  if (url.href.startsWith('chrome-extension')) {
+    throw new Error('Cannot set baseURI to local url:' + url.href);
+  }
+
+
+  let head = doc.querySelector('head');
+  const body = doc.querySelector('body');
 
   if (overwrite) {
     // There must be no more than one base element per document.
-    const bases = document.querySelectorAll('base');
+    const bases = doc.querySelectorAll('base');
     for (const base of bases) {
       base.remove();
     }
 
-    const base = document.createElement('base');
+    const base = doc.createElement('base');
     base.setAttribute('href', url.href);
 
     if (head) {
@@ -485,27 +490,26 @@ export function set_base_uri(document, url, overwrite) {
       // is undefined, this devolves into appendChild.
       head.insertBefore(base, head.firstElementChild);
     } else {
-      head = document.createElement('head');
+      head = doc.createElement('head');
       // Appending to new head while it is still detached is better performance
       // in case document is live
       head.appendChild(base);
       // Insert the head before the body (fallback to append if body not found)
-      document.documentElement.insertBefore(head, body);
+      doc.documentElement.insertBefore(head, body);
     }
     return;
   }
 
-  let base = document.querySelector('base[href]');
-  ;
+  let base = doc.querySelector('base[href]');
   if (!base) {
-    base = document.createElement('base');
+    base = doc.createElement('base');
     base.setAttribute('href', url.href);
     if (head) {
       head.insertBefore(base, head.firstElementChild);
     } else {
-      head = document.createElement('head');
+      head = doc.createElement('head');
       head.appendChild(base);
-      document.documentElement.insertBefore(head, body);
+      doc.documentElement.insertBefore(head, body);
     }
     return;
   }
@@ -537,10 +541,12 @@ export function set_base_uri(document, url, overwrite) {
   // Per the spec, "[t]here must be no more than one base element per
   // document." Now that we know which of the existing base elements will be
   // retained, we remove the others to make the document more spec compliant.
-  const bases = document.querySelectorAll('base');
+  const bases = doc.querySelectorAll('base');
   for (const other_base of bases) {
     if (other_base !== base) {
       other_base.remove();
     }
   }
+
+  assert(!doc.baseURI.startsWith('chrome-extension:'));
 }

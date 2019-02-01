@@ -216,18 +216,21 @@ export async function fetch_image(url, options = {}) {
   return response;
 }
 
-// Returns a promise that resolves to undefined after a given amount of
-// milliseconds.
+// Returns a promise that resolves to undefined after a given delay.
 function sleep(delay = INDEFINITE) {
   assert(delay instanceof Deadline);
+
+  if (!delay.isDefinite()) {
+    console.warn('sleeping indefinitely?');
+    return Promise.resolve();
+  }
+
   const time = delay.toInt();
   assert(Number.isInteger(time));
   return new Promise(resolve => {
     const timer_id = setTimeout(function() {
-      resolve(undefined);
+      resolve();
     }, time);
-    // Very explicit, do not do something like return timer id
-    return undefined;
   });
 }
 
@@ -339,9 +342,27 @@ export async function fetch_image_element(
   if (!is_allowed_request(request_data)) {
     throw new PolicyError('Refused to fetch ' + url.href);
   }
-  const fpromise = fetch_image_element_promise(url);
-  const contestants = timeout ? [fpromise, sleep(timeout)] : [fpromise];
-  const image = await Promise.race(contestants);
+
+  const fetch_promise = new Promise((resolve, reject) => {
+    const proxy = new Image();
+    proxy.src = url.href;
+    if (proxy.complete) {
+      resolve(proxy);
+      return;
+    }
+
+    proxy.onload = _ => resolve(proxy);
+    const error = new FetchError('Fetch image error ' + url.href);
+    proxy.onerror = _ => reject(error);
+  });
+
+  let image;
+  if (timeout.isDefinite()) {
+    image = await Promise.race([fetch_promise, sleep(timeout)]);
+  } else {
+    image = await fetch_promise;
+  }
+
   if (!image) {
     throw new TimeoutError('Timed out fetching ' + url.href);
   }
@@ -357,26 +378,9 @@ export async function fetch_image_element(
 // whether the document is live or inert. Documents created by DOMParser and
 // XMLHttpRequest are inert. In an inert document the src setter method does not
 // work.
-// TODO: actually obey policy?
+
 function fetch_image_element_promise(url, is_allowed_request = PERMITTED) {
-  return new Promise((resolve, reject) => {
-    const proxy = new Image();
-    proxy.src = url.href;
-
-    // If cached then resolve immediately
-    if (proxy.complete) {
-      resolve(proxy);
-      return;
-    }
-
-    proxy.onload = _ => resolve(proxy);
-
-    // The error event does not contain any useful error information so create
-    // our own error. Also, we create a specific error type so as to distinguish
-    // this kind of error from programmer errors or other kinds of fetch errors.
-    const error = new FetchError('Fetch image error ' + url.href);
-    proxy.onerror = _ => reject(error);
-  });
+  return
 }
 
 // Return true if the error is a kind of temporary fetch error that is not
