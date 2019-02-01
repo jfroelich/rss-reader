@@ -200,3 +200,49 @@ export async function unwrap_element_test() {
       '<html><head></head><body>before<b>hello</b>after</body></html>';
   assert(after_state === expected_state);
 }
+
+export async function unwrap_list_test() {
+  let doc = utils.parse_html(
+      '<html><body>1<ul><li>2</li><li>3</li></ul>4<body></html>');
+  let element = doc.querySelector('ul');
+  dom_utils.unwrap_element(element);
+  let after_state = doc.body.innerHTML;
+
+  // NOTE: the whitespace manipulation is wonky/imperfect/inexact. Since it is
+  // not very significant, correctness is determined by non-whitespace, which we
+  // verify using a compare-ignoring-whitespace approach.
+  let expected_state = '1234';
+  after_state = after_state.replace(/\s/g, '');
+  assert(after_state === expected_state);
+
+  // Test against simple empty list
+  doc = utils.parse_html('<html><body><ul></ul><body></html>');
+  element = doc.querySelector('ul');
+  dom_utils.unwrap_element(element);
+  after_state = doc.body.innerHTML;
+  expected_state = '';
+  // Due to wonky whitespace manipulation, strip it out
+  after_state = after_state.trim();
+  assert(after_state === expected_state, 'after is ' + after_state);
+
+  // Test against definition list using both dd and dt
+  doc = utils.parse_html(
+      '<html><body><dl><dd>1</dd><dt>2</dt></dl><body></html>');
+  element = doc.querySelector('dl');
+  dom_utils.unwrap_element(element);
+  after_state = doc.body.innerHTML;
+  expected_state = '12';
+  // Ignore whitespace as usual
+  after_state = after_state.replace(/\s/g, '');
+  assert(after_state === expected_state);
+
+  // Test against list with aberrant item
+  doc = utils.parse_html(
+      '<html><body><ul><li>1</li><foo>2</foo></ul><body></html>');
+  element = doc.querySelector('ul');
+  dom_utils.unwrap_element(element);
+  after_state = doc.body.innerHTML;
+  expected_state = '1<foo>2</foo>';
+  after_state = after_state.replace(/\s/g, '');
+  assert(after_state === expected_state);
+}

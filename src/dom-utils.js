@@ -3,15 +3,14 @@ import '/third-party/tinycolor-min.js';
 import {assert} from '/src/assert.js';
 import * as color from '/src/color.js';
 
-// Only minor validation for speed. Tolerates bad input. This isn't intended to
-// be the most accurate classification. Instead, it is intended to easily find
-// bad urls and rule them out as invalid, even though some slip through, and not
-// unintentionally rule out good urls.
-// @param value {Any} should be a string but this tolerates bad input
-// @returns {Boolean}
+export function has_valid_base_uri(doc) {
+  return doc instanceof Document && doc.baseURI &&
+      typeof doc.baseURI === 'string' &&
+      !doc.baseURI.startsWith('chrome-extension');
+}
+
+// Very minimally validate a url string
 export function is_valid_url_string(value) {
-  // The upper bound on len is an estimate, kind of a safeguard, hopefully never
-  // causes a problem
   return typeof value === 'string' && value.length > 1 &&
       value.length <= 3000 && !value.trim().includes(' ');
 }
@@ -366,94 +365,83 @@ function element_is_offscreen(element) {
   return false;
 }
 
-// Replace |element| with its child nodes. If |nag| is true then warn when
-// unwrapping an orphaned node.
-// TODO: what if the preceding text ends in whitespace, or the trailing text
-// starts with whitespace? should unwrap not append in that case? or what
-// if the text within the element starts or ends in whitespace?
-// TODO: we do not need to append a space if the preceding node is a text node
-// that ends in a space, and similarly if the subsequent node is a text node
-// that starts with a space, we can just let the normalize-text algorithm do
-// the merge.
+// Replace |element| with its child nodes
 export function unwrap_element(element) {
   if (!element.parentNode) {
     return;
   }
 
   const doc = element.ownerDocument;
+  assert(doc instanceof Document);
   const parent = element.parentNode;
   const prev = element.previousSibling;
   const next = element.nextSibling;
-
-  // TODO: do these need to be different for a table? They do logically, but
-  // does it matter at all? The later code maybe just ignores these for tables.
   const first = element.firstChild;
   const last = element.lastChild;
-
   const TEXT = Node.TEXT_NODE;
   const frag = doc.createDocumentFragment();
-
-  const is_table = element.localName === 'table';
+  const is_table = (element.localName === 'table');
   const is_list = ['dl', 'ol', 'ul'].includes(element.localName);
 
   // Detach upfront in case of live dom
   element.remove();
 
-  if (is_table) {
-    // For now, just get unwrap handling tables and always append
+  if (is_table || is_list) {
     frag.appendChild(doc.createTextNode(' '));
   } else if (
-      prev && prev.nodeType === TEXT && first &&
-      (first.nodeType === TEXT ||
-       (is_list && first.nodeType === Node.ELEMENT_NODE && first.firstChild &&
-        first.firstChild.nodeType === TEXT))) {
+      prev && prev.nodeType === TEXT && first && first.nodeType === TEXT) {
     frag.appendChild(doc.createTextNode(' '));
   }
 
+  // Move the child content into the fragment
   // TODO: does for..of work on element.rows and element.rows[n].cells?
-
   if (is_table) {
-    const row_count = element.rows.length;
-    for (let i = 0; i < row_count; i++) {
-      const row = element.rows[i];
-      for (let j = 0, clen = row.cells.length; j < clen; j++) {
-        const cell = row.cells[j];
-        for (let node = cell.firstChild; node; node = cell.firstChild) {
+    console.debug('unwrapping table', element.outerHTML);
+    for (let i = 0; i < element.rows.length; i++) {
+      for (let j = 0, row = element.rows[i]; j < row.cells.length; j++) {
+        for (let cell = row.cells[j], node = cell.firstChild; node;
+             node = cell.firstChild) {
           frag.appendChild(node);
         }
       }
     }
   } else if (is_list) {
-    for (let node = first; node; node = element.firstChild) {
-      if (node.nodeType === Node.ELEMENT_NODE &&
-          (node.localName === 'li' || node.localName === 'dd')) {
-        for (let item_node = node.firstChild; item_node;
-             item_node = node.firstChild) {
-          frag.appendChild(item_node);
+    // NOTE: we move along items using sibling chain, because we are moving
+    // around the content within items, not the items themselves. Previously
+    // this was a bug.
+    let item = element.firstChild;
+    while (item) {
+      if (is_list_item(item)) {
+        // Unlike the outer loop, here firstChild does change each move
+        for (let child = item.firstChild; child; child = item.firstChild) {
+          frag.appendChild(child);
+          frag.appendChild(doc.createTextNode(' '));
         }
+        // Advance after, since we can, and it is simpler
+        item = item.nextSibling;
       } else {
-        frag.appendChild(node);
+        // Advance before, because we are moving the whole thing, and the
+        // nextSibling link will be broken by the move. Memoize the link before
+        // however so we can move it after advance.
+        const prev = item;
+        item = item.nextSibling;
+        // For non-item child node of list element, move the entire thing
+        frag.appendChild(prev);
       }
     }
   } else {
-    for (let node = first; node; node = element.firstChild) {
+    for (let node = element.firstChild; node; node = element.firstChild) {
       frag.appendChild(node);
     }
   }
 
-  if (is_table) {
-    // For now, just get table unwrap working and always append
+  if (is_table || is_list) {
     frag.appendChild(doc.createTextNode(' '));
-  } else if (
-      last && next && next.nodeType === TEXT &&
-      (last.nodeType === TEXT ||
-       (is_list && last.nodeType === Node.ELEMENT_NODE && last.lastChild &&
-        list.lastChild.nodeType === TEXT))) {
+  } else if (last && next && next.nodeType === TEXT && last.nodeType === TEXT) {
     frag.appendChild(doc.createTextNode(' '));
   }
 
-  // Create one space if the element was empty between two text nodes. This is
-  // separate from the other checks that require at least one child.
+  // Create one space if the element was empty between two text nodes
   if (!first && prev && next && prev.nodeType === TEXT &&
       next.nodeType === TEXT) {
     frag.appendChild(doc.createTextNode(' '));

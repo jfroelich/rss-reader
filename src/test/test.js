@@ -15,11 +15,11 @@ import * as utils_tests from '/src/test/utils-tests.js';
 
 const registry = [];
 register_test(color_test);
-register_module_tests(dom_utils_tests);
 register_module_tests(cdb_tests);
+register_module_tests(dom_utils_tests);
 register_module_tests(db_tests);
 register_module_tests(dom_filter_tests);
-register_module_tests(favicon_cache_tests);
+register_module_tests(favicon_tests);
 register_module_tests(idb_tests);
 register_test(mime_test);
 register_module_tests(net_tests);

@@ -1,4 +1,4 @@
-import assert from '/src/assert.js';
+import {assert} from '/src/assert.js';
 import * as cdb from '/src/cdb.js';
 import {INDEFINITE} from '/src/deadline.js';
 import * as idb from '/src/idb.js';
