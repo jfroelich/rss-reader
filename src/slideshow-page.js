@@ -4,7 +4,7 @@ import * as config_control from '/src/config-control.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon.js';
 import * as ops from '/src/ops.js';
-import {PollOperation} from '/src/poll/poll-feeds.js';
+import {PollOperation} from '/src/poll-feeds.js';
 import * as utils from '/src/utils.js';
 
 const splash_element = document.getElementById('initial-loading-panel');

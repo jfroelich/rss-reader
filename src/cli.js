@@ -3,7 +3,7 @@ import * as config from '/src/config-control.js';
 import * as cron_control from '/src/cron.js';
 import * as favicon from '/src/favicon.js';
 import * as ops from '/src/ops.js';
-import {PollOperation} from '/src/poll/poll-feeds.js';
+import {PollOperation} from '/src/poll-feeds.js';
 
 async function cli_subscribe(url_string, poll = true) {
   const url = new URL(url_string);
