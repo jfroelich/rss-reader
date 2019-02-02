@@ -98,6 +98,9 @@ async function fetch_root_icon(request) {
 
   const root_icon = new URL(url.origin + '/favicon.ico');
 
+  // NOTE: oracle.com returns "unknown" as the content type, which is why this
+  // is not restricted by content-type, despite my preference to impose a
+  // constraint on content type of the response.
   const fetch_options = {method: 'head', timeout: timeout};
 
   // Call without catching errors

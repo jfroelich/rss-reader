@@ -2,10 +2,27 @@ import {assert} from '/src/assert.js';
 import * as favicon from '/src/favicon.js';
 import * as idb from '/src/idb.js';
 
+export async function favicon_oracle_test() {
+  const db_name = favicon_oracle_test.name;
+  await idb.remove(db_name);
+  const conn = await favicon.open(db_name);
+
+  const url = new URL('https://www.oracle.com');
+  const request = new favicon.LookupRequest();
+  request.conn = conn;
+  request.url = url;
+
+  const result = await favicon.lookup(request);
+  const expected = 'https://www.oracle.com/favicon.ico';
+  assert(result === expected);
+  conn.close();
+  await idb.remove(db_name);
+}
+
 export async function favicon_cache_open_test() {
   const db_name = favicon_cache_open_test.name;
   await idb.remove(db_name);
-  const conn = await favicon.open(db_name, undefined, 0);
+  const conn = await favicon.open(db_name);
   assert(typeof conn === 'object');
   assert(typeof conn.close === 'function');
   conn.close();
