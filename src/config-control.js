@@ -77,6 +77,11 @@ export function init_config(event) {
   config.write_int('initial_entry_load_limit', 3);
 
   // View settings
+
+  // By default, use a reasonable animation duration that is not too fast or
+  // too slow.
+  config.write_float('slide_transition_duration', 0.16);
+
   config.write_int('entry_title_max_length', 300);
   config.write_int('padding', 180);
   config.write_string('bg_color', '#fefdfd');

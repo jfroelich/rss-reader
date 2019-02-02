@@ -15,7 +15,16 @@ if (feeds_container) {
   console.warn('could not find feeds-container');
 }
 
-let duration = 0.16;  // Slide animation speed (smaller is faster)
+// Slide animation speed (smaller is faster), floating point
+let transition_duration;
+function init_transition_duration() {
+  const default_duration = 0.16;
+  const duration_float = config.read_float('slide_transition_duration');
+  transition_duration =
+      isNaN(duration_float) ? default_duration : duration_float;
+}
+init_transition_duration();
+
 let channel;
 let refresh_in_progress = false;
 const no_articles_element = document.getElementById('no-entries-message');
@@ -882,8 +891,8 @@ function attach_slide(slide) {
   // transition. Therefore, schedule focus for when the transition completes.
   slide.addEventListener('webkitTransitionEnd', transition_onend);
 
-  // The value of the duration variable is defined external to this function,
-  // because it is mutable by other functions.
+  // The value of the transition_duration variable is defined external to this
+  // function, because it is mutable by other functions.
 
   // Define the animation effect that will occur when moving the slide. Slides
   // are moved by changing a slide's css left property. This triggers a
@@ -891,7 +900,7 @@ function attach_slide(slide) {
   // have the transition only apply to a slide when it is in a certain state. If
   // set via css then this causes an undesirable immediate transition on the
   // first slide.
-  slide.style.transition = `left ${duration}s ease-in-out`;
+  slide.style.transition = `left ${transition_duration}s ease-in-out`;
 
   // Initialize the current slide if needed
   if (!get_current_slide()) {
@@ -904,16 +913,18 @@ function attach_slide(slide) {
   container.appendChild(slide);
 }
 
-function is_valid_transition_duration(duration) {
-  return !isNaN(duration) && isFinite(duration) && duration >= 0;
+function is_valid_transition_duration(transition_duration) {
+  return !isNaN(transition_duration) && isFinite(transition_duration) &&
+      transition_duration >= 0;
 }
 
 function set_transition_duration(input_duration) {
   if (!is_valid_transition_duration(input_duration)) {
-    throw new TypeError('Invalid duration parameter', input_duration);
+    throw new TypeError(
+        'Invalid transition_duration parameter', input_duration);
   }
 
-  duration = input_duration;
+  transition_duration = input_duration;
 }
 
 // Handle the end of a transaction. Should not be called directly.
