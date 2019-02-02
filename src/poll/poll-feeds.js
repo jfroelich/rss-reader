@@ -26,7 +26,6 @@ export class PollOperation {
     this.iconn = undefined;
     this.rewrite_rules = rewrite_rules.build();
 
-
     // TODO: somehow store in configuration instead of here, look into
     // deserializing using Regex constructor or something
     this.inaccessible_content_descriptors = [
@@ -44,7 +43,22 @@ export class PollOperation {
   }
 
   async run() {
-    assert(this instanceof PollOperation);
+    if (this.recency_period && !this.ignore_recency_check) {
+      const stamp = parseInt(localStorage.last_poll_date, 10);
+      if (!isNaN(stamp)) {
+        const now = new Date();
+        const stamp_date = new Date(stamp);
+        const millis_elapsed = now - stamp_date;
+        assert(elapsed >= 0);
+        if (elapsed < this.recency_period) {
+          console.debug('Polled too recently', elapsed);
+          return;
+        }
+      }
+    }
+
+    localStorage.last_poll_date = '' + Date.now();
+
     const feeds = await this.get_pollable_feeds();
     console.debug('Loaded %d feeds', feeds.length);
     const promises = feeds.map(this.poll_feed, this);
@@ -53,9 +67,7 @@ export class PollOperation {
     // Calculate the total number of entries added across all feeds.
     let count = 0;
     for (const result of results) {
-      // if (result) {
       count += result;
-      //}
     }
 
     if (count) {
@@ -69,7 +81,6 @@ export class PollOperation {
   }
 
   async poll_feed(feed) {
-    assert(this instanceof PollOperation);
     assert(cdb.is_feed(feed));
 
     if (!cdb.Feed.prototype.hasURL.call(feed)) {
@@ -77,23 +88,17 @@ export class PollOperation {
       return 0;
     }
 
+    console.debug('Polling feed', cdb.Feed.prototype.getURLString.call(feed));
+
     if (!feed.active) {
       console.debug('Feed is inactive', feed);
       return 0;
     }
 
-    if (this.polled_recently(feed.dateFetched)) {
-      console.debug('Feed fetched too recently', feed);
-      return 0;
-    }
-
-    console.debug('Fetching feed', feed);
     let fetch_result;
     try {
       fetch_result = await this.fetch_feed(feed);
     } catch (error) {
-      console.debug('Error fetching feed', error, feed);
-
       if (error instanceof AssertionError) {
         console.error(error);
         throw error;
@@ -330,24 +335,6 @@ export class PollOperation {
   create_entry(entry) {
     assert(cdb.is_entry(entry));
     return cdb.create_entry(this.session, entry);
-  }
-
-  polled_recently(last_fetch_date) {
-    if (!last_fetch_date) {
-      return false;
-    }
-
-    if (this.ignore_recency_check) {
-      return false;
-    }
-
-    if (!this.recency_period) {
-      return false;
-    }
-
-    const now = new Date();
-    const elapsed = now - last_fetch_date;
-    return elapsed > 0 && elapsed < this.recency_period;
   }
 
   fetch_feed(feed) {
