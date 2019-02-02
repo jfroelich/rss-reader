@@ -1,5 +1,5 @@
 import {assert} from '/src/assert.js';
-import * as sniff from '/src/poll/url-sniff.js';
+import * as sniff from '/src/url-sniff.js';
 import * as utils from '/src/utils.js';
 
 export async function url_sniff_test() {
