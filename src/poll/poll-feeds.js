@@ -8,7 +8,6 @@ import * as favicon from '/src/favicon.js';
 import * as net from '/src/net.js';
 import * as notification_module from '/src/note.js';
 import * as rewrite_rules from '/src/poll/rewrite-rules.js';
-import {rewrite_url} from '/src/poll/rewrite-url.js';
 import * as sniff from '/src/poll/url-sniff.js';
 import * as utils from '/src/utils.js';
 
@@ -435,4 +434,14 @@ export class PollOperation {
     }
     return false;
   }
+}
+
+export function rewrite_url(url, rules) {
+  let prev = url;
+  let next = url;
+  for (const rule of rules) {
+    prev = next;
+    next = rule(prev) || prev;
+  }
+  return next;
 }
