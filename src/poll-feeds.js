@@ -8,7 +8,7 @@ import * as favicon from '/src/favicon.js';
 import * as net from '/src/net.js';
 import * as notification_module from '/src/note.js';
 import * as rewrite_rules from '/src/rewrite-urls.js';
-import * as sniff from '/src/sniffer.js';
+import * as sniffer from '/src/sniffer.js';
 import * as utils from '/src/utils.js';
 
 export class PollOperation {
@@ -208,7 +208,7 @@ export class PollOperation {
     let response;
     let url = new URL(cdb.Entry.prototype.getURLString.call(entry));
     if ((url.protocol === 'http:' || url.protocol === 'https:') &&
-        sniff.classify(url) !== sniff.BINARY_CLASS &&
+        sniffer.classify(url) !== sniffer.BINARY_CLASS &&
         !this.url_is_inaccessible(url)) {
       try {
         response =

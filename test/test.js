@@ -10,7 +10,7 @@ import * as net_tests from '/test/net-tests.js';
 import * as ops_tests from '/test/ops-tests.js';
 import {parse_feed_test} from '/test/parse-feed-test.js';
 import * as rewrite_url_tests from '/test/rewrite-url-test.js';
-import {url_sniff_test} from '/test/url-sniff-test.js';
+import {sniffer_test} from '/test/sniffer-test.js';
 import * as utils_tests from '/test/utils-tests.js';
 
 const registry = [];
@@ -26,7 +26,7 @@ register_module_tests(net_tests);
 register_module_tests(ops_tests);
 register_test(parse_feed_test);
 register_module_tests(rewrite_url_tests);
-register_test(url_sniff_test);
+register_test(sniffer_test);
 register_module_tests(utils_tests);
 
 // On module load, expose console commands
