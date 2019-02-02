@@ -1,5 +1,5 @@
 import * as mime from '/src/mime.js';
-import * as url_utils from '/src/utils.js';
+import * as utils from '/src/utils.js';
 
 export const UNKNOWN_CLASS = 0;
 export const TEXT_CLASS = 1;
@@ -34,7 +34,7 @@ export function classify(url) {
     return mime_type ? mime_type_is_binary(mime_type) : UNKNOWN_CLASS;
   }
 
-  const extension = url_utils.url_get_extension(url);
+  const extension = utils.url_get_extension(url);
   if (extension) {
     const mime_type = EXTENSION_TYPE_MAP[extension];
     if (mime_type) {
