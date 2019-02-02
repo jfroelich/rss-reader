@@ -6,8 +6,8 @@ import * as utils from '/src/utils.js';
 const DEFAULT_NAME = 'reader';
 const DEFAULT_VERSION = 29;
 
-export const ENTRY_MAGIC = 0xdeadbeef;
-export const FEED_MAGIC = 0xfeedfeed;
+const ENTRY_MAGIC = 0xdeadbeef;
+const FEED_MAGIC = 0xfeedfeed;
 
 // Various entry property states
 export const ENTRY_UNREAD = 0;
