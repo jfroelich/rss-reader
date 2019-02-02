@@ -1,3 +1,4 @@
+import {assert} from '/src/assert.js';
 import * as mime from '/src/mime.js';
 import * as utils from '/src/utils.js';
 
@@ -17,9 +18,7 @@ export const application_text_types = [
 // unknown when it is not confident in the results. The function guesses the
 // class of the resource purely by looking at its url.
 export function classify(url) {
-  if (!(url instanceof URL)) {
-    throw new TypeError('url is not a URL');
-  }
+  assert(url instanceof URL);
 
   if (url.href === 'about:blank') {
     return TEXT_CLASS;
