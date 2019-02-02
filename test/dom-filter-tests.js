@@ -127,7 +127,7 @@ function run_image_size_filter(doc) {
 
 // Fetch, parse, and prepare a local url
 async function load_file(filename) {
-  const base_path = '/src/test/';
+  const base_path = '/test/';
   const url_string = chrome.extension.getURL(base_path + filename);
   const response = await fetch(url_string);
   const text = await response.text();

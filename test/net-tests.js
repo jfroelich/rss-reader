@@ -3,7 +3,7 @@ import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as net from '/src/net.js';
 
 export async function fetch_image_test() {
-  let path = '/src/test/fetch-image-test.png';
+  let path = '/test/fetch-image-test.png';
   let url_string = chrome.extension.getURL(path);
   let url = new URL(url_string);
 
@@ -19,7 +19,7 @@ export async function fetch_image_test() {
   assert(response);
 
   // Test against a non-existent image
-  path = '/src/test/i-do-not-exist.png';
+  path = '/test/i-do-not-exist.png';
   url_string = chrome.extension.getURL(path);
   url = new URL(url_string);
   options = undefined;  // reset for isolation, presumably indefinite default
