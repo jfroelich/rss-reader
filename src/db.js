@@ -30,11 +30,11 @@ export function append_entry_url(entry, url) {
 }
 
 export function is_entry(value) {
-  return value && typeof value === 'object' && value.magic === ENTRY_MAGIC;
+  return typeof value === 'object' && value.magic === ENTRY_MAGIC;
 }
 
 export function is_feed(value) {
-  return value && typeof value === 'object' && value.magic === FEED_MAGIC;
+  return typeof value === 'object' && value.magic === FEED_MAGIC;
 }
 
 export function construct_entry() {
