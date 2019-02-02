@@ -8,7 +8,7 @@ import * as favicon from '/src/favicon.js';
 import * as net from '/src/net.js';
 import * as notification_module from '/src/note.js';
 import * as rewrite_rules from '/src/rewrite-urls.js';
-import * as sniff from '/src/url-sniff.js';
+import * as sniff from '/src/sniffer.js';
 import * as utils from '/src/utils.js';
 
 export class PollOperation {
