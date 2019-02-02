@@ -72,22 +72,28 @@ export class PollOperation {
     assert(this instanceof PollOperation);
     assert(cdb.is_feed(feed));
 
-    if (!cdb.feed_has_url(feed)) {
+    if (!cdb.Feed.prototype.hasURL.call(feed)) {
+      console.debug('Feed missing url', feed);
       return 0;
     }
 
     if (!feed.active) {
+      console.debug('Feed is inactive', feed);
       return 0;
     }
 
     if (this.polled_recently(feed.dateFetched)) {
+      console.debug('Feed fetched too recently', feed);
       return 0;
     }
 
+    console.debug('Fetching feed', feed);
     let fetch_result;
     try {
       fetch_result = await this.fetch_feed(feed);
     } catch (error) {
+      console.debug('Error fetching feed', error, feed);
+
       if (error instanceof AssertionError) {
         console.error(error);
         throw error;
@@ -96,19 +102,22 @@ export class PollOperation {
       // If failed to fetch with temp error, stop processing the feed and exit
       if (error instanceof net.TimeoutError ||
           error instanceof net.OfflineError) {
+        console.warn(error);
         return 0;
       }
-
 
       feed.errorCount =
           Number.isInteger(feed.errorCount) ? feed.errorCount + 1 : 1;
       if (feed.errorCount > this.deactivation_threshold) {
-        console.debug('Deactivating feed', cdb.feed_get_url(feed));
+        console.debug(
+            'Marking feed inactive',
+            cdb.Feed.prototype.getURLString.call(feed));
         feed.active = false;
         feed.deactivationReasonText = 'fetch';
         feed.deactivationDate = new Date();
       }
 
+      console.debug('Updating feed on fetch error', feed);
       await cdb.update_feed(this.session, feed, true);
       return 0;
     }
@@ -119,6 +128,8 @@ export class PollOperation {
 
     feed = this.merge_feed(feed, fetch_result.feed);
 
+    console.debug('Fetched feed', feed);
+
     // Decrement error count on success
     if (!isNaN(feed.errorCount) && feed.errorCount > 0) {
       feed.errorCount--;
@@ -126,6 +137,7 @@ export class PollOperation {
       delete feed.errorCount;
     }
 
+    console.debug('Updating feed', feed);
     cdb.validate_feed(feed);
     cdb.sanitize_feed(feed);
     await cdb.update_feed(this.session, feed, true);
@@ -144,7 +156,9 @@ export class PollOperation {
     }
 
     const promises = entries.map(
-        (entry => this.poll_entry(entry, cdb.feed_get_url(feed))), this);
+        (entry => this.poll_entry(
+             entry, cdb.Feed.prototype.getURLString.call(feed))),
+        this);
     const ids = await Promise.all(promises);
     const count = ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
 
@@ -156,8 +170,8 @@ export class PollOperation {
     }
 
     console.debug(
-        'Completed polling feed %s, added %d entries', cdb.feed_get_url(feed),
-        count);
+        'Completed polling feed %s, added %d entries',
+        cdb.Feed.prototype.getURLString.call(feed), count);
     return count;
   }
 
@@ -168,14 +182,19 @@ export class PollOperation {
   async poll_entry(entry, feed_url_string) {
     assert(this instanceof PollOperation);
     assert(cdb.is_entry(entry));
-    assert(cdb.entry_has_url(entry));
+    assert(cdb.Entry.prototype.hasURL.call(entry));
 
-    cdb.append_entry_url(
+    console.debug('Polling entry', entry, feed_url_string);
+
+    cdb.Entry.prototype.appendURL.call(
         entry,
-        rewrite_url(new URL(cdb.entry_get_url(entry)), this.rewrite_rules));
+        rewrite_url(
+            new URL(cdb.Entry.prototype.getURLString.call(entry)),
+            this.rewrite_rules));
 
     let existing = await cdb.get_entry(
-        this.session, 'url', new URL(cdb.entry_get_url(entry)), true);
+        this.session, 'url',
+        new URL(cdb.Entry.prototype.getURLString.call(entry)), true);
     if (existing) {
       return 0;
     }
@@ -183,7 +202,7 @@ export class PollOperation {
     // Fetch the entry full text. Reuse the url from above since it has not
     // changed. Trap fetch errors so that we can fall back to using feed content
     let response;
-    let url = new URL(cdb.entry_get_url(entry));
+    let url = new URL(cdb.Entry.prototype.getURLString.call(entry));
     if ((url.protocol === 'http:' || url.protocol === 'https:') &&
         sniff.classify(url) !== sniff.BINARY_CLASS &&
         !this.url_is_inaccessible(url)) {
@@ -208,14 +227,14 @@ export class PollOperation {
     let doc;
     if (response) {
       let url_changed = false;
-      url = new URL(cdb.entry_get_url(entry));
+      url = new URL(cdb.Entry.prototype.getURLString.call(entry));
       const response_url = new URL(response.url);
       if (net.response_is_redirect(url, response)) {
         url_changed = true;
-        cdb.append_entry_url(entry, response_url);
-        cdb.append_entry_url(
+        cdb.Entry.prototype.appendURL.call(entry, response_url);
+        cdb.Entry.prototype.appendURL.call(
             entry, rewrite_url(response_url, this.rewrite_rules));
-        url = new URL(cdb.entry_get_url(entry));
+        url = new URL(cdb.Entry.prototype.getURLString.call(entry));
         let existing = await cdb.get_entry(this.session, 'url', url, true);
         if (existing) {
           return 0;
@@ -250,7 +269,8 @@ export class PollOperation {
     assert(doc instanceof Document);
 
     const old_base_uri = doc.baseURI;
-    dom_utils.set_base_uri(doc, new URL(cdb.entry_get_url(entry)));
+    dom_utils.set_base_uri(
+        doc, new URL(cdb.Entry.prototype.getURLString.call(entry)));
 
     // If title was not present in the feed xml, try and pull it from content
     if (!entry.title) {
@@ -261,7 +281,7 @@ export class PollOperation {
     }
 
     // Set the entry's favicon
-    const lookup_url = new URL(cdb.entry_get_url(entry));
+    const lookup_url = new URL(cdb.Entry.prototype.getURLString.call(entry));
     const lookup_request = new favicon.LookupRequest();
     lookup_request.conn = this.iconn;
     lookup_request.url = lookup_url;
@@ -335,7 +355,7 @@ export class PollOperation {
     options.timeout = this.fetch_feed_timeout;
     options.skip_entries = false;
     options.resolve_entry_urls = true;
-    const url = new URL(cdb.feed_get_url(feed));
+    const url = new URL(cdb.Feed.prototype.getURLString.call(feed));
     return net.fetch_feed(url, options);
   }
 
@@ -347,11 +367,11 @@ export class PollOperation {
   // needs to be fixed. First copy over the old feed's urls, then try and append
   // each new feed url.
   merge_feed(old_feed, new_feed) {
-    const merged_feed = Object.assign(cdb.construct_feed(), old_feed, new_feed);
+    const merged_feed = Object.assign(new cdb.Feed(), old_feed, new_feed);
     merged_feed.urls = [...old_feed.urls];
     if (new_feed.urls) {
       for (const url_string of new_feed.urls) {
-        cdb.append_feed_url(merged_feed, new URL(url_string));
+        cdb.Feed.prototype.appendURL.call(merged_feed, new URL(url_string));
       }
     }
 
@@ -369,7 +389,7 @@ export class PollOperation {
         continue;
       }
 
-      // TODO: use cdb.entry_has_url
+      // TODO: use cdb.Entry.prototype.hasURL
       if (!entry.urls || entry.urls.length < 1) {
         distinct_entries.push(entry);
         continue;
@@ -399,7 +419,7 @@ export class PollOperation {
   // TODO: now that this function is no longer in a separate lib, maybe the
   // clone is just silly.
   coerce_entry(parsed_entry) {
-    const blank_entry = cdb.construct_entry();
+    const blank_entry = new cdb.Entry();
     // Clone to avoid mutation
     const clone = Object.assign(blank_entry, parsed_entry);
 
@@ -407,7 +427,7 @@ export class PollOperation {
     delete clone.link;
     if (parsed_entry.link) {
       try {
-        cdb.append_entry_url(clone, new URL(parsed_entry.link));
+        cdb.Entry.prototype.appendURL.call(clone, new URL(parsed_entry.link));
       } catch (error) {
         if (error instanceof AssertionError) {
           throw error;

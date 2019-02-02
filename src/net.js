@@ -280,7 +280,7 @@ export async function fetch_feed(url, options) {
   const parsed_feed = parse_feed(res_text, skip_entries, resolve_entry_urls);
 
   // Convert the feed from the parse format to the storage format
-  const feed = cdb.construct_feed();
+  const feed = new cdb.Feed();
   feed.type = parsed_feed.type;
 
   if (parsed_feed.link) {
@@ -299,8 +299,8 @@ export async function fetch_feed(url, options) {
   feed.description = parsed_feed.description;
   feed.datePublished = parsed_feed.date_published || new Date();
 
-  cdb.append_feed_url(feed, url);
-  cdb.append_feed_url(feed, new URL(response.url));
+  cdb.Feed.prototype.appendURL.call(feed, url);
+  cdb.Feed.prototype.appendURL.call(feed, new URL(response.url));
 
   // Set the last modified date based on the response
   const last_modified_string = response.headers.get('Last-Modified');

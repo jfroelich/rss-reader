@@ -3,6 +3,9 @@ import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as idb from '/src/idb.js';
 import * as utils from '/src/utils.js';
 
+// TODO: both Entry and Feed can extend Resource, there is a large amount of
+// redundancy, good chance to review understanding of super and inheritance
+
 const DEFAULT_NAME = 'reader';
 const DEFAULT_VERSION = 29;
 
@@ -23,10 +26,57 @@ export const INVALID_FEED_ID = 0;
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
-// |url| should be of type URL.
-export function append_entry_url(entry, url) {
-  assert(is_entry(entry));
-  return append_url_common(entry, url);
+export class Entry {
+  constructor() {
+    this.magic = ENTRY_MAGIC;
+  }
+
+  appendURL(url) {
+    assert(is_entry(this));
+    return append_url_common(this, url);
+  }
+
+  // Returns the last url in this entry's url list
+  getURLString() {
+    assert(is_entry(this));
+    assert(Entry.prototype.hasURL.call(this));
+    return this.urls[this.urls.length - 1];
+  }
+
+  hasURL() {
+    assert(is_entry(this));
+    return Array.isArray(this.urls) && this.urls.length;
+  }
+
+  static isValidId(value) {
+    return Number.isInteger(value) && value > 0;
+  }
+}
+
+export class Feed {
+  constructor() {
+    this.magic = FEED_MAGIC;
+  }
+
+  appendURL(url) {
+    assert(is_feed(this));
+    return append_url_common(this, url);
+  }
+
+  getURLString() {
+    assert(is_feed(this));
+    assert(Feed.prototype.hasURL.call(this));
+    return this.urls[this.urls.length - 1];
+  }
+
+  hasURL() {
+    assert(is_feed(this));
+    return Array.isArray(this.urls) && this.urls.length;
+  }
+
+  static isValidId(value) {
+    return Number.isInteger(value) && value > 0;
+  }
 }
 
 export function is_entry(value) {
@@ -35,50 +85,6 @@ export function is_entry(value) {
 
 export function is_feed(value) {
   return typeof value === 'object' && value.magic === FEED_MAGIC;
-}
-
-export function construct_entry() {
-  return {magic: ENTRY_MAGIC};
-}
-
-export function is_valid_entry_id(value) {
-  return Number.isInteger(value) && value > 0;
-}
-
-export function entry_has_url(entry) {
-  assert(is_entry(entry));
-  return Array.isArray(entry.urls) && entry.urls.length;
-}
-
-export function construct_feed() {
-  return {magic: FEED_MAGIC};
-}
-
-export function is_valid_feed_id(id) {
-  return Number.isInteger(id) && id > 0;
-}
-
-export function feed_has_url(feed) {
-  assert(is_feed(feed));
-  return Array.isArray(feed.urls) && feed.urls.length;
-}
-
-export function append_feed_url(feed, url) {
-  assert(is_feed(feed));
-  return append_url_common(feed, url);
-}
-
-// Get the tail url as a string
-export function feed_get_url(feed) {
-  assert(is_feed(feed));
-  assert(feed_has_url(feed));
-  return feed.urls[feed.urls.length - 1];
-}
-
-export function entry_get_url(entry) {
-  assert(is_entry(entry));
-  assert(entry_has_url(entry));
-  return entry.urls[entry.urls.length - 1];
 }
 
 // Returns a promise that resolves to a new database connection or rejects with
@@ -302,7 +308,7 @@ function archive_entry(entry) {
 }
 
 function compact_entry(entry) {
-  const ce = construct_entry();
+  const ce = new Entry();
   ce.dateCreated = entry.dateCreated;
 
   // Retain this past archival date so that it can still be displayed
@@ -451,7 +457,7 @@ export function create_feeds(conn, feeds) {
 
 export function delete_entry(conn, id) {
   return new Promise((resolve, reject) => {
-    assert(is_valid_entry_id(id));
+    assert(Entry.isValidId(id));
     const txn = conn.transaction('entry', 'readwrite');
     txn.oncomplete = resolve;
     txn.onerror = event => reject(event.target.error);
@@ -461,7 +467,7 @@ export function delete_entry(conn, id) {
 
 export function delete_feed(conn, feed_id) {
   return new Promise((resolve, reject) => {
-    assert(is_valid_feed_id(feed_id));
+    assert(Feed.isValidId(feed_id));
     const entry_ids = [];
     const txn = conn.transaction(['feed', 'entry'], 'readwrite');
     txn.onerror = event => reject(event.target.error);
@@ -484,7 +490,7 @@ export function delete_feed(conn, feed_id) {
 
 export function get_entry(conn, mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
-    assert(mode !== 'id' || is_valid_entry_id(value));
+    assert(mode !== 'id' || Entry.isValidId(value));
     assert(mode !== 'id' || !key_only);
     const txn = conn.transaction('entry');
     txn.onerror = event => reject(event.target.error);
@@ -506,8 +512,8 @@ export function get_entry(conn, mode = 'id', value, key_only) {
       let entry;
       if (key_only) {
         const entry_id = request.result;
-        if (is_valid_entry_id(entry_id)) {
-          entry = construct_entry();
+        if (Entry.isValidId(entry_id)) {
+          entry = new Entry();
           entry.id = entry_id;
         }
       } else {
@@ -578,7 +584,7 @@ export function get_feed_ids(conn) {
 export function get_feed(conn, mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
     assert(mode !== 'url' || (value && typeof value.href === 'string'));
-    assert(mode !== 'id' || is_valid_feed_id(value));
+    assert(mode !== 'id' || Feed.isValidId(value));
     assert(mode !== 'id' || !key_only);
     const txn = conn.transaction('feed');
     txn.onerror = event => reject(event.target.error);
@@ -600,8 +606,8 @@ export function get_feed(conn, mode = 'id', value, key_only) {
       let feed;
       if (key_only) {
         const feed_id = request.result;
-        if (is_valid_feed_id(feed_id)) {
-          feed = construct_feed();
+        if (Feed.isValidId(feed_id)) {
+          feed = new Feed();
           feed.id = feed_id;
         }
       } else {
@@ -667,7 +673,7 @@ export function iterate_entries(conn, handle_entry) {
 
 export async function mark_entry_read(conn, id) {
   return new Promise((resolve, reject) => {
-    assert(is_valid_entry_id(id));
+    assert(Entry.isValidId(id));
     const txn = conn.transaction('entry', 'readwrite');
     txn.onerror = event => reject(event.target.error);
     txn.oncomplete = resolve;
@@ -718,7 +724,7 @@ export async function mark_entry_read(conn, id) {
 export function query_entries(conn, query = {}) {
   return new Promise((resolve, reject) => {
     assert(typeof query === 'object');
-    assert(query.feed_id === undefined || is_valid_feed_id(query.feed_id));
+    assert(query.feed_id === undefined || Feed.isValidId(query.feed_id));
     assert(is_valid_read_state(query.read_state));
     assert(is_valid_offset(query.offset));
     assert(is_valid_direction(query.direction));
@@ -852,7 +858,7 @@ function is_valid_direction(dir) {
 export function update_entry(conn, entry) {
   return new Promise((resolve, reject) => {
     assert(is_entry(entry));
-    assert(is_valid_entry_id(entry.id));
+    assert(Entry.isValidId(entry.id));
     // Do not assert that the entry has a url. Entries are not required to
     // have urls in the db layer. Only higher layers are concerned with
     // imposing that constraint.
@@ -876,12 +882,12 @@ export function update_feed(conn, feed, overwrite) {
     }
 
     // In both overwriting and partial situation, feed.id must be valid
-    assert(is_valid_feed_id(feed.id));
+    assert(Feed.isValidId(feed.id));
 
     // If overwriting, the feed must have a url. If partial, feed is just a bag
     // of properties.
     if (overwrite) {
-      assert(feed_has_url(feed));
+      assert(Feed.prototype.hasURL.call(feed));
     }
 
     // If overwriting, remove unused properties. If partial, feed is just a bag
@@ -998,8 +1004,8 @@ export function validate_entry(entry) {
   assert(is_entry(entry));
   const now = new Date();
 
-  vassert(entry.id === undefined || is_valid_entry_id(entry.id));
-  vassert(entry.feed === undefined || is_valid_feed_id(entry.feed));
+  vassert(entry.id === undefined || Entry.isValidId(entry.id));
+  vassert(entry.feed === undefined || Feed.isValidId(entry.feed));
   vassert(entry.urls === undefined || Array.isArray(entry.urls));
   vassert(
       entry.readState === undefined || entry.readState === ENTRY_READ ||
@@ -1049,7 +1055,7 @@ export function validate_feed(feed) {
   assert(is_feed(feed));
   const now = new Date();
 
-  vassert(feed.id === undefined || is_valid_feed_id(feed.id));
+  vassert(feed.id === undefined || Feed.isValidId(feed.id));
   vassert(
       feed.active === undefined || feed.active === true ||
       feed.active === false);
@@ -1172,7 +1178,7 @@ function is_valid_limit(limit) {
 }
 
 function append_url_common(object, url) {
-  assert(object);
+  assert(typeof object === 'object');
   assert(object.magic === FEED_MAGIC || object.magic === ENTRY_MAGIC);
   assert(url instanceof URL);
 

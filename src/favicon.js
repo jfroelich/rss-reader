@@ -166,7 +166,6 @@ export function Entry() {
 // Return a promise that resolves to a connection
 export function open(
     name = DEFAULT_NAME, version = DEFAULT_VERSION, timeout = DEFAULT_TIMEOUT) {
-  console.debug('favicon.open', name, version, timeout);
   return idb.open(name, version, on_upgrade_needed, timeout);
 }
 

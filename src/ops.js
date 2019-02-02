@@ -113,8 +113,8 @@ export async function opml_import(session, files) {
   const url_array_set = opml_import_dedup_urls(url_array);
 
   const feeds = url_array_set.map(url => {
-    const feed = cdb.construct_feed();
-    cdb.append_feed_url(feed, url);
+    const feed = new cdb.Feed();
+    feed.appendURL(url);
     return feed;
   });
 

@@ -39,7 +39,12 @@ async function cli_poll_feeds() {
   poll.session = session;
   poll.iconn = iconn;
   poll.ignore_recency_check = true;
-  await poll.run();
+  try {
+    await poll.run();
+  } catch (error) {
+    console.error(error);
+  }
+
   session.close();
   iconn.close();
 }

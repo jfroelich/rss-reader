@@ -16,9 +16,9 @@ export async function activate_feed_test() {
   channel.postMessage = message => messages.push(message);
 
   // Create an inactive feed and store it
-  const feed = cdb.construct_feed();
+  const feed = new cdb.Feed();
   feed.active = false;
-  cdb.append_feed_url(feed, new URL('a://b.c'));
+  feed.appendURL(new URL('a://b.c'));
   const id = await cdb.create_feed(session, feed);
 
   // Now attach the channel. We wait until now to skip over create-feed
@@ -89,9 +89,9 @@ export async function deactivate_feed_test() {
   const db_name = 'ops-deactivate-feed-test';
   await idb.remove(db_name);
   const session = await cdb.open(db_name);
-  const feed = cdb.construct_feed();
+  const feed = new cdb.Feed();
   const url = new URL('a://b.c');
-  cdb.append_feed_url(feed, url);
+  feed.appendURL(url);
   feed.active = true;
   const feed_id = await cdb.create_feed(session, feed);
   session.channel.close();
@@ -145,7 +145,7 @@ export async function import_opml_test() {
   const results = await ops.opml_import(session, files);
   assert(results);
   assert(results.length === 1);
-  assert(cdb.is_valid_feed_id(results[0]));
+  assert(cdb.Feed.isValidId(results[0]));
 
   assert(messages.length === 1);
   assert(messages[0].type === 'feed-created');
@@ -178,7 +178,7 @@ export async function subscribe_test() {
   // Test the subscription produced the desired result
   assert(feed);
   assert(cdb.is_feed(feed));
-  assert(cdb.is_valid_feed_id(feed.id));
+  assert(cdb.Feed.isValidId(feed.id));
 
   // Length may be 1 or 2 (may have redirected and captured new url)
   assert(feed.urls.length);
