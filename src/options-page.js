@@ -3,29 +3,6 @@ import * as config from '/src/config.js';
 import * as favicon from '/src/favicon.js';
 import * as ops from '/src/ops.js';
 import {PollOperation} from '/src/poll-feeds.js';
-import * as utils from '/src/utils.js';
-
-// TODO: this should rely on css-based html truncation rather than calling
-// truncate_html
-// TODO: feeds can be added (such as by opml-import) through slideshow or
-// other pages, the feed-list displayed here needs to dynamically update
-
-function perm_has(perm) {
-  return new Promise(
-      resolve => chrome.permissions.contains({permissions: [perm]}, resolve));
-}
-
-function perm_request(perm) {
-  return new Promise(
-      resolve => chrome.permissions.request({permissions: [perm]}, resolve));
-}
-
-function perm_remove(perm) {
-  return new Promise(
-      resolve => chrome.permissions.remove({permissions: [perm]}, resolve));
-}
-
-
 
 let current_menu_item;
 let current_section;
@@ -60,6 +37,8 @@ channel.onmessage = function options_page_onmessage(event) {
   } else if (type === 'feed-updated') {
     // not implemented
   } else if (type === 'feed-created') {
+    // TODO: feeds can be added (such as by opml-import) through slideshow or
+    // other pages, the feed-list displayed here needs to dynamically update
     // not implemented
   } else if (type === 'entry-read') {
     // ignore
@@ -246,7 +225,7 @@ function feed_list_append_feed(feed) {
 
   const title_element = document.createElement('span');
   let feed_title = feed.title || feed.urls[feed.urls.length - 1];
-  feed_title = utils.truncate_html(feed_title, 300);
+  // Title is truncated using css instead of javascript here
   title_element.textContent = feed_title;
   item_element.appendChild(title_element);
   const feed_list_element = document.getElementById('feedlist');
@@ -586,6 +565,22 @@ function body_line_height_input_oninput(event) {
     config.remove('body_line_height');
   }
 }
+
+function perm_has(perm) {
+  return new Promise(
+      resolve => chrome.permissions.contains({permissions: [perm]}, resolve));
+}
+
+function perm_request(perm) {
+  return new Promise(
+      resolve => chrome.permissions.request({permissions: [perm]}, resolve));
+}
+
+function perm_remove(perm) {
+  return new Promise(
+      resolve => chrome.permissions.remove({permissions: [perm]}, resolve));
+}
+
 
 {  // Start on module load init
   // TODO: use single event listener on list itself instead

@@ -4,6 +4,9 @@
 // change. I always forget what this is, and might use it in the future: `const
 // previous_version_string = event.previousVersion;`
 
+// TODO: entry_title_max_length is no longer in use, because I switched to css
+// based truncation
+
 import * as color from '/src/color.js';
 import * as config from '/src/config.js';
 

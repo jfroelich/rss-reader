@@ -795,19 +795,15 @@ function create_article_title_element(entry) {
 
   if (entry.title) {
     let title = entry.title;
+    // TODO: title is allowed to contain whatever entities it has, this should
+    // be a call to strip tags, not an entity escape
     title = utils.escape_html(title);
-    title_element.setAttribute('title', title);
 
-    // filter_publisher requires title be a string. we know it is a string here
-    // so no need for extra sanity checks
+    title_element.setAttribute('title', title);
     title = utils.filter_publisher(title);
 
-    const max_length = config.read_int('entry_title_max_length');
-    if (!isNaN(max_length)) {
-      title = utils.truncate_html(title, max_length);
-    }
-
-    // Use innerHTML to allow entities
+    // NOTE: previously this truncated the title using javascript, now this
+    // relies on css to truncate as needed
     title_element.innerHTML = title;
   } else {
     title_element.setAttribute('title', 'Untitled');

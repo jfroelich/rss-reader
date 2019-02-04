@@ -351,13 +351,28 @@ slide a {
 }
 
 .entry .entry-title {
+  /* truncate title if needed here instead of using script */
+  text-overflow: ellipsis;
+  overflow: hidden;
+
+  /* TODO: review if needed, maybe just rely on implicit default */
   display: block;
+
+  /* TODO: This should be a configurable option */
   letter-spacing: -0.02em;
+
+  /* TODO: This hsould be a configurable option */
   color: rgba(50, 50, 50, 0.9);
+
+  /* TODO: This should be a configurable option */
   text-shadow: 1px 1px 2px #cccccc;
+
   text-decoration: none;
   word-wrap: break-word;
+
+  /* Whether to apply this transform should be an option */
   text-transform: capitalize;
+
   margin: 0;
   padding: 0;
 }

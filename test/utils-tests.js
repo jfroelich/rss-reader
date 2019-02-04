@@ -120,9 +120,9 @@ export async function truncate_html_test() {
   let output = 'a<p>b.</p>';
   assert(truncate_html(input, 2, e) === output);
 
-  /*
+  // TODO: finish transition from old tests to new tests here
 
-  // NOTE: truncate_html function no longer exists, no longer aliasing
+  /*
   const input2 = `<html><head><title>new title</title></head><body>${input1}
     </body></html>`;
   assert(input2, '=>', truncate_html(input2, 2, ext));
