@@ -455,9 +455,8 @@ export function set_base_uri(doc, url, overwrite) {
   assert(typeof url.href === 'string');
 
   if (url.href.startsWith('chrome-extension')) {
-    throw new Error('Cannot set baseURI to local url:' + url.href);
+    throw new Error('Refusing to set baseURI to extension url ' + url.href);
   }
-
 
   let head = doc.querySelector('head');
   const body = doc.querySelector('body');
@@ -484,6 +483,8 @@ export function set_base_uri(doc, url, overwrite) {
       // Insert the head before the body (fallback to append if body not found)
       doc.documentElement.insertBefore(head, body);
     }
+
+    assert(has_valid_base_uri(doc));
     return;
   }
 
@@ -498,6 +499,8 @@ export function set_base_uri(doc, url, overwrite) {
       head.appendChild(base);
       doc.documentElement.insertBefore(head, body);
     }
+
+    assert(has_valid_base_uri(doc));
     return;
   }
 
@@ -535,5 +538,5 @@ export function set_base_uri(doc, url, overwrite) {
     }
   }
 
-  assert(!doc.baseURI.startsWith('chrome-extension:'));
+  assert(has_valid_base_uri(doc));
 }

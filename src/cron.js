@@ -23,15 +23,6 @@ const alarms = [
   {name: 'compact-favicon-db', period: ONE_WEEK_MINUTES}
 ];
 
-export function install_listener(event) {
-  if (event.reason === 'install') {
-    create_alarms();
-  } else {
-    const previous_version_string = event.previousVersion;
-    update_alarms(previous_version_string);
-  }
-}
-
 export async function alarm_listener(alarm) {
   console.debug('Alarm wokeup:', alarm.name);
   config.write_string('last_alarm', alarm.name);
@@ -59,7 +50,6 @@ export async function alarm_listener(alarm) {
 }
 
 async function handle_alarm_poll() {
-  console.debug('handling alarm poll wakeup');
   if (config.read_boolean('only_poll_if_idle')) {
     const idle_states = ['locked', 'idle'];
     const idle_secs = 30;
@@ -83,17 +73,9 @@ async function handle_alarm_poll() {
   iconn.close();
 }
 
-// TEMP: researching error
-window.debug_handle_poll_alarm = handle_alarm_poll;
-
 export function update_alarms(prev_version_string) {
   for (const name of deprecated_alarms) {
     chrome.alarms.clear(name, cleared => on_remove_alarm.bind(null, name));
-  }
-
-  for (const alarm of alarms) {
-    if (alarm.deprecated) {
-    }
   }
 }
 

@@ -6,6 +6,9 @@ import * as dom_utils from '/src/dom-utils.js';
 import * as net from '/src/net.js';
 import * as utils from '/src/utils.js';
 
+// Applies several content filters to a document. The filters are applied in a
+// logical order that tries to minimize the amount of work done, and to preserve
+// correctness.
 export async function composite_document_filter(doc, options = {}) {
   assert(doc instanceof Document);
   assert(dom_utils.has_valid_base_uri(doc));

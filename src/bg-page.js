@@ -5,42 +5,48 @@ import * as cron_control from '/src/cron.js';
 import * as ops from '/src/ops.js';
 import * as utils from '/src/utils.js';
 
-async function db_install_listener(event) {
-  if (event.reason === 'install') {
-    const session = await cdb.open();
-    session.close();
-  }
-}
-
-async function channel_onmessage(event) {
+// Open a channel with a lifetime equal to the background page lifetime.
+const channel = new BroadcastChannel('reader');
+channel.onmessage = async function(event) {
   // Ensure the badge is refreshed when only the background page is loaded
   const types =
       ['entry-created', 'entry-updated', 'entry-deleted', 'entry-read'];
   if (event.isTrusted && event.data && types.includes(event.data.type)) {
-    ops.badge_refresh();
+    ops.badge_refresh().catch(console.warn);
   }
-}
+};
 
-const channel = new BroadcastChannel('reader');
-channel.onmessage = channel_onmessage;
-
+// TODO: re-inline the listener here
 chrome.alarms.onAlarm.addListener(cron_control.alarm_listener);
 
 chrome.runtime.onStartup.addListener(event => {
-  ops.badge_refresh();
+  ops.badge_refresh().catch(console.warn);
 });
 
-// TODO: inline these here again, got carried away with logical cohesion
+// TODO: re-inline the listener here
 chrome.runtime.onInstalled.addListener(config_control.install_listener);
-chrome.runtime.onInstalled.addListener(db_install_listener);
-chrome.runtime.onInstalled.addListener(cron_control.install_listener);
+
+chrome.runtime.onInstalled.addListener(async function(event) {
+  if (event.reason === 'install') {
+    const session = await cdb.open();
+    session.close();
+  }
+});
 
 chrome.runtime.onInstalled.addListener(event => {
-  // Refresh for both install and update event types. While it would seem like
-  // we only need to do this on install, reloading the extension from Chrome's
-  // extensions page triggers an update event where for some reason the badge
-  // text is unset.
-  ops.badge_refresh();
+  if (event.reason === 'install') {
+    cron_control.create_alarms();
+  } else {
+    cron_control.update_alarms(event.previousVersion);
+  }
+});
+
+// Refresh for both install and update event types. While it would seem like
+// we only need to do this on install, reloading the extension from Chrome's
+// extensions page triggers an update event where for some reason the badge
+// text is unset.
+chrome.runtime.onInstalled.addListener(event => {
+  ops.badge_refresh().catch(console.warn);
 });
 
 chrome.browserAction.onClicked.addListener(_ => utils.open_view(config));

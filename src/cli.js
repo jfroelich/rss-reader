@@ -5,13 +5,12 @@ import * as favicon from '/src/favicon.js';
 import * as ops from '/src/ops.js';
 import {PollOperation} from '/src/poll-feeds.js';
 
-async function cli_subscribe(url_string, poll = true) {
+async function cli_subscribe(url_string, fetch_entries = true) {
   const url = new URL(url_string);
   const proms = [cdb.open(), favicon.open()];
   const [session, iconn] = await Promise.all(proms);
   const feed = await ops.subscribe(session, iconn, url, options, 3000, true);
-  // Do a sequential poll of the created feed
-  if (poll) {
+  if (fetch_entries) {
     const op = new PollOperation();
     op.session = session;
     op.iconn = iconn;

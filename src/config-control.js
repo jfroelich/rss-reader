@@ -167,10 +167,6 @@ function rename(from, to) {
   config.remove(from);
 }
 
-// TODO: this is a violation of the config.js abstraction. That is supposed
-// to abstract away how configuration is stored. So we have a design flaw here.
-// This is not supposed to know about local storage.
-
 // React to a localStorage property change. Note that this is only fired by the
 // browser when another page changes local storage. If a local change is made
 // and there is a desire for the same page to hear it, then the caller must
@@ -179,7 +175,7 @@ function rename(from, to) {
 // Note this event listener should only be bound by a page where the appropriate
 // stylesheets are loaded. This assumes those stylesheets exist.
 export function storage_onchange(event) {
-  // TODO: do not use units for 0? maybe that is dumb
+  // TODO: do not use units for 0? maybe that is pendantic
   // TODO: review https://developers.google.com/web/updates/2018/03/cssom
 
   if (!event.isTrusted) {

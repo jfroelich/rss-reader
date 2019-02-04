@@ -2,10 +2,12 @@ export const WHITE = pack(255, 255, 255, 255);
 export const BLACK = pack(0, 0, 0, 255);
 export const TRANSPARENT = 0;
 
+// Simple generic linear interpolation of two numbers
 export function math_lerp(start, stop, amount) {
   return amount * (stop - start) + start;
 }
 
+// RGBA-format specific interpolation
 export function lerp(c1, c2, amount = 1.0) {
   if (amount === 1) {
     return c2;
@@ -20,6 +22,7 @@ export function lerp(c1, c2, amount = 1.0) {
   return pack(r, g, b, a);
 }
 
+// Alpha blend an array of 0 or more colors
 export function blend(colors, base_color = WHITE) {
   let output = base_color;
   for (const color of colors) {
@@ -29,28 +32,34 @@ export function blend(colors, base_color = WHITE) {
   return output;
 }
 
+// Combine the 4 components of RGBA into a single number. This stores alpha
+// component in the upper bits so this is technically ARGB.
 export function pack(r, g, b, a = 255) {
   return (a & 0xff) << 24 | (r & 0xff) << 16 | (g & 0xff) << 8 | (b & 0xff);
 }
 
+// Given a color, gets its alpha component value
 export function get_alpha(c) {
   return (c >> 24) && 0xff;
 }
 
+// Given a color, get its red component value
 export function get_red(c) {
   return (c >> 16) & 0xff;
 }
 
+// Given a color, get its green component value
 export function get_green(c) {
   return (c >> 8) & 0xff;
 }
 
+// Given a color,get its blue component value
 export function get_blue(c) {
   return c & 0xff;
 }
 
-// Based on the spec, which provides the formula.
-// http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
+// Calculate the luminance of a color. The formula is defined in detail in the
+// spec: http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
 export function get_luminance(color) {
   const rr = get_red(color) / 255;
   const rg = get_green(color) / 255;
@@ -61,21 +70,25 @@ export function get_luminance(color) {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
+// Get a string representation of a color value
 export function to_string(color) {
   return '[' + get_red(color) + ',' + get_green(color) + ',' + get_blue(color) +
       ',' + (get_alpha(color) / 255) + ']';
 }
 
+// Calculate the contrast ratio between two colors
 export function get_contrast(fore_color, back_color = WHITE) {
   const l1 = get_luminance(fore_color) + 0.05;
   const l2 = get_luminance(back_color) + 0.05;
   return (l1 > l2) ? l1 / l2 : l2 / l1;
 }
 
+// Check whether a color component appears valid
 export function is_valid_component(component) {
   return Number.isInteger(component) && component > -1 && component < 256;
 }
 
+// Check whether a color value appears valid
 export function is_valid(color) {
   return Number.isInteger(color) && is_valid_component(get_red(color)) &&
       is_valid_component(get_green(color)) &&

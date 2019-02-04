@@ -15,7 +15,6 @@ export {
   validate_feed,
   ValidationError
 } from '/src/db.js';
-
 // clang-format on
 
 class CDBSession {

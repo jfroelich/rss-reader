@@ -1,9 +1,6 @@
-// This module abstracts away configuration storage and provides an interface to
-// reading and writing configuration values. This module does not concern itself
-// with initializing or updating configuration in relation to extension
-// lifecycle events. Although this is a thin wrapper around local storage, no
-// assumptions should be made about how to interact with config's chosen method
-// of persistence. it may change.
+// Provides type-specific i/o operations for storing configuration values, and
+// serves an abstraction layer in case I change my mind regarding how values
+// are stored.
 
 export function has_key(key) {
   return typeof localStorage[key] !== 'undefined';
