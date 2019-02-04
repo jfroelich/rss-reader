@@ -7,10 +7,6 @@ export function show(note) {
     return;
   }
 
-  if (Notification.permission !== 'granted') {
-    return;
-  }
-
   const title = note.title || 'Untitled';
   const message = note.message || '';
 
