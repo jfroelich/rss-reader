@@ -73,7 +73,7 @@ export class PollOperation {
       const notif = {};
       notif.title = 'Added articles';
       notif.message = 'Added ' + count + ' articles';
-      notification_module.show(notif);
+      notification_module.show_notification(config, notif);
     }
 
     console.debug('Run completed, added %d entries', count);

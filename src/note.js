@@ -1,8 +1,7 @@
-import * as config from '/src/config.js';
 import * as utils from '/src/utils.js';
 
 // |note| has optional properties name, message, and url (string)
-export function show(note) {
+export function show_notification(config, note) {
   if (!config.read_boolean('show_notifications')) {
     return;
   }
