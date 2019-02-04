@@ -7,7 +7,7 @@ import * as dom_utils from '/src/dom-utils.js';
 import * as favicon from '/src/favicon.js';
 import * as net from '/src/net.js';
 import * as notification_module from '/src/note.js';
-import * as rewrite_rules from '/src/rewrite-urls.js';
+import * as rewrite_rules from '/src/rewrite-rules.js';
 import * as sniffer from '/src/sniffer.js';
 import * as utils from '/src/utils.js';
 
