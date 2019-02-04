@@ -6,14 +6,6 @@ export const UNKNOWN_CLASS = 0;
 export const TEXT_CLASS = 1;
 export const BINARY_CLASS = 2;
 
-export const text_protocols = ['tel:', 'mailto:', 'javascript:'];
-
-export const application_text_types = [
-  'application/atom+xml', 'application/javascript', 'application/json',
-  'application/rdf+xml', 'application/rss+xml',
-  'application/vnd.mozilla.xul+xml', 'application/xhtml+xml', 'application/xml'
-];
-
 // Classifies a resource as binary, text, or unknown. The function returns
 // unknown when it is not confident in the results. The function guesses the
 // class of the resource purely by looking at its url.
@@ -24,12 +16,13 @@ export function classify(url) {
     return TEXT_CLASS;
   }
 
+  const text_protocols = ['tel:', 'mailto:', 'javascript:'];
   if (text_protocols.includes(url.protocol)) {
     return TEXT_CLASS;
   }
 
   if (url.protocol === 'data:') {
-    const mime_type = find_mime_type_in_data_url(url);
+    const mime_type = data_uri_find_mime_type(url);
     return mime_type ? mime_type_is_binary(mime_type) : UNKNOWN_CLASS;
   }
 
@@ -44,16 +37,11 @@ export function classify(url) {
   return UNKNOWN_CLASS;
 }
 
-export function find_mime_type_in_data_url(url) {
-  if (!(url instanceof URL)) {
-    throw new TypeError('url is not a URL');
-  }
+export function data_uri_find_mime_type(url) {
+  assert(url instanceof URL);
+  assert(url.protocol === 'data:');
 
-  if (url.protocol !== 'data:') {
-    throw new TypeError('url is not a data URI');
-  }
-
-  // Data URIs that do not specify a mime type default to text/plain
+  // TODO: cite spec
   const default_type = 'text/plain';
 
   const href = url.href;
@@ -61,9 +49,9 @@ export function find_mime_type_in_data_url(url) {
     return default_type;
   }
 
-  const PREFIX_LENGTH = 'data:'.length;
-  const search_start = PREFIX_LENGTH;
-  const search_end = PREFIX_LENGTH + mime.MIME_TYPE_MAX_LENGTH + 1;
+  const prefix_length = 'data:'.length;
+  const search_start = prefix_length;
+  const search_end = prefix_length + mime.MIME_TYPE_MAX_LENGTH + 1;
   const haystack = href.substring(search_start, search_end);
 
   const sc_position = haystack.indexOf(';');
@@ -80,9 +68,14 @@ export function find_mime_type_in_data_url(url) {
 }
 
 export function mime_type_is_binary(mime_type) {
-  if (!mime.is_valid(mime_type)) {
-    throw new TypeError('Invalid mime type argument: ' + mime_type);
-  }
+  assert(mime.is_valid(mime_type));
+
+  const application_text_types = [
+    'application/atom+xml', 'application/javascript', 'application/json',
+    'application/rdf+xml', 'application/rss+xml',
+    'application/vnd.mozilla.xul+xml', 'application/xhtml+xml',
+    'application/xml'
+  ];
 
   const slash_position = mime_type.indexOf('/');
   const super_type = mime_type.substring(0, slash_position);
