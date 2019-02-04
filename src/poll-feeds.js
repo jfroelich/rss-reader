@@ -6,7 +6,6 @@ import * as dom_filters from '/src/dom-filters.js';
 import * as dom_utils from '/src/dom-utils.js';
 import * as favicon from '/src/favicon.js';
 import * as net from '/src/net.js';
-import * as notification_module from '/src/note.js';
 import * as rewrite_rules from '/src/rewrite-rules.js';
 import * as sniffer from '/src/sniffer.js';
 import * as utils from '/src/utils.js';
@@ -70,10 +69,10 @@ export class PollOperation {
     }
 
     if (count) {
-      const notif = {};
-      notif.title = 'Added articles';
-      notif.message = 'Added ' + count + ' articles';
-      notification_module.show_notification(config, notif);
+      const note = {};
+      note.title = 'Added articles';
+      note.message = 'Added ' + count + ' articles';
+      utils.show_notification(config, note);
     }
 
     console.debug('Run completed, added %d entries', count);
