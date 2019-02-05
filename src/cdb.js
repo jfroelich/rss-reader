@@ -9,13 +9,31 @@ export {
   is_entry,
   is_feed,
   NotFoundError,
-  sanitize_entry,
-  sanitize_feed,
-  validate_entry,
-  validate_feed,
   ValidationError
 } from '/src/db.js';
 // clang-format on
+
+// Temporary helpers due to db.js refactor as object
+export function validate_feed(feed) {
+  const conn = new db.Db();
+  return conn.validate_feed(feed);
+}
+
+export function validate_entry(entry) {
+  const conn = new db.Db();
+  return conn.validate_entry(entry);
+}
+
+export function sanitize_feed(feed) {
+  const conn = new db.Db();
+  return conn.sanitize_feed(feed);
+}
+
+export function sanitize_entry(entry) {
+  const conn = new db.Db();
+  return conn.sanitize_entry(entry);
+}
+
 
 class CDBSession {
   constructor() {
@@ -43,39 +61,64 @@ export async function open(
     name, version, timeout = INDEFINITE, channel_name = 'reader') {
   const session = new CDBSession();
   session.channel = new BroadcastChannel(channel_name);
-  session.conn = await db.open(name, version, timeout);
+
+  // This funkiness is because I am refactoring db alone, before revising
+  // cdb as well
+  const conn = new db.Db();
+  conn.name = name || 'reader';
+  conn.version = version || 29;
+  conn.timeout = timeout;
+  await conn.open();
+  session.conn = conn.conn;
+
   return session;
 }
 
 export async function archive_entries(session, max_age) {
-  const ids = await db.archive_entries(session.conn, max_age);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  const ids = await conn.archive_entries(max_age);
   for (const id of ids) {
     session.channel.postMessage({type: 'entry-archived', id: id});
   }
 }
 
 export function count_unread_entries_by_feed(session, id) {
-  return db.count_unread_entries_by_feed(session.conn, id);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+  return conn.count_unread_entries_by_feed(id);
 }
 
 export function count_unread_entries(session) {
-  return db.count_unread_entries(session.conn);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+  return conn.count_unread_entries();
 }
 
 export async function create_entry(session, entry) {
-  const id = await db.create_entry(session.conn, entry);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  const id = await conn.create_entry(entry);
   session.channel.postMessage({type: 'entry-created', id: id});
   return id;
 }
 
 export async function create_feed(session, feed) {
-  const id = await db.create_feed(session.conn, feed);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  const id = await conn.create_feed(feed);
   session.channel.postMessage({type: 'feed-created', id: id});
   return id;
 }
 
 export async function create_feeds(session, feeds) {
-  const ids = await db.create_feeds(session.conn, feeds);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  const ids = await conn.create_feeds(feeds);
   for (const id of ids) {
     session.channel.postMessage({type: 'feed-created', id: id});
   }
@@ -83,12 +126,18 @@ export async function create_feeds(session, feeds) {
 }
 
 export async function delete_entry(session, id, reason) {
-  await db.delete_entry(session.conn, id);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  await conn.delete_entry(id);
   session.channel.postMessage({type: 'entry-deleted', id: id, reason: reason});
 }
 
 export async function delete_feed(session, feed_id, reason) {
-  const eids = await db.delete_feed(session.conn, feed_id);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  const eids = await conn.delete_feed(feed_id);
   session.channel.postMessage(
       {type: 'feed-deleted', id: feed_id, reason: reason});
 
@@ -99,45 +148,75 @@ export async function delete_feed(session, feed_id, reason) {
 }
 
 export function get_entry(session, mode, value, key_only) {
-  return db.get_entry(session.conn, mode, value, key_only);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  return conn.get_entry(mode, value, key_only);
 }
 
 export function get_entries(session, mode, offset, limit) {
-  return db.get_entries(session.conn, mode, offset, limit);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  return conn.get_entries(mode, offset, limit);
 }
 
 export function get_feed_ids(session) {
-  return db.get_feed_ids(session.conn);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  return conn.get_feed_ids();
 }
 
 export function get_feed(session, mode, value, key_only) {
-  return db.get_feed(session.conn, mode, value, key_only);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  return conn.get_feed(mode, value, key_only);
 }
 
 export function get_feeds(session, mode, title_sort) {
-  return db.get_feeds(session.conn, mode, title_sort);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  return conn.get_feeds(mode, title_sort);
 }
 
 export function iterate_entries(session, handle_entry) {
-  return db.iterate_entries(session.conn, handle_entry);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  return conn.iterate_entries(handle_entry);
 }
 
 export async function mark_entry_read(session, id) {
-  await db.mark_entry_read(session.conn, id);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  await conn.mark_entry_read(id);
   session.channel.postMessage({type: 'entry-read', id: id});
 }
 
 export function query_entries(session, query) {
-  return db.query_entries(session.conn, query);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  return conn.query_entries(query);
 }
 
 export async function update_entry(session, entry) {
-  await db.update_entry(session.conn, entry);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  await conn.update_entry(entry);
   session.channel.postMessage({type: 'entry-updated', id: entry.id});
 }
 
 export async function update_feed(session, feed, overwrite) {
-  await db.update_feed(session.conn, feed, overwrite);
+  const conn = new db.Db();
+  conn.conn = session.conn;
+
+  await conn.update_feed(feed, overwrite);
   session.channel.postMessage(
       {type: 'feed-updated', id: feed.id, feed: overwrite ? undefined : feed});
 }

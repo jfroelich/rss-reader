@@ -158,6 +158,9 @@ function cli_print_tests() {
 }
 
 function populate_test_menu() {
+  // TODO: sort the test list alphabetically by test function name
+  // before render
+
   const menu = document.getElementById('tests');
   for (const test of registry) {
     const option = document.createElement('option');

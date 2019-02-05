@@ -131,8 +131,6 @@ export class PollOperation {
 
     feed = this.merge_feed(feed, fetch_result.feed);
 
-    console.debug('Fetched feed', feed);
-
     // Decrement error count on success
     if (!isNaN(feed.errorCount) && feed.errorCount > 0) {
       feed.errorCount--;
@@ -140,7 +138,6 @@ export class PollOperation {
       delete feed.errorCount;
     }
 
-    console.debug('Updating feed', feed);
     cdb.validate_feed(feed);
     cdb.sanitize_feed(feed);
     await cdb.update_feed(this.session, feed, true);
@@ -166,10 +163,10 @@ export class PollOperation {
     const count = ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
 
     if (this.notify && count) {
-      const notif = {};
-      notif.title = 'Added articles';
-      notif.message = 'Added ' + count + ' articles for feed ' + feed.title;
-      notification_module.show(notif);
+      const note = {};
+      note.title = 'Added articles';
+      note.message = 'Added ' + count + ' articles for feed ' + feed.title;
+      utils.show_notification(config, note);
     }
 
     console.debug(
@@ -186,8 +183,6 @@ export class PollOperation {
     assert(this instanceof PollOperation);
     assert(cdb.is_entry(entry));
     assert(cdb.Entry.prototype.hasURL.call(entry));
-
-    console.debug('Polling entry', entry, feed_url_string);
 
     cdb.Entry.prototype.appendURL.call(
         entry,
