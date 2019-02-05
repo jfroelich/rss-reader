@@ -65,7 +65,7 @@ export async function lookup(request) {
   }
 
   if (response) {
-    console.debug('Found root icon', hostname, response.url);
+    // console.debug('Found root icon', hostname, response.url);
     const entry = new Entry();
     entry.hostname = hostname;
     entry.icon_url = response.url;
