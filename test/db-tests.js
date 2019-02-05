@@ -30,7 +30,7 @@ export async function count_unread_entries_by_feed_test() {
   const create_promises = [];
 
   for (let i = 0; i < 2; i++) {
-    const read_state = i === 0 ? db.ENTRY_UNREAD : db.ENTRY_READ;
+    const read_state = i === 0 ? db.Entry.UNREAD : db.Entry.READ;
     for (let j = 0; j < num_entries_created_per_type; j++) {
       const entry = new db.Entry();
       entry.feed = feed_id;
@@ -67,7 +67,7 @@ export async function count_unread_entries_test() {
   const entries_to_insert = [];
   for (let i = 0; i < insert_unread_count; i++) {
     const entry = new db.Entry();
-    entry.readState = db.ENTRY_UNREAD;
+    entry.readState = db.Entry.UNREAD;
     entry.appendURL(new URL('a://b.c' + i));
     entries_to_insert.push(entry);
   }
@@ -76,7 +76,7 @@ export async function count_unread_entries_test() {
   const insert_read_count = 5;
   for (let i = 0; i < insert_read_count; i++) {
     const entry = new db.Entry();
-    entry.readState = db.ENTRY_READ;
+    entry.readState = db.Entry.READ;
     entry.appendURL(new URL('d://e.f' + i));
     entries_to_insert.push(entry);
   }
@@ -446,16 +446,16 @@ export async function mark_entry_read_test() {
   conn.name = db_name;
   await conn.open();
   const entry = new db.Entry();
-  entry.readState = db.ENTRY_UNREAD;
+  entry.readState = db.Entry.UNREAD;
   const id = await conn.create_entry(entry);
   let stored_entry = await conn.get_entry('id', id, false);
   assert(stored_entry);
-  assert(stored_entry.readState === db.ENTRY_UNREAD);
+  assert(stored_entry.readState === db.Entry.UNREAD);
   await conn.mark_entry_read(id);
   stored_entry = undefined;
   stored_entry = await conn.get_entry('id', id, false);
   assert(stored_entry);
-  assert(stored_entry.readState === db.ENTRY_READ);
+  assert(stored_entry.readState === db.Entry.READ);
   conn.close();
   await idb.remove(db_name);
 }
@@ -473,7 +473,7 @@ export async function query_entries_test() {
   // Create 5 unread entries tied to feed 1
   for (let i = 0; i < 5; i++) {
     entry = new db.Entry();
-    entry.readState = db.ENTRY_UNREAD;
+    entry.readState = db.Entry.UNREAD;
     entry.feed = 1;
     entry.datePublished = new Date();
     const promise = conn.create_entry(entry);
@@ -483,7 +483,7 @@ export async function query_entries_test() {
   // Create 5 read entries tied to feed 1
   for (let i = 0; i < 5; i++) {
     entry = new db.Entry();
-    entry.readState = db.ENTRY_READ;
+    entry.readState = db.Entry.READ;
     entry.feed = 1;
     entry.datePublished = new Date();
     const promise = conn.create_entry(entry);
@@ -493,7 +493,7 @@ export async function query_entries_test() {
   // Create 5 unread entries tied to feed 2
   for (let i = 0; i < 5; i++) {
     entry = new db.Entry();
-    entry.readState = db.ENTRY_UNREAD;
+    entry.readState = db.Entry.UNREAD;
     entry.feed = 2;
     entry.datePublished = new Date();
     const promise = conn.create_entry(entry);
@@ -503,7 +503,7 @@ export async function query_entries_test() {
   // Create 5 read entries tied to feed 2
   for (let i = 0; i < 5; i++) {
     entry = new db.Entry();
-    entry.readState = db.ENTRY_READ;
+    entry.readState = db.Entry.READ;
     entry.feed = 2;
     entry.datePublished = new Date();
     const promise = conn.create_entry(entry);
@@ -523,13 +523,13 @@ export async function query_entries_test() {
 
   // Query for all unread entries, assert that it finds the expected number of
   // entries
-  query = {read_state: db.ENTRY_UNREAD};
+  query = {read_state: db.Entry.UNREAD};
   entries = await conn.query_entries(query);
   assert(entries.length === 10);
 
   // Query for all read entries, assert that it finds the expected number of
   // entries
-  query = {read_state: db.ENTRY_READ};
+  query = {read_state: db.Entry.READ};
   entries = await conn.query_entries(query);
   assert(entries.length === 10);
 
@@ -608,30 +608,30 @@ export async function query_entries_test() {
   }
 
   // Query using particular feed unread only
-  query = {feed_id: 1, read_state: db.ENTRY_UNREAD};
+  query = {feed_id: 1, read_state: db.Entry.UNREAD};
   entries = await conn.query_entries(query);
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === db.ENTRY_UNREAD);
+    assert(entry.readState === db.Entry.UNREAD);
   }
 
   // Feed 1 read only
-  query = {feed_id: 1, read_state: db.ENTRY_READ};
+  query = {feed_id: 1, read_state: db.Entry.READ};
   entries = await conn.query_entries(query);
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === db.ENTRY_READ);
+    assert(entry.readState === db.Entry.READ);
   }
 
   // Feed 1, unread, offset 3
-  query = {feed_id: 1, read_state: db.ENTRY_UNREAD, offset: 3};
+  query = {feed_id: 1, read_state: db.Entry.UNREAD, offset: 3};
   entries = await conn.query_entries(query);
   assert(entries.length === 2);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === db.ENTRY_UNREAD);
+    assert(entry.readState === db.Entry.UNREAD);
   }
 
   conn.close();

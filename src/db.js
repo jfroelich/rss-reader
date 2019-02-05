@@ -9,20 +9,6 @@ import * as utils from '/src/utils.js';
 const ENTRY_MAGIC = 0xdeadbeef;
 const FEED_MAGIC = 0xfeedfeed;
 
-// Various entry property states
-export const ENTRY_UNREAD = 0;
-export const ENTRY_READ = 1;
-export const ENTRY_UNARCHIVED = 0;
-export const ENTRY_ARCHIVED = 1;
-
-// A sentinel value for entry ids. This shares the same type as a real entry
-// id, but is outside the range, because indexedDB's auto-increment algorithm
-// starts with 1.
-export const INVALID_ENTRY_ID = 0;
-export const INVALID_FEED_ID = 0;
-
-const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
-
 export class Entry {
   constructor() {
     this.magic = ENTRY_MAGIC;
@@ -50,6 +36,13 @@ export class Entry {
   }
 }
 
+Entry.INVALID_ID = 0;
+Entry.UNREAD = 0;
+Entry.READ = 1;
+Entry.UNARCHIVED = 0;
+Entry.ARCHIVED = 1;
+
+
 export class Feed {
   constructor() {
     this.magic = FEED_MAGIC;
@@ -75,6 +68,8 @@ export class Feed {
     return Number.isInteger(value) && value > 0;
   }
 }
+
+Feed.INVALID_ID = 0;
 
 export function is_entry(value) {
   return typeof value === 'object' && value.magic === ENTRY_MAGIC;
@@ -270,15 +265,20 @@ export class Db {
     };
   }
 
-  archive_entries(max_age = TWO_DAYS_MS) {
+  archive_entries(max_age) {
     return new Promise((resolve, reject) => {
+      if (typeof max_age === 'undefined') {
+        const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
+        max_age = TWO_DAYS_MS;
+      }
+
       const entry_ids = [];
       const txn = this.conn.transaction('entry', 'readwrite');
       txn.oncomplete = _ => resolve(entry_ids);
       txn.onerror = event => reject(event.target.error);
       const store = txn.objectStore('entry');
       const index = store.index('archiveState-readState');
-      const key_path = [ENTRY_UNARCHIVED, ENTRY_READ];
+      const key_path = [Entry.UNARCHIVED, Entry.READ];
       const request = index.openCursor(key_path);
       request.onsuccess = event => {
         const cursor = event.target.result;
@@ -330,7 +330,7 @@ export class Db {
       console.warn('Entry increased size', entry);
     }
 
-    ce.archiveState = ENTRY_ARCHIVED;
+    ce.archiveState = Entry.ARCHIVED;
     const current_date = new Date();
     ce.dateArchived = current_date;
     ce.dateUpdated = current_date;
@@ -368,7 +368,7 @@ export class Db {
       const txn = this.conn.transaction('entry');
       const store = txn.objectStore('entry');
       const index = store.index('feed-readState');
-      const range_only_value = [id, ENTRY_UNREAD];
+      const range_only_value = [id, Entry.UNREAD];
       const request = index.count(range_only_value);
       request.onsuccess = _ => resolve(request.result);
       request.onerror = _ => reject(request.error);
@@ -380,7 +380,7 @@ export class Db {
       const txn = this.conn.transaction('entry');
       const store = txn.objectStore('entry');
       const index = store.index('readState');
-      const request = index.count(ENTRY_UNREAD);
+      const request = index.count(Entry.UNREAD);
       request.onsuccess = _ => resolve(request.result);
       request.onerror = _ => reject(request.error);
     });
@@ -395,11 +395,11 @@ export class Db {
       assert(entry.id === undefined);
 
       if (entry.readState === undefined) {
-        entry.readState = ENTRY_UNREAD;
+        entry.readState = Entry.UNREAD;
       }
 
       if (entry.archiveState === undefined) {
-        entry.archiveState = ENTRY_UNARCHIVED;
+        entry.archiveState = Entry.UNARCHIVED;
       }
 
       if (entry.dateCreated === undefined) {
@@ -573,7 +573,7 @@ export class Db {
       let request;
       if (mode === 'viewable') {
         const index = store.index('archiveState-readState');
-        const path = [ENTRY_UNARCHIVED, ENTRY_UNREAD];
+        const path = [Entry.UNARCHIVED, Entry.UNREAD];
         request = index.openCursor(path);
       } else if (mode === 'all') {
         request = store.openCursor();
@@ -730,21 +730,21 @@ export class Db {
           return;
         }
 
-        if (entry.archiveState === ENTRY_ARCHIVED) {
+        if (entry.archiveState === Entry.ARCHIVED) {
           const message = 'Cannot mark archived entry as read ' + id;
           const error = new InvalidStateError(message);
           reject(error);
           return;
         }
 
-        if (entry.readState === ENTRY_READ) {
+        if (entry.readState === Entry.READ) {
           const message = 'Cannot mark read entry as read ' + id;
           const error = new InvalidStateError(message);
           reject(error);
           return;
         }
 
-        entry.readState = ENTRY_READ;
+        entry.readState = Entry.READ;
         const currentDate = new Date();
         entry.dateUpdated = currentDate;
         entry.dateRead = currentDate;
@@ -839,8 +839,8 @@ export class Db {
     const min_date = new Date(1);
     const max_date = new Date();
     // Shorter alias
-    const read = ENTRY_READ;
-    const unread = ENTRY_UNREAD;
+    const read = Entry.READ;
+    const unread = Entry.UNREAD;
 
     if (query.feed_id === 0 || query.feed_id === undefined) {
       if (query.read_state === undefined) {
@@ -1047,12 +1047,12 @@ export class Db {
     vassert(entry.feed === undefined || Feed.isValidId(entry.feed));
     vassert(entry.urls === undefined || Array.isArray(entry.urls));
     vassert(
-        entry.readState === undefined || entry.readState === ENTRY_READ ||
-        entry.readState === ENTRY_UNREAD);
+        entry.readState === undefined || entry.readState === Entry.READ ||
+        entry.readState === Entry.UNREAD);
     vassert(
         entry.archiveState === undefined ||
-        entry.archiveState === ENTRY_ARCHIVED ||
-        entry.archiveState === ENTRY_UNARCHIVED);
+        entry.archiveState === Entry.ARCHIVED ||
+        entry.archiveState === Entry.UNARCHIVED);
     vassert(entry.author === undefined || typeof entry.author === 'string');
     vassert(entry.content === undefined || typeof entry.content === 'string');
 
@@ -1210,7 +1210,7 @@ export class Db {
   }
 
   is_valid_read_state(state) {
-    return state === undefined || state === ENTRY_READ || state === ENTRY_UNREAD
+    return state === undefined || state === Entry.READ || state === Entry.UNREAD
   }
 
   is_valid_offset(offset) {
