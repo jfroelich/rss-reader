@@ -5,7 +5,7 @@
 // previous_version_string = event.previousVersion;`
 
 // TODO: entry_title_max_length is no longer in use, because I switched to css
-// based truncation
+// based truncation. need to add this to list of keys deleted per ugprade
 
 import * as color from '/src/color.js';
 import * as config from '/src/config.js';

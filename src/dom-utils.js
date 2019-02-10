@@ -3,6 +3,11 @@ import '/third-party/tinycolor-min.js';
 import {assert} from '/src/assert.js';
 import * as color from '/src/color.js';
 
+// TODO: maybe it is better to check for base as a required element because
+// this avoids the ambiguity with chrome-extension default being implicit or
+// explicit? checking for explicit base would guarantee the baseURI is explicit,
+// in fact that might be the only way. false negative when all urls absolute
+// however, but maybe that is immaterial.
 export function has_valid_base_uri(doc) {
   return doc instanceof Document && doc.baseURI &&
       typeof doc.baseURI === 'string' &&
@@ -62,7 +67,6 @@ export function element_ancestors(element, include_self) {
   return layers;
 }
 
-
 // Parses a css color value into a color
 export function css_color_parse(value) {
   if (typeof value === 'string' && value.length) {
@@ -120,11 +124,6 @@ function is_element_leaf_exception(element) {
   return leaf_exception_element_names.includes(element.localName);
 }
 
-const void_elements = [
-  'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta',
-  'param', 'source', 'track', 'wbr'
-];
-
 export function coerce_element(element, new_name, copy_attributes = true) {
   const parent = element.parentNode;
   if (!parent) {
@@ -153,6 +152,11 @@ export function coerce_element(element, new_name, copy_attributes = true) {
 }
 
 function move_child_nodes(src, dst) {
+  const void_elements = [
+    'area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta',
+    'param', 'source', 'track', 'wbr'
+  ];
+
   if (!void_elements.includes(dst.localName)) {
     for (let node = src.firstChild; node; node = src.firstChild) {
       dst.appendChild(node);
@@ -190,7 +194,6 @@ const attr_names = [
 export function is_boolean(element, attribute_name) {
   return attr_names.includes(attribute_name);
 }
-
 
 // Returns true if the image element has at least one source
 export function image_has_source(image) {

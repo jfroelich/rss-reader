@@ -13,6 +13,17 @@ export {
 } from '/src/db.js';
 // clang-format on
 
+/*class CDB {
+  constructor() {
+    this.db = undefined;
+  }
+
+  open() {
+    await this.db.open();
+  }
+}*/
+
+
 // Temporary helpers due to db.js refactor as object
 export function validate_feed(feed) {
   const conn = new db.Db();

@@ -3,6 +3,9 @@ import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as idb from '/src/idb.js';
 import * as utils from '/src/utils.js';
 
+// TODO: db method names need to be renamed, when OO the convention is
+// camelCase, not snake_case, for method names
+
 // TODO: both Entry and Feed can extend Resource, there is a large amount of
 // redundancy, good chance to review understanding of super and inheritance
 
