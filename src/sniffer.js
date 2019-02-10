@@ -45,13 +45,13 @@ export function data_uri_find_mime_type(url) {
   const default_type = 'text/plain';
 
   const href = url.href;
-  if (href.length < mime.MIME_TYPE_MIN_LENGTH) {
+  if (href.length < mime.MIN_LENGTH) {
     return default_type;
   }
 
   const prefix_length = 'data:'.length;
   const search_start = prefix_length;
-  const search_end = prefix_length + mime.MIME_TYPE_MAX_LENGTH + 1;
+  const search_end = prefix_length + mime.MAX_LENGTH + 1;
   const haystack = href.substring(search_start, search_end);
 
   const sc_position = haystack.indexOf(';');
@@ -59,7 +59,7 @@ export function data_uri_find_mime_type(url) {
     return default_type;
   }
 
-  if (sc_position < mime.MIME_TYPE_MIN_LENGTH) {
+  if (sc_position < mime.MIN_LENGTH) {
     return default_type;
   }
 

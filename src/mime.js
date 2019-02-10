@@ -1,16 +1,25 @@
 // Provides helpers for interacting with purported mime-type values. A mime-type
 // is a specialized type of string.
 
-export const MIME_TYPE_MIN_LENGTH = 7;
-export const MIME_TYPE_MAX_LENGTH = 100;
+// TODO: remove all the tolerance for undefined in the internal helpers, enforce
+// a policy of always-defined input and implicitly throw otherwise
 
+
+// These are not exact, just rough approximations that weed out likely false
+// positives in the validity check
+export const MIN_LENGTH = 7;
+export const MAX_LENGTH = 100;
+
+// Returns whether the value looks like a valid mime type. This is a minimal
+// check intended to minimize obviously bad values while possibly allowing
+// through (misclassifying) a few.
 export function is_valid(value) {
-  return typeof value === 'string' && value.length > MIME_TYPE_MIN_LENGTH &&
-      value.length < MIME_TYPE_MAX_LENGTH && value.includes('/') &&
-      !value.includes(' ');
+  return typeof value === 'string' && value.length > MIN_LENGTH &&
+      value.length < MAX_LENGTH && value.includes('/') && !value.includes(' ');
 }
 
 export function parse_content_type(value) {
+  // TODO: increase strictness?
   if (typeof value !== 'string') {
     return;
   }

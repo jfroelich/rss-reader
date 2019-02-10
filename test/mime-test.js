@@ -4,9 +4,9 @@ import * as mime from '/src/mime.js';
 export async function mime_test() {
   const a = assert;
   // constants tests
-  a(mime.MIME_TYPE_MIN_LENGTH < mime.MIME_TYPE_MAX_LENGTH);
-  a(mime.MIME_TYPE_MIN_LENGTH >= 0);
-  a(mime.MIME_TYPE_MAX_LENGTH >= 0);
+  a(mime.MIN_LENGTH < mime.MAX_LENGTH);
+  a(mime.MIN_LENGTH >= 0);
+  a(mime.MAX_LENGTH >= 0);
 
   // parse no input
   a(mime.parse_content_type() === undefined);
