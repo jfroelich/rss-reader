@@ -256,12 +256,18 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   }
 
   const feed = response.feed;
+
+  // TODO: inline the helper here now that subscribe is within ops so as to
+  // reduce the number of global helpers that relate to only one use context
   await set_feed_favicon(iconn, feed);
+
+
   cdb.validate_feed(feed);
   cdb.sanitize_feed(feed);
   feed.id = await cdb.create_feed(session, feed);
 
   if (notify) {
+    // TODO: use cdb.getFeedURLString
     const feed_title = feed.title || feed.urls[feed.urls.length - 1];
     const note = {};
     note.title = 'Subscribed!';
@@ -348,4 +354,8 @@ async function refresh_feed_icon(session, iconn, feed) {
   }
 }
 
-export class ConstraintError extends Error {}
+export class ConstraintError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
