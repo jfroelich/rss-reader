@@ -83,6 +83,7 @@ async function run_timed_test(test_function, timeout = 0) {
   console.log('%s: completed', test_function.name);
 }
 
+// TODO: timeout parameter should be instanceof Deadline
 function deferred_rejection(test_function, time_ms) {
   const test_name = test_function.name.replace(/_/g, '-');
   const error = new Error('Test "' + test_name + '" timed out');
@@ -108,6 +109,7 @@ function find_test_by_name(name) {
 // @param timeout {Number} optional, ms, per-test timeout value
 // @param parallel {Boolean} optional, whether to run tests in parallel or
 // serial, defaults to false (serial)
+// TODO: use Deadline here
 async function cli_run(name, timeout = 10000, parallel = true) {
   // Either run one test, run the named tests, or run all tests
 
@@ -158,8 +160,7 @@ function cli_print_tests() {
 }
 
 function populate_test_menu() {
-  // TODO: sort the test list alphabetically by test function name
-  // before render
+  // TODO: sort the test list alphabetically by test name before render
 
   const menu = document.getElementById('tests');
   for (const test of registry) {
