@@ -112,10 +112,10 @@ export class Db {
   async open() {
     assert(this instanceof Db);
     assert(typeof this.name === 'string');
-    assert(typeof this.upgrade_handler === 'function');
+    assert(typeof this.upgradeHandler === 'function');
 
     this.conn = await idb.open(
-        this.name, this.version, this.upgrade_handler.bind(this), this.timeout);
+        this.name, this.version, this.upgradeHandler.bind(this), this.timeout);
   }
 
   close() {
@@ -128,7 +128,7 @@ export class Db {
 
   // event.oldVersion is 0 when the database is being created
   // use conn.version to get the current version
-  upgrade_handler(event) {
+  upgradeHandler(event) {
     const conn = event.target.result;
     const txn = event.target.transaction;
     let feed_store, entry_store;
@@ -151,11 +151,11 @@ export class Db {
     }
 
     if (event.oldVersion > 0 && event.oldVersion < 21) {
-      this.add_magic_to_entries(txn);
+      this.addMagicToEntries(txn);
     }
 
     if (event.oldVersion > 0 && event.oldVersion < 22) {
-      this.add_magic_to_feeds(txn);
+      this.addMagicToFeeds(txn);
     }
 
     if (event.oldVersion > 0 && event.oldVersion < 23) {
@@ -163,7 +163,7 @@ export class Db {
     }
 
     if (event.oldVersion > 0 && event.oldVersion < 24) {
-      this.add_active_field_to_feeds(feed_store);
+      this.addActiveFieldToFeeds(feed_store);
     }
 
     if (event.oldVersion < 25) {
@@ -179,7 +179,7 @@ export class Db {
       // If there may be existing entries, then ensure that all older entries
       // have a datePublished
       if (event.oldVersion) {
-        this.ensure_entries_have_date_published(entry_store);
+        this.ensureEntriesHaveDatePublished(entry_store);
       }
 
       entry_store.createIndex('datePublished', 'datePublished');
@@ -206,7 +206,7 @@ export class Db {
     }
   }
 
-  ensure_entries_have_date_published(store) {
+  ensureEntriesHaveDatePublished(store) {
     const request = store.openCursor();
     request.onerror = _ => console.error(request.error);
     request.onsuccess = event => {
@@ -223,7 +223,7 @@ export class Db {
     };
   }
 
-  add_magic_to_entries(txn) {
+  addMagicToEntries(txn) {
     const store = txn.objectStore('entry');
     const request = store.openCursor();
     request.onerror = _ => console.error(request.error);
@@ -241,7 +241,7 @@ export class Db {
     };
   }
 
-  add_magic_to_feeds(txn) {
+  addMagicToFeeds(txn) {
     const store = txn.objectStore('feed');
     const request = store.getAll();
     request.onerror = _ => console.error(request.error);
@@ -255,7 +255,7 @@ export class Db {
     }
   }
 
-  add_active_field_to_feeds(store) {
+  addActiveFieldToFeeds(store) {
     const request = store.getAll();
     request.onerror = _ => console.error(request.error);
     request.onsuccess = function(event) {
@@ -268,7 +268,7 @@ export class Db {
     };
   }
 
-  archive_entries(max_age) {
+  archiveEntries(max_age) {
     return new Promise((resolve, reject) => {
       if (typeof max_age === 'undefined') {
         const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
@@ -311,10 +311,8 @@ export class Db {
           return;
         }
 
-        // NOTE: using fat arrow syntax means this is bound to Db. If modified
-        // then do not forget that this will bind instead to IDBRequest.
         if (age > max_age) {
-          const ae = this.archive_entry(entry);
+          const ae = this.archiveEntry(entry);
           cursor.update(ae);
           entry_ids.push(ae.id);
         }
@@ -324,9 +322,9 @@ export class Db {
     });
   }
 
-  archive_entry(entry) {
+  archiveEntry(entry) {
     const before_size = utils.sizeof(entry);
-    const ce = this.compact_entry(entry);
+    const ce = this.compactEntry(entry);
     const after_size = utils.sizeof(ce);
 
     if (after_size > before_size) {
@@ -340,7 +338,7 @@ export class Db {
     return ce;
   }
 
-  compact_entry(entry) {
+  compactEntry(entry) {
     const ce = new Entry();
     ce.dateCreated = entry.dateCreated;
 
@@ -366,7 +364,7 @@ export class Db {
     return ce;
   }
 
-  count_unread_entries_by_feed(id) {
+  countUnreadEntriesByFeed(id) {
     return new Promise((resolve, reject) => {
       const txn = this.conn.transaction('entry');
       const store = txn.objectStore('entry');
@@ -378,7 +376,7 @@ export class Db {
     });
   }
 
-  count_unread_entries(conn) {
+  countUnreadEntries(conn) {
     return new Promise((resolve, reject) => {
       const txn = this.conn.transaction('entry');
       const store = txn.objectStore('entry');
@@ -389,8 +387,7 @@ export class Db {
     });
   }
 
-
-  create_entry(entry) {
+  createEntry(entry) {
     // This intentionally does not resolve until the transaction resolves
     // because resolving when the request completes would be premature.
     return new Promise((resolve, reject) => {
@@ -426,7 +423,7 @@ export class Db {
     });
   }
 
-  create_feed(feed) {
+  createFeed(feed) {
     return new Promise((resolve, reject) => {
       assert(is_feed(feed));
       // TODO: use Feed.hasURL instead here
@@ -447,7 +444,7 @@ export class Db {
       let id = 0;
       const txn = this.conn.transaction('feed', 'readwrite');
       txn.onerror = event => reject(event.target.error);
-      // This intentionally does not settle until the transaction completes
+      // Do not settle until the transaction completes
       txn.oncomplete = _ => resolve(id);
       const store = txn.objectStore('feed');
       const request = store.put(feed);
@@ -455,7 +452,7 @@ export class Db {
     });
   }
 
-  create_feeds(feeds) {
+  createFeeds(feeds) {
     return new Promise((resolve, reject) => {
       assert(feeds);
       for (const feed of feeds) {
@@ -491,7 +488,7 @@ export class Db {
     });
   }
 
-  delete_entry(id) {
+  deleteEntry(id) {
     return new Promise((resolve, reject) => {
       assert(Entry.isValidId(id));
       const txn = this.conn.transaction('entry', 'readwrite');
@@ -501,7 +498,7 @@ export class Db {
     });
   }
 
-  delete_feed(feed_id) {
+  deleteFeed(feed_id) {
     return new Promise((resolve, reject) => {
       assert(Feed.isValidId(feed_id));
       const entry_ids = [];
@@ -524,7 +521,7 @@ export class Db {
     });
   }
 
-  get_entry(mode = 'id', value, key_only) {
+  getEntry(mode = 'id', value, key_only) {
     return new Promise((resolve, reject) => {
       assert(mode !== 'id' || Entry.isValidId(value));
       assert(mode !== 'id' || !key_only);

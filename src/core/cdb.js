@@ -101,7 +101,7 @@ export async function archive_entries(session, max_age) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  const ids = await conn.archive_entries(max_age);
+  const ids = await conn.archiveEntries(max_age);
   for (const id of ids) {
     session.channel.postMessage({type: 'entry-archived', id: id});
   }
@@ -110,20 +110,20 @@ export async function archive_entries(session, max_age) {
 export function count_unread_entries_by_feed(session, id) {
   const conn = new db.Db();
   conn.conn = session.conn;
-  return conn.count_unread_entries_by_feed(id);
+  return conn.countUnreadEntriesByFeed(id);
 }
 
 export function count_unread_entries(session) {
   const conn = new db.Db();
   conn.conn = session.conn;
-  return conn.count_unread_entries();
+  return conn.countUnreadEntries();
 }
 
 export async function create_entry(session, entry) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  const id = await conn.create_entry(entry);
+  const id = await conn.createEntry(entry);
   session.channel.postMessage({type: 'entry-created', id: id});
   return id;
 }
@@ -132,7 +132,7 @@ export async function create_feed(session, feed) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  const id = await conn.create_feed(feed);
+  const id = await conn.createFeed(feed);
   session.channel.postMessage({type: 'feed-created', id: id});
   return id;
 }
@@ -141,7 +141,7 @@ export async function create_feeds(session, feeds) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  const ids = await conn.create_feeds(feeds);
+  const ids = await conn.createFeeds(feeds);
   for (const id of ids) {
     session.channel.postMessage({type: 'feed-created', id: id});
   }
@@ -152,7 +152,7 @@ export async function delete_entry(session, id, reason) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  await conn.delete_entry(id);
+  await conn.deleteEntry(id);
   session.channel.postMessage({type: 'entry-deleted', id: id, reason: reason});
 }
 
@@ -160,7 +160,7 @@ export async function delete_feed(session, feed_id, reason) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  const eids = await conn.delete_feed(feed_id);
+  const eids = await conn.deleteFeed(feed_id);
   session.channel.postMessage(
       {type: 'feed-deleted', id: feed_id, reason: reason});
 
@@ -174,7 +174,7 @@ export function get_entry(session, mode, value, key_only) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  return conn.get_entry(mode, value, key_only);
+  return conn.getEntry(mode, value, key_only);
 }
 
 export function get_entries(session, mode, offset, limit) {

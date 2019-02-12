@@ -1,5 +1,5 @@
-import {assert} from '/src/lib/assert.js';
 import * as db from '/src/core/db.js';
+import {assert} from '/src/lib/assert.js';
 import * as idb from '/src/lib/idb.js';
 
 export async function archive_entries_test() {
@@ -8,7 +8,7 @@ export async function archive_entries_test() {
   const conn = new db.Db();
   conn.name = db_name;
   await conn.open();
-  await conn.archive_entries(100);
+  await conn.archiveEntries(100);
   conn.close();
   await idb.remove(db_name);
 }
@@ -24,7 +24,7 @@ export async function count_unread_entries_by_feed_test() {
   const feed = new db.Feed();
   const url = new URL('http://www.example.com/feed.xml');
   feed.appendURL(url);
-  const feed_id = await conn.create_feed(feed);
+  const feed_id = await conn.createFeed(feed);
 
   const num_entries_created_per_type = 5;
   const create_promises = [];
@@ -35,17 +35,17 @@ export async function count_unread_entries_by_feed_test() {
       const entry = new db.Entry();
       entry.feed = feed_id;
       entry.readState = read_state;
-      const promise = conn.create_entry(entry);
+      const promise = conn.createEntry(entry);
       create_promises.push(promise);
     }
   }
   const entry_ids = await Promise.all(create_promises);
 
-  let unread_count = await conn.count_unread_entries_by_feed(feed_id);
+  let unread_count = await conn.countUnreadEntriesByFeed(feed_id);
   assert(unread_count === num_entries_created_per_type);
 
-  const bad_id = 123456789;
-  unread_count = await conn.count_unread_entries_by_feed(bad_id);
+  const non_existent_id = 123456789;
+  unread_count = await conn.countUnreadEntriesByFeed(non_existent_id);
   assert(unread_count === 0);
   conn.close();
   await idb.remove(db_name);
@@ -59,7 +59,7 @@ export async function count_unread_entries_test() {
   conn.name = db_name;
   await conn.open();
 
-  let count = await conn.count_unread_entries();
+  let count = await conn.countUnreadEntries();
   assert(0 === count);
 
   // Generate some unread entries
@@ -84,13 +84,13 @@ export async function count_unread_entries_test() {
   // Store both the read and unread entries
   const insert_promises = [];
   for (const entry of entries_to_insert) {
-    insert_promises.push(conn.create_entry(entry));
+    insert_promises.push(conn.createEntry(entry));
   }
   await Promise.all(insert_promises);
 
   // Assert the count of unread entries is equal to the number of inserted
   // unread entries.
-  count = await conn.count_unread_entries();
+  count = await conn.countUnreadEntries();
   assert(count === insert_unread_count);
 
   conn.close();
@@ -104,8 +104,8 @@ export async function create_entry_test() {
   await conn.open();
 
   const entry = new db.Entry();
-  const id = await conn.create_entry(entry);
-  const stored_entry = await conn.get_entry('id', id, false);
+  const id = await conn.createEntry(entry);
+  const stored_entry = await conn.getEntry('id', id, false);
   assert(stored_entry);
   assert(db.is_entry(stored_entry));
   assert(stored_entry.id === id);
@@ -122,7 +122,7 @@ export async function create_feed_test() {
   const feed = new db.Feed();
   const feed_url = new URL('http://www.example.com/example.rss');
   feed.appendURL(feed_url);
-  const stored_feed_id = await conn.create_feed(feed);
+  const stored_feed_id = await conn.createFeed(feed);
   assert(db.Feed.isValidId(stored_feed_id));
   let stored_feed = await conn.get_feed('url', feed_url, true);
   assert(db.is_feed(stored_feed));
@@ -143,10 +143,10 @@ export async function create_feed_url_constraint_test() {
   const feed2 = new db.Feed();
   feed2.appendURL(new URL('http://www.example.com/example.rss'));
 
-  await conn.create_feed(feed1);
+  await conn.createFeed(feed1);
   let create_error;
   try {
-    await conn.create_feed(feed2);
+    await conn.createFeed(feed2);
   } catch (error) {
     create_error = error;
   }
@@ -162,14 +162,13 @@ export async function create_feeds_test() {
   const conn = new db.Db();
   conn.name = db_name;
   await conn.open();
-
   const num_feeds = 3, feeds = [];
   for (let i = 0; i < num_feeds; i++) {
     const feed = new db.Feed();
     feed.appendURL(new URL('a://b.c' + i));
     feeds.push(feed);
   }
-  const ids = await conn.create_feeds(feeds);
+  const ids = await conn.createFeeds(feeds);
   assert(ids.length === num_feeds);
   const stored_feeds = await conn.get_feeds('all', false);
   assert(stored_feeds.length === num_feeds);
@@ -198,16 +197,16 @@ export async function delete_entry_test() {
   const url2 = new URL('https://www.example2.com');
   entry2.appendURL(url2);
 
-  const entry_id1 = await conn.create_entry(entry1);
-  const entry_id2 = await conn.create_entry(entry2);
-  let stored_entry = await conn.get_entry('id', entry_id1, false);
+  const entry_id1 = await conn.createEntry(entry1);
+  const entry_id2 = await conn.createEntry(entry2);
+  let stored_entry = await conn.getEntry('id', entry_id1, false);
   assert(stored_entry);
-  await conn.delete_entry(entry_id1, 'test');
+  await conn.deleteEntry(entry_id1, 'test');
   stored_entry = undefined;
-  stored_entry = await conn.get_entry('id', entry_id1, false);
+  stored_entry = await conn.getEntry('id', entry_id1, false);
   assert(!stored_entry);
   stored_entry = undefined;
-  stored_entry = await conn.get_entry('id', entry_id2, false);
+  stored_entry = await conn.getEntry('id', entry_id2, false);
   assert(stored_entry);
   conn.close();
   await idb.remove(db_name);
@@ -223,19 +222,19 @@ export async function delete_feed_test() {
   const feed1 = new db.Feed();
   const url1 = new URL('http://www.example.com/foo.xml');
   feed1.appendURL(url1);
-  const feed_id1 = await conn.create_feed(feed1);
+  const feed_id1 = await conn.createFeed(feed1);
   const feed2 = new db.Feed();
   const url2 = new URL('http://www.example.com/bar.xml');
   feed2.appendURL(url2);
-  const feed_id2 = await conn.create_feed(feed2);
-  await conn.delete_feed(feed_id1);
+  const feed_id2 = await conn.createFeed(feed2);
+  await conn.deleteFeed(feed_id1);
   const stored_feed1 = await conn.get_feed('id', feed_id1, false);
   assert(!stored_feed1);
   const stored_feed2 = await conn.get_feed('id', feed_id2, false);
   assert(stored_feed2);
-  const bad_id = 123456789;
-  await conn.delete_feed(bad_id);
-  await conn.delete_feed(feed_id2);
+  const non_existent_id = 123456789;
+  await conn.deleteFeed(non_existent_id);
+  await conn.deleteFeed(feed_id2);
   conn.close();
   await idb.remove(db_name);
 }
@@ -294,11 +293,11 @@ export async function get_entry_test() {
   await conn.open();
   const entry = new db.Entry();
   entry.title = 'test';
-  const entry_id = await conn.create_entry(entry);
-  const stored_entry = await conn.get_entry('id', entry_id, false);
+  const entry_id = await conn.createEntry(entry);
+  const stored_entry = await conn.getEntry('id', entry_id, false);
   assert(stored_entry);
-  const bad_id = 123456789;
-  const bad_entry = await conn.get_entry('id', bad_id, false);
+  const non_existent_id = 123456789;
+  const bad_entry = await conn.getEntry('id', non_existent_id, false);
   assert(bad_entry === undefined);
   conn.close();
   await idb.remove(db_name);
@@ -315,7 +314,7 @@ export async function get_entries_test() {
   for (let i = 0; i < n; i++) {
     const entry = new db.Entry();
     entry.title = 'title ' + i;
-    const promise = conn.create_entry(entry);
+    const promise = conn.createEntry(entry);
     create_promises.push(promise);
   }
   await Promise.all(create_promises);
@@ -337,7 +336,7 @@ export async function get_feed_ids_test() {
     const feed = new db.Feed();
     const url = new URL('a://b.c/feed' + i + '.xml');
     feed.appendURL(url);
-    const promise = conn.create_feed(feed);
+    const promise = conn.createFeed(feed);
     create_promises.push(promise);
   }
   const created_feed_ids = await Promise.all(create_promises);
@@ -359,7 +358,7 @@ export async function get_feed_test() {
   const feed = new db.Feed();
   const url = new URL('a://b.c');
   feed.appendURL(url);
-  const feed_id = await conn.create_feed(feed);
+  const feed_id = await conn.createFeed(feed);
   assert(db.Feed.isValidId(feed_id));
   const stored_feed = await conn.get_feed('id', feed_id, false);
   assert(stored_feed);
@@ -388,7 +387,7 @@ export async function get_feeds_test() {
     } else {
       active_count++;
     }
-    const promise = conn.create_feed(feed);
+    const promise = conn.createFeed(feed);
     create_promises.push(promise);
   }
   const ids = await Promise.all(create_promises);
@@ -424,7 +423,7 @@ export async function iterate_entries_test() {
   for (let i = 0; i < n; i++) {
     const entry = new db.Entry();
     entry.title = 'test' + i;
-    const promise = conn.create_entry(entry);
+    const promise = conn.createEntry(entry);
     create_promises.push(promise);
   }
   const ids = await Promise.all(create_promises);
@@ -447,13 +446,13 @@ export async function mark_entry_read_test() {
   await conn.open();
   const entry = new db.Entry();
   entry.readState = db.Entry.UNREAD;
-  const id = await conn.create_entry(entry);
-  let stored_entry = await conn.get_entry('id', id, false);
+  const id = await conn.createEntry(entry);
+  let stored_entry = await conn.getEntry('id', id, false);
   assert(stored_entry);
   assert(stored_entry.readState === db.Entry.UNREAD);
   await conn.mark_entry_read(id);
   stored_entry = undefined;
-  stored_entry = await conn.get_entry('id', id, false);
+  stored_entry = await conn.getEntry('id', id, false);
   assert(stored_entry);
   assert(stored_entry.readState === db.Entry.READ);
   conn.close();
@@ -476,7 +475,7 @@ export async function query_entries_test() {
     entry.readState = db.Entry.UNREAD;
     entry.feed = 1;
     entry.datePublished = new Date();
-    const promise = conn.create_entry(entry);
+    const promise = conn.createEntry(entry);
     create_promises.push(promise);
   }
 
@@ -486,7 +485,7 @@ export async function query_entries_test() {
     entry.readState = db.Entry.READ;
     entry.feed = 1;
     entry.datePublished = new Date();
-    const promise = conn.create_entry(entry);
+    const promise = conn.createEntry(entry);
     create_promises.push(promise);
   }
 
@@ -496,7 +495,7 @@ export async function query_entries_test() {
     entry.readState = db.Entry.UNREAD;
     entry.feed = 2;
     entry.datePublished = new Date();
-    const promise = conn.create_entry(entry);
+    const promise = conn.createEntry(entry);
     create_promises.push(promise);
   }
 
@@ -506,7 +505,7 @@ export async function query_entries_test() {
     entry.readState = db.Entry.READ;
     entry.feed = 2;
     entry.datePublished = new Date();
-    const promise = conn.create_entry(entry);
+    const promise = conn.createEntry(entry);
     create_promises.push(promise);
   }
 
@@ -647,11 +646,11 @@ export async function update_entry_test() {
 
   let entry = new db.Entry();
   entry.title = 'first-title';
-  const entry_id = await conn.create_entry(entry);
-  entry = await conn.get_entry('id', entry_id, false);
+  const entry_id = await conn.createEntry(entry);
+  entry = await conn.getEntry('id', entry_id, false);
   entry.title = 'second-title';
   await conn.update_entry(entry);
-  entry = await conn.get_entry('id', entry_id, false);
+  entry = await conn.getEntry('id', entry_id, false);
   assert(entry.title === 'second-title');
   conn.close();
   await idb.remove(db_name);
@@ -667,7 +666,7 @@ export async function update_feed_test() {
   feed.title = 'first';
   const url = new URL('a://b.c');
   feed.appendURL(url);
-  let new_id = await conn.create_feed(feed);
+  let new_id = await conn.createFeed(feed);
   feed.id = new_id;
   feed.title = 'second';
   await conn.update_feed(feed, true);
