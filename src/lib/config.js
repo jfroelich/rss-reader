@@ -46,18 +46,11 @@ export function read_int(key, fallback_value) {
 }
 
 export function write_float(key, value) {
-  localStorage[key] = '' + value;
+  localStorage[key] = value;
 }
 
 export function read_float(key) {
-  const string_value = localStorage[key];
-  if (string_value) {
-    const float_value = parseFloat(string_value, 10);
-    if (!isNaN(float_value)) {
-      return float_value;
-    }
-  }
-  return NaN;
+  return parseFloat(localStorage[key], 10);
 }
 
 export function write_boolean(key, value) {
