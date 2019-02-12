@@ -13,15 +13,27 @@ export {
 } from '/src/db.js';
 // clang-format on
 
-/*class CDB {
+class CDB {
   constructor() {
-    this.db = undefined;
+    this.db = new db.Db();
+    this.channel = undefined;
+    this.channel_name = 'reader';
   }
 
   open() {
     await this.db.open();
+    this.channel = new BroadcastChannel(this.channel_name);
   }
-}*/
+
+  close() {
+    if (this.channel) {
+      this.channel.close();
+      this.channel = undefined;
+    }
+
+    this.db.close();
+  }
+}
 
 
 // Temporary helpers due to db.js refactor as object
