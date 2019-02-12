@@ -1,6 +1,6 @@
-import {assert} from '/src/assert.js';
-import * as db from '/src/db.js';
-import * as idb from '/src/idb.js';
+import {assert} from '/src/lib/assert.js';
+import * as db from '/src/core/db.js';
+import * as idb from '/src/lib/idb.js';
 
 export async function archive_entries_test() {
   const db_name = 'archive-entries-test';

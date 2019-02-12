@@ -1,6 +1,6 @@
-import {assert} from '/src/assert.js';
-import * as mime from '/src/mime.js';
-import * as utils from '/src/utils.js';
+import * as utils from '/src/core/utils.js';
+import {assert} from '/src/lib/assert.js';
+import * as mime from '/src/lib/mime.js';
 
 export const UNKNOWN_CLASS = 0;
 export const TEXT_CLASS = 1;

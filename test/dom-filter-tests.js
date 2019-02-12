@@ -1,9 +1,9 @@
-import {assert} from '/src/assert.js';
-import * as color from '/src/color.js';
-import * as dom_filters from '/src/dom-filters.js';
-import * as dom_utils from '/src/dom-utils.js';
-import * as net from '/src/net.js';
-import * as utils from '/src/utils.js';
+import {assert} from '/src/lib/assert.js';
+import * as color from '/src/lib/color.js';
+import * as dom_filters from '/src/core/dom-filters.js';
+import * as dom_utils from '/src/core/dom-utils.js';
+import * as net from '/src/core/net.js';
+import * as utils from '/src/core/utils.js';
 
 
 export async function attribute_empty_filter_test() {

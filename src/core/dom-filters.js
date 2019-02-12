@@ -1,10 +1,10 @@
-import {assert, AssertionError} from '/src/assert.js';
-import * as boilerplate from '/src/boilerplate.js';
-import * as color from '/src/color.js';
-import {Deadline, INDEFINITE} from '/src/deadline.js';
-import * as dom_utils from '/src/dom-utils.js';
-import * as net from '/src/net.js';
-import * as utils from '/src/utils.js';
+import * as dom_utils from '/src/core/dom-utils.js';
+import * as net from '/src/core/net.js';
+import * as utils from '/src/core/utils.js';
+import {assert, AssertionError} from '/src/lib/assert.js';
+import * as boilerplate from '/src/lib/boilerplate.js';
+import * as color from '/src/lib/color.js';
+import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 
 // Applies several content filters to a document. The filters are applied in a
 // logical order that tries to minimize the amount of work done, and to preserve

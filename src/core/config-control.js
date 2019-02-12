@@ -7,8 +7,8 @@
 // TODO: entry_title_max_length is no longer in use, because I switched to css
 // based truncation. need to add this to list of keys deleted per ugprade
 
-import * as color from '/src/color.js';
-import * as config from '/src/config.js';
+import * as color from '/src/lib/color.js';
+import * as config from '/src/lib/config.js';
 
 // React to the extension being installed or updated, or when chrome is updated,
 // to do config related things. Note that this listener should be bound before

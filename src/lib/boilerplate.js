@@ -1,4 +1,4 @@
-import {assert} from '/src/assert.js';
+import {assert} from '/src/lib/assert.js';
 
 export const neutral_score = 50;
 
@@ -300,10 +300,6 @@ function find_and_set_parent(blocks, block, element) {
 
 // This module focuses on setting derived properties of blocks in the dataset
 // by analyzing the content of each block.
-//
-// This is a package-private module only intended for use by boilerplate.js or
-// testing. This is re-exported by boilerplate.js, so access it from there.
-
 // TODO: maybe specifying the Block type was bad, I should simply use a generic
 // dictionary
 

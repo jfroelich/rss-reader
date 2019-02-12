@@ -1,9 +1,9 @@
-import {assert} from '/src/assert.js';
-import * as cdb from '/src/cdb.js';
-import * as config from '/src/config.js';
-import * as favicon from '/src/favicon.js';
-import * as net from '/src/net.js';
-import * as utils from '/src/utils.js';
+import * as cdb from '/src/core/cdb.js';
+import * as favicon from '/src/core/favicon.js';
+import * as net from '/src/core/net.js';
+import * as utils from '/src/core/utils.js';
+import {assert} from '/src/lib/assert.js';
+import * as config from '/src/lib/config.js';
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar
 export async function badge_refresh() {

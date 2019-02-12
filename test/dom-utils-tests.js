@@ -1,6 +1,6 @@
-import {assert} from '/src/assert.js';
-import * as dom_utils from '/src/dom-utils.js';
-import * as utils from '/src/utils.js';
+import {assert} from '/src/lib/assert.js';
+import * as dom_utils from '/src/core/dom-utils.js';
+import * as utils from '/src/core/utils.js';
 
 export async function coerce_element_test() {
   const input = '<html><head></head><body><p></p><a></a></body></html>';

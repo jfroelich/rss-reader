@@ -1,7 +1,7 @@
 import '/third-party/parse-srcset.js';
 import '/third-party/tinycolor-min.js';
-import {assert} from '/src/assert.js';
-import * as color from '/src/color.js';
+import {assert} from '/src/lib/assert.js';
+import * as color from '/src/lib/color.js';
 
 // TODO: maybe it is better to check for base as a required element because
 // this avoids the ambiguity with chrome-extension default being implicit or

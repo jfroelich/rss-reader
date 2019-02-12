@@ -1,7 +1,7 @@
-import {assert} from '/src/assert.js';
-import {Deadline, INDEFINITE} from '/src/deadline.js';
-import * as idb from '/src/idb.js';
-import * as utils from '/src/utils.js';
+import * as utils from '/src/core/utils.js';
+import {assert} from '/src/lib/assert.js';
+import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import * as idb from '/src/lib/idb.js';
 
 // TODO: db method names need to be renamed, when OO the convention is
 // camelCase, not snake_case, for method names

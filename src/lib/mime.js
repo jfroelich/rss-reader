@@ -4,7 +4,6 @@
 // TODO: remove all the tolerance for undefined in the internal helpers, enforce
 // a policy of always-defined input and implicitly throw otherwise
 
-
 // These are not exact, just rough approximations that weed out likely false
 // positives in the validity check
 export const MIN_LENGTH = 7;

@@ -1,9 +1,9 @@
-import * as cdb from '/src/cdb.js';
-import * as config from '/src/config-control.js';
-import * as cron_control from '/src/cron.js';
-import * as favicon from '/src/favicon.js';
-import * as ops from '/src/ops.js';
-import {PollOperation} from '/src/poll-feeds.js';
+import * as cdb from '/src/core/cdb.js';
+import * as config from '/src/core/config-control.js';
+import * as cron_control from '/src/core/cron.js';
+import * as favicon from '/src/core/favicon.js';
+import * as ops from '/src/core/ops.js';
+import {PollOperation} from '/src/core/poll-feeds.js';
 
 async function cli_subscribe(url_string, fetch_entries = true) {
   const url = new URL(url_string);

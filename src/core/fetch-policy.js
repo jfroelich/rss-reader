@@ -1,3 +1,5 @@
+// TODO: use a better file name, like fetch-policies.js
+
 // A default permit-all policy
 export function PERMITTED(request) {
   return true;

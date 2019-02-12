@@ -1,5 +1,5 @@
-import {assert} from '/src/assert.js';
-import * as utils from '/src/utils.js';
+import {assert} from '/src/lib/assert.js';
+import * as utils from '/src/core/utils.js';
 
 export async function url_get_extension_tests() {
   // Exercise the simple typical success case

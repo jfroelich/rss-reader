@@ -1,4 +1,4 @@
-import {assert} from '/src/assert.js';
+import {assert} from '/src/lib/assert.js';
 
 // Maybe generate and show a desktop notification provided that notifications
 // are enabled in settings. |note| has optional properties name, message, and

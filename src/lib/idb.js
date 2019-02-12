@@ -1,5 +1,5 @@
-import {assert} from '/src/assert.js';
-import {Deadline, INDEFINITE} from '/src/deadline.js';
+import {assert} from '/src/lib/assert.js';
+import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 
 // Opens a connection to an indexedDB database. The primary benefits over using
 // indexedDB.open directly are that this works as a promise, enables a timeout,

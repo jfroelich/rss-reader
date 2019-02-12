@@ -1,9 +1,9 @@
-import * as cdb from '/src/cdb.js';
-import * as config from '/src/config.js';
-import * as favicon from '/src/favicon.js';
-import {refresh_feed_icons} from '/src/ops.js';
-import {PollOperation} from '/src/poll-feeds.js';
-import * as utils from '/src/utils.js';
+import * as cdb from '/src/core/cdb.js';
+import * as favicon from '/src/core/favicon.js';
+import * as ops from '/src/core/ops.js';
+import {PollOperation} from '/src/core/poll-feeds.js';
+import * as utils from '/src/core/utils.js';
+import * as config from '/src/lib/config.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
 const ONE_WEEK_MINUTES = 60 * 24 * 7;
@@ -37,7 +37,7 @@ export async function alarm_listener(alarm) {
   } else if (alarm.name === 'refresh-feed-icons') {
     const proms = [await cdb.open(), favicon.open()];
     const [session, iconn] = await Promise.all(proms);
-    await refresh_feed_icons(session, iconn);
+    await ops.refresh_feed_icons(session, iconn);
     session.close();
     iconn.close();
   } else if (alarm.name === 'compact-favicon-db') {

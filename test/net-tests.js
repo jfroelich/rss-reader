@@ -1,6 +1,6 @@
-import {assert} from '/src/assert.js';
-import {Deadline, INDEFINITE} from '/src/deadline.js';
-import * as net from '/src/net.js';
+import {assert} from '/src/lib/assert.js';
+import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import * as net from '/src/core/net.js';
 
 export async function fetch_image_test() {
   let path = '/test/fetch-image-test.png';

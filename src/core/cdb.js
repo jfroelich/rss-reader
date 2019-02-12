@@ -1,5 +1,5 @@
-import * as db from '/src/db.js';
-import {INDEFINITE} from '/src/deadline.js';
+import * as db from '/src/core/db.js';
+import {INDEFINITE} from '/src/lib/deadline.js';
 
 // clang-format off
 export {
@@ -10,7 +10,7 @@ export {
   is_feed,
   NotFoundError,
   ValidationError
-} from '/src/db.js';
+} from '/src/core/db.js';
 // clang-format on
 
 class CDB {
@@ -20,7 +20,7 @@ class CDB {
     this.channel_name = 'reader';
   }
 
-  open() {
+  async open() {
     await this.db.open();
     this.channel = new BroadcastChannel(this.channel_name);
   }

@@ -1,9 +1,9 @@
-import {assert} from '/src/assert.js';
-import * as cdb from '/src/cdb.js';
-import {Deadline, INDEFINITE} from '/src/deadline.js';
-import * as feed_parser from '/src/feed-parser.js';
-import {APP_DEFAULT, PERMITTED} from '/src/fetch-policy.js';
-import * as mime from '/src/mime.js';
+import * as cdb from '/src/core/cdb.js';
+import {APP_DEFAULT, PERMITTED} from '/src/core/fetch-policy.js';
+import {assert} from '/src/lib/assert.js';
+import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import * as feed_parser from '/src/lib/feed-parser.js';
+import * as mime from '/src/lib/mime.js';
 
 // Call the native fetch with a timeout. The native fetch does not have a
 // timeout, so we simulate it by racing it against a promise that resolves to

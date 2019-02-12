@@ -1,7 +1,7 @@
-import {assert} from '/src/assert.js';
-import * as cdb from '/src/cdb.js';
-import * as idb from '/src/idb.js';
-import * as ops from '/src/ops.js';
+import {assert} from '/src/lib/assert.js';
+import * as cdb from '/src/core/cdb.js';
+import * as idb from '/src/lib/idb.js';
+import * as ops from '/src/core/ops.js';
 
 export async function activate_feed_test() {
   const db_name = 'ops-activate-feed-test';

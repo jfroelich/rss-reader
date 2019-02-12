@@ -1,14 +1,18 @@
-import {assert, AssertionError} from '/src/assert.js';
-import * as cdb from '/src/cdb.js';
-import * as config from '/src/config.js';
-import {Deadline, INDEFINITE} from '/src/deadline.js';
-import * as dom_filters from '/src/dom-filters.js';
-import * as dom_utils from '/src/dom-utils.js';
-import * as favicon from '/src/favicon.js';
-import * as net from '/src/net.js';
-import * as rewrite_rules from '/src/rewrite-rules.js';
-import * as sniffer from '/src/sniffer.js';
-import * as utils from '/src/utils.js';
+// TODO: re-envision this module as just a specific helper to ops.js, callers
+// should be proxied through ops.js poll-feeds call, instead of directly
+// interacting with this module
+
+import * as cdb from '/src/core/cdb.js';
+import * as dom_filters from '/src/core/dom-filters.js';
+import * as dom_utils from '/src/core/dom-utils.js';
+import * as favicon from '/src/core/favicon.js';
+import * as net from '/src/core/net.js';
+import * as rewrite_rules from '/src/core/rewrite-rules.js';
+import * as sniffer from '/src/core/sniffer.js';
+import * as utils from '/src/core/utils.js';
+import {assert, AssertionError} from '/src/lib/assert.js';
+import * as config from '/src/lib/config.js';
+import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 
 export class PollOperation {
   constructor() {

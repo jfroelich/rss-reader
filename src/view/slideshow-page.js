@@ -1,11 +1,11 @@
-import {assert} from '/src/assert.js';
-import * as cdb from '/src/cdb.js';
-import * as config_control from '/src/config-control.js';
-import * as config from '/src/config.js';
-import * as favicon from '/src/favicon.js';
-import * as ops from '/src/ops.js';
-import {PollOperation} from '/src/poll-feeds.js';
-import * as utils from '/src/utils.js';
+import * as cdb from '/src/core/cdb.js';
+import * as config_control from '/src/core/config-control.js';
+import * as favicon from '/src/core/favicon.js';
+import * as ops from '/src/core/ops.js';
+import {PollOperation} from '/src/core/poll-feeds.js';
+import * as utils from '/src/core/utils.js';
+import {assert} from '/src/lib/assert.js';
+import * as config from '/src/lib/config.js';
 
 const splash_element = document.getElementById('initial-loading-panel');
 const feeds_container = document.getElementById('feeds-container');

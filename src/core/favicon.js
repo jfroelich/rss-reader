@@ -1,7 +1,7 @@
-import {assert, AssertionError} from '/src/assert.js';
-import {Deadline, INDEFINITE} from '/src/deadline.js';
-import * as idb from '/src/idb.js';
-import * as net from '/src/net.js';
+import * as net from '/src/core/net.js';
+import {assert, AssertionError} from '/src/lib/assert.js';
+import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import * as idb from '/src/lib/idb.js';
 
 const DEFAULT_NAME = 'favicon';
 const DEFAULT_VERSION = 1;

@@ -1,6 +1,6 @@
-import {assert} from '/src/assert.js';
-import * as sniffer from '/src/sniffer.js';
-import * as utils from '/src/utils.js';
+import {assert} from '/src/lib/assert.js';
+import * as sniffer from '/src/core/sniffer.js';
+import * as utils from '/src/core/utils.js';
 
 export async function sniffer_test() {
   // Local aliases
