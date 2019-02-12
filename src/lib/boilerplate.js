@@ -1,5 +1,8 @@
 import {assert} from '/src/lib/assert.js';
 
+// TODO: export a function like block-is-boilerplate or block-is-content instead
+// of exporting this raw score. I prefer score to be as opaque as possible and
+// exporting this is just too low level, the api is too technical as a result.
 export const neutral_score = 50;
 
 // Given a dataset representing content sections of a document, produce a scored
@@ -33,7 +36,7 @@ export function classify(dataset, score_block, options = {}) {
   assert(Number.isInteger(document_area));
   assert(document_area >= 0);
 
-  // TODO: these statements should be located closer to where the result is used
+  // TODO: move closer to use case
   const default_minimum_content_threshold = 20;
   let minimum_content_threshold = isNaN(options.minimum_content_threshold) ?
       default_minimum_content_threshold :
