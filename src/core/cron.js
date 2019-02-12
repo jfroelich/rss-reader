@@ -3,7 +3,7 @@ import * as favicon from '/src/core/favicon.js';
 import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';
 import * as utils from '/src/core/utils.js';
-import * as config from '/src/lib/config.js';
+import * as tls from '/src/lib/tls.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
 const ONE_WEEK_MINUTES = 60 * 24 * 7;
@@ -25,7 +25,7 @@ const alarms = [
 
 export async function alarm_listener(alarm) {
   console.debug('Alarm wokeup:', alarm.name);
-  config.write_string('last_alarm', alarm.name);
+  tls.write_string('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
     let max_age;
@@ -50,7 +50,7 @@ export async function alarm_listener(alarm) {
 }
 
 async function handle_alarm_poll() {
-  if (config.read_boolean('only_poll_if_idle')) {
+  if (tls.read_boolean('only_poll_if_idle')) {
     const idle_states = ['locked', 'idle'];
     const idle_secs = 30;
     const idle_state = await utils.query_idle_state(idle_secs);

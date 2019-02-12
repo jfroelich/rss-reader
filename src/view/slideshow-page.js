@@ -1,11 +1,11 @@
 import * as cdb from '/src/core/cdb.js';
-import * as config_control from '/src/core/config-control.js';
+import * as config from '/src/core/config.js';
 import * as favicon from '/src/core/favicon.js';
 import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';
 import * as utils from '/src/core/utils.js';
 import {assert} from '/src/lib/assert.js';
-import * as config from '/src/lib/config.js';
+import * as tls from '/src/lib/tls.js';
 
 const splash_element = document.getElementById('initial-loading-panel');
 const feeds_container = document.getElementById('feeds-container');
@@ -19,7 +19,7 @@ if (feeds_container) {
 let transition_duration;
 function init_transition_duration() {
   const default_duration = 0.16;
-  const duration_float = config.read_float('slide_transition_duration');
+  const duration_float = tls.read_float('slide_transition_duration');
   transition_duration =
       isNaN(duration_float) ? default_duration : duration_float;
 }
@@ -48,7 +48,7 @@ async function show_next_slide() {
   let entries = [];
   if (slide_unread_count < 3) {
     let limit = undefined;
-    const config_limit = config.read_int('initial_entry_load_limit');
+    const config_limit = tls.read_int('initial_entry_load_limit');
     if (!isNaN(config_limit)) {
       limit = config_limit;
     }
@@ -499,7 +499,7 @@ function download_opml_document(opml_document, file_name = 'subs.xml') {
 function header_font_menu_init(fonts) {
   const menu = document.getElementById('header-font-menu');
   menu.onchange = header_font_menu_onchange;
-  const current_header_font = config.read_string('header_font_family');
+  const current_header_font = tls.read_string('header_font_family');
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Header Font';
@@ -519,7 +519,7 @@ function header_font_menu_init(fonts) {
 function body_font_menu_init(fonts) {
   const menu = document.getElementById('body-font-menu');
   menu.onchange = body_font_menu_onchange;
-  const current_body_font = config.read_string('body_font_family');
+  const current_body_font = tls.read_string('body_font_family');
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Body Font';
@@ -538,16 +538,16 @@ function body_font_menu_init(fonts) {
 
 function header_font_menu_onchange(event) {
   const font_name = event.target.value;
-  const old_value = config.read_string('header_font_family');
+  const old_value = tls.read_string('header_font_family');
   if (font_name) {
-    config.write_string('header_font_family', font_name);
+    tls.write_string('header_font_family', font_name);
   } else {
-    config.remove('header_font_family');
+    tls.remove('header_font_family');
   }
 
   // HACK: dispatch a fake local change because storage change event listener
   // only fires if change made from other page
-  config_control.storage_onchange({
+  config.storage_onchange({
     isTrusted: true,
     type: 'storage',
     key: 'header_font_family',
@@ -558,16 +558,16 @@ function header_font_menu_onchange(event) {
 
 function body_font_menu_onchange(event) {
   const font_name = event.target.value;
-  const old_value = config.read_string('body_font_family');
+  const old_value = tls.read_string('body_font_family');
   if (font_name) {
-    config.write_string('body_font_family', font_name);
+    tls.write_string('body_font_family', font_name);
   } else {
-    config.remove('body_font_family');
+    tls.remove('body_font_family');
   }
 
   // HACK: dispatch a fake local change because storage change event listener
   // only fires if change made from other page
-  config_control.storage_onchange({
+  config.storage_onchange({
     isTrusted: true,
     type: 'storage',
     key: 'body_font_family',
@@ -603,7 +603,7 @@ function leftpanel_init() {
   menu_options.onclick = options_menu_onclick;
 
   // Load fonts from configuration once for both init helpers
-  const fonts = config.read_array('fonts');
+  const fonts = tls.read_array('fonts');
   header_font_menu_init(fonts);
   body_font_menu_init(fonts);
 
@@ -1149,8 +1149,8 @@ async function load_view() {
 }
 
 channel_init();
-addEventListener('storage', config_control.storage_onchange);
+addEventListener('storage', config.storage_onchange);
 addEventListener('keydown', onkeydown);
-document.addEventListener('DOMContentLoaded', config_control.dom_load_listener);
+document.addEventListener('DOMContentLoaded', config.dom_load_listener);
 
 load_view().catch(console.error);

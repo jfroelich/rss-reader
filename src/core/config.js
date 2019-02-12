@@ -1,17 +1,12 @@
-// regarding update_config, updates get fired for many reasons, such as when
-// reloading the extension from the extensions page. This does not indicate a
-// version change. Removing legacy keys should be based on extension version
-// change. I always forget what this is, and might use it in the future: `const
-// previous_version_string = event.previousVersion;`
 
 // TODO: entry_title_max_length is no longer in use, because I switched to css
 // based truncation. need to add this to list of keys deleted per ugprade
 
 import * as color from '/src/lib/color.js';
-import * as config from '/src/lib/config.js';
+import * as tls from '/src/lib/tls.js';
 
 // React to the extension being installed or updated, or when chrome is updated,
-// to do config related things. Note that this listener should be bound before
+// to do tls related things. Note that this listener should be bound before
 // other listeners that depend on configuration setup.
 export function install_listener(event) {
   if (event.reason === 'install') {
@@ -22,14 +17,20 @@ export function install_listener(event) {
 }
 
 function update_config(event) {
+  // regarding update_config, updates get fired for many reasons, such as when
+  // reloading the extension from the extensions page. This does not indicate a
+  // version change. Removing legacy keys should be based on extension version
+  // change. I always forget what this is, and might use it in the future:
+  // `const previous_version_string = event.previousVersion;`
+
   // Remove deprecated keys
   // TODO: should just have an array and iterate over it
-  config.remove('debug');
-  config.remove('refresh_badge_delay');
-  config.remove('db_name');
-  config.remove('db_version');
-  config.remove('db_open_timeout');
-  config.remove('channel_name');
+  tls.remove('debug');
+  tls.remove('refresh_badge_delay');
+  tls.remove('db_name');
+  tls.remove('db_version');
+  tls.remove('db_open_timeout');
+  tls.remove('channel_name');
 
   rename('LAST_ALARM', 'last_alarm');
   rename(
@@ -56,45 +57,45 @@ function update_config(event) {
   // In some unknown prior version of the extension, I stored the path prefix
   // in the images array. This is no longer done, so check if the stored value
   // still has the path and if so remove it.
-  const path = config.read_string('bg_image');
+  const path = tls.read_string('bg_image');
   if (path && path.startsWith('/images/')) {
     console.debug('Stripping /images/ from bg image path', path);
-    config.write_string('bg_image', path.substring('/images/'.length));
+    tls.write_string('bg_image', path.substring('/images/'.length));
   }
 }
 
 export function init_config(event) {
   // General settings
-  config.write_boolean('reuse_newtab', true);
-  config.write_boolean('show_notifications', true);
+  tls.write_boolean('reuse_newtab', true);
+  tls.write_boolean('show_notifications', true);
 
   // Poll settings
-  config.write_boolean('only_poll_if_idle', true);
+  tls.write_boolean('only_poll_if_idle', true);
 
   // Content filter settings
-  config.write_int('contrast_default_matte', color.WHITE);
-  config.write_int('emphasis_max_length', 200);
-  config.write_int('table_scan_max_rows', 20);
-  config.write_float('min_contrast_ratio', 4.5);
-  config.write_int('set_image_sizes_timeout', 300);
-  config.write_int('initial_entry_load_limit', 3);
+  tls.write_int('contrast_default_matte', color.WHITE);
+  tls.write_int('emphasis_max_length', 200);
+  tls.write_int('table_scan_max_rows', 20);
+  tls.write_float('min_contrast_ratio', 4.5);
+  tls.write_int('set_image_sizes_timeout', 300);
+  tls.write_int('initial_entry_load_limit', 3);
 
   // View settings
 
   // By default, use a reasonable animation duration that is not too fast or
   // too slow.
-  config.write_float('slide_transition_duration', 0.16);
+  tls.write_float('slide_transition_duration', 0.16);
 
-  config.write_int('entry_title_max_length', 300);
-  config.write_int('padding', 180);
-  config.write_string('bg_color', '#fefdfd');
-  config.write_string('header_font_family', 'Open Sans Regular');
-  config.write_int('header_font_size', 70);
-  config.write_string('body_font_family', 'Edward Tufte Roman');
-  config.write_int('body_font_size', 36);
-  config.write_int('body_line_height', 46);
-  config.write_int('column_count', 1);
-  config.write_boolean('justify_text', false);
+  tls.write_int('entry_title_max_length', 300);
+  tls.write_int('padding', 180);
+  tls.write_string('bg_color', '#fefdfd');
+  tls.write_string('header_font_family', 'Open Sans Regular');
+  tls.write_int('header_font_size', 70);
+  tls.write_string('body_font_family', 'Edward Tufte Roman');
+  tls.write_int('body_font_size', 36);
+  tls.write_int('body_line_height', 46);
+  tls.write_int('column_count', 1);
+  tls.write_boolean('justify_text', false);
 
   // Install default background images
   // clang-format off
@@ -120,7 +121,7 @@ export function init_config(event) {
     'thomas-zucx-noise-lines.png'
   ];
   // clang-format on
-  config.write_array('background_images', background_images);
+  tls.write_array('background_images', background_images);
 
   install_fonts();
 }
@@ -148,26 +149,26 @@ export function install_fonts() {
     'Roboto Regular'
   ];
   // clang-format on
-  config.write_array('fonts', fonts);
+  tls.write_array('fonts', fonts);
 }
 
 // Rename a configuration key.
-// TODO: this belongs in config.js, not here
+// TODO: move to tls.js
 function rename(from, to) {
   // There is no need to do any type coercion. Maintain fidelity by using the
   // string type, because everything in and out of config is derivative of
   // of the string type.
-  const value = config.read_string(from);
+  const value = tls.read_string(from);
 
   // Avoid creating the new key if the value is undefined. If the value is
   // undefined then rename devolves into a remove decorator. Note that due to
   // the strictness of this check, empty strings are retained, even though they
   // are not visibly different from undefined in devtools
   if (typeof value !== 'undefined') {
-    config.write_string(to, value);
+    tls.write_string(to, value);
   }
 
-  config.remove(from);
+  tls.remove(from);
 }
 
 // React to a localStorage property change. Note that this is only fired by the
@@ -273,7 +274,7 @@ export function dom_load_listener() {
   sheet.addRule('.entry .entry-title', page_style_title_rule_create());
   sheet.addRule('.entry .entry-content', page_style_content_rule_create());
 
-  const padding = config.read_int('padding');
+  const padding = tls.read_int('padding');
   if (!isNaN(padding)) {
     sheet.addRule('.slide-padding-wrapper', 'padding: ' + padding + 'px');
   }
@@ -282,8 +283,8 @@ export function dom_load_listener() {
 function page_style_entry_rule_create() {
   const buffer = [];
 
-  let path = config.read_string('bg_image');
-  const color = config.read_string('bg_color');
+  let path = tls.read_string('bg_image');
+  const color = tls.read_string('bg_color');
 
   if (path) {
     buffer.push(`background: url("/images/${path}");`);
@@ -296,12 +297,12 @@ function page_style_entry_rule_create() {
 
 function page_style_title_rule_create(sheet) {
   const buffer = [];
-  const font_size = config.read_int('header_font_size');
+  const font_size = tls.read_int('header_font_size');
   if (!isNaN(font_size)) {
     buffer.push(`font-size: ${font_size}px;`);
   }
 
-  const font_family = config.read_string('header_font_family');
+  const font_family = tls.read_string('header_font_family');
   if (font_family) {
     buffer.push(`font-family: ${font_family};`);
   }
@@ -311,27 +312,27 @@ function page_style_title_rule_create(sheet) {
 
 function page_style_content_rule_create(sheet) {
   const buffer = [];
-  const font_size = config.read_int('body_font_size');
+  const font_size = tls.read_int('body_font_size');
   if (!isNaN(font_size)) {
     buffer.push(`font-size: ${font_size}px;`);
   }
 
-  if (config.read_boolean('justify_text')) {
+  if (tls.read_boolean('justify_text')) {
     buffer.push('text-align: justify;');
   }
 
-  const font_family = config.read_string('body_font_family');
+  const font_family = tls.read_string('body_font_family');
   if (font_family) {
     buffer.push(`font-family: ${font_family};`);
   }
 
-  const line_height = config.read_int('body_line_height');
+  const line_height = tls.read_int('body_line_height');
   if (!isNaN(line_height)) {
     buffer.push(`line-height: ${line_height}px;`);
   }
 
   // TODO: did column-count become standard css yet? if so drop prefix
-  const column_count = config.read_int('column_count');
+  const column_count = tls.read_int('column_count');
   if (column_count === 2 || column_count === 3) {
     buffer.push(`-webkit-column-count: ${column_count};`);
     buffer.push('-webkit-column-gap: 30px;');

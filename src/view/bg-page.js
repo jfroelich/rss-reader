@@ -1,9 +1,9 @@
 import * as cdb from '/src/core/cdb.js';
-import * as config_control from '/src/core/config-control.js';
+import * as config from '/src/core/config.js';
 import * as cron_control from '/src/core/cron.js';
 import * as ops from '/src/core/ops.js';
 import * as utils from '/src/core/utils.js';
-import * as config from '/src/lib/config.js';
+import * as tls from '/src/lib/tls.js';
 
 // Open a channel with a lifetime equal to the background page lifetime.
 const channel = new BroadcastChannel('reader');
@@ -24,7 +24,7 @@ chrome.runtime.onStartup.addListener(event => {
 });
 
 // TODO: re-inline the listener here
-chrome.runtime.onInstalled.addListener(config_control.install_listener);
+chrome.runtime.onInstalled.addListener(config.install_listener);
 
 chrome.runtime.onInstalled.addListener(async function(event) {
   if (event.reason === 'install') {
@@ -49,4 +49,4 @@ chrome.runtime.onInstalled.addListener(event => {
   ops.badge_refresh().catch(console.warn);
 });
 
-chrome.browserAction.onClicked.addListener(_ => utils.open_view(config));
+chrome.browserAction.onClicked.addListener(_ => utils.open_view(tls));

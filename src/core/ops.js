@@ -3,7 +3,7 @@ import * as favicon from '/src/core/favicon.js';
 import * as net from '/src/core/net.js';
 import * as utils from '/src/core/utils.js';
 import {assert} from '/src/lib/assert.js';
-import * as config from '/src/lib/config.js';
+import * as tls from '/src/lib/tls.js';
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar
 export async function badge_refresh() {
@@ -270,7 +270,7 @@ export async function subscribe(session, iconn, url, timeout, notify) {
     note.title = 'Subscribed!';
     note.message = 'Subscribed to ' + feed_title;
     note.url = feed.faviconURLString;
-    utils.show_notification(config, note);
+    utils.show_notification(tls, note);
   }
 
   return feed;

@@ -11,8 +11,8 @@ import * as rewrite_rules from '/src/core/rewrite-rules.js';
 import * as sniffer from '/src/core/sniffer.js';
 import * as utils from '/src/core/utils.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
-import * as config from '/src/lib/config.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import * as tls from '/src/lib/tls.js';
 
 export class PollOperation {
   constructor() {
@@ -76,7 +76,7 @@ export class PollOperation {
       const note = {};
       note.title = 'Added articles';
       note.message = 'Added ' + count + ' articles';
-      utils.show_notification(config, note);
+      utils.show_notification(tls, note);
     }
 
     console.debug('Run completed, added %d entries', count);
@@ -170,7 +170,7 @@ export class PollOperation {
       const note = {};
       note.title = 'Added articles';
       note.message = 'Added ' + count + ' articles for feed ' + feed.title;
-      utils.show_notification(config, note);
+      utils.show_notification(tls, note);
     }
 
     console.debug(
@@ -295,19 +295,19 @@ export class PollOperation {
 
     // Filter the document content
     const filter_options = {};
-    filter_options.contrast_matte = config.read_int('contrast_default_matte');
-    filter_options.contrast_ratio = config.read_float('min_contrast_ratio');
-    // Deserialize from config as a Deadline, not a raw int
-    const config_set_image_sz_to = config.read_int('set_image_sizes_timeout');
+    filter_options.contrast_matte = tls.read_int('contrast_default_matte');
+    filter_options.contrast_ratio = tls.read_float('min_contrast_ratio');
+    // Deserialize from settings as a Deadline, not a raw int
+    const config_set_image_sz_to = tls.read_int('set_image_sizes_timeout');
     if (!isNaN(config_set_image_sz_to)) {
       filter_options.image_size_timeout = new Deadline(config_set_image_sz_to);
     }
 
-    filter_options.table_scan_max_rows = config.read_int('table_scan_max_rows');
+    filter_options.table_scan_max_rows = tls.read_int('table_scan_max_rows');
 
     // NOTE: may be NaN if not set or invalid value, only set if valid, this
     // was previously a bug
-    const config_emph_max_len = config.read_int('emphasis_max_length');
+    const config_emph_max_len = tls.read_int('emphasis_max_length');
     if (!isNaN(config_emph_max_len)) {
       filter_options.emphasis_max_length = config_emph_max_len;
     }

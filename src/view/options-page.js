@@ -2,7 +2,7 @@ import * as cdb from '/src/core/cdb.js';
 import * as favicon from '/src/core/favicon.js';
 import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';
-import * as config from '/src/lib/config.js';
+import * as tls from '/src/lib/tls.js';
 
 let current_menu_item;
 let current_section;
@@ -480,7 +480,7 @@ function menu_item_onclick(event) {
 }
 
 function enable_notifications_checkbox_onclick(event) {
-  config.write_boolean('show_notifications', event.target.checked);
+  tls.write_boolean('show_notifications', event.target.checked);
 }
 
 function enable_bg_processing_checkbox_onclick(event) {
@@ -502,67 +502,67 @@ async function enable_bg_processing_checkbox_init() {
 function bg_image_menu_onchange(event) {
   const path = event.target.value;
   if (path) {
-    config.write_string('bg_image', path);
+    tls.write_string('bg_image', path);
   } else {
-    config.remove('bg_image');
+    tls.remove('bg_image');
   }
 }
 
 function column_count_menu_onchange(event) {
   const count = event.target.value;
   if (count) {
-    config.write_string('column_count', count);
+    tls.write_string('column_count', count);
   } else {
-    config.remove('column_count');
+    tls.remove('column_count');
   }
 }
 
 function entry_bg_color_input_oninput(event) {
   const color = event.target.value;
   if (color) {
-    config.write_string('bg_color', color);
+    tls.write_string('bg_color', color);
   } else {
-    config.remove('bg_color');
+    tls.remove('bg_color');
   }
 }
 
 function entry_margin_slider_onchange(event) {
   const margin = event.target.value;
   if (margin) {
-    config.write_string('padding', margin);
+    tls.write_string('padding', margin);
   } else {
-    config.remove('padding');
+    tls.remove('padding');
   }
 }
 
 function header_font_size_slider_onchange(event) {
   const size = event.target.value;
   if (size) {
-    config.write_string('header_font_size', size);
+    tls.write_string('header_font_size', size);
   } else {
-    config.remove('header_font_size');
+    tls.remove('header_font_size');
   }
 }
 
 function body_font_size_slider_onchange(event) {
   const size = event.target.value;
   if (size) {
-    config.write_string('body_font_size', size);
+    tls.write_string('body_font_size', size);
   } else {
-    config.remove('body_font_size');
+    tls.remove('body_font_size');
   }
 }
 
 function justify_text_checkbox_onchange(event) {
-  config.write_boolean('justify_text', event.target.checked);
+  tls.write_boolean('justify_text', event.target.checked);
 }
 
 function body_line_height_input_oninput(event) {
   const height = event.target.value;
   if (height) {
-    config.write_string('body_line_height', height);
+    tls.write_string('body_line_height', height);
   } else {
-    config.remove('body_line_height');
+    tls.remove('body_line_height');
   }
 }
 
@@ -590,15 +590,15 @@ function perm_remove(perm) {
   }
 
   const enable_notes_checkbox = document.getElementById('enable-notifications');
-  enable_notes_checkbox.checked = config.read_boolean('show_notifications');
+  enable_notes_checkbox.checked = tls.read_boolean('show_notifications');
   enable_notes_checkbox.onclick = enable_notifications_checkbox_onclick;
 
   enable_bg_processing_checkbox_init();
 
   const idle_poll_checkbox = document.getElementById('enable-idle-check');
-  idle_poll_checkbox.checked = config.read_boolean('only_poll_if_idle');
+  idle_poll_checkbox.checked = tls.read_boolean('only_poll_if_idle');
   idle_poll_checkbox.onclick = event =>
-      config.write_boolean('only_poll_if_idle', event.target.checked);
+      tls.write_boolean('only_poll_if_idle', event.target.checked);
 
   feed_list_init();
 
@@ -623,8 +623,8 @@ function perm_remove(perm) {
     option.textContent = 'Use background color';
     bg_image_menu.appendChild(option);
 
-    let current_path = config.read_string('bg_image');
-    const background_images = config.read_array('background_images');
+    let current_path = tls.read_string('bg_image');
+    const background_images = tls.read_array('background_images');
     for (const path of background_images) {
       let option = document.createElement('option');
       option.value = path;
@@ -638,7 +638,7 @@ function perm_remove(perm) {
     const column_count_menu = document.getElementById('column-count');
     column_count_menu.onchange = column_count_menu_onchange;
     const column_count_options = [1, 2, 3];
-    const current_column_count = config.read_int('column_count');
+    const current_column_count = tls.read_int('column_count');
     for (const column_count of column_count_options) {
       const option = document.createElement('option');
       option.value = column_count;
@@ -650,40 +650,40 @@ function perm_remove(perm) {
 
   const bg_color_input = document.getElementById('entry-background-color');
   bg_color_input.oninput = entry_bg_color_input_oninput;
-  const bg_color = config.read_string('bg_color');
+  const bg_color = tls.read_string('bg_color');
   if (bg_color) {
     bg_color_input.value = bg_color;
   }
 
   const entry_margin_input = document.getElementById('entry-margin');
   entry_margin_input.onchange = entry_margin_slider_onchange;
-  const margin = config.read_int('padding', 0);
+  const margin = tls.read_int('padding', 0);
   if (!isNaN(margin)) {
     entry_margin_input.value = margin;
   }
 
   const justify_checkbox = document.getElementById('justify-text');
-  justify_checkbox.checked = config.read_boolean('justify_text');
+  justify_checkbox.checked = tls.read_boolean('justify_text');
   justify_checkbox.onchange = event =>
-      config.write_boolean('justify_text', event.target.checked);
+      tls.write_boolean('justify_text', event.target.checked);
 
   const header_size_range = document.getElementById('header-font-size');
   header_size_range.onchange = header_font_size_slider_onchange;
-  const header_font_size = config.read_int('header_font_size');
+  const header_font_size = tls.read_int('header_font_size');
   if (!isNaN(header_font_size)) {
     header_size_range.value = header_font_size;
   }
 
   const body_size_range = document.getElementById('body-font-size');
   body_size_range.onchange = body_font_size_slider_onchange;
-  const body_font_size = config.read_int('body_font_size');
+  const body_font_size = tls.read_int('body_font_size');
   if (!isNaN(body_font_size)) {
     body_size_range.value = body_font_size;
   }
 
   const body_line_height_input = document.getElementById('body-line-height');
   body_line_height_input.oninput = body_line_height_input_oninput;
-  const body_line_height = config.read_int('body_line_height');
+  const body_line_height = tls.read_int('body_line_height');
   if (!isNaN(body_line_height)) {
     body_line_height_input.value = body_line_height;
   }

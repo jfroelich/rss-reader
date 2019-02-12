@@ -1,5 +1,5 @@
 import * as cdb from '/src/core/cdb.js';
-import * as config from '/src/core/config-control.js';
+import * as config from '/src/core/config.js';
 import * as cron_control from '/src/core/cron.js';
 import * as favicon from '/src/core/favicon.js';
 import * as ops from '/src/core/ops.js';
