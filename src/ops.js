@@ -1,3 +1,4 @@
+import {assert} from '/src/assert.js';
 import * as cdb from '/src/cdb.js';
 import * as config from '/src/config.js';
 import * as favicon from '/src/favicon.js';
@@ -105,14 +106,43 @@ function create_opml_template(document_title) {
   return doc;
 }
 
+// Create and store feed objects in the database based on urls extracted from
+// zero or more opml files. |files| should be a FileList or an Array.
 export async function opml_import(session, files) {
-  console.debug('Importing %d OPML files', files.length);
+  // TODO: stricter guard
+  assert(files);
+  console.log('Importing %d OPML files', files.length);
 
-  const read_files_results = await opml_import_read_files(files);
-  const url_array = opml_import_flatten_urls(read_files_results);
-  const url_array_set = opml_import_dedup_urls(url_array);
+  // Grab urls from each of the files. Per-file errors are logged not thrown.
+  const promises = Array.prototype.map.call(files, file => {
+    const promise = opml_import_read_feeds(file);
+    return promise.catch(console.warn);
+  });
+  const results = await Promise.all(promises);
 
-  const feeds = url_array_set.map(url => {
+  // Flatten results into a simple array of urls
+  const urls = [];
+  for (const result of results) {
+    if (result) {
+      for (const url of result) {
+        urls.push(url);
+      }
+    }
+  }
+
+  // Filter dups
+  // TODO: can Array.prototype.indexOf/includes work on URL objects? It is
+  // comparison by reference?
+  const url_set = [], seen_hrefs = [];
+  for (const url of urls) {
+    if (!seen_hrefs.includes(url.href)) {
+      url_set.push(url);
+      seen_hrefs.push(url.href);
+    }
+  }
+
+  // Convert urls into feeds
+  const feeds = url_set.map(url => {
     const feed = new cdb.Feed();
     feed.appendURL(url);
     return feed;
@@ -121,32 +151,13 @@ export async function opml_import(session, files) {
   return cdb.create_feeds(session, feeds);
 }
 
-function opml_import_read_files(files) {
-  // FileList does not support map
-  const promises = Array.prototype.map.call(files, file => {
-    const promise = opml_import_read_feeds(file);
-    // Redirect per-file errors to console rather than exceptions
-    return promise.catch(console.warn);
-  });
-  return Promise.all(promises);
-}
-
-function opml_import_flatten_urls(all_files_urls) {
-  // per_file_urls may be undefined if there was a problem reading the file
-  // that generated it
-  const urls = [];
-  for (const per_file_urls of all_files_urls) {
-    if (per_file_urls) {
-      for (const url of per_file_urls) {
-        urls.push(url);
-      }
-    }
-  }
-  return urls;
-}
-
 async function opml_import_read_feeds(file) {
-  if (!file_is_opml(file)) {
+  // TODO: this is user input, not programmer input, because we do not want to
+  // place the burden on the caller to provide the correct file type. Therefore
+  // this should just log a warning and return an empty array?
+  // TODO: maybe we should not be trying to consider the mime type at all, and
+  // just allow the parsing to fail later.
+  if (!file_type_is_opml(file)) {
     const msg = 'Unacceptable type ' + file.type + ' for file ' + file.name;
     throw new TypeError(msg);
   }
@@ -157,21 +168,7 @@ async function opml_import_read_feeds(file) {
 
   const file_text = await utils.file_read_text(file);
   const document = parse_opml(file_text);
-  return opml_import_find_urls(document);
-}
 
-function opml_import_dedup_urls(urls) {
-  const url_set = [], seen = [];
-  for (const url of urls) {
-    if (!seen.includes(url.href)) {
-      url_set.push(url);
-      seen.push(url.href);
-    }
-  }
-  return url_set;
-}
-
-function opml_import_find_urls(document) {
   const elements = document.querySelectorAll('opml > body > outline[type]');
   const type_pattern = /^\s*(rss|rdf|feed)\s*$/i;
   const urls = [];
@@ -197,7 +194,7 @@ function opml_import_parse_url_noexcept(url_string) {
   }
 }
 
-function file_is_opml(file) {
+function file_type_is_opml(file) {
   const types = [
     'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
     'application/opml+xml'
