@@ -1,9 +1,9 @@
 import {assert} from '/src/assert.js';
 import * as cdb from '/src/cdb.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
+import * as feed_parser from '/src/feed-parser.js';
 import {APP_DEFAULT, PERMITTED} from '/src/fetch-policy.js';
 import * as mime from '/src/mime.js';
-import {parse_feed} from '/src/parse-feed.js';
 
 // Call the native fetch with a timeout. The native fetch does not have a
 // timeout, so we simulate it by racing it against a promise that resolves to
@@ -277,7 +277,8 @@ export async function fetch_feed(url, options) {
   const resolve_entry_urls =
       'resolve_entry_urls' in options ? options.resolve_entry_urls : false;
 
-  const parsed_feed = parse_feed(res_text, skip_entries, resolve_entry_urls);
+  const parsed_feed =
+      feed_parser.parse(res_text, skip_entries, resolve_entry_urls);
 
   // Convert the feed from the parse format to the storage format
   const feed = new cdb.Feed();

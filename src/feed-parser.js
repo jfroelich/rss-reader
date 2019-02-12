@@ -17,7 +17,7 @@ export function feed_t() {
   this.entries = [];
 }
 
-// The parse_feed function accepts a string as input. The string should be the
+// The parse function accepts a string as input. The string should be the
 // full text of an xml file. The xml is parsed into a Document object, and then
 // the Document object is coerced into a basic JavaScript object. Feed
 // properties are stored in the parsed object. The output object contains an
@@ -33,7 +33,7 @@ export function feed_t() {
 // empty entries array is included in the result
 // @param resolve_entry_urls {Boolean} if true, entry urls are canonicalized
 // using feed.link as the base url
-export function parse_feed(value, skip_entries, resolve_entry_urls) {
+export function parse(value, skip_entries, resolve_entry_urls) {
   const doc = parse_xml(value);
   return unmarshall_xml(doc, skip_entries, resolve_entry_urls);
 }
