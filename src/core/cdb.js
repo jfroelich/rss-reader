@@ -35,26 +35,25 @@ class CDB {
   }
 }
 
-
 // Temporary helpers due to db.js refactor as object
 export function validate_feed(feed) {
   const conn = new db.Db();
-  return conn.validate_feed(feed);
+  return conn.validateFeed(feed);
 }
 
 export function validate_entry(entry) {
   const conn = new db.Db();
-  return conn.validate_entry(entry);
+  return conn.validateEntry(entry);
 }
 
 export function sanitize_feed(feed) {
   const conn = new db.Db();
-  return conn.sanitize_feed(feed);
+  return conn.sanitizeFeed(feed);
 }
 
 export function sanitize_entry(entry) {
   const conn = new db.Db();
-  return conn.sanitize_entry(entry);
+  return conn.sanitizeEntry(entry);
 }
 
 
@@ -181,42 +180,42 @@ export function get_entries(session, mode, offset, limit) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  return conn.get_entries(mode, offset, limit);
+  return conn.getEntries(mode, offset, limit);
 }
 
 export function get_feed_ids(session) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  return conn.get_feed_ids();
+  return conn.getFeedIds();
 }
 
 export function get_feed(session, mode, value, key_only) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  return conn.get_feed(mode, value, key_only);
+  return conn.getFeed(mode, value, key_only);
 }
 
 export function get_feeds(session, mode, title_sort) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  return conn.get_feeds(mode, title_sort);
+  return conn.getFeeds(mode, title_sort);
 }
 
 export function iterate_entries(session, handle_entry) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  return conn.iterate_entries(handle_entry);
+  return conn.iterateEntries(handle_entry);
 }
 
 export async function mark_entry_read(session, id) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  await conn.mark_entry_read(id);
+  await conn.markEntryRead(id);
   session.channel.postMessage({type: 'entry-read', id: id});
 }
 
@@ -224,14 +223,14 @@ export function query_entries(session, query) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  return conn.query_entries(query);
+  return conn.queryEntries(query);
 }
 
 export async function update_entry(session, entry) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  await conn.update_entry(entry);
+  await conn.updateEntry(entry);
   session.channel.postMessage({type: 'entry-updated', id: entry.id});
 }
 
@@ -239,7 +238,7 @@ export async function update_feed(session, feed, overwrite) {
   const conn = new db.Db();
   conn.conn = session.conn;
 
-  await conn.update_feed(feed, overwrite);
+  await conn.updateFeed(feed, overwrite);
   session.channel.postMessage(
       {type: 'feed-updated', id: feed.id, feed: overwrite ? undefined : feed});
 }

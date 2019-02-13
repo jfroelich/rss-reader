@@ -124,9 +124,9 @@ export async function create_feed_test() {
   feed.appendURL(feed_url);
   const stored_feed_id = await conn.createFeed(feed);
   assert(db.Feed.isValidId(stored_feed_id));
-  let stored_feed = await conn.get_feed('url', feed_url, true);
+  let stored_feed = await conn.getFeed('url', feed_url, true);
   assert(db.is_feed(stored_feed));
-  stored_feed = await conn.get_feed('id', stored_feed_id, false);
+  stored_feed = await conn.getFeed('id', stored_feed_id, false);
   assert(db.is_feed(stored_feed));
   conn.close();
   await idb.remove(db_name);
@@ -170,9 +170,9 @@ export async function create_feeds_test() {
   }
   const ids = await conn.createFeeds(feeds);
   assert(ids.length === num_feeds);
-  const stored_feeds = await conn.get_feeds('all', false);
+  const stored_feeds = await conn.getFeeds('all', false);
   assert(stored_feeds.length === num_feeds);
-  const get_proms = ids.map(id => conn.get_feed('id', id, false));
+  const get_proms = ids.map(id => conn.getFeed('id', id, false));
   const feeds_by_id = await Promise.all(get_proms);
   for (const feed of feeds_by_id) {
     assert(db.is_feed(feed));
@@ -228,9 +228,9 @@ export async function delete_feed_test() {
   feed2.appendURL(url2);
   const feed_id2 = await conn.createFeed(feed2);
   await conn.deleteFeed(feed_id1);
-  const stored_feed1 = await conn.get_feed('id', feed_id1, false);
+  const stored_feed1 = await conn.getFeed('id', feed_id1, false);
   assert(!stored_feed1);
-  const stored_feed2 = await conn.get_feed('id', feed_id2, false);
+  const stored_feed2 = await conn.getFeed('id', feed_id2, false);
   assert(stored_feed2);
   const non_existent_id = 123456789;
   await conn.deleteFeed(non_existent_id);
@@ -318,7 +318,7 @@ export async function get_entries_test() {
     create_promises.push(promise);
   }
   await Promise.all(create_promises);
-  const entries = await conn.get_entries('all', 0, 0);
+  const entries = await conn.getEntries('all', 0, 0);
   assert(entries.length === n);
   conn.close();
   await idb.remove(db_name);
@@ -340,7 +340,7 @@ export async function get_feed_ids_test() {
     create_promises.push(promise);
   }
   const created_feed_ids = await Promise.all(create_promises);
-  const feed_ids = await conn.get_feed_ids();
+  const feed_ids = await conn.getFeedIds();
   assert(feed_ids.length === created_feed_ids.length);
   for (const id of created_feed_ids) {
     assert(feed_ids.includes(id));
@@ -360,9 +360,9 @@ export async function get_feed_test() {
   feed.appendURL(url);
   const feed_id = await conn.createFeed(feed);
   assert(db.Feed.isValidId(feed_id));
-  const stored_feed = await conn.get_feed('id', feed_id, false);
+  const stored_feed = await conn.getFeed('id', feed_id, false);
   assert(stored_feed);
-  const stored_feed2 = await conn.get_feed('url', url, false);
+  const stored_feed2 = await conn.getFeed('url', url, false);
   assert(stored_feed2);
   conn.close();
   await idb.remove(db_name);
@@ -391,17 +391,17 @@ export async function get_feeds_test() {
     create_promises.push(promise);
   }
   const ids = await Promise.all(create_promises);
-  const unsorted = await conn.get_feeds('all', false);
+  const unsorted = await conn.getFeeds('all', false);
   assert(unsorted.length === n);
   for (const feed of unsorted) {
     assert(feed);
   }
-  const sorted = await conn.get_feeds('all', true);
+  const sorted = await conn.getFeeds('all', true);
   assert(sorted.length === n);
   for (const feed of sorted) {
     assert(feed);
   }
-  const actives = await conn.get_feeds('active', false);
+  const actives = await conn.getFeeds('active', false);
   assert(actives.length === active_count);
   for (const feed of actives) {
     assert(feed);
@@ -429,7 +429,7 @@ export async function iterate_entries_test() {
   const ids = await Promise.all(create_promises);
 
   let num_iterated = 0;
-  await conn.iterate_entries(entry => {
+  await conn.iterateEntries(entry => {
     assert(entry);
     num_iterated++;
   });
@@ -450,7 +450,7 @@ export async function mark_entry_read_test() {
   let stored_entry = await conn.getEntry('id', id, false);
   assert(stored_entry);
   assert(stored_entry.readState === db.Entry.UNREAD);
-  await conn.mark_entry_read(id);
+  await conn.markEntryRead(id);
   stored_entry = undefined;
   stored_entry = await conn.getEntry('id', id, false);
   assert(stored_entry);
@@ -517,25 +517,25 @@ export async function query_entries_test() {
 
   // Query for all entries, assert that it finds the expected number of
   // entries. Also test an undefined query parameter here.
-  entries = await conn.query_entries();
+  entries = await conn.queryEntries();
   assert(entries.length === 20);
 
   // Query for all unread entries, assert that it finds the expected number of
   // entries
   query = {read_state: db.Entry.UNREAD};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length === 10);
 
   // Query for all read entries, assert that it finds the expected number of
   // entries
   query = {read_state: db.Entry.READ};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length === 10);
 
   // Query using reverse direction. Assert that entries are returned in the
   // expected order.
   query = {direction: 'DESC'};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   // Walk the array. When querying by DESC order, each entry's datePublished
   // value should be greater than or equal to the next one
   for (let i = 0; i < entries.length - 1; i++) {
@@ -547,52 +547,52 @@ export async function query_entries_test() {
   // Query using an offset and no limit. Here choose the smallest offset that
   // is not 0.
   query = {offset: 1};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length === 20 - query.offset);
 
   // Query using no limit and an offset one less than the max
   query = {offset: 19};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length === 20 - query.offset);
 
   // Query using no limit and an arbitrary offset
   query = {offset: 11};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length === 20 - query.offset);
 
   // Query using a limit greater than the number of existing entries
   query = {offset: 50000};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length === 0);
 
   // Query using a limit without an offset
   query = {limit: 10};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length <= 10);
 
   // Query using the smallest limit
   query = {limit: 1};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length <= 1);
 
   // Query using offset and the smallest limit
   query = {offset: 10, limit: 1};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length <= 1);
 
   // Query using limit greater than number of entries
   query = {limit: 9001};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length === 20);
 
   // Query using an arbitrary offset and an arbitrary limit
   query = {offset: 5, limit: 8};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length === 8);
 
   // Query using feed1
   query = {feed_id: 1};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length === 10);
   for (const entry of entries) {
     assert(entry.feed === 1);
@@ -600,7 +600,7 @@ export async function query_entries_test() {
 
   // Query using feed2
   query = {feed_id: 2};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length === 10);
   for (const entry of entries) {
     assert(entry.feed === 2);
@@ -608,7 +608,7 @@ export async function query_entries_test() {
 
   // Query using particular feed unread only
   query = {feed_id: 1, read_state: db.Entry.UNREAD};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
@@ -617,7 +617,7 @@ export async function query_entries_test() {
 
   // Feed 1 read only
   query = {feed_id: 1, read_state: db.Entry.READ};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
@@ -626,7 +626,7 @@ export async function query_entries_test() {
 
   // Feed 1, unread, offset 3
   query = {feed_id: 1, read_state: db.Entry.UNREAD, offset: 3};
-  entries = await conn.query_entries(query);
+  entries = await conn.queryEntries(query);
   assert(entries.length === 2);
   for (const entry of entries) {
     assert(entry.feed === 1);
@@ -649,7 +649,7 @@ export async function update_entry_test() {
   const entry_id = await conn.createEntry(entry);
   entry = await conn.getEntry('id', entry_id, false);
   entry.title = 'second-title';
-  await conn.update_entry(entry);
+  await conn.updateEntry(entry);
   entry = await conn.getEntry('id', entry_id, false);
   assert(entry.title === 'second-title');
   conn.close();
@@ -669,9 +669,9 @@ export async function update_feed_test() {
   let new_id = await conn.createFeed(feed);
   feed.id = new_id;
   feed.title = 'second';
-  await conn.update_feed(feed, true);
+  await conn.updateFeed(feed, true);
   feed = undefined;  // paranoia
-  feed = await conn.get_feed('id', new_id, false);
+  feed = await conn.getFeed('id', new_id, false);
   assert(feed.title = 'second');
   conn.close();
   await idb.remove(db_name);
@@ -684,7 +684,7 @@ export async function sanitize_entry_content_test() {
 
   const conn = new db.Db();
 
-  conn.sanitize_entry(entry);
+  conn.sanitizeEntry(entry);
   assert(entry.content === content);
 
   // Test that line breaks are not filtered from content. This was previously
@@ -693,7 +693,7 @@ export async function sanitize_entry_content_test() {
   // filter_unprintables does not
   content = '<html><head></head><body>hello\nworld</body></html>';
   entry.content = content;
-  conn.sanitize_entry(entry);
+  conn.sanitizeEntry(entry);
   let expected = '<html><head></head><body>hello\nworld</body></html>';
   assert(entry.content === expected, entry.content);
 }

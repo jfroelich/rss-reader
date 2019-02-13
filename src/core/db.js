@@ -558,10 +558,10 @@ export class Db {
     });
   }
 
-  get_entries(mode = 'all', offset, limit) {
+  getEntries(mode = 'all', offset, limit) {
     return new Promise((resolve, reject) => {
-      assert(this.is_valid_offset(offset));
-      assert(this.is_valid_limit(limit));
+      assert(this.isValidOffset(offset));
+      assert(this.isValidLimit(limit));
       const entries = [];
       let advanced = false;
 
@@ -604,7 +604,7 @@ export class Db {
     });
   }
 
-  get_feed_ids() {
+  getFeedIds() {
     return new Promise((resolve, reject) => {
       const txn = this.conn.transaction('feed');
       txn.onerror = event => reject(event.target.error);
@@ -614,7 +614,7 @@ export class Db {
     });
   }
 
-  get_feed(mode = 'id', value, key_only) {
+  getFeed(mode = 'id', value, key_only) {
     return new Promise((resolve, reject) => {
       // TODO: use value instanceof URL?
       assert(mode !== 'url' || (value && typeof value.href === 'string'));
@@ -653,7 +653,7 @@ export class Db {
     });
   }
 
-  get_feeds(mode = 'all', title_sort) {
+  getFeeds(mode = 'all', title_sort) {
     return new Promise((resolve, reject) => {
       const txn = this.conn.transaction('feed');
       const store = txn.objectStore('feed');
@@ -679,7 +679,7 @@ export class Db {
     });
   }
 
-  iterate_entries(handle_entry) {
+  iterateEntries(handle_entry) {
     return new Promise((resolve, reject) => {
       assert(typeof handle_entry === 'function');
       const txn = this.conn.transaction('entry', 'readwrite');
@@ -705,7 +705,7 @@ export class Db {
     });
   }
 
-  mark_entry_read(id) {
+  markEntryRead(id) {
     return new Promise((resolve, reject) => {
       assert(Entry.isValidId(id));
       const txn = this.conn.transaction('entry', 'readwrite');
@@ -755,13 +755,13 @@ export class Db {
     });
   }
 
-  query_entries(query = {}) {
+  queryEntries(query = {}) {
     return new Promise((resolve, reject) => {
       assert(typeof query === 'object');
       assert(query.feed_id === undefined || Feed.isValidId(query.feed_id));
-      assert(this.is_valid_read_state(query.read_state));
-      assert(this.is_valid_offset(query.offset));
-      assert(this.is_valid_direction(query.direction));
+      assert(this.isValidReadState(query.read_state));
+      assert(this.isValidOffset(query.offset));
+      assert(this.isValidDirection(query.direction));
 
       const offset = query.offset === undefined ? 0 : query.offset;
       const limit = query.limit === undefined ? 0 : query.limit;
@@ -771,7 +771,7 @@ export class Db {
       const txn = this.conn.transaction('entry');
       txn.onerror = event => reject(event.target.error);
       const store = txn.objectStore('entry');
-      const request = this.query_entries_build_request(store, query, direction);
+      const request = this.queryEntriesBuildRequest(store, query, direction);
 
       // Setup a shared state across all cursor event handlers
       const cursor_state = {};
@@ -833,7 +833,7 @@ export class Db {
   }
 
   // Compose an IDBRequest object based on query values
-  query_entries_build_request(store, query, direction) {
+  queryEntriesBuildRequest(store, query, direction) {
     let request;
     // Several branches use these same two variables
     const min_date = new Date(1);
@@ -885,11 +885,11 @@ export class Db {
     return request;
   }
 
-  is_valid_direction(dir) {
+  isValidDirection(dir) {
     return dir === undefined || dir === 'ASC' || dir === 'DESC';
   }
 
-  update_entry(entry) {
+  updateEntry(entry) {
     return new Promise((resolve, reject) => {
       assert(is_entry(entry));
       assert(Entry.isValidId(entry.id));
@@ -905,7 +905,7 @@ export class Db {
     });
   }
 
-  update_feed(feed, overwrite) {
+  updateFeed(feed, overwrite) {
     return new Promise((resolve, reject) => {
       // If overwriting, the new feed must be valid. If partial update, the new
       // feed is just a bag of properties, but it at least must be an object.
@@ -1035,13 +1035,13 @@ export class Db {
     });
   }
 
-  validate_entry(entry) {
+  validateEntry(entry) {
     assert(is_entry(entry));
     const now = new Date();
 
     const vassert = this.vassert;
-    const is_valid_date = this.is_valid_date;
-    const is_date_lte = this.is_date_lte;
+    const isValidDate = this.isValidDate;
+    const isDateLTE = this.isDateLTE;
 
     vassert(entry.id === undefined || Entry.isValidId(entry.id));
     vassert(entry.feed === undefined || Feed.isValidId(entry.feed));
@@ -1056,25 +1056,25 @@ export class Db {
     vassert(entry.author === undefined || typeof entry.author === 'string');
     vassert(entry.content === undefined || typeof entry.content === 'string');
 
-    vassert(is_valid_date(entry.dateCreated));
-    vassert(is_date_lte(entry.dateCreated, now));
-    vassert(is_valid_date(entry.dateUpdated));
-    vassert(is_date_lte(entry.dateUpdated, now));
-    vassert(is_date_lte(entry.dateCreated, entry.dateUpdated));
-    vassert(is_valid_date(entry.datePublished));
-    vassert(is_date_lte(entry.datePublished, now));
-    this.validate_enclosure(entry.enclosure);
+    vassert(isValidDate(entry.dateCreated));
+    vassert(isDateLTE(entry.dateCreated, now));
+    vassert(isValidDate(entry.dateUpdated));
+    vassert(isDateLTE(entry.dateUpdated, now));
+    vassert(isDateLTE(entry.dateCreated, entry.dateUpdated));
+    vassert(isValidDate(entry.datePublished));
+    vassert(isDateLTE(entry.datePublished, now));
+    this.validateEnclosure(entry.enclosure);
   }
 
-  is_valid_date(value) {
+  isValidDate(value) {
     return value === undefined || !isNaN(value.getTime());
   }
 
-  is_date_lte(date1, date2) {
+  isDateLTE(date1, date2) {
     return date1 === undefined || date2 === undefined || date1 <= date2;
   }
 
-  validate_enclosure(enc) {
+  validateEnclosure(enc) {
     const vassert = this.vassert;
 
     if (enc === undefined || enc === null) {
@@ -1093,13 +1093,13 @@ export class Db {
         typeof enc.type === 'string');
   }
 
-  validate_feed(feed) {
+  validateFeed(feed) {
     assert(is_feed(feed));
     const now = new Date();
 
     const vassert = this.vassert;
-    const is_valid_date = this.is_valid_date;
-    const is_date_lte = this.is_date_lte;
+    const isValidDate = this.isValidDate;
+    const isDateLTE = this.isDateLTE;
 
     vassert(feed.id === undefined || Feed.isValidId(feed.id));
     vassert(
@@ -1117,23 +1117,23 @@ export class Db {
         feed.deactivationReasonText === undefined ||
         typeof feed.deactivationReasonText === 'string');
 
-    vassert(is_valid_date(feed.deactivateDate));
-    vassert(is_date_lte(feed.deactivateDate, now));
-    vassert(is_valid_date(feed.dateCreated));
-    vassert(is_date_lte(feed.dateCreated, now));
-    vassert(is_date_lte(feed.dateCreated, feed.deactivateDate));
-    vassert(is_valid_date(feed.dateUpdated));
-    vassert(is_date_lte(feed.dateUpdated, now));
-    vassert(is_date_lte(feed.dateCreated, feed.dateUpdated));
-    vassert(is_valid_date(feed.datePublished));
-    vassert(is_date_lte(feed.datePublished, now));
-    vassert(is_valid_date(feed.dateLastModifed));
-    vassert(is_date_lte(feed.dateLastModifed, now));
-    vassert(is_valid_date(feed.dateFetched));
-    vassert(is_date_lte(feed.dateFetched, now));
+    vassert(isValidDate(feed.deactivateDate));
+    vassert(isDateLTE(feed.deactivateDate, now));
+    vassert(isValidDate(feed.dateCreated));
+    vassert(isDateLTE(feed.dateCreated, now));
+    vassert(isDateLTE(feed.dateCreated, feed.deactivateDate));
+    vassert(isValidDate(feed.dateUpdated));
+    vassert(isDateLTE(feed.dateUpdated, now));
+    vassert(isDateLTE(feed.dateCreated, feed.dateUpdated));
+    vassert(isValidDate(feed.datePublished));
+    vassert(isDateLTE(feed.datePublished, now));
+    vassert(isValidDate(feed.dateLastModifed));
+    vassert(isDateLTE(feed.dateLastModifed, now));
+    vassert(isValidDate(feed.dateFetched));
+    vassert(isDateLTE(feed.dateFetched, now));
   }
 
-  sanitize_entry(
+  sanitizeEntry(
       entry, author_max_length = 200, title_max_length = 1000,
       content_max_length = 50000) {
     assert(is_entry(entry));
@@ -1168,7 +1168,7 @@ export class Db {
     }
   }
 
-  sanitize_feed(feed, title_max_len, desc_max_len) {
+  sanitizeFeed(feed, title_max_len, desc_max_len) {
     assert(is_feed(feed));
 
     if (isNaN(title_max_len)) {
@@ -1209,16 +1209,16 @@ export class Db {
     }
   }
 
-  is_valid_read_state(state) {
+  isValidReadState(state) {
     return state === undefined || state === Entry.READ || state === Entry.UNREAD
   }
 
-  is_valid_offset(offset) {
+  isValidOffset(offset) {
     return offset === null || offset === undefined || offset === NaN ||
         (Number.isInteger(offset) && offset >= 0);
   }
 
-  is_valid_limit(limit) {
+  isValidLimit(limit) {
     return limit === null || limit === undefined || limit === NaN ||
         (Number.isInteger(limit) && limit >= 0);
   }

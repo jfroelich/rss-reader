@@ -1,7 +1,7 @@
-import {assert} from '/src/lib/assert.js';
 import * as cdb from '/src/core/cdb.js';
-import * as idb from '/src/lib/idb.js';
 import * as ops from '/src/core/ops.js';
+import {assert} from '/src/lib/assert.js';
+import * as idb from '/src/lib/idb.js';
 
 export async function activate_feed_test() {
   const db_name = 'ops-activate-feed-test';
@@ -42,7 +42,7 @@ export async function activate_feed_test() {
   const stored_feed = await cdb.get_feed(session, 'id', id, false);
 
   // Activation should not have somehow destroyed type info. For performance
-  // reasons this check is NOT implicit in the db.get_feed call, so it is not
+  // reasons this check is NOT implicit in the get_feed call, so it is not
   // redundant or unreasonable to check here.
   assert(cdb.is_feed(stored_feed));
 
