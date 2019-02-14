@@ -252,12 +252,17 @@ function feed_list_append_feed(feed) {
 }
 
 async function feed_list_item_onclick(event) {
+  // TODO: if this handler is bound to the feed list and not individual items,
+  // then it would be more appropriate and clear to rename the function to
+  // feed_list_onclick, and this would in turn provided clarity regarding the
+  // use of currentTarget instead of target here.
   const feed_list_item_element = event.currentTarget;
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-  const session = await cdb.open();
-  const feed = await cdb.get_feed(session, 'id', feed_id, false);
+  const session = new cdb.CDB();
+  await session.open();
+  const feed = await session.getFeed('id', feed_id, false);
   session.close();
 
   const title_element = document.getElementById('details-title');
@@ -382,13 +387,15 @@ async function after_subscribe_poll_feed_async(feed) {
 }
 
 async function feed_list_init() {
-  const session = await cdb.open();
-  const feeds = await cdb.get_feeds(session, 'all', true);
+  const session = new cdb.CDB();
+  await session.open();
+  const feeds = await session.getFeeds('all', true);
   session.close();
 
   for (const feed of feeds) {
     // TODO: I think this is actually a concern of feed_list_append_feed? I do
     // not think this needs to be done here, but not sure
+    // TODO: use more opaque Feed.getURLString call
     feed.title = feed.title || feed.urls[feed.urls.length - 1];
     feed_list_append_feed(feed);
   }

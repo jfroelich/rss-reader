@@ -28,10 +28,11 @@ export async function alarm_listener(alarm) {
   tls.write_string('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
-    let max_age;
-    const session = await cdb.open();
-    await cdb.archive_entries(session, max_age);
+    const session = new cdb.CDB();
+    await session.open();
+    await session.archiveEntries(/* max_age */ undefined);
     session.close();
+
   } else if (alarm.name === 'poll') {
     await handle_alarm_poll();
   } else if (alarm.name === 'refresh-feed-icons') {

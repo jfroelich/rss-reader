@@ -557,8 +557,8 @@ export class Db {
 
   getEntries(mode = 'all', offset, limit) {
     return new Promise((resolve, reject) => {
-      assert(this.isValidOffset(offset));
-      assert(this.isValidLimit(limit));
+      assert(Db.isValidOffset(offset));
+      assert(Db.isValidLimit(limit));
       const entries = [];
       let advanced = false;
 
@@ -757,7 +757,7 @@ export class Db {
       assert(typeof query === 'object');
       assert(query.feed_id === undefined || Feed.isValidId(query.feed_id));
       assert(this.isValidReadState(query.read_state));
-      assert(this.isValidOffset(query.offset));
+      assert(Db.isValidOffset(query.offset));
       assert(this.isValidDirection(query.direction));
 
       const offset = query.offset === undefined ? 0 : query.offset;
@@ -1032,13 +1032,13 @@ export class Db {
     });
   }
 
-  validateEntry(entry) {
+  static validateEntry(entry) {
     assert(is_entry(entry));
     const now = new Date();
 
-    const vassert = this.vassert;
-    const isValidDate = this.isValidDate;
-    const isDateLTE = this.isDateLTE;
+    const vassert = Db.vassert;
+    const isValidDate = Db.isValidDate;
+    const isDateLTE = Db.isDateLTE;
 
     vassert(entry.id === undefined || Entry.isValidId(entry.id));
     vassert(entry.feed === undefined || Feed.isValidId(entry.feed));
@@ -1060,19 +1060,19 @@ export class Db {
     vassert(isDateLTE(entry.dateCreated, entry.dateUpdated));
     vassert(isValidDate(entry.datePublished));
     vassert(isDateLTE(entry.datePublished, now));
-    this.validateEnclosure(entry.enclosure);
+    Db.validateEnclosure(entry.enclosure);
   }
 
-  isValidDate(value) {
+  static isValidDate(value) {
     return value === undefined || !isNaN(value.getTime());
   }
 
-  isDateLTE(date1, date2) {
+  static isDateLTE(date1, date2) {
     return date1 === undefined || date2 === undefined || date1 <= date2;
   }
 
-  validateEnclosure(enc) {
-    const vassert = this.vassert;
+  static validateEnclosure(enc) {
+    const vassert = Db.vassert;
 
     if (enc === undefined || enc === null) {
       return;
@@ -1090,13 +1090,13 @@ export class Db {
         typeof enc.type === 'string');
   }
 
-  validateFeed(feed) {
+  static validateFeed(feed) {
     assert(is_feed(feed));
     const now = new Date();
 
-    const vassert = this.vassert;
-    const isValidDate = this.isValidDate;
-    const isDateLTE = this.isDateLTE;
+    const vassert = Db.vassert;
+    const isValidDate = Db.isValidDate;
+    const isDateLTE = Db.isDateLTE;
 
     vassert(feed.id === undefined || Feed.isValidId(feed.id));
     vassert(
@@ -1130,7 +1130,7 @@ export class Db {
     vassert(isDateLTE(feed.dateFetched, now));
   }
 
-  sanitizeEntry(
+  static sanitizeEntry(
       entry, author_max_length = 200, title_max_length = 1000,
       content_max_length = 50000) {
     assert(is_entry(entry));
@@ -1165,7 +1165,7 @@ export class Db {
     }
   }
 
-  sanitizeFeed(feed, title_max_len, desc_max_len) {
+  static sanitizeFeed(feed, title_max_len, desc_max_len) {
     assert(is_feed(feed));
 
     if (isNaN(title_max_len)) {
@@ -1200,22 +1200,22 @@ export class Db {
 
   // A utility function for throwing a custom type of error, in the style of an
   // assert call.
-  vassert(condition, message) {
+  static vassert(condition, message) {
     if (!condition) {
       throw new ValidationError(message);
     }
   }
 
-  isValidReadState(state) {
+  static isValidReadState(state) {
     return state === undefined || state === Entry.READ || state === Entry.UNREAD
   }
 
-  isValidOffset(offset) {
+  static isValidOffset(offset) {
     return offset === null || offset === undefined || offset === NaN ||
         (Number.isInteger(offset) && offset >= 0);
   }
 
-  isValidLimit(limit) {
+  static isValidLimit(limit) {
     return limit === null || limit === undefined || limit === NaN ||
         (Number.isInteger(limit) && limit >= 0);
   }

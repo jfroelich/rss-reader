@@ -40,8 +40,13 @@ export class PollOperation {
   }
 
   // Returns a promise that resolves to an array of feeds
+  // TODO: probably should inline, this is too simple
   get_pollable_feeds() {
-    return cdb.get_feeds(this.session, 'active', /* sorted */ false);
+    // TODO: switch to proper use of CDB instance
+    const interimSession = new cdb.CDB();
+    interimSession.db.conn = this.session.conn;
+    interimSession.channel = this.session.channel;
+    return interimSession.getFeeds('active', false);
   }
 
   async run() {
@@ -51,9 +56,9 @@ export class PollOperation {
         const now = new Date();
         const stamp_date = new Date(stamp);
         const millis_elapsed = now - stamp_date;
-        assert(elapsed >= 0);
-        if (elapsed < this.recency_period) {
-          console.debug('Polled too recently', elapsed);
+        assert(millis_elapsed >= 0);
+        if (millis_elapsed < this.recency_period) {
+          console.debug('Polled too recently', millis_elapsed);
           return;
         }
       }
@@ -125,7 +130,13 @@ export class PollOperation {
       }
 
       console.debug('Updating feed on fetch error', feed);
-      await cdb.update_feed(this.session, feed, true);
+
+      // TODO: switch to proper use of CDB instance
+      const interimSession = new cdb.CDB();
+      interimSession.db.conn = this.session.conn;
+      interimSession.channel = this.session.channel;
+
+      await interimSession.updateFeed(feed, true);
       return 0;
     }
 
@@ -142,9 +153,15 @@ export class PollOperation {
       delete feed.errorCount;
     }
 
-    cdb.validate_feed(feed);
-    cdb.sanitize_feed(feed);
-    await cdb.update_feed(this.session, feed, true);
+    cdb.CDB.validateFeed(feed);
+    cdb.CDB.sanitizeFeed(feed);
+
+    // TODO: switch to proper use of CDB instance
+    const interimSession = new cdb.CDB();
+    interimSession.db.conn = this.session.conn;
+    interimSession.channel = this.session.channel;
+
+    await interimSession.updateFeed(feed, true);
 
     // Now poll the feed's entries
     let entries = fetch_result.entries.map(this.coerce_entry);
@@ -194,9 +211,13 @@ export class PollOperation {
             new URL(cdb.Entry.prototype.getURLString.call(entry)),
             this.rewrite_rules));
 
-    let existing = await cdb.get_entry(
-        this.session, 'url',
-        new URL(cdb.Entry.prototype.getURLString.call(entry)), true);
+    // TODO: finish transition to proper use of CDB instance
+    const interimSession = new cdb.CDB();
+    interimSession.db.conn = this.session.conn;
+    interimSession.channel = this.session.channel;
+
+    let existing = await interimSession.getEntry(
+        'url', new URL(cdb.Entry.prototype.getURLString.call(entry)), true);
     if (existing) {
       return 0;
     }
@@ -237,7 +258,7 @@ export class PollOperation {
         cdb.Entry.prototype.appendURL.call(
             entry, rewrite_url(response_url, this.rewrite_rules));
         url = new URL(cdb.Entry.prototype.getURLString.call(entry));
-        let existing = await cdb.get_entry(this.session, 'url', url, true);
+        let existing = await interimSession.getEntry('url', url, true);
         if (existing) {
           return 0;
         }
@@ -320,8 +341,8 @@ export class PollOperation {
     assert(doc.documentElement);
 
     entry.content = doc.documentElement.outerHTML;
-    cdb.sanitize_entry(entry);
-    cdb.validate_entry(entry);
+    cdb.CDB.sanitizeEntry(entry);
+    cdb.CDB.validateEntry(entry);
 
     // We do not need to await but I am for now due to what seems like an
     // unrelated error but may be related, the await rules out this having
@@ -329,9 +350,15 @@ export class PollOperation {
     return await this.create_entry(entry);
   }
 
+  // TODO: inline this helper, it no longer provides much value
   create_entry(entry) {
     assert(cdb.is_entry(entry));
-    return cdb.create_entry(this.session, entry);
+
+    // TODO: finish transition to CDB object
+    const session = new cdb.CDB();
+    session.db.conn = this.session.conn;
+    session.channel = this.session.channel;
+    return session.createEntry(entry);
   }
 
   fetch_feed(feed) {

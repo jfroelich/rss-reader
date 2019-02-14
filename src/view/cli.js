@@ -5,6 +5,8 @@ import * as favicon from '/src/core/favicon.js';
 import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';
 
+// TODO: add and implement cli_archive_entries
+
 async function cli_subscribe(url_string, fetch_entries = true) {
   const url = new URL(url_string);
   const proms = [cdb.open(), favicon.open()];

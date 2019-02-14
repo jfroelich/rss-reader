@@ -684,7 +684,7 @@ export async function sanitize_entry_content_test() {
 
   const conn = new db.Db();
 
-  conn.sanitizeEntry(entry);
+  Db.sanitizeEntry(entry);
   assert(entry.content === content);
 
   // Test that line breaks are not filtered from content. This was previously
@@ -693,7 +693,7 @@ export async function sanitize_entry_content_test() {
   // filter_unprintables does not
   content = '<html><head></head><body>hello\nworld</body></html>';
   entry.content = content;
-  conn.sanitizeEntry(entry);
+  Db.sanitizeEntry(entry);
   let expected = '<html><head></head><body>hello\nworld</body></html>';
   assert(entry.content === expected, entry.content);
 }

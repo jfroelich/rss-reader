@@ -1,4 +1,5 @@
 import * as db from '/src/core/db.js';
+import {assert} from '/src/lib/assert.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 
 // clang-format off
@@ -13,7 +14,7 @@ export {
 } from '/src/core/db.js';
 // clang-format on
 
-class CDB {
+export class CDB {
   constructor() {
     this.db = new db.Db();
     this.channel = undefined;
@@ -21,6 +22,7 @@ class CDB {
   }
 
   async open() {
+    assert(typeof this.channel_name === 'string');
     await this.db.open();
     this.channel = new BroadcastChannel(this.channel_name);
   }
@@ -33,212 +35,126 @@ class CDB {
 
     this.db.close();
   }
-}
 
-// Temporary helpers due to db.js refactor as object
-export function validate_feed(feed) {
-  const conn = new db.Db();
-  return conn.validateFeed(feed);
-}
-
-export function validate_entry(entry) {
-  const conn = new db.Db();
-  return conn.validateEntry(entry);
-}
-
-export function sanitize_feed(feed) {
-  const conn = new db.Db();
-  return conn.sanitizeFeed(feed);
-}
-
-export function sanitize_entry(entry) {
-  const conn = new db.Db();
-  return conn.sanitizeEntry(entry);
-}
-
-
-class CDBSession {
-  constructor() {
-    this.conn = undefined;
-    this.channel = undefined;
+  static validateFeed(feed) {
+    return db.Db.validateFeed(entry);
   }
 
-  close() {
-    if (this.channel) {
-      this.channel.close();
+  static validateEntry(entry) {
+    return db.Db.validateEntry(entry);
+  }
+
+  static sanitizeFeed(feed) {
+    return db.Db.sanitizeFeed(feed);
+  }
+
+  static sanitizeEntry(entry) {
+    return db.Db.sanitizeEntry(entry);
+  }
+
+  async archiveEntries(max_age) {
+    const ids = await this.db.archiveEntries(max_age);
+    for (const id of ids) {
+      this.channel.postMessage({type: 'entry-archived', id: id});
     }
+  }
 
-    if (this.conn) {
-      this.conn.close();
+  countUnreadEntriesByFeed(id) {
+    return this.db.countUnreadEntriesByFeed(id);
+  }
+
+  countUnreadEntries() {
+    return this.db.countUnreadEntries();
+  }
+
+  async createEntry(entry) {
+    const id = await this.db.createEntry(entry);
+    this.channel.postMessage({type: 'entry-created', id: id});
+    return id;
+  }
+
+  async createFeed(feed) {
+    const id = await this.db.createFeed(feed);
+    this.channel.postMessage({type: 'feed-created', id: id});
+    return id;
+  }
+
+  async createFeeds(feeds) {
+    const ids = await this.db.createFeeds(feeds);
+    for (const id of ids) {
+      this.channel.postMessage({type: 'feed-created', id: id});
     }
-
-    // Nullify the props to force errors in places that use props incorrectly
-    // Set to undefined instead of delete to maintain v8 object shape
-    this.channel = undefined;
-    this.conn = undefined;
+    return ids;
   }
-}
 
-export async function open(
-    name, version, timeout = INDEFINITE, channel_name = 'reader') {
-  const session = new CDBSession();
-  session.channel = new BroadcastChannel(channel_name);
-
-  // This funkiness is because I am refactoring db alone, before revising
-  // cdb as well
-  const conn = new db.Db();
-  conn.name = name || 'reader';
-  conn.version = version || 29;
-  conn.timeout = timeout;
-  await conn.open();
-  session.conn = conn.conn;
-
-  return session;
-}
-
-export async function archive_entries(session, max_age) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
-
-  const ids = await conn.archiveEntries(max_age);
-  for (const id of ids) {
-    session.channel.postMessage({type: 'entry-archived', id: id});
+  async deleteEntry(id) {
+    await this.db.deleteEntry(id);
+    this.channel.postMessage({type: 'entry-deleted', id: id});
   }
-}
 
-export function count_unread_entries_by_feed(session, id) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
-  return conn.countUnreadEntriesByFeed(id);
-}
+  async deleteFeed(feed_id, reason) {
+    const eids = await this.db.deleteFeed(feed_id);
+    this.channel.postMessage(
+        {type: 'feed-deleted', id: feed_id, reason: reason});
 
-export function count_unread_entries(session) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
-  return conn.countUnreadEntries();
-}
-
-export async function create_entry(session, entry) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
-
-  const id = await conn.createEntry(entry);
-  session.channel.postMessage({type: 'entry-created', id: id});
-  return id;
-}
-
-export async function create_feed(session, feed) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
-
-  const id = await conn.createFeed(feed);
-  session.channel.postMessage({type: 'feed-created', id: id});
-  return id;
-}
-
-export async function create_feeds(session, feeds) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
-
-  const ids = await conn.createFeeds(feeds);
-  for (const id of ids) {
-    session.channel.postMessage({type: 'feed-created', id: id});
+    for (const id of eids) {
+      this.channel.postMessage(
+          {type: 'entry-deleted', id: id, reason: reason, feed_id: feed_id});
+    }
   }
-  return ids;
-}
 
-export async function delete_entry(session, id, reason) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
-
-  await conn.deleteEntry(id);
-  session.channel.postMessage({type: 'entry-deleted', id: id, reason: reason});
-}
-
-export async function delete_feed(session, feed_id, reason) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
-
-  const eids = await conn.deleteFeed(feed_id);
-  session.channel.postMessage(
-      {type: 'feed-deleted', id: feed_id, reason: reason});
-
-  for (const id of eids) {
-    session.channel.postMessage(
-        {type: 'entry-deleted', id: id, reason: reason, feed_id: feed_id});
+  async getEntry(mode, value, key_only) {
+    return this.db.getEntry(mode, value, key_only);
   }
-}
 
-export function get_entry(session, mode, value, key_only) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
+  getEntries(mode, offset, limit) {
+    return this.db.getEntries(mode, offset, limit);
+  }
 
-  return conn.getEntry(mode, value, key_only);
-}
+  getFeedIds() {
+    return this.db.getFeedIds();
+  }
 
-export function get_entries(session, mode, offset, limit) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
+  getFeed(mode, value, key_only) {
+    return this.db.getFeed(mode, value, key_only);
+  }
 
-  return conn.getEntries(mode, offset, limit);
-}
+  getFeeds(mode, title_sort) {
+    return this.db.getFeeds(mode, title_sort);
+  }
 
-export function get_feed_ids(session) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
+  iterateEntries(handle_entry) {
+    return this.db.iterateEntries(handle_entry);
+  }
 
-  return conn.getFeedIds();
-}
+  async markEntryRead(id) {
+    await this.db.markEntryRead(id);
+    this.channel.postMessage({type: 'entry-read', id: id});
+  }
 
-export function get_feed(session, mode, value, key_only) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
+  queryEntries(query) {
+    return this.db.queryEntries(query);
+  }
 
-  return conn.getFeed(mode, value, key_only);
-}
+  async updateEntry(entry) {
+    await this.db.updateEntry(entry);
+    this.channel.postMessage({type: 'entry-updated', id: entry.id});
+  }
 
-export function get_feeds(session, mode, title_sort) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
+  async updateFeed(feed, overwrite) {
+    await this.db.updateFeed(feed, overwrite);
 
-  return conn.getFeeds(mode, title_sort);
-}
-
-export function iterate_entries(session, handle_entry) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
-
-  return conn.iterateEntries(handle_entry);
-}
-
-export async function mark_entry_read(session, id) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
-
-  await conn.markEntryRead(id);
-  session.channel.postMessage({type: 'entry-read', id: id});
-}
-
-export function query_entries(session, query) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
-
-  return conn.queryEntries(query);
-}
-
-export async function update_entry(session, entry) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
-
-  await conn.updateEntry(entry);
-  session.channel.postMessage({type: 'entry-updated', id: entry.id});
-}
-
-export async function update_feed(session, feed, overwrite) {
-  const conn = new db.Db();
-  conn.conn = session.conn;
-
-  await conn.updateFeed(feed, overwrite);
-  session.channel.postMessage(
-      {type: 'feed-updated', id: feed.id, feed: overwrite ? undefined : feed});
+    // TODO: do not pass the entire giant feed object through the channel.
+    // Expose only those properties needed by event consumers. Also, pass those
+    // properties as properties of the event itself, not a nested feed object,
+    // because callers should only expect a basic event, not a full fledged
+    // feed object. Also, review why it is even needed. If the only things
+    // needed are things like the cleaned feed title, then maybe just expose
+    // title.
+    this.channel.postMessage({
+      type: 'feed-updated',
+      id: feed.id,
+      feed: overwrite ? undefined : feed
+    });
+  }
 }

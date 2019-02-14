@@ -41,7 +41,10 @@ async function show_next_slide() {
     return;
   }
 
-  const session = await cdb.open();
+  // const session = await cdb.open();
+  const session = new cdb.CDB();
+  await session.open();
+
   await mark_slide_read_start(session, current_slide);
 
   const slide_unread_count = count_unread_slides();
@@ -54,7 +57,7 @@ async function show_next_slide() {
     }
 
     const mode = 'viewable';
-    entries = await cdb.get_entries(session, mode, slide_unread_count, limit);
+    entries = await session.getEntries(mode, slide_unread_count, limit);
   }
   session.close();
 
@@ -297,7 +300,17 @@ async function mark_slide_read_start(session, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  await cdb.mark_entry_read(session, entry_id);
+  // TODO: switch to proper use of CDB instance
+  const interimSession = new cdb.CDB();
+  interimSession.db.conn = session.conn;
+  interimSession.channel = session.channel;
+
+  // TODO: if this is the sole await call, we could just return the promise
+  // and have this not be an async qualified function? I am unclear on why
+  // this was implemented this way. Perhaps due to some paranoia about trapped
+  // exceptions back when there was some kind of bug?
+
+  await interimSession.markEntryRead(entry_id);
 }
 
 function remove_slide(slide) {
@@ -696,9 +709,10 @@ async function onmessage(event) {
     // logic.
 
     let limit = undefined;
-    const session = await cdb.open();
-    const entries =
-        await cdb.get_entries(session, 'viewable', unread_count, limit);
+    // const session = await cdb.open();
+    const session = new cdb.CDB();
+    await session.open();
+    const entries = await session.getEntries('viewable', unread_count, limit);
     session.close();
 
     for (const entry of entries) {
@@ -1121,9 +1135,11 @@ function hide_splash() {
 async function load_view() {
   show_splash();
 
-  const session = await cdb.open();
-  const get_entries_promise = cdb.get_entries(session, 'viewable', 0, 6);
-  const get_feeds_promise = cdb.get_feeds(session, 'all', true);
+  const session = new cdb.CDB();
+  await session.open();
+
+  const get_entries_promise = session.getEntries('viewable', 0, 6);
+  const get_feeds_promise = session.getFeeds('all', true);
   session.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)

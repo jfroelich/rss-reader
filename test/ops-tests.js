@@ -6,7 +6,10 @@ import * as idb from '/src/lib/idb.js';
 export async function activate_feed_test() {
   const db_name = 'ops-activate-feed-test';
   await idb.remove(db_name);
-  const session = await cdb.open(db_name);
+
+  const session = new cdb.CDB();
+  session.db.name = db_name;
+  await session.open();
 
   // Setup a fake channel for recording messages for later assertions. Do not
   // immediately attach it to the session because we want to ignore certain
@@ -19,7 +22,7 @@ export async function activate_feed_test() {
   const feed = new cdb.Feed();
   feed.active = false;
   feed.appendURL(new URL('a://b.c'));
-  const id = await cdb.create_feed(session, feed);
+  const id = await session.createFeed(feed);
 
   // Now attach the channel. We wait until now to skip over create-feed
   session.channel = channel;
@@ -39,10 +42,10 @@ export async function activate_feed_test() {
   assert(messages[0].type === 'feed-updated');
 
   // Read the feed back out of the database to investigate
-  const stored_feed = await cdb.get_feed(session, 'id', id, false);
+  const stored_feed = await session.getFeed('id', id, false);
 
   // Activation should not have somehow destroyed type info. For performance
-  // reasons this check is NOT implicit in the get_feed call, so it is not
+  // reasons this check is NOT implicit in the getFeed call, so it is not
   // redundant or unreasonable to check here.
   assert(cdb.is_feed(stored_feed));
 
@@ -88,12 +91,16 @@ export async function activate_feed_test() {
 export async function deactivate_feed_test() {
   const db_name = 'ops-deactivate-feed-test';
   await idb.remove(db_name);
-  const session = await cdb.open(db_name);
+
+  const session = new cdb.CDB();
+  session.db.name = db_name;
+  await session.open();
+
   const feed = new cdb.Feed();
   const url = new URL('a://b.c');
   feed.appendURL(url);
   feed.active = true;
-  const feed_id = await cdb.create_feed(session, feed);
+  const feed_id = await session.createFeed(feed);
   session.channel.close();
 
   const messages = [];
@@ -102,7 +109,7 @@ export async function deactivate_feed_test() {
   channel.close = function() {};
   session.channel = channel;
   await ops.deactivate_feed(session, feed_id, 'testing');
-  const stored_feed = await cdb.get_feed(session, 'id', feed_id, false);
+  const stored_feed = await session.getFeed('id', feed_id, false);
   assert(stored_feed);
   assert(cdb.is_feed(stored_feed));
   assert(stored_feed.active === false);
