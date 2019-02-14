@@ -2,6 +2,10 @@
 // should be proxied through ops.js poll-feeds call, instead of directly
 // interacting with this module
 
+// TODO: when transitioning to object-oriented implementation, I did not bother
+// to rename the functions, need to switch to camel-case as that is the OO
+// convention. I noticed this during the CDB refactor so wait till that is done
+
 import * as cdb from '/src/core/cdb.js';
 import * as dom_filters from '/src/core/dom-filters.js';
 import * as dom_utils from '/src/core/dom-utils.js';
@@ -39,14 +43,9 @@ export class PollOperation {
     ];
   }
 
-  // Returns a promise that resolves to an array of feeds
-  // TODO: probably should inline, this is too simple
+  // TODO: inline
   get_pollable_feeds() {
-    // TODO: switch to proper use of CDB instance
-    const interimSession = new cdb.CDB();
-    interimSession.db.conn = this.session.conn;
-    interimSession.channel = this.session.channel;
-    return interimSession.getFeeds('active', false);
+    return this.session.getFeeds('active', false);
   }
 
   async run() {
@@ -130,13 +129,7 @@ export class PollOperation {
       }
 
       console.debug('Updating feed on fetch error', feed);
-
-      // TODO: switch to proper use of CDB instance
-      const interimSession = new cdb.CDB();
-      interimSession.db.conn = this.session.conn;
-      interimSession.channel = this.session.channel;
-
-      await interimSession.updateFeed(feed, true);
+      await this.session.updateFeed(feed, true);
       return 0;
     }
 
@@ -155,13 +148,7 @@ export class PollOperation {
 
     cdb.CDB.validateFeed(feed);
     cdb.CDB.sanitizeFeed(feed);
-
-    // TODO: switch to proper use of CDB instance
-    const interimSession = new cdb.CDB();
-    interimSession.db.conn = this.session.conn;
-    interimSession.channel = this.session.channel;
-
-    await interimSession.updateFeed(feed, true);
+    await this.session.updateFeed(feed, true);
 
     // Now poll the feed's entries
     let entries = fetch_result.entries.map(this.coerce_entry);
@@ -210,13 +197,7 @@ export class PollOperation {
         rewrite_url(
             new URL(cdb.Entry.prototype.getURLString.call(entry)),
             this.rewrite_rules));
-
-    // TODO: finish transition to proper use of CDB instance
-    const interimSession = new cdb.CDB();
-    interimSession.db.conn = this.session.conn;
-    interimSession.channel = this.session.channel;
-
-    let existing = await interimSession.getEntry(
+    let existing = await this.session.getEntry(
         'url', new URL(cdb.Entry.prototype.getURLString.call(entry)), true);
     if (existing) {
       return 0;
@@ -258,7 +239,7 @@ export class PollOperation {
         cdb.Entry.prototype.appendURL.call(
             entry, rewrite_url(response_url, this.rewrite_rules));
         url = new URL(cdb.Entry.prototype.getURLString.call(entry));
-        let existing = await interimSession.getEntry('url', url, true);
+        let existing = await this.session.getEntry('url', url, true);
         if (existing) {
           return 0;
         }
@@ -326,8 +307,6 @@ export class PollOperation {
 
     filter_options.table_scan_max_rows = tls.read_int('table_scan_max_rows');
 
-    // NOTE: may be NaN if not set or invalid value, only set if valid, this
-    // was previously a bug
     const config_emph_max_len = tls.read_int('emphasis_max_length');
     if (!isNaN(config_emph_max_len)) {
       filter_options.emphasis_max_length = config_emph_max_len;
@@ -335,9 +314,7 @@ export class PollOperation {
 
     filter_options.is_allowed_request = net.is_allowed_request;
 
-    const composite_promise =
-        dom_filters.composite_document_filter(doc, filter_options);
-    await composite_promise;
+    await dom_filters.composite_document_filter(doc, filter_options);
     assert(doc.documentElement);
 
     entry.content = doc.documentElement.outerHTML;
@@ -353,12 +330,7 @@ export class PollOperation {
   // TODO: inline this helper, it no longer provides much value
   create_entry(entry) {
     assert(cdb.is_entry(entry));
-
-    // TODO: finish transition to CDB object
-    const session = new cdb.CDB();
-    session.db.conn = this.session.conn;
-    session.channel = this.session.channel;
-    return session.createEntry(entry);
+    return this.session.createEntry(entry);
   }
 
   fetch_feed(feed) {

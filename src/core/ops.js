@@ -17,36 +17,23 @@ export async function badge_refresh() {
 }
 
 export function activate_feed(session, feed_id) {
-  const props = {};
-  props.id = feed_id;
-  props.active = true;
-  props.deactivateDate = undefined;
-  props.deactivationReasonText = undefined;
-
-  // TODO: switch to proper use of CDB instance
-  const interimSession = new cdb.CDB();
-  interimSession.db.conn = session.conn;
-  interimSession.channel = session.channel;
-
-  return interimSession.updateFeed(props, false);
+  const props = {
+    id: feed_id,
+    active: true,
+    deactivateDate: undefined,
+    deactivationReasonText: undefined
+  };
+  return session.updateFeed(props, false);
 }
 
-export async function deactivate_feed(session, feed_id, reason) {
-  const props = {};
-  props.id = feed_id;
-  props.active = false;
-  props.deactivateDate = new Date();
-  props.deactivationReasonText = reason;
-
-  // TODO: switch to proper use of CDB instance
-  const interimSession = new cdb.CDB();
-  interimSession.db.conn = session.conn;
-  interimSession.channel = session.channel;
-
-  // TODO: if this is the sole await, then deactivate-feed does not need to be
-  // async. Instead just return the unawaited promise.
-
-  await interimSession.updateFeed(props, false);
+export function deactivate_feed(session, feed_id, reason) {
+  const props = {
+    id: feed_id,
+    active: false,
+    deactivateDate: new Date(),
+    deactivationReasonText: reason
+  };
+  return session.updateFeed(props, false);
 }
 
 // Returns an in memory OPML document object filled with the feeds from the
@@ -166,11 +153,7 @@ export async function opml_import(session, files) {
     return feed;
   });
 
-  // TODO: finish transition to properly using CDB instance
-  const interimSession = new cdb.CDB();
-  interimSession.db.conn = session.conn;
-  interimSession.channel = session.channel;
-  return interimSession.createFeeds(feeds);
+  return session.createFeeds(feeds);
 }
 
 async function opml_import_read_feeds(file) {
@@ -207,6 +190,7 @@ async function opml_import_read_feeds(file) {
   return urls;
 }
 
+// TODO: inline
 function opml_import_parse_url_noexcept(url_string) {
   if (url_string) {
     try {
@@ -216,6 +200,7 @@ function opml_import_parse_url_noexcept(url_string) {
   }
 }
 
+// TODO: inline
 function file_type_is_opml(file) {
   const types = [
     'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
@@ -248,31 +233,30 @@ export class OPMLParseError extends Error {
 }
 
 export async function subscribe(session, iconn, url, timeout, notify) {
-  // TODO: switch to proper CDB instance use
-  const interimSession = new cdb.CDB();
-  interimSession.db.conn = session.conn;
-  interimSession.channel = session.channel;
+  assert(session instanceof cdb.CDB);
+  assert(iconn === undefined || iconn instanceof IDBDatabase);
+  assert(url instanceof URL);
 
-  // Check if subscribed to the input url
-  let existing_feed = await interimSession.getFeed('url', url, true);
+  // Throw an error if already subscribed
+  let existing_feed = await session.getFeed('url', url, true);
   if (existing_feed) {
     const message = 'Found existing feed with url ' + url.href;
     throw new ConstraintError(message);
   }
 
-  // Propagate fetch errors as subscribe errors
   const fetch_options = {
     timeout: timeout,
     skip_entries: true,
     resolve_entry_urls: false
   };
+  // Propagate fetch errors as subscribe errors by not catching
   const response = await net.fetch_feed(url, fetch_options);
   const http_response = response.http_response;
 
   // If redirected, check if subscribed to the redirected url
   if (net.response_is_redirect(url, http_response)) {
     const rurl = new URL(http_response.url);
-    let existing_feed = await interimSession.getFeed('url', rurl, true);
+    let existing_feed = await session.getFeed('url', rurl, true);
     if (existing_feed) {
       const message = 'Found existing feed with redirect url ' + rurl.href;
       throw new ConstraintError(message);
@@ -287,16 +271,10 @@ export async function subscribe(session, iconn, url, timeout, notify) {
 
   cdb.CDB.validateFeed(feed);
   cdb.CDB.sanitizeFeed(feed);
-
-  // TODO: finish transition to CDB instance
-  const cdbSession = new cdb.CDB();
-  cdbSession.db.conn = session.conn;
-  cdbSession.channel = session.channel;
-
-  feed.id = await cdbSession.createFeed(feed);
+  feed.id = await session.createFeed(feed);
 
   if (notify) {
-    // TODO: use cdb.getFeedURLString
+    // TODO: use cdb.Feed.getURLString
     const feed_title = feed.title || feed.urls[feed.urls.length - 1];
     const note = {};
     note.title = 'Subscribed!';
@@ -309,13 +287,10 @@ export async function subscribe(session, iconn, url, timeout, notify) {
 }
 
 export function unsubscribe(session, feed_id) {
-  // TODO: finish transition to CDB instance
-  const interimSession = new cdb.CDB();
-  interimSession.db.conn = session.conn;
-  interimSession.channel = session.channel;
-  return interimSession.deleteFeed(feed_id, 'unsubscribe');
+  return session.deleteFeed(feed_id, 'unsubscribe');
 }
 
+// TODO: inline
 async function set_feed_favicon(iconn, feed) {
   if (!iconn) {
     return;
@@ -332,6 +307,8 @@ export function get_feed_favicon_lookup_url(feed) {
   if (feed.link) {
     return new URL(feed.link);
   }
+
+  // TODO: use Feed.getURLString
 
   if (!feed.urls) {
     return;
@@ -352,12 +329,7 @@ export function get_feed_favicon_lookup_url(feed) {
 }
 
 export async function refresh_feed_icons(session, iconn) {
-  // TODO: switch to proper use of CDB instance
-  const interimSession = new cdb.CDB();
-  interimSession.db.conn = session.conn;
-  interimSession.channel = session.channel;
-
-  const feeds = await interimSession.getFeeds('active', false);
+  const feeds = await session.getFeeds('active', false);
   const promises = [];
   for (const feed of feeds) {
     promises.push(refresh_feed_icon(session, iconn, feed));
@@ -367,6 +339,7 @@ export async function refresh_feed_icons(session, iconn) {
 
 // Update the favicon of a feed in the database
 async function refresh_feed_icon(session, iconn, feed) {
+  // TODO: use Feed.hasURL
   if (!feed.urls || !feed.urls.length) {
     return;
   }
@@ -388,12 +361,7 @@ async function refresh_feed_icon(session, iconn, feed) {
       delete feed.faviconURLString;
     }
 
-    // TODO: switch to proper use of CDB instance
-    const interimSession = new cdb.CDB();
-    interimSession.db.conn = session.conn;
-    interimSession.channel = session.channel;
-
-    await interimSession.updateFeed(feed, true);
+    await session.updateFeed(feed, true);
   }
 }
 

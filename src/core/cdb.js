@@ -1,4 +1,4 @@
-import * as db from '/src/core/db.js';
+import {Db} from '/src/core/db.js';
 import {assert} from '/src/lib/assert.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 
@@ -16,7 +16,7 @@ export {
 
 export class CDB {
   constructor() {
-    this.db = new db.Db();
+    this.db = new Db();
     this.channel = undefined;
     this.channel_name = 'reader';
   }
@@ -37,19 +37,19 @@ export class CDB {
   }
 
   static validateFeed(feed) {
-    return db.Db.validateFeed(entry);
+    return Db.validateFeed(feed);
   }
 
   static validateEntry(entry) {
-    return db.Db.validateEntry(entry);
+    return Db.validateEntry(entry);
   }
 
   static sanitizeFeed(feed) {
-    return db.Db.sanitizeFeed(feed);
+    return Db.sanitizeFeed(feed);
   }
 
   static sanitizeEntry(entry) {
-    return db.Db.sanitizeEntry(entry);
+    return Db.sanitizeEntry(entry);
   }
 
   async archiveEntries(max_age) {

@@ -9,8 +9,10 @@ import {PollOperation} from '/src/core/poll-feeds.js';
 
 async function cli_subscribe(url_string, fetch_entries = true) {
   const url = new URL(url_string);
-  const proms = [cdb.open(), favicon.open()];
-  const [session, iconn] = await Promise.all(proms);
+  const session = new cdb.CDB();
+
+  const proms = [session.open(), favicon.open()];
+  const [_, iconn] = await Promise.all(proms);
   const feed = await ops.subscribe(session, iconn, url, options, 3000, true);
   if (fetch_entries) {
     const op = new PollOperation();
@@ -25,27 +27,23 @@ async function cli_subscribe(url_string, fetch_entries = true) {
 }
 
 async function cli_refresh_icons() {
-  const proms = [cdb.open(), favicon.open()];
-  const [session, iconn] = await Promise.all(proms);
+  const session = new cdb.CDB();
+  const proms = [session.open(), favicon.open()];
+  const [_, iconn] = await Promise.all(proms);
   await ops.refresh_feed_icons(session, iconn);
   session.close();
   iconn.close();
 }
 
 async function cli_poll_feeds() {
-  const proms = [cdb.open(), favicon.open()];
-  const [session, iconn] = await Promise.all(proms);
-
+  const session = new cdb.CDB();
+  const proms = [session.open(), favicon.open()];
+  const [_, iconn] = await Promise.all(proms);
   const poll = new PollOperation();
   poll.session = session;
   poll.iconn = iconn;
   poll.ignore_recency_check = true;
-  try {
-    await poll.run();
-  } catch (error) {
-    console.error(error);
-  }
-
+  await poll.run();
   session.close();
   iconn.close();
 }
@@ -75,19 +73,23 @@ function cli_clear_alarms() {
 
 function cli_create_alarms() {
   cron_control.create_alarms();
-  console.debug('Created alarms');
+  console.log('Created alarms');
 }
 
 async function cli_clear_icons() {
+  console.log('Clearing favicon cache...');
   const conn = await favicon.open();
   return favicon.clear(conn);
   conn.close();
+  console.log('Cleared favicon cache');
 }
 
 async function cli_compact_icons() {
+  console.log('Compacting favicon cache...');
   const conn = await favicon.open();
   return favicon.compact(conn);
   conn.close();
+  console.log('Compacted favicon cache');
 }
 
 function cli_install_fonts() {

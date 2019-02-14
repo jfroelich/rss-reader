@@ -28,7 +28,8 @@ chrome.runtime.onInstalled.addListener(config.install_listener);
 
 chrome.runtime.onInstalled.addListener(async function(event) {
   if (event.reason === 'install') {
-    const session = await cdb.open();
+    const session = new cdb.CDB();
+    await session.open();
     session.close();
   }
 });

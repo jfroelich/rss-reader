@@ -59,6 +59,7 @@ channel.onmessageerror = function(event) {
   console.warn(event);
 };
 
+// TODO: move to utils or dom-utils
 function fade_element(element, duration_secs, delay_secs) {
   return new Promise((resolve, reject) => {
     if (!element) {
@@ -224,8 +225,9 @@ function feed_list_append_feed(feed) {
   }
 
   const title_element = document.createElement('span');
+  // TODO: use Feed.getURLString
   let feed_title = feed.title || feed.urls[feed.urls.length - 1];
-  // Title is truncated using css instead of javascript here
+  // Title is automatically truncated via CSS so just produce the full value
   title_element.textContent = feed_title;
   item_element.appendChild(title_element);
   const feed_list_element = document.getElementById('feedlist');
@@ -251,11 +253,11 @@ function feed_list_append_feed(feed) {
   feed_count_update();
 }
 
+// TODO: if this handler is bound to the feed list and not individual items,
+// then it would be more appropriate and clear to rename the function to
+// feed_list_onclick, and this would in turn provided clarity regarding the
+// use of currentTarget instead of target here.
 async function feed_list_item_onclick(event) {
-  // TODO: if this handler is bound to the feed list and not individual items,
-  // then it would be more appropriate and clear to rename the function to
-  // feed_list_onclick, and this would in turn provided clarity regarding the
-  // use of currentTarget instead of target here.
   const feed_list_item_element = event.currentTarget;
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
@@ -303,7 +305,7 @@ async function feed_list_item_onclick(event) {
   deactivate_button.disabled = feed.active === false ? true : false;
 
   section_show_by_id('mi-feed-details');
-  window.scrollTo(0, 0);
+  scrollTo(0, 0);
 }
 
 async function subscribe_form_onsubmit(event) {
@@ -316,6 +318,8 @@ async function subscribe_form_onsubmit(event) {
   }
 
   subscription_monitor_show();
+
+  // TODO: this seems redundant with above???
   monitor_element = document.getElementById('submon');
 
   const subscribe_url_input_element = document.getElementById('subscribe-url');
@@ -341,9 +345,10 @@ async function subscribe_form_onsubmit(event) {
 
   // TODO: subscribe can now throw an error, this should catch the error and
   // show a nice error message or something instead of panic
-  // TODO: move this to a helper
-  const conn_promises = Promise.all([cdb.open(), favicon.open()]);
-  const [session, iconn] = await conn_promises;
+
+  const session = new cdb.CDB();
+  const promises = [session.open(), favicon.open()];
+  const [_, iconn] = await Promise.all(promises);
   const feed =
       await ops.subscribe(session, iconn, subscribe_url, undefined, true);
   session.close();
@@ -358,7 +363,7 @@ async function subscribe_form_onsubmit(event) {
   section_show_by_id('subs-list-section');
 
   // intentionally non-blocking
-  // NOTE: we must use setTimeout or we get a 503 error for requesting the
+  // NOTE: we must use setTimeout or we can get a 503 error for requesting the
   // feed again too quickly
 
   setTimeout(function() {
@@ -373,8 +378,9 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const conn_promises = Promise.all([cdb.open(), favicon.open()]);
-  const [session, iconn] = await conn_promises;
+  const session = new cdb.CDB();
+  const promises = [session.open(), favicon.open()];
+  const [_, iconn] = await Promise.all(promises);
 
   const op = new PollOperation();
   op.session = session;
@@ -415,6 +421,7 @@ function feed_list_remove_feed_by_id(feed_id) {
   const feed_element =
       document.querySelector(`#feedlist li[feed="${feed_id}"]`);
 
+  // TODO: throw an error instead of log+return
   if (!feed_element) {
     console.error('Could not find feed element with feed id', feed_id);
     return;
@@ -436,7 +443,8 @@ function feed_list_remove_feed_by_id(feed_id) {
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const session = await cdb.open();
+  const session = new cdb.CDB();
+  await session.open();
   await ops.unsubscribe(session, feed_id);
   session.close();
 
@@ -447,7 +455,8 @@ async function unsubscribe_button_onclick(event) {
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const session = await cdb.open();
+  const session = new cdb.CDB();
+  await session.open();
   await ops.activate_feed(session, feed_id);
   session.close();
 
@@ -467,10 +476,12 @@ async function activate_feed_button_onclick(event) {
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const reason = 'manual';
-  const session = await cdb.open();
-  await ops.deactivate_feed(session, feed_id, reason);
+  const session = new cdb.CDB();
+  await session.open();
+  await ops.deactivate_feed(session, feed_id, 'manual');
   session.close();
+
+  // TODO: this should be done in the event handler instead of here
 
   // Deactivate the corresponding element in the view
   const item_selector = 'li[feed="' + feed_id + '"]';

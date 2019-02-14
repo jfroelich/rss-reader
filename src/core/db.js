@@ -118,6 +118,8 @@ export class Db {
   close() {
     if (this.conn) {
       this.conn.close();
+      // Try to really make it obvious when the caller does something wrong
+      this.conn = undefined;
     } else {
       console.warn('Tried to close non-open connection');
     }

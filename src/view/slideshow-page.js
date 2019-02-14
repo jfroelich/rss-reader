@@ -41,10 +41,8 @@ async function show_next_slide() {
     return;
   }
 
-  // const session = await cdb.open();
   const session = new cdb.CDB();
   await session.open();
-
   await mark_slide_read_start(session, current_slide);
 
   const slide_unread_count = count_unread_slides();
@@ -89,7 +87,7 @@ function compact_slides() {
   }
 
   // The maximum number of slides loaded at any one time.
-  // TODO: this should come from local storage
+  // TODO: this should come from configuration setting
   const max_load_count = 6;
   const container = document.getElementById('slideshow-container');
   let first_slide = container.firstElementChild;
@@ -102,7 +100,8 @@ function compact_slides() {
 
 function show_prev_slide() {
   if (get_active_transition_count()) {
-    console.debug('Canceling previous navigation');
+    console.debug(
+        'Transition in progress, canceling navigation to previous slide');
     return;
   }
 
@@ -179,7 +178,6 @@ async function slide_onclick(event) {
   // Open the link in a new tab via a technique that Chrome tolerates
   chrome.tabs.create({active: true, url: url_string});
 
-
   // Find the clicked slide. Start from parent because we know that the anchor
   // itself is not a slide. We know that a slide will always be found
   const slide = anchor.parentNode.closest('slide');
@@ -213,7 +211,8 @@ async function slide_onclick(event) {
   // the checks within mark_slide_read_start, it avoids opening the connection.
   if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
       !slide.hasAttribute('read-pending')) {
-    const session = await cdb.open();
+    const session = new cdb.CDB();
+    await session.open();
     await mark_slide_read_start(session, slide);
     session.close();
   }
@@ -271,9 +270,8 @@ function hide_no_articles_message() {
 }
 
 // Starts transitioning a slide into the read state. Updates both the view and
-// the database. This resolves before the view is fully updated. This only sets
-// the slide's read-pending attribute, not its read attribute.
-async function mark_slide_read_start(session, slide) {
+// the database. This resolves before the view is fully updated.
+function mark_slide_read_start(session, slide) {
   const entry_id_string = slide.getAttribute('entry');
   const entry_id = parseInt(entry_id_string, 10);
 
@@ -281,36 +279,26 @@ async function mark_slide_read_start(session, slide) {
   // calls to mark_slide_read_start. This is routine, expected, and not an
   // error.
   if (slide.hasAttribute('read-pending')) {
-    return;
+    return Promise.resolve();
   }
 
   // The slide was already read. Typically happens when navigating away from a
   // slide a second time. Not an error.
   if (slide.hasAttribute('read')) {
-    return;
+    return Promise.resolve();
   }
 
   // A slide is stale for various reasons such as its corresponding entry being
   // deleted from the database. Callers are not expected to avoid calling this
   // on stale slides. Not an error.
   if (slide.hasAttribute('stale')) {
-    return;
+    return Promise.resolve();
   }
 
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  // TODO: switch to proper use of CDB instance
-  const interimSession = new cdb.CDB();
-  interimSession.db.conn = session.conn;
-  interimSession.channel = session.channel;
-
-  // TODO: if this is the sole await call, we could just return the promise
-  // and have this not be an async qualified function? I am unclear on why
-  // this was implemented this way. Perhaps due to some paranoia about trapped
-  // exceptions back when there was some kind of bug?
-
-  await interimSession.markEntryRead(entry_id);
+  return session.markEntryRead(entry_id);
 }
 
 function remove_slide(slide) {
@@ -338,8 +326,9 @@ async function refresh_button_onclick(event) {
 
   refresh_in_progress = true;
 
-  const promises = [cdb.open(), favicon.open()];
-  const [session, iconn] = await Promise.all(promises);
+  const session = new cdb.CDB();
+  const promises = [session.open(), favicon.open()];
+  const [_, iconn] = await Promise.all(promises);
 
   const poll = new PollOperation();
   poll.session = session;
@@ -448,8 +437,9 @@ function import_opml_prompt() {
     // For unknown reason we must grab this before the await, otherwise error.
     // This behavior changed sometime around Chrome 72 without warning
     const files = event.target.files;
-    const session = await cdb.open();
-    console.debug('Connected, about to import %d files', files.length);
+    const session = new cdb.CDB();
+    await session.open();
+    console.debug('Connected to db, importing %d files', files.length);
     await ops.opml_import(session, files);
     session.close();
   };
@@ -458,7 +448,7 @@ function import_opml_prompt() {
 
 // TODO: handling all clicks and then forwarding them to click handler seems
 // dumb. I should be ignoring clicks on such buttons. Let them continue
-// progation. The buttons should instead have their own handlers.
+// propagation. The buttons should instead have their own handlers.
 async function options_menu_onclick(event) {
   const option = event.target;
   if (option.localName !== 'li') {
@@ -490,6 +480,8 @@ async function options_menu_onclick(event) {
 
 // Given an opml document, converts it into a file and then triggers the
 // download of that file in the browser.
+// TODO: make this more generic (e.g any type of file, not just opml, or maybe
+// at least xml, and then move it somewhere like utils)
 function download_opml_document(opml_document, file_name = 'subs.xml') {
   // Generate a file. Files implement the Blob interface so we really just
   // generate a blob.
@@ -669,8 +661,8 @@ async function onmessage(event) {
   // TODO: this double test against type is awkward, need to revisit, but
   // currently only focused on deprecating entry-write message type
   if (type === 'entry-created' || type === 'entry-updated') {
-    // For now, we only care about newly added articles, because we do support
-    // hot-swapping content
+    // For now, we only care about newly added articles, because we do not
+    // support hot-swapping content
     if (type !== 'entry-created') {
       return;
     }
@@ -679,7 +671,7 @@ async function onmessage(event) {
     // articles that have since become available after the time the view was
     // already loaded. To do this, the current criteria uses the number of
     // unread articles in the view as an indicator.
-    // TODO: should this come from config?
+    // TODO: this should come from config
     const max_unread_before_suppress_load = 3;
     const unread_count = count_unread_slides();
 
@@ -708,11 +700,10 @@ async function onmessage(event) {
     // just inventing an approach that doesn't run headfirst into this crappy
     // logic.
 
-    let limit = undefined;
-    // const session = await cdb.open();
     const session = new cdb.CDB();
     await session.open();
-    const entries = await session.getEntries('viewable', unread_count, limit);
+    const entries =
+        await session.getEntries('viewable', unread_count, undefined);
     session.close();
 
     for (const entry of entries) {
@@ -726,7 +717,7 @@ async function onmessage(event) {
     // The slide may not exist (this is routine and not an error)
     if (slide) {
       if (is_current_slide(slide)) {
-        // TODO: set to empty string instead (or will using one param work?)
+        // TODO: set to empty string instead?
         slide.setAttribute('stale', 'true');
       } else {
         remove_slide(slide);
@@ -762,7 +753,7 @@ async function onmessage(event) {
 
   // All types should be explicitly handled, even if they do nothing but exit.
   // This message appearing serves as a continual incentive.
-  console.warn('Unhandled message', JSON.stringify(message));
+  console.warn('Unhandled message', message);
 }
 
 function onmessageerror(event) {
@@ -893,7 +884,7 @@ function attach_slide(slide) {
   // because it is not set in css.
   slide.style.left = container.childElementCount === 0 ? '0' : '100%';
 
-  // TODO: review if prefix was dropped
+  // TODO: review if webkit prefix was dropped for webkitTransitionEnd
 
   // In order for scrolling a slide element with keyboard keys to work, the
   // slide must be focused. But calling element.focus() while a transition is
@@ -937,7 +928,7 @@ function set_transition_duration(input_duration) {
   transition_duration = input_duration;
 }
 
-// Handle the end of a transaction. Should not be called directly.
+// Handle the end of a transition. Should not be called directly.
 function transition_onend(event) {
   // The slide that the transition occured upon (event.target) is not guaranteed
   // to be equal to the current slide. We want to affect the current slide.
@@ -952,10 +943,11 @@ function transition_onend(event) {
   slide.focus();
 
   // There may be more than one transition effect occurring at the moment.
-  // Inform others via global slideshow state that this transition completed.
+  // Inform others via global state that this transition completed.
   decrement_active_transition_count();
 }
 
+// TODO: move to utils
 // Return a date as a formatted string. This is an opinionated implementation
 // that is intended to be very simple. This tries to recover from errors and
 // not throw.
@@ -1122,7 +1114,6 @@ function onkeydown(event) {
     show_prev_slide();
   }
 }
-
 
 function show_splash() {
   splash_element.style.display = 'block';

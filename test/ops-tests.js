@@ -75,10 +75,10 @@ export async function activate_feed_test() {
   // invalid feed ids (e.g. anything less than 1), and we don't want to trigger
   // those errors, we want to trigger only the error that occurs as a result of
   // searching the object store and not finding something.
-  const fictitious_feed_id = 123456789;
+  const fake_feed_id = 123456789;
   activation_error = undefined;
   try {
-    await ops.activate_feed(session, fictitious_feed_id);
+    await ops.activate_feed(session, fake_feed_id);
   } catch (error) {
     activation_error = error;
   }
@@ -130,14 +130,18 @@ export async function import_opml_test() {
 
   const db_name = 'ops-import-opml-test';
   await idb.remove(db_name);
-  const session = await cdb.open(db_name);
+
+  const session = new cdb.CDB();
+  session.db.name = db_name;
+  await session.open();
+
   let iconn = undefined;  // test without favicon caching support
   const messages = [];
 
-  // Close the channel automatically opened before replacing it
+  // Close the channel automatically opened in session.open
   session.channel.close();
 
-  // Define a new channel
+  // Provide a new mocked channel
   session.channel = {
     name: 'import-opml-test',
     postMessage: message => messages.push(message),
@@ -165,7 +169,12 @@ export async function import_opml_test() {
 export async function subscribe_test() {
   const db_name = 'subscribe-test';
   await idb.remove(db_name);
-  const session = await cdb.open(db_name);
+
+  const session = new cdb.CDB();
+  session.db.name = db_name;
+  await session.open();
+
+  session.channel.close();
 
   // Inject a fake channel
   const messages = [];
@@ -175,11 +184,16 @@ export async function subscribe_test() {
     close: function() {}
   };
 
+  // TODO: use a local url. First, this url no longer is valid because Google
+  // discontinued this service. Second, it is bad practice to ping live
+  // third-party services and may be a TOS violation of those services. Third,
+  // we do not really need to exercise network failure case.
+
   const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
   const url = new URL(test_url);
 
   // Rethrow subscribe exceptions just like assertion failures by omitting
-  // try/catch here.
+  // try/catch.
   const feed = await ops.subscribe(session, undefined, url, 7000, false);
 
   // Test the subscription produced the desired result
