@@ -1,10 +1,10 @@
-import * as utils from '/src/core/utils.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as html_utils from '/src/lib/html-utils.js';
 import * as idb from '/src/lib/idb.js';
 import * as object_utils from '/src/lib/object-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
+import {sizeof} from '/src/lib/sizeof.js';
 
 // TODO: both Entry and Feed can extend Resource, there is a large amount of
 // redundancy, good chance to review understanding of super and inheritance
@@ -325,9 +325,9 @@ export class Db {
   }
 
   archiveEntry(entry) {
-    const before_size = utils.sizeof(entry);
+    const before_size = sizeof(entry);
     const ce = this.compactEntry(entry);
-    const after_size = utils.sizeof(ce);
+    const after_size = sizeof(ce);
 
     if (after_size > before_size) {
       console.warn('Entry increased size', entry);
