@@ -11,6 +11,26 @@ export function unique(array) {
   return array.filter((value, index) => array.indexOf(value) === index);
 }
 
+// Similar to unique, but with an optional compute function that derives a
+// value to use for comparison to other values. When |compute| is not specified
+// it defaults to a comparison of the original value.
+export function unique_compute(array, compute) {
+  if (typeof compute !== 'function') {
+    return unique(array);
+  }
+
+  const seen_computed = [];
+  return array.filter(value => {
+    const computed_value = compute(value);
+    if (seen_computed.includes(computed_value)) {
+      return false;
+    } else {
+      seen_computed.push(computed_value);
+      return true;
+    }
+  });
+}
+
 // Maybe generate and show a desktop notification provided that notifications
 // are enabled in settings. |note| has optional properties name, message, and
 // url (string). Defaults are provided for missing properties.
