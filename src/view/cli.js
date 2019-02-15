@@ -20,7 +20,7 @@ async function cli_subscribe(url_string, fetch_entries = true) {
     op.iconn = iconn;
     op.ignore_recency_check = true;
     op.notify = true;
-    await op.poll_feed(feed);
+    await op.pollFeed(feed);
   }
   session.close();
   iconn.close();

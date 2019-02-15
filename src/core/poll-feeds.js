@@ -1,11 +1,3 @@
-// TODO: re-envision this module as just a specific helper to ops.js, callers
-// should be proxied through ops.js poll-feeds call, instead of directly
-// interacting with this module
-
-// TODO: when transitioning to object-oriented implementation, I did not bother
-// to rename the functions, need to switch to camel-case as that is the OO
-// convention. I noticed this during the CDB refactor so wait till that is done
-
 import * as cdb from '/src/core/cdb.js';
 import * as dom_filters from '/src/core/dom-filters.js';
 import * as dom_utils from '/src/core/dom-utils.js';
@@ -28,12 +20,9 @@ export class PollOperation {
     this.deactivation_threshold = 10;
     this.notify = true;
     this.session = undefined;
-    // favicon db connection
     this.iconn = undefined;
     this.rewrite_rules = rewrite_rules.build();
 
-    // TODO: somehow store in configuration instead of here, look into
-    // deserializing using Regex constructor or something
     this.inaccessible_content_descriptors = [
       {pattern: /forbes\.com$/i, reason: 'interstitial-advert'},
       {pattern: /productforums\.google\.com$/i, reason: 'script-generated'},
@@ -43,13 +32,10 @@ export class PollOperation {
     ];
   }
 
-  // TODO: inline
-  get_pollable_feeds() {
-    return this.session.getFeeds('active', false);
-  }
-
   async run() {
+    // Cancel the run if the last run was too recent
     if (this.recency_period && !this.ignore_recency_check) {
+      // TODO: access via local storage utils or config
       const stamp = parseInt(localStorage.last_poll_date, 10);
       if (!isNaN(stamp)) {
         const now = new Date();
@@ -65,9 +51,9 @@ export class PollOperation {
 
     localStorage.last_poll_date = '' + Date.now();
 
-    const feeds = await this.get_pollable_feeds();
-    console.debug('Loaded %d feeds', feeds.length);
-    const promises = feeds.map(this.poll_feed, this);
+    const feeds = await this.session.getFeeds('active', false);
+    console.debug('Loaded %d active feeds for polling', feeds.length);
+    const promises = feeds.map(this.pollFeed, this);
     const results = await Promise.all(promises);
 
     // Calculate the total number of entries added across all feeds.
@@ -76,17 +62,17 @@ export class PollOperation {
       count += result;
     }
 
-    if (count) {
+    if (this.notify && count > 0) {
       const note = {};
       note.title = 'Added articles';
       note.message = 'Added ' + count + ' articles';
       utils.show_notification(tls, note);
     }
 
-    console.debug('Run completed, added %d entries', count);
+    console.debug('Poll feeds completed, added %d entries', count);
   }
 
-  async poll_feed(feed) {
+  async pollFeed(feed) {
     assert(cdb.is_feed(feed));
 
     if (!cdb.Feed.prototype.hasURL.call(feed)) {
@@ -103,7 +89,7 @@ export class PollOperation {
 
     let fetch_result;
     try {
-      fetch_result = await this.fetch_feed(feed);
+      fetch_result = await this.fetchFeed(feed);
     } catch (error) {
       if (error instanceof AssertionError) {
         console.error(error);
@@ -137,7 +123,7 @@ export class PollOperation {
     // feed/entries/http-response, do a minor assertion
     assert(typeof fetch_result === 'object');
 
-    feed = this.merge_feed(feed, fetch_result.feed);
+    feed = this.mergeFeed(feed, fetch_result.feed);
 
     // Decrement error count on success
     if (!isNaN(feed.errorCount) && feed.errorCount > 0) {
@@ -151,8 +137,8 @@ export class PollOperation {
     await this.session.updateFeed(feed, true);
 
     // Now poll the feed's entries
-    let entries = fetch_result.entries.map(this.coerce_entry);
-    entries = this.dedup_entries(entries);
+    let entries = fetch_result.entries.map(this.coerceEntry);
+    entries = this.dedupEntries(entries);
 
     for (const entry of entries) {
       entry.feed = feed.id;
@@ -164,8 +150,8 @@ export class PollOperation {
     }
 
     const promises = entries.map(
-        (entry => this.poll_entry(
-             entry, cdb.Feed.prototype.getURLString.call(feed))),
+        (entry =>
+             this.pollEntry(entry, cdb.Feed.prototype.getURLString.call(feed))),
         this);
     const ids = await Promise.all(promises);
     const count = ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
@@ -187,7 +173,7 @@ export class PollOperation {
   // the full text of the entry. Either returns the added entry id, or throws an
   // error.
   // TODO: if feed_url_string not in use, should not be param
-  async poll_entry(entry, feed_url_string) {
+  async pollEntry(entry, feed_url_string) {
     assert(this instanceof PollOperation);
     assert(cdb.is_entry(entry));
     assert(cdb.Entry.prototype.hasURL.call(entry));
@@ -209,7 +195,7 @@ export class PollOperation {
     let url = new URL(cdb.Entry.prototype.getURLString.call(entry));
     if ((url.protocol === 'http:' || url.protocol === 'https:') &&
         sniffer.classify(url) !== sniffer.BINARY_CLASS &&
-        !this.url_is_inaccessible(url)) {
+        !this.isAccessibleURL(url)) {
       try {
         response =
             await net.fetch_html(url, {timeout: this.fetch_html_timeout});
@@ -324,16 +310,16 @@ export class PollOperation {
     // We do not need to await but I am for now due to what seems like an
     // unrelated error but may be related, the await rules out this having
     // anything to do with it
-    return await this.create_entry(entry);
+    return await this.createEntry(entry);
   }
 
   // TODO: inline this helper, it no longer provides much value
-  create_entry(entry) {
+  createEntry(entry) {
     assert(cdb.is_entry(entry));
     return this.session.createEntry(entry);
   }
 
-  fetch_feed(feed) {
+  fetchFeed(feed) {
     const options = {};
     options.timeout = this.fetch_feed_timeout;
     options.skip_entries = false;
@@ -349,7 +335,7 @@ export class PollOperation {
   // feed has only the urls from the new feed. So the output feed's url array
   // needs to be fixed. First copy over the old feed's urls, then try and append
   // each new feed url.
-  merge_feed(old_feed, new_feed) {
+  mergeFeed(old_feed, new_feed) {
     const merged_feed = Object.assign(new cdb.Feed(), old_feed, new_feed);
     merged_feed.urls = [...old_feed.urls];
     if (new_feed.urls) {
@@ -361,7 +347,7 @@ export class PollOperation {
     return merged_feed;
   }
 
-  dedup_entries(entries) {
+  dedupEntries(entries) {
     assert(Array.isArray(entries));
 
     const distinct_entries = [];
@@ -401,7 +387,7 @@ export class PollOperation {
   // Convert a parsed entry into a cdb-formatted entry
   // TODO: now that this function is no longer in a separate lib, maybe the
   // clone is just silly.
-  coerce_entry(parsed_entry) {
+  coerceEntry(parsed_entry) {
     const blank_entry = new cdb.Entry();
     // Clone to avoid mutation
     const clone = Object.assign(blank_entry, parsed_entry);
@@ -423,7 +409,7 @@ export class PollOperation {
     return clone;
   }
 
-  url_is_inaccessible(url) {
+  isAccessibleURL(url) {
     for (const desc of this.inaccessible_content_descriptors) {
       if (desc.pattern && desc.pattern.test(url.hostname)) {
         return true;

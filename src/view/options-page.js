@@ -387,7 +387,7 @@ async function after_subscribe_poll_feed_async(feed) {
   op.iconn = iconn;
   op.ignore_recency_check = true;
   op.notify = true;
-  await op.poll_feed(feed);
+  await op.pollFeed(feed);
   session.close();
   iconn.close();
 }
