@@ -1,16 +1,14 @@
-// TODO: use a better file name, like fetch-policies.js
-
 // A default permit-all policy
-export function PERMITTED(request) {
+export function permit_all(request) {
   return true;
 }
 
 // A simple, custom, hardcoded fetch policy
-// * restrict to http/https/data
-// * restrict to get/head
-// * restrict to non-loopback
-// * Disallow credentials
-export function APP_DEFAULT(request) {
+// * allow only http/https/data
+// * allow only get/head
+// * disallow loopback
+// * disallow credentials
+export function permit_default(request) {
   const good_protocols = ['data', 'http', 'https'];
   const good_methods = ['get', 'head'];
   const bad_hostnames = ['localhost', '127.0.0.1'];

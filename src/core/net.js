@@ -1,5 +1,5 @@
 import * as cdb from '/src/core/cdb.js';
-import {APP_DEFAULT, PERMITTED} from '/src/core/fetch-policy.js';
+import * as fetch_policies from '/src/core/fetch-policies.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
@@ -48,7 +48,7 @@ export async function fetch_with_timeout(url, options = {}) {
 
 export function fetch_html(url, options = {}) {
   const opts = Object.assign({}, options);
-  const policy = options.policy || APP_DEFAULT;
+  const policy = options.policy || fetch_policies.permit_default;
   const types = ['text/html'];
   if (options.allow_text) {
     types.push('text/plain');
@@ -76,7 +76,8 @@ export async function better_fetch(url, options = {}) {
     throw new OfflineError('Failed to fetch url while offline ' + url.href);
   }
 
-  const is_allowed_request = options.is_allowed_request || PERMITTED;
+  const is_allowed_request =
+      options.is_allowed_request || fetch_policies.permit_all;
 
   const request_data = {method: options.method, url: url};
   if (!is_allowed_request(request_data)) {
@@ -343,7 +344,7 @@ export async function fetch_feed(url, options) {
 // @param is_allowed_request {Function} optional, is given a request-like
 // object, throws a policy error if the function returns false
 export async function fetch_image_element(
-    url, timeout = INDEFINITE, is_allowed_request = PERMITTED) {
+    url, timeout = INDEFINITE, is_allowed_request = fetch_policies.permit_all) {
   assert(url instanceof URL);
   assert(timeout instanceof Deadline);
   assert(is_allowed_request instanceof Function);

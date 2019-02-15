@@ -67,7 +67,7 @@ export async function color_contrast_filter_basic_test() {
 
 export async function image_lazy_filter_test() {
   // TODO: rewrite without input, load a local file internally
-  // TODO: explicitly use fetch policy PERMITTED
+  // TODO: explicitly use fetch policy permit_all
 
   // let url_string;
   // const request_url = new URL(url_string);
