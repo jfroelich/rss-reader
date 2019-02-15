@@ -3,6 +3,7 @@ import * as favicon from '/src/core/favicon.js';
 import * as net from '/src/core/net.js';
 import * as utils from '/src/core/utils.js';
 import {assert} from '/src/lib/assert.js';
+import * as file_utils from '/src/lib/file-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
 import * as tls from '/src/lib/tls.js';
 
@@ -172,7 +173,7 @@ async function opml_import_read_feeds(file) {
     return [];
   }
 
-  const file_text = await utils.file_read_text(file);
+  const file_text = await file_utils.read_text(file);
   const document = parse_opml(file_text);
 
   const elements = document.querySelectorAll('opml > body > outline[type]');

@@ -68,15 +68,6 @@ function find_tab(url_string) {
   });
 }
 
-export function file_read_text(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsText(file);
-    reader.onload = _ => resolve(reader.result);
-    reader.onerror = _ => reject(reader.error);
-  });
-}
-
 // Returns a new string where the publisher information has been stripped. For
 // example, in the string "Florida man shoots self - Your Florida News", the
 // algorithm would hopefully identify the publisher as "Your Florida news" and
