@@ -13,6 +13,7 @@ import {parse_feed_test} from '/test/parse-feed-test.js';
 import * as rewrite_url_tests from '/test/rewrite-url-test.js';
 import {sniffer_test} from '/test/sniffer-test.js';
 import * as string_utils_tests from '/test/string-utils-tests.js';
+import * as url_utils_tests from '/test/url-utils-tests.js';
 import * as utils_tests from '/test/utils-tests.js';
 
 const registry = [];
@@ -31,6 +32,7 @@ register_test(parse_feed_test);
 register_module_tests(rewrite_url_tests);
 register_test(sniffer_test);
 register_module_tests(string_utils_tests);
+register_module_tests(url_utils_tests);
 register_module_tests(utils_tests);
 
 // On module load, expose console commands

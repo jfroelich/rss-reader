@@ -1,29 +1,6 @@
 import * as utils from '/src/core/utils.js';
 import {assert} from '/src/lib/assert.js';
 
-export async function url_get_extension_tests() {
-  // Exercise the simple typical success case
-  let input = new URL('http://www.a.com/b.html');
-  let result = utils.url_get_extension(input);
-  assert(result === 'html');
-
-  // Should fail when there is a trailing period
-  input = new URL('http://www.a.com/b.');
-  result = utils.url_get_extension(input);
-  assert(!result);
-
-  // TODO: get this test passing again
-  // leading period should find extension
-  // input = new URL('http://www.a.com/.htaccess');
-  // result = utils.url_get_extension(input);
-  // assert(result === 'htaccess');
-
-  // Should fail when the extension has too many characters
-  input = new URL('http://www.a.com/b.01234567890123456789asdf');
-  result = utils.url_get_extension(input);
-  assert(!result);
-}
-
 export async function replace_tags_test() {
   // TODO: implement me
 }

@@ -6,6 +6,7 @@ import * as boilerplate from '/src/lib/boilerplate.js';
 import * as color from '/src/lib/color.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as string_utils from '/src/lib/string-utils.js';
+import * as url_utils from '/src/lib/url-utils.js';
 
 // Applies several content filters to a document. The filters are applied in a
 // logical order that tries to minimize the amount of work done, and to preserve
@@ -546,7 +547,8 @@ async function image_size_filter_process_image(
   // Check characters in url
   const exts = ['jpg', 'gif', 'svg', 'jpg', 'bmp', 'png'];
   const pairs = [{w: 'w', h: 'h'}, {w: 'width', h: 'height'}];
-  if (url.protocol !== 'data:' && exts.includes(utils.url_get_extension(url))) {
+  if (url.protocol !== 'data:' &&
+      exts.includes(url_utils.url_get_extension(url))) {
     for (const pair of pairs) {
       width = parseInt(url.searchParams.get(pairs.w), 10);
       height = parseInt(url.searchParams.get(pairs.h), 10);
@@ -755,8 +757,8 @@ function lonestar_is_telemetric(
             return true;
           }
         } else {
-          if (utils.url_get_upper_domain(document_url) !==
-              utils.url_get_upper_domain(url)) {
+          if (url_utils.url_get_upper_domain(document_url) !==
+              url_utils.url_get_upper_domain(url)) {
             return true;
           }
         }
