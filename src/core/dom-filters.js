@@ -11,8 +11,12 @@ import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 // correctness.
 export async function composite_document_filter(doc, options = {}) {
   assert(doc instanceof Document);
-  assert(dom_utils.has_valid_base_uri(doc));
   assert(typeof options === 'object');
+
+  // TODO: this assert probably does not belong here. This concern is per filter
+  // where some filters are concerned and some are not. The appropriate location
+  // for this sanity check is within each filter that is concerned with it.
+  assert(dom_utils.has_valid_base_uri(doc));
 
   frame_filter(doc);
   ensure_body_element_filter(doc);
