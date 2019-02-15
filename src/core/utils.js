@@ -30,21 +30,6 @@ export function show_notification(config, note) {
   });
 }
 
-export function filter_empty_properties(value) {
-  const has_own = Object.prototype.hasOwnProperty;
-
-  if (value && typeof value === 'object') {
-    for (const key in value) {
-      if (has_own.call(value, key)) {
-        const pv = value[key];
-        if (pv === null || pv === '' || pv === undefined) {
-          delete value[key];
-        }
-      }
-    }
-  }
-}
-
 // Calculates the approximate byte size of a value. This should only be used for
 // informational purposes because it is hilariously inaccurate. Adapted from
 // http://stackoverflow.com/questions/1248302. This function generally does not

@@ -3,6 +3,7 @@ import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as html_utils from '/src/lib/html-utils.js';
 import * as idb from '/src/lib/idb.js';
+import * as object_utils from '/src/lib/object-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
 
 // TODO: both Entry and Feed can extend Resource, there is a large amount of
@@ -413,7 +414,7 @@ export class Db {
       }
 
       delete entry.dateUpdated;
-      utils.filter_empty_properties(entry);
+      object_utils.filter_empty_properties(entry);
       let id;
       const txn = this.conn.transaction('entry', 'readwrite');
       txn.oncomplete = _ => resolve(id);
@@ -441,7 +442,7 @@ export class Db {
 
       feed.dateCreated = new Date();
       delete feed.dateUpdated;
-      utils.filter_empty_properties(feed);
+      object_utils.filter_empty_properties(feed);
       let id = 0;
       const txn = this.conn.transaction('feed', 'readwrite');
       txn.onerror = event => reject(event.target.error);
@@ -463,7 +464,7 @@ export class Db {
       }
 
       for (const feed of feeds) {
-        utils.filter_empty_properties(feed);
+        object_utils.filter_empty_properties(feed);
         // Allow explicit false
         if (feed.active === undefined) {
           feed.active = true;
@@ -898,7 +899,7 @@ export class Db {
       // have urls in the db layer. Only higher layers are concerned with
       // imposing that constraint.
       entry.dateUpdated = new Date();
-      utils.filter_empty_properties(entry);
+      object_utils.filter_empty_properties(entry);
       const txn = this.conn.transaction('entry', 'readwrite');
       txn.oncomplete = resolve;
       txn.onerror = event => reject(event.target.error);
@@ -929,7 +930,7 @@ export class Db {
       // bag of properties and undefined keys signify properties that should be
       // removed from the old feed.
       if (overwrite) {
-        utils.filter_empty_properties(feed);
+        object_utils.filter_empty_properties(feed);
       }
 
       // If overwriting, set the dateUpdated property. If partial, it will be
