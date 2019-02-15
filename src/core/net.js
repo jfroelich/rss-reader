@@ -329,6 +329,15 @@ export async function fetch_feed(url, options) {
 // allow me to control the request parameters and does send cookies, but I need
 // to review this more, I am still unsure.
 
+// Return a promise that resolves to an image element. The image is loaded by
+// proxy, which in other words means that we use a new, separate image element
+// attached to the same document executing this function to load the image. The
+// resulting image is NOT attached to the document that contained the image that
+// had the given url. The proxy is used because we cannot reliably load images
+// using the HTMLImageElement src setter method if we do not know for certain
+// whether the document is live or inert. Documents created by DOMParser and
+// XMLHttpRequest are inert. In an inert document the src setter method does not
+// work.
 // @param url {URL}
 // @param timeout {Number}
 // @param is_allowed_request {Function} optional, is given a request-like
@@ -368,20 +377,6 @@ export async function fetch_image_element(
     throw new TimeoutError('Timed out fetching ' + url.href);
   }
   return image;
-}
-
-// Return a promise that resolves to an image element. The image is loaded by
-// proxy, which in other words means that we use a new, separate image element
-// attached to the same document executing this function to load the image. The
-// resulting image is NOT attached to the document that contained the image that
-// had the given url. The proxy is used because we cannot reliably load images
-// using the HTMLImageElement src setter method if we do not know for certain
-// whether the document is live or inert. Documents created by DOMParser and
-// XMLHttpRequest are inert. In an inert document the src setter method does not
-// work.
-
-function fetch_image_element_promise(url, is_allowed_request = PERMITTED) {
-  return
 }
 
 // Return true if the error is a kind of temporary fetch error that is not
