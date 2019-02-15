@@ -1,5 +1,16 @@
 import {assert} from '/src/lib/assert.js';
 
+// Return a new array consisting of only distinct values (compared by
+// equality). Relative order is maintained. Throws an error if the input is not
+// an array.
+export function unique(array) {
+  // The lambda only returns true when the index of the input value is
+  // equal to the index of the first time the value appears. Obviously not the
+  // most efficient but pretty simple.
+  // See https://stackoverflow.com/questions/11246758
+  return array.filter((value, index) => array.indexOf(value) === index);
+}
+
 // Maybe generate and show a desktop notification provided that notifications
 // are enabled in settings. |note| has optional properties name, message, and
 // url (string). Defaults are provided for missing properties.

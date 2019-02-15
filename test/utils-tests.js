@@ -1,5 +1,25 @@
-import {assert} from '/src/lib/assert.js';
 import * as utils from '/src/core/utils.js';
+import {assert} from '/src/lib/assert.js';
+
+export async function unique_test() {
+  let input = [0, 1, 2];
+  let output = utils.unique(input);
+  assert(output.length === 3);
+  assert(output[0] === 0 && output[1] === 1 && output[2] === 2);
+
+  input = [];
+  output = utils.unique(input);
+  assert(output.length === 0);
+
+  input = [0, 0];
+  output = utils.unique(input);
+  assert(output.length === 1);
+
+  input = [0, 1, 1];
+  output = utils.unique(input);
+  assert(output.length === 2);
+  assert(output[0] === 0 && output[1] === 1);
+}
 
 export async function url_get_extension_tests() {
   // Exercise the simple typical success case
