@@ -31,16 +31,6 @@ export function show_notification(config, note) {
   });
 }
 
-export function query_idle_state(idle_secs) {
-  return new Promise((resolve, reject) => {
-    if (chrome && chrome.idle && chrome.idle.queryState) {
-      chrome.idle.queryState(idle_secs, resolve);
-    } else {
-      reject(new Error('chrome.idle unavailable'));
-    }
-  });
-}
-
 // Replaces tags in the input string with the replacement. If a replacement is
 // not specified, then tags are removed.
 export function replace_tags(html, replacement) {

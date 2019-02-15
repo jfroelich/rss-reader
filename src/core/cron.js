@@ -3,6 +3,7 @@ import * as favicon from '/src/core/favicon.js';
 import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';
 import * as utils from '/src/core/utils.js';
+import * as idle from '/src/lib/idle.js';
 import * as tls from '/src/lib/tls.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
@@ -54,7 +55,7 @@ async function handle_alarm_poll() {
   if (tls.read_boolean('only_poll_if_idle')) {
     const idle_states = ['locked', 'idle'];
     const idle_secs = 30;
-    const idle_state = await utils.query_idle_state(idle_secs);
+    const idle_state = await idle.query_state(idle_secs);
     if (!idle_states.includes(idle_state)) {
       console.debug('Canceling poll-feeds alarm as not idle');
       return;
