@@ -5,7 +5,6 @@ import * as net from '/src/core/net.js';
 import {assert} from '/src/lib/assert.js';
 import * as file_utils from '/src/lib/file-utils.js';
 import * as opml_utils from '/src/lib/opml-utils.js';
-import * as string_utils from '/src/lib/string-utils.js';
 import * as tls from '/src/lib/tls.js';
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar
@@ -82,7 +81,6 @@ export async function export_opml(document_title) {
   return doc;
 }
 
-
 // Create and store feed objects in the database based on urls extracted from
 // zero or more opml files. |files| should be a FileList or an Array.
 export async function opml_import(session, files) {
@@ -108,8 +106,7 @@ export async function opml_import(session, files) {
   }
 
   // Filter dups
-  // TODO: can Array.prototype.indexOf/includes work on URL objects? It is
-  // comparison by reference?
+  // TODO: use array-utils.unique_compute
   const url_set = [], seen_hrefs = [];
   for (const url of urls) {
     if (!seen_hrefs.includes(url.href)) {
@@ -144,7 +141,7 @@ async function opml_import_read_feeds(file) {
   }
 
   const file_text = await file_utils.read_text(file);
-  const document = parse_opml(file_text);
+  const document = opml_utils.parse_opml(file_text);
 
   const elements = document.querySelectorAll('opml > body > outline[type]');
   const type_pattern = /^\s*(rss|rdf|feed)\s*$/i;
@@ -179,29 +176,6 @@ function file_type_is_opml(file) {
     'application/opml+xml'
   ];
   return types.includes(file.type);
-}
-
-function parse_opml(xml_string) {
-  const parser = new DOMParser();
-  const document = parser.parseFromString(xml_string, 'application/xml');
-  const error = document.querySelector('parsererror');
-  if (error) {
-    const message = string_utils.condense_whitespace(error.textContent);
-    throw new OPMLParseError(message);
-  }
-
-  // Need to normalize localName when document is xml-flagged
-  const name = document.documentElement.localName.toLowerCase();
-  if (name !== 'opml') {
-    throw new OPMLParseError('Document element is not opml: ' + name);
-  }
-  return document;
-}
-
-export class OPMLParseError extends Error {
-  constructor(message = 'Parsing error') {
-    super(message);
-  }
 }
 
 export async function subscribe(session, iconn, url, timeout, notify) {
