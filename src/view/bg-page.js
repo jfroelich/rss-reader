@@ -1,9 +1,9 @@
 import * as cdb from '/src/core/cdb.js';
 import * as config from '/src/core/config.js';
 import * as cron_control from '/src/core/cron.js';
+import * as extension from '/src/core/extension.js';
 import * as ops from '/src/core/ops.js';
 import * as utils from '/src/core/utils.js';
-import * as tls from '/src/lib/tls.js';
 
 // Open a channel with a lifetime equal to the background page lifetime.
 const channel = new BroadcastChannel('reader');
@@ -50,4 +50,5 @@ chrome.runtime.onInstalled.addListener(event => {
   ops.badge_refresh().catch(console.warn);
 });
 
-chrome.browserAction.onClicked.addListener(_ => utils.open_view(tls));
+chrome.browserAction.onClicked.addListener(
+    event => extension.open_view().catch(console.warn));
