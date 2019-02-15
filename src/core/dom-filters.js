@@ -15,7 +15,7 @@ export async function composite_document_filter(doc, options = {}) {
   assert(typeof options === 'object');
 
   frame_filter(doc);
-  body_filter(doc);
+  ensure_body_element_filter(doc);
   iframe_filter(doc);
   comment_filter(doc);
   visibility_filter(doc, options.contrast_matte, options.contrast_ratio);
@@ -153,8 +153,7 @@ export function blacklist_filter(doc, blacklist) {
   }
 }
 
-// Ensures that a document has a body element
-export function body_filter(doc) {
+function ensure_body_element_filter(doc) {
   if (!doc.body) {
     const message = 'This document has no content';
     const error_node = doc.createTextNode(message);
