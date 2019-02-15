@@ -3,7 +3,6 @@ import * as config from '/src/core/config.js';
 import * as cron_control from '/src/core/cron.js';
 import * as extension from '/src/core/extension.js';
 import * as ops from '/src/core/ops.js';
-import * as utils from '/src/core/utils.js';
 
 // Open a channel with a lifetime equal to the background page lifetime.
 const channel = new BroadcastChannel('reader');

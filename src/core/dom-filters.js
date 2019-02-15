@@ -1,6 +1,5 @@
 import * as dom_utils from '/src/core/dom-utils.js';
 import * as net from '/src/core/net.js';
-import * as utils from '/src/core/utils.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import * as boilerplate from '/src/lib/boilerplate.js';
 import * as color from '/src/lib/color.js';

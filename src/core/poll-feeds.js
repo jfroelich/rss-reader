@@ -1,10 +1,10 @@
 import * as cdb from '/src/core/cdb.js';
+import * as desknote from '/src/core/desknote.js';
 import * as dom_filters from '/src/core/dom-filters.js';
 import * as dom_utils from '/src/core/dom-utils.js';
 import * as favicon from '/src/core/favicon.js';
 import * as net from '/src/core/net.js';
 import * as rewrite_rules from '/src/core/rewrite-rules.js';
-import * as utils from '/src/core/utils.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as html_utils from '/src/lib/html-utils.js';
@@ -67,7 +67,7 @@ export class PollOperation {
       const note = {};
       note.title = 'Added articles';
       note.message = 'Added ' + count + ' articles';
-      utils.show_notification(tls, note);
+      desknote.show(note);
     }
 
     console.debug('Poll feeds completed, added %d entries', count);
@@ -161,7 +161,7 @@ export class PollOperation {
       const note = {};
       note.title = 'Added articles';
       note.message = 'Added ' + count + ' articles for feed ' + feed.title;
-      utils.show_notification(tls, note);
+      desknote.show(note);
     }
 
     console.debug(

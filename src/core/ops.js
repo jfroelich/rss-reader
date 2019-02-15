@@ -1,7 +1,7 @@
 import * as cdb from '/src/core/cdb.js';
+import * as desknote from '/src/core/desknote.js';
 import * as favicon from '/src/core/favicon.js';
 import * as net from '/src/core/net.js';
-import * as utils from '/src/core/utils.js';
 import {assert} from '/src/lib/assert.js';
 import * as file_utils from '/src/lib/file-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
@@ -282,7 +282,7 @@ export async function subscribe(session, iconn, url, timeout, notify) {
     note.title = 'Subscribed!';
     note.message = 'Subscribed to ' + feed_title;
     note.url = feed.faviconURLString;
-    utils.show_notification(tls, note);
+    desknote.show(note);
   }
 
   return feed;

@@ -1,14 +1,11 @@
 import * as extension from '/src/core/extension.js';
-import {assert} from '/src/lib/assert.js';
+import * as tls from '/src/lib/tls.js';
 
-// Maybe generate and show a desktop notification provided that notifications
-// are enabled in settings. |note| has optional properties name, message, and
-// url (string). Defaults are provided for missing properties.
-// TODO: utils is located in core, so this is located in core, so there is no
-// longer a need to do config dependency injection, so the config parameter
-// should be removed and instead config should be imported
-export function show_notification(config, note) {
-  if (!config.read_boolean('show_notifications')) {
+// If notifications are enabled, generate and show a desktop notification.
+// |note| has optional properties name, message, and url (string). Defaults are
+// provided for missing properties.
+export function show(note) {
+  if (!tls.read_boolean('show_notifications')) {
     return;
   }
 

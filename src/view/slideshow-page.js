@@ -3,7 +3,6 @@ import * as config from '/src/core/config.js';
 import * as favicon from '/src/core/favicon.js';
 import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';
-import * as utils from '/src/core/utils.js';
 import {assert} from '/src/lib/assert.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
 import * as html_utils from '/src/lib/html-utils.js';
@@ -483,7 +482,7 @@ async function options_menu_onclick(event) {
 // Given an opml document, converts it into a file and then triggers the
 // download of that file in the browser.
 // TODO: make this more generic (e.g any type of file, not just opml, or maybe
-// at least xml, and then move it somewhere like utils)
+// at least xml, and then move it somewhere like a library)
 function download_opml_document(opml_document, file_name = 'subs.xml') {
   // Generate a file. Files implement the Blob interface so we really just
   // generate a blob.
@@ -949,7 +948,7 @@ function transition_onend(event) {
   decrement_active_transition_count();
 }
 
-// TODO: move to utils
+// TODO: move to a library like date-utils
 // Return a date as a formatted string. This is an opinionated implementation
 // that is intended to be very simple. This tries to recover from errors and
 // not throw.

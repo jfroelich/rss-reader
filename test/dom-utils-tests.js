@@ -1,5 +1,4 @@
 import * as dom_utils from '/src/core/dom-utils.js';
-import * as utils from '/src/core/utils.js';
 import {assert} from '/src/lib/assert.js';
 import * as html_utils from '/src/lib/html-utils.js';
 
