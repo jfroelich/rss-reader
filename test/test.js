@@ -1,3 +1,4 @@
+import * as array_utils_tests from '/test/array-utils-tests.js';
 import * as cdb_tests from '/test/cdb-tests.js';
 import {color_test} from '/test/color-test.js';
 import * as db_tests from '/test/db-tests.js';
@@ -15,6 +16,7 @@ import * as string_utils_tests from '/test/string-utils-tests.js';
 import * as utils_tests from '/test/utils-tests.js';
 
 const registry = [];
+register_module_tests(array_utils_tests);
 register_test(color_test);
 register_module_tests(cdb_tests);
 register_module_tests(dom_utils_tests);
