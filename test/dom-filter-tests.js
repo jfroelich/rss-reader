@@ -1,15 +1,15 @@
-import {assert} from '/src/lib/assert.js';
-import * as color from '/src/lib/color.js';
 import * as dom_filters from '/src/core/dom-filters.js';
 import * as dom_utils from '/src/core/dom-utils.js';
 import * as net from '/src/core/net.js';
 import * as utils from '/src/core/utils.js';
-
+import {assert} from '/src/lib/assert.js';
+import * as color from '/src/lib/color.js';
+import * as html_utils from '/src/lib/html-utils.js';
 
 export async function attribute_empty_filter_test() {
   // Simple empty non-boolean attribute in body
   let input = '<html><head></head><body><a name="">test</a></body></html>';
-  let doc = utils.parse_html(input);
+  let doc = html_utils.parse_html(input);
   dom_filters.attribute_empty_filter(doc);
   let output = '<html><head></head><body><a>test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);
@@ -17,7 +17,7 @@ export async function attribute_empty_filter_test() {
   // boolean attribute with value in body
   input =
       '<html><head></head><body><a disabled="disabled">test</a></body></html>';
-  doc = utils.parse_html(input);
+  doc = html_utils.parse_html(input);
   attribute_empty_filter(doc);
   output =
       '<html><head></head><body><a disabled="disabled">test</a></body></html>';
@@ -26,14 +26,14 @@ export async function attribute_empty_filter_test() {
   // boolean attribute without value in body
   // TODO: is this right? not sure if ="" belongs
   input = '<html><head></head><body><a disabled="">test</a></body></html>';
-  doc = utils.parse_html(input);
+  doc = html_utils.parse_html(input);
   attribute_empty_filter(doc);
   output = '<html><head></head><body><a disabled="">test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);
 
   // Body element with attribute
   input = '<html><head></head><body foo="">test</body></html>';
-  doc = utils.parse_html(input);
+  doc = html_utils.parse_html(input);
   attribute_empty_filter(doc);
   output = '<html><head></head><body foo="">test</body></html>';
   assert(doc.documentElement.outerHTML === output);
@@ -41,14 +41,14 @@ export async function attribute_empty_filter_test() {
   // Multiple elements with non-boolean attributes in body
   input =
       '<html><head></head><body><p id=""><a name="">test</a></p></body></html>';
-  doc = utils.parse_html(input);
+  doc = html_utils.parse_html(input);
   attribute_empty_filter(doc);
   output = '<html><head></head><body><p><a>test</a></p></body></html>';
   assert(doc.documentElement.outerHTML === output);
 
   // Multiple non-boolean attributes in element in body
   input = '<html><head></head><body><a id="" name="">test</a></body></html>';
-  doc = utils.parse_html(input);
+  doc = html_utils.parse_html(input);
   attribute_empty_filter(doc);
   output = '<html><head></head><body><a>test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);
@@ -56,7 +56,7 @@ export async function attribute_empty_filter_test() {
   // Element with both non-boolean and boolean attribute in body
   input =
       '<html><head></head><body><a id="" disabled="">test</a></body></html>';
-  doc = utils.parse_html(input);
+  doc = html_utils.parse_html(input);
   attribute_empty_filter(doc);
   output = '<html><head></head><body><a disabled="">test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);
@@ -74,7 +74,7 @@ export async function image_lazy_filter_test() {
   // const request_url = new URL(url_string);
   // const response = await net.fetch_html(request_url);
   // const response_text = await response.text();
-  // const document = utils.parse_html(response_text);
+  // const document = html_utils.parse_html(response_text);
   // dom_filters.image_lazy_filter(document);
   // Call this subsequently because it prints out missing images
   // dom_filters.image_dead_filter(document);
@@ -131,7 +131,7 @@ async function load_file(filename) {
   const url_string = chrome.extension.getURL(base_path + filename);
   const response = await fetch(url_string);
   const text = await response.text();
-  const doc = utils.parse_html(text);
+  const doc = html_utils.parse_html(text);
   const base_url_string = chrome.extension.getURL(base_path);
   const base_url = new URL(base_url_string);
   dom_utils.set_base_uri(doc, base_url);

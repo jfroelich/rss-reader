@@ -5,6 +5,7 @@ import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';
 import * as utils from '/src/core/utils.js';
 import {assert} from '/src/lib/assert.js';
+import * as html_utils from '/src/lib/html-utils.js';
 import * as tls from '/src/lib/tls.js';
 
 const splash_element = document.getElementById('initial-loading-panel');
@@ -802,7 +803,7 @@ function create_article_title_element(entry) {
     let title = entry.title;
     // TODO: title is allowed to contain whatever entities it has, this should
     // be a call to strip tags, not an entity escape
-    title = utils.escape_html(title);
+    title = html_utils.escape_html(title);
 
     title_element.setAttribute('title', title);
     title = utils.filter_publisher(title);

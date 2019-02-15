@@ -1,6 +1,7 @@
 import * as utils from '/src/core/utils.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import * as html_utils from '/src/lib/html-utils.js';
 import * as idb from '/src/lib/idb.js';
 import * as string_utils from '/src/lib/string-utils.js';
 
@@ -1141,9 +1142,9 @@ export class Db {
     if (entry.author) {
       let author = entry.author;
       author = string_utils.filter_controls(author);
-      author = utils.replace_tags(author, '');
+      author = html_utils.replace_tags(author, '');
       author = string_utils.condense_whitespace(author);
-      author = utils.truncate_html(author, author_max_length);
+      author = html_utils.truncate_html(author, author_max_length);
       entry.author = author;
     }
 
@@ -1154,16 +1155,16 @@ export class Db {
       content = string_utils.filter_unprintables(content);
 
       // Temporarily disabled while debugging poll-feeds issue
-      // content = utils.truncate_html(content, content_max_length);
+      // content = html_utils.truncate_html(content, content_max_length);
       entry.content = content;
     }
 
     if (entry.title) {
       let title = entry.title;
       title = string_utils.filter_controls(title);
-      title = utils.replace_tags(title, '');
+      title = html_utils.replace_tags(title, '');
       title = string_utils.condense_whitespace(title);
-      title = utils.truncate_html(title, title_max_length);
+      title = html_utils.truncate_html(title, title_max_length);
       entry.title = title;
     }
   }
@@ -1185,18 +1186,18 @@ export class Db {
     if (feed.title) {
       let title = feed.title;
       title = string_utils.filter_controls(title);
-      title = utils.replace_tags(title, html_tag_replacement);
+      title = html_utils.replace_tags(title, html_tag_replacement);
       title = string_utils.condense_whitespace(title);
-      title = utils.truncate_html(title, title_max_len, repl_suffix);
+      title = html_utils.truncate_html(title, title_max_len, repl_suffix);
       feed.title = title;
     }
 
     if (feed.description) {
       let desc = feed.description;
       desc = string_utils.filter_controls(desc);
-      desc = utils.replace_tags(desc, html_tag_replacement);
+      desc = html_utils.replace_tags(desc, html_tag_replacement);
       desc = string_utils.condense_whitespace(desc);
-      desc = utils.truncate_html(desc, desc_max_len, repl_suffix);
+      desc = html_utils.truncate_html(desc, desc_max_len, repl_suffix);
       feed.description = desc;
     }
   }

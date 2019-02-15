@@ -7,6 +7,7 @@ import * as rewrite_rules from '/src/core/rewrite-rules.js';
 import * as utils from '/src/core/utils.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import * as html_utils from '/src/lib/html-utils.js';
 import * as sniffer from '/src/lib/sniffer.js';
 import * as tls from '/src/lib/tls.js';
 
@@ -234,7 +235,7 @@ export class PollOperation {
       let response_text;
       try {
         response_text = await response.text();
-        doc = utils.parse_html(response_text);
+        doc = html_utils.parse_html(response_text);
       } catch (error) {
         if (error instanceof AssertionError) {
           throw error;
@@ -244,7 +245,7 @@ export class PollOperation {
       }
     } else {
       try {
-        doc = utils.parse_html(entry.content);
+        doc = html_utils.parse_html(entry.content);
       } catch (error) {
         if (error instanceof AssertionError) {
           throw error;
