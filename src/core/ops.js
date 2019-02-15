@@ -3,6 +3,7 @@ import * as favicon from '/src/core/favicon.js';
 import * as net from '/src/core/net.js';
 import * as utils from '/src/core/utils.js';
 import {assert} from '/src/lib/assert.js';
+import * as string_utils from '/src/lib/string-utils.js';
 import * as tls from '/src/lib/tls.js';
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar
@@ -214,7 +215,7 @@ function parse_opml(xml_string) {
   const document = parser.parseFromString(xml_string, 'application/xml');
   const error = document.querySelector('parsererror');
   if (error) {
-    const message = utils.condense_whitespace(error.textContent);
+    const message = string_utils.condense_whitespace(error.textContent);
     throw new OPMLParseError(message);
   }
 

@@ -1,4 +1,5 @@
 import {assert} from '/src/lib/assert.js';
+import * as string_utils from '/src/lib/string-utils.js';
 
 // Return a new array consisting of only distinct values (compared by
 // equality). Relative order is maintained. Throws an error if the input is not
@@ -69,21 +70,6 @@ export function query_idle_state(idle_secs) {
       reject(new Error('chrome.idle unavailable'));
     }
   });
-}
-
-export function filter_unprintables(value) {
-  if (typeof value !== 'string') {
-    return value;
-  }
-
-  // \t \u0009 9, \n \u000a 10, \f \u000c 12, \r \u000d 13
-  // The regex matches 0-8, 11, and 14-31, all inclusive
-  return value.replace(/[\u0000-\u0008\u000b\u000e-\u001F]+/g, '');
-}
-
-
-export function filter_controls(value) {
-  return value.replace(/[\x00-\x1F\x7F-\x9F]+/g, '');
 }
 
 // Replaces tags in the input string with the replacement. If a replacement is
@@ -242,10 +228,6 @@ function find_tab(url_string) {
   });
 }
 
-export function condense_whitespace(value) {
-  return value.replace(/\s\s+/g, ' ');
-}
-
 export function file_read_text(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -318,7 +300,7 @@ export function parse_html(html) {
 
   const error = doc.querySelector('parsererror');
   if (error) {
-    const message = condense_whitespace(error.textContent);
+    const message = string_utils.condense_whitespace(error.textContent);
     throw new Error(message);
   }
 
@@ -332,15 +314,11 @@ export function url_get_extension(url) {
     const last_dot_pos_p1 = path.lastIndexOf('.') + 1;
     if (last_dot_pos_p1 > 0 && last_dot_pos_p1 < path.length) {
       const ext = path.substring(last_dot_pos_p1);
-      if (ext.length < 5 && is_alphanumeric(ext)) {
+      if (ext.length < 5 && string_utils.is_alphanumeric(ext)) {
         return ext;
       }
     }
   }
-}
-
-export function is_alphanumeric(value) {
-  return !/[^\p{L}\d]/u.test(value);
 }
 
 // Returns a new string where certain characters in the input string have been

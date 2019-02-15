@@ -2,6 +2,7 @@ import * as utils from '/src/core/utils.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as idb from '/src/lib/idb.js';
+import * as string_utils from '/src/lib/string-utils.js';
 
 // TODO: both Entry and Feed can extend Resource, there is a large amount of
 // redundancy, good chance to review understanding of super and inheritance
@@ -1139,9 +1140,9 @@ export class Db {
 
     if (entry.author) {
       let author = entry.author;
-      author = utils.filter_controls(author);
+      author = string_utils.filter_controls(author);
       author = utils.replace_tags(author, '');
-      author = utils.condense_whitespace(author);
+      author = string_utils.condense_whitespace(author);
       author = utils.truncate_html(author, author_max_length);
       entry.author = author;
     }
@@ -1150,7 +1151,7 @@ export class Db {
       let content = entry.content;
       // We cannot use filter_controls because that matches \r\n. This was
       // previously the source of a bug
-      content = utils.filter_unprintables(content);
+      content = string_utils.filter_unprintables(content);
 
       // Temporarily disabled while debugging poll-feeds issue
       // content = utils.truncate_html(content, content_max_length);
@@ -1159,9 +1160,9 @@ export class Db {
 
     if (entry.title) {
       let title = entry.title;
-      title = utils.filter_controls(title);
+      title = string_utils.filter_controls(title);
       title = utils.replace_tags(title, '');
-      title = utils.condense_whitespace(title);
+      title = string_utils.condense_whitespace(title);
       title = utils.truncate_html(title, title_max_length);
       entry.title = title;
     }
@@ -1183,18 +1184,18 @@ export class Db {
 
     if (feed.title) {
       let title = feed.title;
-      title = utils.filter_controls(title);
+      title = string_utils.filter_controls(title);
       title = utils.replace_tags(title, html_tag_replacement);
-      title = utils.condense_whitespace(title);
+      title = string_utils.condense_whitespace(title);
       title = utils.truncate_html(title, title_max_len, repl_suffix);
       feed.title = title;
     }
 
     if (feed.description) {
       let desc = feed.description;
-      desc = utils.filter_controls(desc);
+      desc = string_utils.filter_controls(desc);
       desc = utils.replace_tags(desc, html_tag_replacement);
-      desc = utils.condense_whitespace(desc);
+      desc = string_utils.condense_whitespace(desc);
       desc = utils.truncate_html(desc, desc_max_len, repl_suffix);
       feed.description = desc;
     }

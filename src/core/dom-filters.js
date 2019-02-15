@@ -5,6 +5,7 @@ import {assert, AssertionError} from '/src/lib/assert.js';
 import * as boilerplate from '/src/lib/boilerplate.js';
 import * as color from '/src/lib/color.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import * as string_utils from '/src/lib/string-utils.js';
 
 // Applies several content filters to a document. The filters are applied in a
 // logical order that tries to minimize the amount of work done, and to preserve
@@ -833,7 +834,7 @@ export function node_whitespace_filter(doc) {
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     const val = node.nodeValue;
     if (val.length > 3 && !node.parentNode.closest(ws_sense)) {
-      const new_val = utils.condense_whitespace(val);
+      const new_val = string_utils.condense_whitespace(val);
       if (new_val.length !== val.length) {
         node.nodeValue = new_val;
       }
