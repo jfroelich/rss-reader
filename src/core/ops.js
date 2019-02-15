@@ -131,7 +131,11 @@ async function opml_import_read_feeds(file) {
   // this should just log a warning and return an empty array?
   // TODO: maybe we should not be trying to consider the mime type at all, and
   // just allow the parsing to fail later.
-  if (!file_type_is_opml(file)) {
+  const opml_mime_types = [
+    'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
+    'application/opml+xml'
+  ];
+  if (!opml_mime_types.includes(file.type)) {
     const msg = 'Unacceptable type ' + file.type + ' for file ' + file.name;
     throw new TypeError(msg);
   }
@@ -167,15 +171,6 @@ function opml_import_parse_url_noexcept(url_string) {
     } catch (error) {
     }
   }
-}
-
-// TODO: inline
-function file_type_is_opml(file) {
-  const types = [
-    'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
-    'application/opml+xml'
-  ];
-  return types.includes(file.type);
 }
 
 export async function subscribe(session, iconn, url, timeout, notify) {
