@@ -154,23 +154,16 @@ async function opml_import_read_feeds(file) {
     const type = element.getAttribute('type');
     if (type_pattern.test(type)) {
       const url_string = element.getAttribute('xmlUrl');
-      const url = opml_import_parse_url_noexcept(url_string);
-      if (url) {
+      try {
+        const url = new URL(url_string);
         urls.push(url);
+      } catch (error) {
+        // Ignore the error, skip the url
+        console.debug('Invalid opml outline url', url_string, error);
       }
     }
   }
   return urls;
-}
-
-// TODO: inline
-function opml_import_parse_url_noexcept(url_string) {
-  if (url_string) {
-    try {
-      return new URL(url_string);
-    } catch (error) {
-    }
-  }
 }
 
 export async function subscribe(session, iconn, url, timeout, notify) {
