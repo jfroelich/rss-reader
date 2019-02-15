@@ -4,10 +4,10 @@ import * as dom_utils from '/src/core/dom-utils.js';
 import * as favicon from '/src/core/favicon.js';
 import * as net from '/src/core/net.js';
 import * as rewrite_rules from '/src/core/rewrite-rules.js';
-import * as sniffer from '/src/core/sniffer.js';
 import * as utils from '/src/core/utils.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import * as sniffer from '/src/lib/sniffer.js';
 import * as tls from '/src/lib/tls.js';
 
 export class PollOperation {

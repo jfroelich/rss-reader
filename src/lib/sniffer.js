@@ -1,5 +1,3 @@
-// TODO: now that this no longer depends on anything in core, move to lib
-
 import {assert} from '/src/lib/assert.js';
 import * as mime from '/src/lib/mime.js';
 import * as url_utils from '/src/lib/url-utils.js';
