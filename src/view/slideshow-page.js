@@ -5,6 +5,7 @@ import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';
 import * as utils from '/src/core/utils.js';
 import {assert} from '/src/lib/assert.js';
+import {filter_publisher} from '/src/lib/filter-publisher.js';
 import * as html_utils from '/src/lib/html-utils.js';
 import * as tls from '/src/lib/tls.js';
 
@@ -806,7 +807,7 @@ function create_article_title_element(entry) {
     title = html_utils.escape_html(title);
 
     title_element.setAttribute('title', title);
-    title = utils.filter_publisher(title);
+    title = filter_publisher(title);
 
     // NOTE: previously this truncated the title using javascript, now this
     // relies on css to truncate as needed

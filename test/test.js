@@ -5,6 +5,7 @@ import * as db_tests from '/test/db-tests.js';
 import * as dom_filter_tests from '/test/dom-filter-tests.js';
 import * as dom_utils_tests from '/test/dom-utils-tests.js';
 import * as favicon_tests from '/test/favicon-tests.js';
+import {filter_publisher_test} from '/test/filter-publisher-test.js';
 import * as html_utils_tests from '/test/html-utils-tests.js';
 import * as idb_tests from '/test/idb-test.js';
 import {mime_test} from '/test/mime-test.js';
@@ -15,7 +16,6 @@ import * as rewrite_url_tests from '/test/rewrite-url-test.js';
 import {sniffer_test} from '/test/sniffer-test.js';
 import * as string_utils_tests from '/test/string-utils-tests.js';
 import * as url_utils_tests from '/test/url-utils-tests.js';
-import * as utils_tests from '/test/utils-tests.js';
 
 const registry = [];
 register_module_tests(array_utils_tests);
@@ -25,6 +25,7 @@ register_module_tests(dom_utils_tests);
 register_module_tests(db_tests);
 register_module_tests(dom_filter_tests);
 register_module_tests(favicon_tests);
+register_test(filter_publisher_test);
 register_module_tests(html_utils_tests);
 register_module_tests(idb_tests);
 register_test(mime_test);
@@ -35,7 +36,6 @@ register_module_tests(rewrite_url_tests);
 register_test(sniffer_test);
 register_module_tests(string_utils_tests);
 register_module_tests(url_utils_tests);
-register_module_tests(utils_tests);
 
 // On module load, expose console commands
 window.run = cli_run;
