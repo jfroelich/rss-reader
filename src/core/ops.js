@@ -4,6 +4,7 @@ import * as favicon from '/src/core/favicon.js';
 import * as net from '/src/core/net.js';
 import {assert} from '/src/lib/assert.js';
 import * as file_utils from '/src/lib/file-utils.js';
+import * as opml_utils from '/src/lib/opml-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
 import * as tls from '/src/lib/tls.js';
 
@@ -41,7 +42,7 @@ export function deactivate_feed(session, feed_id, reason) {
 // Returns an in memory OPML document object filled with the feeds from the
 // database. document_title is optional.
 export async function export_opml(document_title) {
-  const doc = create_opml_template(document_title);
+  const doc = opml_utils.create_opml_template(document_title);
 
   const session = new cdb.CDB();
   await session.open();
@@ -81,37 +82,6 @@ export async function export_opml(document_title) {
   return doc;
 }
 
-function create_opml_template(document_title) {
-  const doc = document.implementation.createDocument(null, 'opml', null);
-  doc.documentElement.setAttribute('version', '2.0');
-
-  const head_element = doc.createElement('head');
-  doc.documentElement.appendChild(head_element);
-
-  if (document_title) {
-    const title_element = doc.createElement('title');
-    title_element.textContent = document_title;
-  }
-
-  const current_date = new Date();
-  const current_date_utc_string = current_date.toUTCString();
-
-  const date_created_element = doc.createElement('datecreated');
-  date_created_element.textContent = current_date_utc_string;
-  head_element.appendChild(date_created_element);
-
-  const date_modified_element = doc.createElement('datemodified');
-  date_modified_element.textContent = current_date_utc_string;
-  head_element.appendChild(date_modified_element);
-
-  const docs_element = doc.createElement('docs');
-  docs_element.textContent = 'http://dev.opml.org/spec2.html';
-  head_element.appendChild(docs_element);
-
-  const body_element = doc.createElement('body');
-  doc.documentElement.appendChild(body_element);
-  return doc;
-}
 
 // Create and store feed objects in the database based on urls extracted from
 // zero or more opml files. |files| should be a FileList or an Array.
