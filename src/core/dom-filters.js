@@ -2,6 +2,7 @@ import * as dom_utils from '/src/core/dom-utils.js';
 import * as net from '/src/core/net.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import * as boilerplate from '/src/lib/boilerplate.js';
+import {coerce_element} from '/src/lib/coerce-element.js';
 import * as color from '/src/lib/color.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as string_utils from '/src/lib/string-utils.js';
@@ -232,6 +233,8 @@ export function comment_filter(doc) {
 // characters in the element name, so that when a document it serialized, it
 // contains fewer characters. |copy_attrs_flag| is optional boolean specifying
 // whether to copy html attributes when replacing an element.
+// TODO: coerce-element dropped its copy-attributes parameter, attribuets are
+// now always copied, so this should no longer have copy_attrs_flag param
 export function condense_tagnames_filter(doc, copy_attrs_flag) {
   const renames = [
     {before: 'strong', after: 'b'}, {before: 'em', after: 'i'},
@@ -240,7 +243,7 @@ export function condense_tagnames_filter(doc, copy_attrs_flag) {
   for (const rename of renames) {
     const elements = doc.querySelectorAll(rename.before);
     for (const element of elements) {
-      dom_utils.coerce_element(element, rename.after, copy_attrs_flag);
+      coerce_element(element, rename.after);
     }
   }
 }

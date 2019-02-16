@@ -1,5 +1,6 @@
 import * as array_utils_tests from '/test/array-utils-tests.js';
 import * as cdb_tests from '/test/cdb-tests.js';
+import {coerce_element_test} from '/test/coerce-element-test.js';
 import {color_test} from '/test/color-test.js';
 import * as db_tests from '/test/db-tests.js';
 import * as dom_filter_tests from '/test/dom-filter-tests.js';
@@ -19,6 +20,7 @@ import * as url_utils_tests from '/test/url-utils-tests.js';
 
 const registry = [];
 register_module_tests(array_utils_tests);
+register_test(coerce_element_test);
 register_test(color_test);
 register_module_tests(cdb_tests);
 register_module_tests(dom_utils_tests);
