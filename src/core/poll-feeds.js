@@ -312,13 +312,9 @@ export class PollOperation {
     return net.fetch_feed(url, options);
   }
 
-  // Returns a new object that results from merging the old feed with the new
-  // feed. Fields from the new feed take precedence, except for urls, which are
-  // merged to generate a distinct ordered set of oldest to newest url. Impure
-  // because of copying by reference. Internally, after assignment, the merged
-  // feed has only the urls from the new feed. So the output feed's url array
-  // needs to be fixed. First copy over the old feed's urls, then try and append
-  // each new feed url.
+  // Returns a new feed object that results from merging the old feed with the
+  // new feed. Values from the new feed take precedence, except for urls, which
+  // are merged to generate an ordered set.
   mergeFeed(old_feed, new_feed) {
     const merged_feed = Object.assign(new cdb.Feed(), old_feed, new_feed);
     merged_feed.urls = [...old_feed.urls];
@@ -369,8 +365,7 @@ export class PollOperation {
   }
 
   // Convert a parsed entry into a cdb-formatted entry
-  // TODO: now that this function is no longer in a separate lib, maybe the
-  // clone is just silly.
+  // TODO: skip clone and mutate
   coerceEntry(parsed_entry) {
     const blank_entry = new cdb.Entry();
     // Clone to avoid mutation
