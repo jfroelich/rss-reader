@@ -1,7 +1,3 @@
-
-// TODO: entry_title_max_length is no longer in use, because I switched to css
-// based truncation. need to add this to list of keys deleted per ugprade
-
 import * as color from '/src/lib/color.js';
 import * as tls from '/src/lib/tls.js';
 
@@ -31,6 +27,7 @@ function update_config(event) {
   tls.remove('db_version');
   tls.remove('db_open_timeout');
   tls.remove('channel_name');
+  tls.remove('entry_title_max_length');
 
   rename('LAST_ALARM', 'last_alarm');
   rename(
