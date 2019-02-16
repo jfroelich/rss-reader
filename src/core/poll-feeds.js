@@ -150,10 +150,7 @@ export class PollOperation {
       }
     }
 
-    const promises = entries.map(
-        (entry =>
-             this.pollEntry(entry, cdb.Feed.prototype.getURLString.call(feed))),
-        this);
+    const promises = entries.map(this.pollEntry, this);
     const ids = await Promise.all(promises);
     const count = ids.reduce((sum, v) => v ? sum + 1 : sum, 0);
 
@@ -171,10 +168,9 @@ export class PollOperation {
   }
 
   // Processes an entry and possibly adds it to the database. Attempts to fetch
-  // the full text of the entry. Either returns the added entry id, or throws an
-  // error.
-  // TODO: if feed_url_string not in use, should not be param
-  async pollEntry(entry, feed_url_string) {
+  // the full text of the entry. Returns a promise that resolves to the new
+  // entry id, 0 if the entry exists, or rejects with an error.
+  async pollEntry(entry) {
     assert(this instanceof PollOperation);
     assert(cdb.is_entry(entry));
     assert(cdb.Entry.prototype.hasURL.call(entry));
@@ -187,7 +183,7 @@ export class PollOperation {
     let existing = await this.session.getEntry(
         'url', new URL(cdb.Entry.prototype.getURLString.call(entry)), true);
     if (existing) {
-      return 0;
+      return Promise.resolve(0);
     }
 
     // Fetch the entry full text. Reuse the url from above since it has not
@@ -210,11 +206,7 @@ export class PollOperation {
     }
 
     // If we fetched and redirected, append the post-redirect response url, and
-    // reapply url rewriting.
-
-    // NOTE: there is something really strange going, so do not use a variable
-    // named document here to try to flesh out the bug
-
+    // reapply url rewriting, and check again for existence
     let doc;
     if (response) {
       let url_changed = false;
@@ -228,7 +220,7 @@ export class PollOperation {
         url = new URL(cdb.Entry.prototype.getURLString.call(entry));
         let existing = await this.session.getEntry('url', url, true);
         if (existing) {
-          return 0;
+          return Promise.resolve(0);
         }
       }
 
@@ -308,16 +300,7 @@ export class PollOperation {
     cdb.CDB.sanitizeEntry(entry);
     cdb.CDB.validateEntry(entry);
 
-    // We do not need to await but I am for now due to what seems like an
-    // unrelated error but may be related, the await rules out this having
-    // anything to do with it
-    return await this.createEntry(entry);
-  }
-
-  // TODO: inline this helper, it no longer provides much value
-  createEntry(entry) {
-    assert(cdb.is_entry(entry));
-    return this.session.createEntry(entry);
+    return await this.session.createEntry(entry);
   }
 
   fetchFeed(feed) {
