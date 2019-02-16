@@ -1,59 +1,101 @@
 import * as color from '/src/lib/color.js';
 import * as tls from '/src/lib/tls.js';
 
+// Keys that were previously in use and are no longer in use that should be
+// cleaned up when the extension is updated
+const deprecated_keys = [
+  'channel_name', 'db_name', 'db_open_timeout', 'db_version', 'debug',
+  'entry_title_max_length', 'refresh_badge_delay'
+];
+
+// Filenames of article background images
+// clang-format off
+const background_images = [
+  'bgfons-paper_texture318.jpg',
+  'CCXXXXXXI_by_aqueous.jpg',
+  'paper-backgrounds-vintage-white.jpg',
+  'pickering-texturetastic-gray.png',
+  'reusage-recycled-paper-white-first.png',
+  'subtle-patterns-beige-paper.png',
+  'subtle-patterns-cream-paper.png',
+  'subtle-patterns-exclusive-paper.png',
+  'subtle-patterns-groove-paper.png',
+  'subtle-patterns-handmade-paper.png',
+  'subtle-patterns-paper-1.png',
+  'subtle-patterns-paper-2.png',
+  'subtle-patterns-paper.png',
+  'subtle-patterns-rice-paper-2.png',
+  'subtle-patterns-rice-paper-3.png',
+  'subtle-patterns-soft-wallpaper.png',
+  'subtle-patterns-white-wall.png',
+  'subtle-patterns-witewall-3.png',
+  'thomas-zucx-noise-lines.png'
+];
+
+// Available font names. These must correspond to the names used in CSS.
+const fonts = [
+  'ArchivoNarrow-Regular',
+  'Arial',
+  'Calibri',
+  'Cambria',
+  'CartoGothicStd',
+  'Edward Tufte Roman',
+  'Fanwood',
+  'Georgia',
+  'League Mono Regular',
+  'League Spartan',
+  'Merriweather Regular',
+  'Montserrat',
+  'Noto Sans',
+  'Open Sans Regular',
+  'PathwayGothicOne',
+  'PlayfairDisplaySC',
+  'Roboto Regular'
+];
+// clang-format on
+
 // React to the extension being installed or updated, or when chrome is updated,
-// to do tls related things. Note that this listener should be bound before
-// other listeners that depend on configuration setup.
+// to do config related things.
+// TODO: is it better to place this in the background page?
 export function install_listener(event) {
   if (event.reason === 'install') {
-    init_config(event);
+    init(event);
   } else {
     update_config(event);
   }
 }
 
+// The extension updated, or the background page was reloaded
 function update_config(event) {
-  // regarding update_config, updates get fired for many reasons, such as when
-  // reloading the extension from the extensions page. This does not indicate a
-  // version change. Removing legacy keys should be based on extension version
-  // change. I always forget what this is, and might use it in the future:
-  // `const previous_version_string = event.previousVersion;`
+  for (const key of deprecated_keys) {
+    tls.remove(key);
+  }
 
-  // Remove deprecated keys
-  // TODO: should just have an array and iterate over it
-  tls.remove('debug');
-  tls.remove('refresh_badge_delay');
-  tls.remove('db_name');
-  tls.remove('db_version');
-  tls.remove('db_open_timeout');
-  tls.remove('channel_name');
-  tls.remove('entry_title_max_length');
-
-  rename('LAST_ALARM', 'last_alarm');
-  rename(
+  tls.rename('LAST_ALARM', 'last_alarm');
+  tls.rename(
       'sanitize_document_image_size_fetch_timeout', 'set_image_sizes_timeout');
-  rename(
+  tls.rename(
       'sanitize_document_low_contrast_default_matte', 'contrast_default_matte');
-  rename('sanitize_document_emphasis_max_length', 'emphasis_max_length');
-  rename('sanitize_document_table_scan_max_rows', 'table_scan_max_rows');
-  rename('article_title_display_max_length', 'entry_title_max_length');
-  rename('MIN_CONTRAST_RATIO', 'min_contrast_ratio');
-  rename('PADDING', 'padding');
-  rename('BG_IMAGE', 'bg_image');
-  rename('BG_COLOR', 'bg_color');
-  rename('HEADER_FONT_FAMILY', 'header_font_family');
-  rename('HEADER_FONT_SIZE', 'header_font_size');
-  rename('BODY_FONT_FAMILY', 'body_font_family');
-  rename('BODY_FONT_SIZE', 'body_font_size');
-  rename('BODY_LINE_HEIGHT', 'body_line_height');
-  rename('JUSTIFY_TEXT', 'justify_text');
-  rename('COLUMN_COUNT', 'column_count');
-  rename('SHOW_NOTIFICATIONS', 'show_notifications');
-  rename('ONLY_POLL_IF_IDLE', 'only_poll_if_idle');
+  tls.rename('sanitize_document_emphasis_max_length', 'emphasis_max_length');
+  tls.rename('sanitize_document_table_scan_max_rows', 'table_scan_max_rows');
+  tls.rename('article_title_display_max_length', 'entry_title_max_length');
+  tls.rename('MIN_CONTRAST_RATIO', 'min_contrast_ratio');
+  tls.rename('PADDING', 'padding');
+  tls.rename('BG_IMAGE', 'bg_image');
+  tls.rename('BG_COLOR', 'bg_color');
+  tls.rename('HEADER_FONT_FAMILY', 'header_font_family');
+  tls.rename('HEADER_FONT_SIZE', 'header_font_size');
+  tls.rename('BODY_FONT_FAMILY', 'body_font_family');
+  tls.rename('BODY_FONT_SIZE', 'body_font_size');
+  tls.rename('BODY_LINE_HEIGHT', 'body_line_height');
+  tls.rename('JUSTIFY_TEXT', 'justify_text');
+  tls.rename('COLUMN_COUNT', 'column_count');
+  tls.rename('SHOW_NOTIFICATIONS', 'show_notifications');
+  tls.rename('ONLY_POLL_IF_IDLE', 'only_poll_if_idle');
 
-  // In some unknown prior version of the extension, I stored the path prefix
-  // in the images array. This is no longer done, so check if the stored value
-  // still has the path and if so remove it.
+  // In a prior version of the extension, I stored the path prefix in the images
+  // array. This is no longer done, so check if the stored value still has the
+  // path and if so remove it.
   const path = tls.read_string('bg_image');
   if (path && path.startsWith('/images/')) {
     console.debug('Stripping /images/ from bg image path', path);
@@ -61,7 +103,7 @@ function update_config(event) {
   }
 }
 
-export function init_config(event) {
+export function init(event) {
   // General settings
   tls.write_boolean('reuse_newtab', true);
   tls.write_boolean('show_notifications', true);
@@ -78,12 +120,7 @@ export function init_config(event) {
   tls.write_int('initial_entry_load_limit', 3);
 
   // View settings
-
-  // By default, use a reasonable animation duration that is not too fast or
-  // too slow.
   tls.write_float('slide_transition_duration', 0.16);
-
-  tls.write_int('entry_title_max_length', 300);
   tls.write_int('padding', 180);
   tls.write_string('bg_color', '#fefdfd');
   tls.write_string('header_font_family', 'Open Sans Regular');
@@ -93,79 +130,12 @@ export function init_config(event) {
   tls.write_int('body_line_height', 46);
   tls.write_int('column_count', 1);
   tls.write_boolean('justify_text', false);
-
-  // Install default background images
-  // clang-format off
-  const background_images = [
-    'bgfons-paper_texture318.jpg',
-    'CCXXXXXXI_by_aqueous.jpg',
-    'paper-backgrounds-vintage-white.jpg',
-    'pickering-texturetastic-gray.png',
-    'reusage-recycled-paper-white-first.png',
-    'subtle-patterns-beige-paper.png',
-    'subtle-patterns-cream-paper.png',
-    'subtle-patterns-exclusive-paper.png',
-    'subtle-patterns-groove-paper.png',
-    'subtle-patterns-handmade-paper.png',
-    'subtle-patterns-paper-1.png',
-    'subtle-patterns-paper-2.png',
-    'subtle-patterns-paper.png',
-    'subtle-patterns-rice-paper-2.png',
-    'subtle-patterns-rice-paper-3.png',
-    'subtle-patterns-soft-wallpaper.png',
-    'subtle-patterns-white-wall.png',
-    'subtle-patterns-witewall-3.png',
-    'thomas-zucx-noise-lines.png'
-  ];
-  // clang-format on
   tls.write_array('background_images', background_images);
-
   install_fonts();
 }
 
 export function install_fonts() {
-  // Install default fonts
-  // clang-format off
-  const fonts = [
-    'ArchivoNarrow-Regular',
-    'Arial',
-    'Calibri',
-    'Cambria',
-    'CartoGothicStd',
-    'Edward Tufte Roman',
-    'Fanwood',
-    'Georgia',
-    'League Mono Regular',
-    'League Spartan',
-    'Merriweather Regular',
-    'Montserrat',
-    'Noto Sans',
-    'Open Sans Regular',
-    'PathwayGothicOne',
-    'PlayfairDisplaySC',
-    'Roboto Regular'
-  ];
-  // clang-format on
   tls.write_array('fonts', fonts);
-}
-
-// Rename a configuration key.
-// TODO: move to tls.js
-function rename(from, to) {
-  // There is no need to do any type coercion. Maintain fidelity by using the
-  // string type, because everything in and out of config is derivative of
-  // of the string type.
-  const value = tls.read_string(from);
-
-  // Avoid creating the new key if the value is undefined. If the value is
-  // undefined then rename devolves into a remove decorator. Note that due to
-  // the strictness of this check, empty strings are retained, even though they
-  // are not visibly different from undefined in devtools
-  if (typeof value !== 'undefined') {
-    tls.write_string(to, value);
-  }
-
-  tls.remove(from);
 }
 
 // React to a localStorage property change. Note that this is only fired by the

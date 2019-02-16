@@ -2,6 +2,14 @@
 // serves an abstraction layer in case I change my mind regarding how values
 // are stored.
 
+export function rename(from, to) {
+  const value = read_string(from);
+  if (typeof value !== 'undefined') {
+    write_string(to, value);
+  }
+  remove(from);
+}
+
 export function has_key(key) {
   return typeof localStorage[key] !== 'undefined';
 }
