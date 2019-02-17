@@ -5,6 +5,54 @@ import {assert} from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
 import * as html_utils from '/src/lib/html-utils.js';
 
+// Check that the anchor-script-filter removes the anchors that should be
+// removed and retains the anchors that should be retained.
+export async function anchor_script_filter_test() {
+  let input, doc;
+
+  // A non-href non-javascript anchor should not be affected
+  input = '<a>test</a>';
+  doc = html_utils.parse_html(input);
+  dom_filters.anchor_script_filter(doc);
+  assert(doc.querySelector('a'));
+
+  // An anchor with a relative href without a javascript protocol should not
+  // be affected
+  input = '<a href="foo.html">foo</a>';
+  doc = html_utils.parse_html(input);
+  dom_filters.anchor_script_filter(doc);
+  assert(doc.querySelector('a'));
+
+  // An anchor with an absolute href without a javascript protocol should not
+  // be affected
+  input = '<a href="http://www.example.com/foo.html">foo</a>';
+  doc = html_utils.parse_html(input);
+  dom_filters.anchor_script_filter(doc);
+  assert(doc.querySelector('a'));
+
+  // A well-formed javascript anchor should be removed
+  input = '<a href="javascript:console.log(\'im in ur base\')">hax</a>';
+  doc = html_utils.parse_html(input);
+  dom_filters.anchor_script_filter(doc);
+  assert(!doc.querySelector('a'));
+
+  // A well-formed javascript anchor with leading space should still be removed,
+  // because the spec says browsers should tolerate leading and trailing space
+  input = '<a href=" javascript:console.log(\'im in ur base\')">hax</a>';
+  doc = html_utils.parse_html(input);
+  dom_filters.anchor_script_filter(doc);
+  assert(!doc.querySelector('a'));
+
+  // A malformed javascript anchor with space before colon should be unaffected
+  // NOTE: browser will treat this as a relative url, the spaces through the
+  // entire href value will each get encoded as %20, the anchor's protocol will
+  // still match the base uri protocol after the filter.
+  input = '<a href="javascript  :console.log(\'im in ur base\')">hax</a>';
+  doc = html_utils.parse_html(input);
+  dom_filters.anchor_script_filter(doc);
+  assert(doc.querySelector('a'));
+}
+
 export async function attribute_empty_filter_test() {
   // Simple empty non-boolean attribute in body
   let input = '<html><head></head><body><a name="">test</a></body></html>';
