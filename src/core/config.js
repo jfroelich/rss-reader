@@ -226,9 +226,9 @@ export function storage_onchange(event) {
     const rule = find_css_rule('.entry .entry-content');
     const count = parseInt(event.newValue, 10);
     if (!isNaN(count) && count >= 0 && count <= 3) {
-      rule.style.webkitColumnCount = count;
+      rule.style.columnCount = count;
     } else {
-      rule.style.webkitColumnCount = '';
+      rule.style.columnCount = '';
     }
   }
 }
@@ -298,12 +298,11 @@ function page_style_content_rule_create(sheet) {
     buffer.push(`line-height: ${line_height}px;`);
   }
 
-  // TODO: did column-count become standard css yet? if so drop prefix
   const column_count = tls.read_int('column_count');
   if (column_count === 2 || column_count === 3) {
-    buffer.push(`-webkit-column-count: ${column_count};`);
-    buffer.push('-webkit-column-gap: 30px;');
-    buffer.push('-webkit-column-rule: 1px outset #aaaaaa;');
+    buffer.push(`column-count: ${column_count};`);
+    buffer.push('column-gap: 30px;');
+    buffer.push('column-rule: 1px outset #aaaaaa;');
   }
 
   return buffer.join('');
