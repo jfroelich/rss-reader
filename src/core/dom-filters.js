@@ -925,6 +925,11 @@ export function document_trim_filter(doc) {
 // Resolves all element attribute values that contain urls in |document|. Throws
 // an error if the document has an invalid base URI.
 export function url_resolve_filter(doc) {
+  // TODO: some elements have multiple attributes with urls. For example,
+  // the new model-viewer attribute also has a poster attribute. There may be
+  // some other elements I have ignored too, like some of the attributes for
+  // <object> or <embed>.
+
   const base_url = new URL(doc.baseURI);
   const map = {
     a: 'href',
@@ -946,6 +951,7 @@ export function url_resolve_filter(doc) {
     input: 'src',
     ins: 'cite',
     link: 'href',
+    'model-viewer': 'src',
     object: 'data',
     q: 'cite',
     script: 'src',
