@@ -799,23 +799,18 @@ function create_article_title_element(entry) {
   title_element.setAttribute('class', 'entry-title');
   title_element.setAttribute('rel', 'noreferrer');
 
-  if (entry.title) {
-    let title = entry.title;
-    // TODO: title is allowed to contain whatever entities it has, this should
-    // be a call to strip tags, not an entity escape
-    title = html_utils.escape_html(title);
+  // NOTE: title is a dom string and therefore may contain html tags and
+  // entities. When an entry is saved into the database, its title is sanitized
+  // and tags are removed, but entities remain. Therefore, the title loaded here
+  // does not need to undergo further sanization. Previously this was an error
+  // where the title underwent a second round of encoding, leading to encoded
+  // entities appearing in the UI.
 
-    title_element.setAttribute('title', title);
-    title = filter_publisher(title);
-
-    // NOTE: previously this truncated the title using javascript, now this
-    // relies on css to truncate as needed
-    title_element.innerHTML = title;
-  } else {
-    title_element.setAttribute('title', 'Untitled');
-    title_element.textContent = 'Untitled';
-  }
-
+  // In addition, this relies on using CSS to truncate the title as needed
+  // instead of explicitly truncating the value here.
+  let title = entry.title || 'Untitled';
+  title_element.setAttribute('title', title);
+  title_element.innerHTML = filter_publisher(title);
   return title_element;
 }
 

@@ -5,7 +5,7 @@ import * as string_utils from '/src/lib/string-utils.js';
 // replaced with html entities. If input is not a string returns undefined.
 // Adapted from https://stackoverflow.com/questions/784586.
 export function escape_html(html) {
-  const pattern = /[<>"'`]/g;
+  const pattern = /[<>"'`&]/g;
   if (typeof html === 'string') {
     return html.replace(pattern, match => '&#' + match.charCodeAt(0) + ';');
   }
