@@ -46,7 +46,6 @@ export async function composite_document_filter(doc, options = {}) {
   image_size_small_filter(doc);
   image_size_large_filter(doc);
   condense_tagnames_filter(doc, false);
-  anchor_validity_filter(doc);
   anchor_format_filter(doc);
   form_filter(doc);
   breakrule_filter(doc);
@@ -100,17 +99,6 @@ export function anchor_script_filter(doc) {
   for (const anchor of anchors) {
     if (anchor.protocol === 'javascript:') {
       dom_utils.unwrap_element(anchor);
-    }
-  }
-}
-
-export function anchor_validity_filter(doc) {
-  const pattern = /^\s*https?:\/\/#/i;
-  const anchors = doc.querySelectorAll('a');
-  for (const anchor of anchors) {
-    const href_value = anchor.getAttribute('href');
-    if (href_value && pattern.test(href_value)) {
-      anchor.remove();
     }
   }
 }
