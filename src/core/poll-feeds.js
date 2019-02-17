@@ -292,8 +292,12 @@ export class PollOperation {
     }
 
     filter_options.is_allowed_request = net.is_allowed_request;
-
+    filter_options.empty_body_message =
+        'Unable to display document because it uses HTML frames';
     await dom_filters.composite_document_filter(doc, filter_options);
+
+    // TODO: this is overly paranoid and should be removed, I believe it is an
+    // artifact of a previous bug
     assert(doc.documentElement);
 
     entry.content = doc.documentElement.outerHTML;

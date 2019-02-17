@@ -20,7 +20,7 @@ export async function composite_document_filter(doc, options = {}) {
   // for this sanity check is within each filter that is concerned with it.
   assert(dom_utils.has_valid_base_uri(doc));
 
-  frame_filter(doc);
+  frame_filter(doc, options.empty_frame_body_message);
   ensure_body_element_filter(doc);
   iframe_filter(doc);
   comment_filter(doc);
@@ -327,34 +327,31 @@ export function format_filter(doc) {
   }
 }
 
-// Removes frame-related content from a document, including noframes, but
-// not iframes.
-export function frame_filter(doc) {
+// Removes frame-related content from a document, including frameset, frame, and
+// noframes, but excluding iframes. The |default_message| is displayed when this
+// filter results in producing an otherwise empty body element.
+export function frame_filter(
+    doc, default_message = 'Framed content not supported') {
   const frameset_element = doc.querySelector('frameset');
   if (!frameset_element) {
-    // Still account for malformed cases
-    const frame_elements = doc.querySelectorAll('frame');
-    for (const frame_element of frame_elements) {
-      frame_element.remove();
+    // Ensure nothing frame-related is left even without a frameset, and
+    // regardless of location in the hierarchy.
+    const elements = doc.querySelectorAll('frame, noframes');
+    for (const element of elements) {
+      element.remove();
     }
-
-    const noframes_elements = doc.querySelectorAll('noframes');
-    for (const noframes_element of noframes_elements) {
-      noframes_element.remove();
-    }
-
     return;
   }
-
 
   // If there is a frameset, first look for an existing body element. Do not
   // use the document.body shortcut because it will match frameset. This is
   // trying to handle the malformed html case. If there is a body, clear it out
   // so that it is setup for reuse. If there is no body, create one in replace
   // of the original frameset.
-
   let body_element = doc.querySelectorAll('body');
   if (body_element) {
+    // There is both a frameset and a body, which is malformed html. Keep the
+    // body and pitch the frameset.
     frameset_element.remove();
 
     // If a body element existed in addition to the frameset element, clear it
@@ -367,13 +364,16 @@ export function frame_filter(doc) {
   } else {
     // Removing the frameset will leave the document without a body. Since we
     // have a frameset and no body, create a new body element in place of the
-    // frameset. This will detach the existing frameset. Again this assumes
-    // there is only one frameset.
+    // frameset. This will detach the existing frameset. This assumes there is
+    // only one frameset.
     body_element = doc.createElement('body');
-    // Confusing parameter order note: replaceChild(new child, old child)
-    doc.documentElement.replaceChild(body_element, frameset_element);
+
+    const new_child = body_element;
+    const old_child = frameset_element;
+    doc.documentElement.replaceChild(new_child, old_child);
   }
 
+  // noframes, if present, should be nested within frameset in well-formed html.
   // Now look for noframes elements within the detached frameset, and if found,
   // move their contents into the body element. I am not sure if there should
   // only be one noframes element or multiple are allowed, so just look for all.
@@ -384,17 +384,19 @@ export function frame_filter(doc) {
     }
   }
 
-  // Ensure nothing frame related remains, as a minimal filter guarantee, given
-  // the possibility of malformed html
+  // Ensure nothing frame related remains, as a minimal guarantee, given the
+  // possibility of malformed html
   const elements = doc.querySelectorAll('frame, frameset, noframes');
   for (const element of elements) {
     element.remove();
   }
 
-  // Avoid producing an empty body without an explanation
+  // Avoid producing an empty body without an explanation. Note that we know
+  // something frame-related happened because we would have exited earlier
+  // without a frameset, so this is not going to affect to the empty-body
+  // case in a frameless document.
   if (!body_element.firstChild) {
-    const message = 'Unable to display document because it uses HTML frames';
-    const node = doc.createTextNode(message);
+    const node = doc.createTextNode(default_message);
     body_element.appendChild(node);
   }
 }
