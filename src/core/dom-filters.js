@@ -39,6 +39,8 @@ export async function composite_document_filter(doc, options = {}) {
   image_responsive_filter(doc);
   lonestar_filter(doc);
   image_dead_filter(doc);
+  await image_reachable_filter(
+      doc, options.image_size_timeout, options.is_allowed_request);
   await image_size_filter(
       doc, options.image_size_timeout, options.is_allowed_request);
   boilerplate_filter(doc);
@@ -498,7 +500,91 @@ export function image_responsive_filter(doc) {
   }
 }
 
-// Tries to set width/height attributes for all images
+export function image_reachable_filter(
+    doc, timeout = INDEFINITE, fetch_policy) {
+  assert(doc.baseURI);
+  assert(timeout instanceof Deadline);
+
+  // This is a private helper to the filter. Given an image element, inspect
+  // its src value and try to fetch the corresponding resource. If successful,
+  // stash the width and height in the element for later. If unsuccessful,
+  // remove the image.
+  async function internal_process_image_helper(image) {
+    let url;
+    try {
+      url = new URL(image.src);
+    } catch (error) {
+      // TODO: decide what to do about this kind of error. In a sense it also
+      // represents an unreachable image and possibly the image should be
+      // removed. Keep in mind this may also be redundant with the dead filter,
+      // but maybe that has to be that way because filters should error on the
+      // side of being naive with respect to what other filters are running.
+      console.debug('Invalid image url', image.src);
+      return;
+    }
+
+    let result;
+    try {
+      result = await net.fetch_image_element(url, timeout, fetch_policy);
+    } catch (error) {
+      // Avoid suppressing this error and rethrow
+      if (error instanceof AssertionError) {
+        throw error;
+      }
+
+      // We want to try and carefully not conflate an image being unreachable
+      // because we have no network connection, and an image being unreachable
+      // because it really is a 404. If we are offline, we cannot determine
+      // reachability, so bail. While we could check connectivity at the start
+      // of the filter, that would ignore the possible loss of connectivity
+      // during the run. If we did not check for connectivity state, we would
+      // incorrectly conclude that all images are unreachable and this would
+      // result in removing all images from all articles, which would be bad.
+      if (error instanceof net.OfflineError) {
+        console.debug(
+            'Cannot determine image reachability while offline', url.href);
+        return;
+      }
+
+      // If fetch refused to fetch due to policy, we cannot determine whether
+      // the image is reachable. It would be wrong to remove it, so just bail.
+      if (error instanceof net.PolicyError) {
+        console.debug(
+            'Cannot determine image reachability due to policy violation',
+            url.href, error);
+        return;
+      }
+
+      // We encountered some other kind of error, such as a timeout error, or
+      // a 404, so conclude the image is unreachable.
+      console.debug('Removing unreachable image', image.outerHTML, error);
+      image.remove();
+      return;
+    }
+
+    // If there was no error, then the response was ok, and the image seems
+    // reachable (at this time). Stash information in the element so that other
+    // filters potentially avoid making network requests. Note that I assume
+    // there is only an extremely small risk of collision with real attribute
+    // values so this stash technique is probably fine.
+
+    // TEMP: tracing recently introduced functionality
+    console.debug('Image is reachable', image.src, result.width, result.height);
+    image.setAttribute('data-reachable-width', result.width);
+    image.setAttribute('data-reachable-height', result.height);
+  }
+
+  const promises = [];
+  const images = doc.querySelectorAll('img');
+  for (const image of images) {
+    promises.push(internal_process_image_helper(image));
+  }
+  return Promise.all(promises);
+}
+
+// Tries to set width/height attributes for all images. If also running the
+// image_reachable_filter, this should occur after that filter so as to avoid
+// duplicate network requests.
 export function image_size_filter(
     doc, timeout = INDEFINITE, is_allowed_request) {
   assert(doc.baseURI);
@@ -518,6 +604,21 @@ async function image_size_filter_process_image(
   if (image.hasAttribute('width') && image.hasAttribute('height')) {
     return;
   }
+
+  // Check for whether the reachability filter has run. If so, grab width and
+  // height from its results and exit early.
+  if (image.hasAttribute('data-reachable-width') &&
+      image.hasAttribute('data-reachable-height')) {
+    image.setAttribute('width', image.getAttribute('data-reachable-width'));
+    image.setAttribute('height', image.getAttribute('data-reachable-height'));
+
+    // TEMP: monitoring new feature
+    console.debug(
+        'Determined image dimensions from rearchability filter',
+        image.outerHTML);
+    return;
+  }
+
 
   let width = 0, height = 0;
 

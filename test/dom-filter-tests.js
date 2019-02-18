@@ -3,6 +3,7 @@ import * as dom_utils from '/src/core/dom-utils.js';
 import * as net from '/src/core/net.js';
 import {assert} from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
+import {INDEFINITE} from '/src/lib/deadline.js';
 import * as html_utils from '/src/lib/html-utils.js';
 
 // Check that the anchor-script-filter removes the anchors that should be
@@ -127,6 +128,28 @@ export async function image_lazy_filter_test() {
   // dom_filters.image_dead_filter(document);
 }
 
+export async function image_reachable_filter_test() {
+  const doc = await load_file('image-reachable-filter-test.html', false);
+  const allow_all_requests = request => true;
+  let image;
+
+  // Before applying the filter, ensure as a precondition that the test file
+  // is setup correctly (that images exist)
+  assert(doc.querySelector('#unreachable'));
+  assert(doc.querySelector('.reachable'));
+
+  await dom_filters.image_reachable_filter(doc, INDEFINITE, allow_all_requests);
+
+  // The filter should have removed this image.
+  image = doc.querySelector('#unreachable');
+  assert(!image);
+
+  // The fhilter should have retained this image, and further modified it.
+  image = doc.querySelector('.reachable');
+  assert(image);
+  assert(image.hasAttribute('data-reachable-width'));
+  assert(image.hasAttribute('data-reachable-height'));
+}
 
 // Assert the ordinary case of a basic html document with an image with unknown
 // attributes
@@ -169,18 +192,22 @@ export async function image_size_filter_sourceless_test() {
 }
 
 function run_image_size_filter(doc) {
-  return dom_filters.image_size_filter(doc, undefined, url => true);
+  return dom_filters.image_size_filter(doc, undefined, request => true);
 }
 
 // Fetch, parse, and prepare a local url
-async function load_file(filename) {
+async function load_file(filename, set_base_uri_flag = true) {
   const base_path = '/test/';
   const url_string = chrome.extension.getURL(base_path + filename);
   const response = await fetch(url_string);
   const text = await response.text();
   const doc = html_utils.parse_html(text);
-  const base_url_string = chrome.extension.getURL(base_path);
-  const base_url = new URL(base_url_string);
-  dom_utils.set_base_uri(doc, base_url);
+
+  if (set_base_uri_flag) {
+    const base_url_string = chrome.extension.getURL(base_path);
+    const base_url = new URL(base_url_string);
+    dom_utils.set_base_uri(doc, base_url);
+  }
+
   return doc;
 }
