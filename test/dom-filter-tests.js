@@ -6,6 +6,30 @@ import * as color from '/src/lib/color.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 import * as html_utils from '/src/lib/html-utils.js';
 
+export async function emphasis_filter_test() {
+  let input, doc;
+
+  // TODO: implement a simple straightforward test that exercises the normal
+  // cases.
+
+  // TODO: implement tests for the abnormal cases
+
+  // Specifically test the nesting filter
+  input = '<b><b>b</b></b>';
+  doc = html_utils.parse_html(input);
+  dom_filters.emphasis_filter(doc);
+  assert(doc.querySelectorAll('b').length === 1);
+
+  // In mixed, test inner child removed and outer parent remains
+  input = '<b><strong>b-strong</strong></b>';
+  doc = html_utils.parse_html(input);
+  dom_filters.emphasis_filter(doc);
+  assert(!doc.querySelector('strong'));
+  assert(doc.querySelector('b'));
+
+  // TODO: specifically test various threshold parameter values
+}
+
 // Check that the anchor-script-filter removes the anchors that should be
 // removed and retains the anchors that should be retained.
 export async function anchor_script_filter_test() {

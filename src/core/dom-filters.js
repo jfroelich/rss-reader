@@ -268,6 +268,21 @@ export function emphasis_filter(doc, threshold = 0) {
   assert(Number.isInteger(threshold));
   assert(threshold >= 0);
 
+  // Handle redundant nesting, such as strong within strong. Unwrap the child
+  // and retain the parent. Use a similar approach to the misnested filter.
+  // This belongs here and not in the misnested filter because these nestings
+  // do not constitute malformed HTML. The goal here is to shrink the size of
+  // the content as much as possible so as to reduce storage, despite the minor
+  // decrease in the performance of this filter. In some cases the redundancy
+  // is not really redundant if CSS were accurately considered, the author may
+  // have been doing something clever or unusual but valid, but since we largely
+  // ignore CSS, it becomes redundant as a result.
+  const redundants = doc.querySelectorAll(
+      'strong strong, strong b, b strong, b b, u u, u em, em u, em em');
+  for (const element of redundants) {
+    dom_utils.unwrap_element(element);
+  }
+
   if (threshold > 0) {
     const selector = 'b, big, em, i, strong, mark, u';
     const elements = doc.querySelectorAll(selector);
