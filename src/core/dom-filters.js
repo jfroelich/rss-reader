@@ -47,7 +47,7 @@ export async function composite_document_filter(doc, options = {}) {
   anchor_script_filter(doc);
   image_size_small_filter(doc);
   image_size_large_filter(doc);
-  condense_tagnames_filter(doc, false);
+  condense_tagnames_filter(doc);
   anchor_format_filter(doc);
   form_filter(doc);
   breakrule_filter(doc);
@@ -230,11 +230,8 @@ export function comment_filter(doc) {
 
 // Replaces certain elements in |doc| with equivalents that use fewer
 // characters in the element name, so that when a document it serialized, it
-// contains fewer characters. |copy_attrs_flag| is optional boolean specifying
-// whether to copy html attributes when replacing an element.
-// TODO: coerce-element dropped its copy-attributes parameter, attribuets are
-// now always copied, so this should no longer have copy_attrs_flag param
-export function condense_tagnames_filter(doc, copy_attrs_flag) {
+// contains fewer characters.
+export function condense_tagnames_filter(doc) {
   const renames = [
     {before: 'strong', after: 'b'}, {before: 'em', after: 'i'},
     {before: 'layer', after: 'div'}
