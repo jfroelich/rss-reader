@@ -39,10 +39,12 @@ export function sizeof(input_value) {
       case 'object':
         if (visited_objects.indexOf(value) === -1) {
           visited_objects.push(value);
-
           if (ArrayBuffer.isView(value)) {
             sz += value.length;
           } else if (Array.isArray(value)) {
+            // Account for the reference to the array itself
+            // References are maybe 8 bytes?
+            sz += 8;
             stack.push(...value);
           } else {
             const to_string_output = object_to_string.call(value);
