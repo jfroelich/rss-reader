@@ -45,8 +45,7 @@ export async function composite_document_filter(doc, options = {}) {
       doc, options.image_size_timeout, options.is_allowed_request);
   boilerplate_filter(doc);
   anchor_script_filter(doc);
-  image_size_small_filter(doc);
-  image_size_large_filter(doc);
+  image_size_constrain_filter(doc);
   condense_tagnames_filter(doc);
   anchor_format_filter(doc);
   form_filter(doc);
@@ -517,10 +516,9 @@ export function image_reachable_filter(
   assert(doc.baseURI);
   assert(timeout instanceof Deadline);
 
-  // This is a private helper to the filter. Given an image element, inspect
-  // its src value and try to fetch the corresponding resource. If successful,
-  // stash the width and height in the element for later. If unsuccessful,
-  // remove the image.
+  // Given an image element, inspect its src value and try to fetch the
+  // corresponding resource. If successful, stash the width and height in the
+  // element for later. If unsuccessful, remove the image.
   async function internal_process_image_helper(image) {
     let url;
     try {
@@ -531,7 +529,7 @@ export function image_reachable_filter(
       // removed. Keep in mind this may also be redundant with the dead filter,
       // but maybe that has to be that way because filters should error on the
       // side of being naive with respect to what other filters are running.
-      console.debug('Invalid image url', image.src);
+      console.debug('Ignoring invalid image url', image.src);
       return;
     }
 
@@ -539,12 +537,11 @@ export function image_reachable_filter(
     try {
       result = await net.fetch_image_element(url, timeout, fetch_policy);
     } catch (error) {
-      // Avoid suppressing this error and rethrow
       if (error instanceof AssertionError) {
         throw error;
       }
 
-      // We want to try and carefully not conflate an image being unreachable
+      // We want to try to carefully not conflate an image being unreachable
       // because we have no network connection, and an image being unreachable
       // because it really is a 404. If we are offline, we cannot determine
       // reachability, so bail. While we could check connectivity at the start
@@ -553,35 +550,26 @@ export function image_reachable_filter(
       // incorrectly conclude that all images are unreachable and this would
       // result in removing all images from all articles, which would be bad.
       if (error instanceof net.OfflineError) {
-        console.debug(
-            'Cannot determine image reachability while offline', url.href);
         return;
       }
 
       // If fetch refused to fetch due to policy, we cannot determine whether
       // the image is reachable. It would be wrong to remove it, so just bail.
       if (error instanceof net.PolicyError) {
-        console.debug(
-            'Cannot determine image reachability due to policy violation',
-            url.href, error);
         return;
       }
 
       // We encountered some other kind of error, such as a timeout error, or
       // a 404, so conclude the image is unreachable.
-      console.debug('Removing unreachable image', image.outerHTML, error);
       image.remove();
       return;
     }
 
     // If there was no error, then the response was ok, and the image seems
     // reachable (at this time). Stash information in the element so that other
-    // filters potentially avoid making network requests. Note that I assume
-    // there is only an extremely small risk of collision with real attribute
-    // values so this stash technique is probably fine.
-
-    // TEMP: tracing recently introduced functionality
-    console.debug('Image is reachable', image.src, result.width, result.height);
+    // filters potentially avoid making network requests. I assume there is only
+    // an extremely small risk of collision with real attribute values so this
+    // stash technique is probably fine.
     image.setAttribute('data-reachable-width', result.width);
     image.setAttribute('data-reachable-height', result.height);
   }
@@ -597,22 +585,21 @@ export function image_reachable_filter(
 // Tries to set width/height attributes for all images. If also running the
 // image_reachable_filter, this should occur after that filter so as to avoid
 // duplicate network requests.
-export function image_size_filter(
-    doc, timeout = INDEFINITE, is_allowed_request) {
+export function image_size_filter(doc, timeout = INDEFINITE, fetch_policy) {
   assert(doc.baseURI);
   assert(timeout instanceof Deadline);
   const images = doc.querySelectorAll('img');
   const promises = [];
   for (const image of images) {
-    const promise = image_size_filter_process_image(
-        image, doc, timeout, is_allowed_request);
+    const promise =
+        image_size_filter_process_image(image, doc, timeout, fetch_policy);
     promises.push(promise);
   }
   return Promise.all(promises);
 }
 
 async function image_size_filter_process_image(
-    image, doc, timeout, is_allowed_request) {
+    image, doc, timeout, fetch_policy) {
   if (image.hasAttribute('width') && image.hasAttribute('height')) {
     return;
   }
@@ -623,14 +610,8 @@ async function image_size_filter_process_image(
       image.hasAttribute('data-reachable-height')) {
     image.setAttribute('width', image.getAttribute('data-reachable-width'));
     image.setAttribute('height', image.getAttribute('data-reachable-height'));
-
-    // TEMP: monitoring new feature
-    console.debug(
-        'Determined image dimensions from rearchability filter',
-        image.outerHTML);
     return;
   }
-
 
   let width = 0, height = 0;
 
@@ -675,8 +656,7 @@ async function image_size_filter_process_image(
   }
 
   try {
-    const fimg =
-        await net.fetch_image_element(url, timeout, is_allowed_request);
+    const fimg = await net.fetch_image_element(url, timeout, fetch_policy);
     image.setAttribute('width', fimg.width);
     image.setAttribute('height', fimg.height);
   } catch (error) {
@@ -686,55 +666,23 @@ async function image_size_filter_process_image(
   }
 }
 
-export function image_size_large_filter(doc) {
+// Remove or modify images based on size. Assumes images have dimensions.
+export function image_size_constrain_filter(doc) {
   const images = doc.querySelectorAll('img');
   for (const image of images) {
-    if (image_is_size_large(image)) {
+    // For large images, remove explicit dimensions to allow for natural
+    // dimension precedence and avoid scaling issues in the UI
+    if (image.width > 1024 || image.height > 1024) {
       image.removeAttribute('width');
       image.removeAttribute('height');
-    }
-  }
-}
-
-function image_is_size_large(image) {
-  const width_string = image.getAttribute('width');
-  if (!width_string) {
-    return false;
-  }
-
-  const height_string = image.getAttribute('height');
-  if (!height_string) {
-    return false;
-  }
-
-  const width_int = parseInt(width_string, 10);
-  if (isNaN(width_int)) {
-    return false;
-  } else if (width_int > 1000) {
-    return true;
-  }
-
-  const height_int = parseInt(height_string, 10);
-  if (isNaN(height_int)) {
-    return false;
-  } else if (height_int > 1000) {
-    return true;
-  }
-
-  return false;
-}
-
-export function image_size_small_filter(doc) {
-  for (const image of doc.querySelectorAll('img')) {
-    if (image_is_small(image)) {
+    } else if (
+        image.width > 2 && image.width < 33 && image.height > 2 &&
+        image.height < 33) {
+      // Remove small images because we assume those images are probably
+      // boilerplate, part of a site's template, or telemetry.
       dom_utils.remove_image(image);
     }
   }
-}
-
-function image_is_small(image) {
-  return image.width > 2 && image.width < 33 && image.height > 2 &&
-      image.height < 33;
 }
 
 // Remove empty/single-item lists
@@ -1133,6 +1081,5 @@ export function visibility_filter(doc, matte, mcr) {
     }
   }
 
-  // temp disabled debuggin poll hang, problem might be unwrap above
-  // color_contrast_filter(doc, matte, mcr);
+  color_contrast_filter(doc, matte, mcr);
 }
