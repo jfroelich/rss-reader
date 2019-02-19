@@ -23,6 +23,22 @@ const alarms = [
   {name: 'compact-favicon-db', period: ONE_WEEK_MINUTES}
 ];
 
+export function create_alarms() {
+  for (const desc of alarms) {
+    chrome.alarms.create(desc.name, {periodInMinutes: desc.period});
+  }
+}
+
+export function update_alarms(prev_version_string) {
+  for (const name of deprecated_alarms) {
+    chrome.alarms.clear(name, cleared => {
+      if (cleared) {
+        console.log('Removed alarm', name);
+      }
+    });
+  }
+}
+
 export async function alarm_listener(alarm) {
   console.debug('Alarm wokeup:', alarm.name);
   tls.write_string('last_alarm', alarm.name);
@@ -73,23 +89,4 @@ async function handle_alarm_poll() {
   await poll.run();
   session.close();
   iconn.close();
-}
-
-export function update_alarms(prev_version_string) {
-  for (const name of deprecated_alarms) {
-    chrome.alarms.clear(name, cleared => on_remove_alarm.bind(null, name));
-  }
-}
-
-export function create_alarms() {
-  for (const desc of alarms) {
-    console.debug('Creating alarm', desc.name);
-    chrome.alarms.create(desc.name, {periodInMinutes: desc.period});
-  }
-}
-
-function on_remove_alarm(name, was_cleared) {
-  if (was_cleared) {
-    console.log('Removed alarm', name);
-  }
 }
