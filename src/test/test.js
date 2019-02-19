@@ -1,22 +1,22 @@
-import * as array_utils_tests from '/test/array-utils-tests.js';
-import * as cdb_tests from '/test/cdb-tests.js';
-import {coerce_element_test} from '/test/coerce-element-test.js';
-import {color_test} from '/test/color-test.js';
-import * as db_tests from '/test/db-tests.js';
-import * as dom_filter_tests from '/test/dom-filter-tests.js';
-import * as dom_utils_tests from '/test/dom-utils-tests.js';
-import * as favicon_tests from '/test/favicon-tests.js';
-import {filter_publisher_test} from '/test/filter-publisher-test.js';
-import * as html_utils_tests from '/test/html-utils-tests.js';
-import * as idb_tests from '/test/idb-test.js';
-import {mime_test} from '/test/mime-test.js';
-import * as net_tests from '/test/net-tests.js';
-import * as ops_tests from '/test/ops-tests.js';
-import {parse_feed_test} from '/test/parse-feed-test.js';
-import * as rewrite_url_tests from '/test/rewrite-url-test.js';
-import {sniffer_test} from '/test/sniffer-test.js';
-import * as string_utils_tests from '/test/string-utils-tests.js';
-import * as url_utils_tests from '/test/url-utils-tests.js';
+import * as cdb_tests from '/src/core/cdb-tests.js';
+import * as db_tests from '/src/core/db-tests.js';
+import * as dom_filter_tests from '/src/core/dom-filter-tests.js';
+import * as dom_utils_tests from '/src/core/dom-utils-tests.js';
+import * as favicon_tests from '/src/core/favicon-tests.js';
+import * as net_tests from '/src/core/net-tests.js';
+import * as ops_tests from '/src/core/ops-tests.js';
+import * as rewrite_url_tests from '/src/core/rewrite-url-test.js';
+import * as array_utils_tests from '/src/lib/array-utils-tests.js';
+import {coerce_element_test} from '/src/lib/coerce-element-test.js';
+import {color_test} from '/src/lib/color-test.js';
+import {filter_publisher_test} from '/src/lib/filter-publisher-test.js';
+import * as html_utils_tests from '/src/lib/html-utils-tests.js';
+import * as idb_tests from '/src/lib/idb-test.js';
+import {mime_test} from '/src/lib/mime-test.js';
+import {parse_feed_test} from '/src/lib/parse-feed-test.js';
+import {sniffer_test} from '/src/lib/sniffer-test.js';
+import * as string_utils_tests from '/src/lib/string-utils-tests.js';
+import * as url_utils_tests from '/src/lib/url-utils-tests.js';
 
 const registry = [];
 register_module_tests(array_utils_tests);
@@ -47,8 +47,9 @@ window.print_tests = cli_print_tests;
 populate_test_menu();
 
 function register_module_tests(mod) {
-  // NOTE: obj[propname] notation is required here, obj.prop does not work
   for (const id in mod) {
+    // obj.prop notation does not work here
+    // TODO: switch to endsWith as a stricter condition?
     if (typeof mod[id] === 'function' && id.includes('_test')) {
       register_test(mod[id]);
     }
@@ -77,10 +78,8 @@ async function run_timed_test(test_function, timeout = 0) {
   // when awaiting the promise when the test has rejected, or after the timeout
   // occurred. We throw an error in all 3 cases. Note that in the timeout case
   // we ignore the test result (pass or error) and throw a timeout error
-  // instead.
-
-  // In the case of a timeout, we do not abort the test, because promises are
-  // not cancelable.
+  // instead. Also note that in the case of a timeout, we do not abort the test,
+  // because promises are not cancelable.
 
   if (timeout) {
     const test_promise = test_function();

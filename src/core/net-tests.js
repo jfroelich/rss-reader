@@ -1,9 +1,9 @@
+import * as net from '/src/core/net.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
-import * as net from '/src/core/net.js';
 
 export async function fetch_image_test() {
-  let path = '/test/fetch-image-test.png';
+  let path = '/src/core/fetch-image-test.png';
   let url_string = chrome.extension.getURL(path);
   let url = new URL(url_string);
 

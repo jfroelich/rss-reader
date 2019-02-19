@@ -153,7 +153,8 @@ export async function image_lazy_filter_test() {
 }
 
 export async function image_reachable_filter_test() {
-  const doc = await load_file('image-reachable-filter-test.html', false);
+  const doc =
+      await load_file('/src/core/image-reachable-filter-test.html', false);
   const allow_all_requests = request => true;
   let image;
 
@@ -178,7 +179,7 @@ export async function image_reachable_filter_test() {
 // Assert the ordinary case of a basic html document with an image with unknown
 // attributes
 export async function image_size_filter_test() {
-  const doc = await load_file('image-size-filter-basic.html');
+  const doc = await load_file('/src/core/image-size-filter-basic.html');
   await run_image_size_filter(doc);
   const image = doc.querySelector('img');
   assert(image.width === 16);
@@ -187,7 +188,7 @@ export async function image_size_filter_test() {
 
 // Assert that fetching an image that does not exist skips over the image
 export async function image_size_filter_404_test() {
-  const doc = await load_file('image-size-filter-404.html');
+  const doc = await load_file('/src/core/image-size-filter-404.html');
   // This should not throw even though the image specified in the html is
   // missing
   await run_image_size_filter(doc);
@@ -201,14 +202,14 @@ export async function image_size_filter_404_test() {
 
 // Exercise running the function on a document without any images.
 export async function image_size_filter_text_only_test() {
-  const doc = await load_file('image-size-filter-text-only.html');
+  const doc = await load_file('/src/core/image-size-filter-text-only.html');
   await run_image_size_filter(doc);
 }
 
 // Test that an image devoid of source information does not cause an error, and
 // does not somehow init properties.
 export async function image_size_filter_sourceless_test() {
-  const doc = await load_file('image-size-filter-sourceless.html');
+  const doc = await load_file('/src/core/image-size-filter-sourceless.html');
   await run_image_size_filter(doc);
   const image = doc.querySelector('img');
   assert(image.width === 0);
@@ -221,8 +222,7 @@ function run_image_size_filter(doc) {
 
 // Fetch, parse, and prepare a local url
 async function load_file(filename, set_base_uri_flag = true) {
-  const base_path = '/test/';
-  const url_string = chrome.extension.getURL(base_path + filename);
+  const url_string = chrome.extension.getURL(filename);
   const response = await fetch(url_string);
   const text = await response.text();
   const doc = html_utils.parse_html(text);
