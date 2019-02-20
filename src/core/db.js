@@ -756,7 +756,7 @@ export class Db {
           return;
         }
 
-        entry.readState = read ? Entry.READ : entry.UNREAD;
+        entry.readState = read ? Entry.READ : Entry.UNREAD;
         const currentDate = new Date();
         entry.dateUpdated = currentDate;
         if (read) {
