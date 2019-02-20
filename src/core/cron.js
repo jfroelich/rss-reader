@@ -67,12 +67,15 @@ export async function alarm_listener(alarm) {
 }
 
 async function handle_alarm_poll() {
-  if (tls.read_boolean('only_poll_if_idle')) {
+  const idle_poll_secs = tls.read_int('idle_poll_secs');
+  if (Number.isInteger(idle_poll_secs) && idle_poll_secs > 0 &&
+      tls.read_boolean('only_poll_if_idle')) {
     const idle_states = ['locked', 'idle'];
-    const idle_secs = 30;
-    const idle_state = await idle.query_state(idle_secs);
+    const idle_state = await idle.query_state(idle_poll_secs);
     if (!idle_states.includes(idle_state)) {
-      console.debug('Canceling poll-feeds alarm as not idle');
+      console.debug(
+          'Canceling poll-feeds alarm as not idle for %d seconds',
+          idle_poll_secs);
       return;
     }
   }

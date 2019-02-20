@@ -110,6 +110,7 @@ export function init(event) {
 
   // Poll settings
   tls.write_boolean('only_poll_if_idle', true);
+  tls.write_int('idle_poll_secs', 30);
 
   // Content filter settings
   tls.write_int('contrast_default_matte', color.WHITE);
