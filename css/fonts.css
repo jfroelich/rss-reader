@@ -1,3 +1,9 @@
+/* See https://rsms.me/inter/inter.css */
+@font-face {
+  font-family: 'Inter';
+  src: url('/fonts/Inter.var.woff2') format('woff2');
+}
+
 @font-face {
   font-family: Merriweather Regular;
   src: url('/fonts/Merriweather-Regular.ttf') format('truetype');

@@ -42,6 +42,7 @@ const fonts = [
   'Edward Tufte Roman',
   'Fanwood',
   'Georgia',
+  'Inter',
   'League Mono Regular',
   'League Spartan',
   'Merriweather Regular',

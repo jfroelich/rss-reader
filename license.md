@@ -1,4 +1,4 @@
-Copyright 2018 Josh Froelich. All rights reserved.
+Copyright 2019 Josh Froelich. All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
 are permitted provided that the following conditions are met:
@@ -23,16 +23,15 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Third-party code license information:
-
+## Third-party code license information:
 * tinycolor.js - MIT License
 * parse-srcset.js - MIT License
 * he.js - MIT License
 
-Font license information:
-
+## Third-party font license information:
 * Edward Tufte Roman https://github.com/edwardtufte/et-book (MIT Licensed)
-* Fanwood https://www.theleagueofmoveabletype.com/
-* League Mono Regular https://www.theleagueofmoveabletype.com/
-* League Spartan https://www.theleagueofmoveabletype.com/
-* Merriweather OFL
+* Fanwood https://www.theleagueofmoveabletype.com
+* Inter https://rsms.me/inter SIL Open Font License 1.1
+* League Mono Regular https://www.theleagueofmoveabletype.com
+* League Spartan https://www.theleagueofmoveabletype.com
+* Merriweather Open Font License
