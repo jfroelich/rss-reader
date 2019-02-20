@@ -298,8 +298,7 @@ function mark_slide_read_start(session, slide) {
 
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
-
-  return session.markEntryRead(entry_id);
+  return session.setEntryReadState(entry_id, true);
 }
 
 function remove_slide(slide) {

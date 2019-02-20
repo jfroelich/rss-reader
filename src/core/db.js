@@ -707,9 +707,14 @@ export class Db {
     });
   }
 
-  markEntryRead(id) {
+  // Modify the read state property of an entry in the database
+  // |id| is id of entry in database to modify.
+  // |read| is boolean, true if marking as read, false if marking as unread,
+  // defaults to false
+  setEntryReadState(id, read = false) {
     return new Promise((resolve, reject) => {
       assert(Entry.isValidId(id));
+      assert(typeof read === 'boolean');
       const txn = this.conn.transaction('entry', 'readwrite');
       txn.onerror = event => reject(event.target.error);
       txn.oncomplete = resolve;
@@ -726,30 +731,39 @@ export class Db {
         }
 
         if (!is_entry(entry)) {
-          const message = 'Read object is not an entry ' + id;
+          const message = 'Matched object is not an entry ' + id;
           const error = new TypeError(message);
           reject(error);
           return;
         }
 
         if (entry.archiveState === Entry.ARCHIVED) {
-          const message = 'Cannot mark archived entry as read ' + id;
+          const message = 'Cannot change read state of archived entry ' + id;
           const error = new InvalidStateError(message);
           reject(error);
           return;
         }
 
-        if (entry.readState === Entry.READ) {
+        if (read && entry.readState === Entry.READ) {
           const message = 'Cannot mark read entry as read ' + id;
           const error = new InvalidStateError(message);
           reject(error);
           return;
+        } else if (!read && entry.readState === Entry.UNREAD) {
+          const message = 'Cannot mark unread entry as unread ' + id;
+          const error = new InvalidStateError(message);
+          reject(error);
+          return;
         }
 
-        entry.readState = Entry.READ;
+        entry.readState = read ? Entry.READ : entry.UNREAD;
         const currentDate = new Date();
         entry.dateUpdated = currentDate;
-        entry.dateRead = currentDate;
+        if (read) {
+          entry.dateRead = currentDate;
+        } else {
+          delete entry.dateRead;
+        }
 
         const entry_store = event.target.source;
         entry_store.put(entry);

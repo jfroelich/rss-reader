@@ -127,13 +127,13 @@ export class CDB {
     return this.db.iterateEntries(handle_entry);
   }
 
-  async markEntryRead(id) {
-    await this.db.markEntryRead(id);
-    this.channel.postMessage({type: 'entry-read', id: id});
-  }
-
   queryEntries(query) {
     return this.db.queryEntries(query);
+  }
+
+  async setEntryReadState(id, read = false) {
+    await this.db.setEntryReadState(id, read);
+    this.channel.postMessage({type: 'entry-read', id: id});
   }
 
   async updateEntry(entry) {

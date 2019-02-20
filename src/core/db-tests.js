@@ -438,7 +438,7 @@ export async function iterate_entries_test() {
   await idb.remove(db_name);
 }
 
-export async function mark_entry_read_test() {
+export async function set_entry_read_state_test() {
   const db_name = 'mark-entry-read-test';
   await idb.remove(db_name);
   const conn = new db.Db();
@@ -450,11 +450,19 @@ export async function mark_entry_read_test() {
   let stored_entry = await conn.getEntry('id', id, false);
   assert(stored_entry);
   assert(stored_entry.readState === db.Entry.UNREAD);
-  await conn.markEntryRead(id);
+  await conn.setEntryReadState(id, true);
   stored_entry = undefined;
   stored_entry = await conn.getEntry('id', id, false);
   assert(stored_entry);
   assert(stored_entry.readState === db.Entry.READ);
+
+  // Now mark it again as unread, and assert
+  await conn.setEntryReadState(id, false);
+  stored_entry = undefined;
+  stored_entry = await conn.getEntry('id', id, false);
+  assert(stored_entry);
+  assert(stored_entry.readState === db.Entry.UNREAD);
+
   conn.close();
   await idb.remove(db_name);
 }
