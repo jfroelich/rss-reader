@@ -45,7 +45,7 @@ export function classify(dataset, score_block, options = {}) {
 
   let text_length = 0;
   if (doc.body) {
-    text_length = get_text_length(doc.body.textContent);
+    text_length = compute_text_length(doc.body.textContent);
   }
 
   let num_elements = 0;
@@ -351,7 +351,7 @@ export function extract_features(dataset, options = {}) {
   for (const block of dataset) {
     block.element_type = block.element.localName;
     block.depth = get_node_depth(block.element);
-    block.text_length = get_text_length(block.element.textContent);
+    block.text_length = compute_text_length(block.element.textContent);
     block.anchor_text_length = get_anchor_text_length(block.element);
     block.list_item_count = get_list_item_count(block.element);
     block.paragraph_count = get_paragraph_count(block.element);
@@ -383,7 +383,7 @@ function get_anchor_text_length(element) {
   const anchors = element.querySelectorAll('a[href]');
   let anchor_length = 0;
   for (const anchor of anchors) {
-    const text_length = get_text_length(anchor.textContent);
+    const text_length = compute_text_length(anchor.textContent);
     anchor_length += text_length;
   }
   return anchor_length;
@@ -777,9 +777,7 @@ function derive_attribute_bias(tokens, token_weights) {
 }
 
 // Return an approximate count of the characters in a string. This ignores outer
-// whitespace excessive inner whitespace.
-export function get_text_length(text) {
-  const trimmed_text = text.trim();
-  const condensed_text = trimmed_text.replace(/\s\s+/g, ' ');
-  return condensed_text.length;
+// whitespace and excessive inner whitespace.
+export function compute_text_length(text) {
+  return text.trim().replace(/\s\s+/g, ' ').length;
 }
