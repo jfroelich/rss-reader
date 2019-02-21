@@ -254,7 +254,7 @@ export class Db {
         feed.dateUpdated = new Date();
         store.put(feed);
       }
-    }
+    };
   }
 
   addActiveFieldToFeeds(store) {
