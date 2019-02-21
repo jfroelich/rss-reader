@@ -1,6 +1,12 @@
 import {assert} from '/src/lib/assert.js';
 import * as string_utils from '/src/lib/string-utils.js';
 
+// Very minimally validate a url string
+export function is_valid_url_string(value) {
+  return typeof value === 'string' && value.length > 1 &&
+      value.length <= 3000 && !value.trim().includes(' ');
+}
+
 export function url_get_extension(url) {
   const path = url.pathname;
 

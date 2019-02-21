@@ -3,12 +3,6 @@ import '/third-party/tinycolor-min.js';
 import {assert} from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
 
-// Very minimally validate a url string
-export function is_valid_url_string(value) {
-  return typeof value === 'string' && value.length > 1 &&
-      value.length <= 3000 && !value.trim().includes(' ');
-}
-
 export function is_list_item(node) {
   return ['li', 'dd', 'dt'].includes(node.localName);
 }
@@ -313,7 +307,6 @@ export function unwrap_element(element) {
   }
 
   const doc = element.ownerDocument;
-  assert(doc instanceof Document);
   const parent = element.parentNode;
   const prev = element.previousSibling;
   const next = element.nextSibling;

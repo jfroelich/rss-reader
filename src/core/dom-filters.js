@@ -467,7 +467,7 @@ export function image_lazy_filter(doc) {
       for (const name of lazy_names) {
         if (attr_names.includes(name)) {
           const value = image.getAttribute(name);
-          if (dom_utils.is_valid_url_string(value)) {
+          if (url_utils.is_valid_url_string(value)) {
             image.removeAttribute(name);
             image.setAttribute('src', value);
             break;
