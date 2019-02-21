@@ -17,36 +17,37 @@ export function LookupRequest() {
   this.conn = undefined;
   this.min_image_size = 30;
   this.max_image_size = 10240;
+  this.expires = new Date(Date.now() + ONE_MONTH_MS);
   this.max_failure_count = DEFAULT_MAX_FAILURE_COUNT;
 }
 
 export async function lookup(request) {
-  assert(is_valid_lookup_request(request));
-
+  assert(request instanceof LookupRequest);
+  assert(request.conn === undefined || request.conn instanceof IDBDatabase);
+  assert(request.url instanceof URL);
   assert(request.timeout instanceof Deadline);
+  assert(request.expires instanceof Date);
 
   const conn = request.conn;
   const hostname = request.url.hostname;
+  const lookup_date = new Date();
 
   let entry = await find_entry(conn, hostname);
-  if (entry && entry.icon_url && !entry_is_expired(entry)) {
-    // console.debug('Hit valid', hostname, entry.icon_url);
+  if (entry && entry.icon_url && entry.expires >= lookup_date) {
     return entry.icon_url;
   }
 
   if (entry && entry.failures > request.max_failure_count) {
-    // console.debug('Hit but invalid', hostname);
     return;
   }
 
   const icon_url = search_document(request.document);
   if (icon_url) {
-    // console.debug('Found favicon in document', icon_url);
     const entry = new Entry();
     entry.hostname = hostname;
     entry.icon_url = icon_url;
     const now = new Date();
-    entry.expires = new Date(Date.now() + ONE_MONTH_MS);
+    entry.expires = this.expires;
     entry.failures = 0;
 
     await put_entry(conn, entry);
@@ -65,27 +66,23 @@ export async function lookup(request) {
   }
 
   if (response) {
-    // console.debug('Found root icon', hostname, response.url);
     const entry = new Entry();
     entry.hostname = hostname;
     entry.icon_url = response.url;
     const now = new Date();
-    entry.expires = new Date(Date.now() + ONE_MONTH_MS);
+    entry.expires = this.expires;
     entry.failures = 0;
     await put_entry(conn, entry);
     return response.url;
   }
 
   // Memoize a failed lookup
-  // console.debug(
-  //    'lookup failed to hostname %s with failure count %d', hostname,
-  //    (entry && entry.failures) ? entry.failures + 1 : 1);
   const failure = new Entry();
   failure.hostname = hostname;
   failure.failures = (entry && entry.failures) ? entry.failures + 1 : 1;
   failure.icon_url = entry ? entry.icon_url : undefined;
   const now = new Date();
-  failure.expires = new Date(now.getTime() + 2 * ONE_MONTH_MS);
+  failure.expires = new Date(this.expires.getTime() * 2);
   await put_entry(conn, failure);
 }
 
@@ -99,8 +96,7 @@ async function fetch_root_icon(request) {
   const root_icon = new URL(url.origin + '/favicon.ico');
 
   // NOTE: oracle.com returns "unknown" as the content type, which is why this
-  // is not restricted by content-type, despite my preference to impose a
-  // constraint on content type of the response.
+  // is not restricted by content-type, despite my preference.
   const fetch_options = {method: 'head', timeout: timeout};
 
   // Call without catching errors
@@ -137,26 +133,6 @@ function search_document(document) {
   if (links.length > 1) {
     return links[0].getAttribute('href');
   }
-}
-
-function entry_is_expired(entry) {
-  return entry.expires && entry.expires <= new Date();
-}
-
-function is_valid_lookup_request(request) {
-  if (!(request instanceof LookupRequest)) {
-    return false;
-  }
-
-  if (request.conn && !(request.conn instanceof IDBDatabase)) {
-    return false;
-  }
-
-  if (!(request.url instanceof URL)) {
-    return false;
-  }
-
-  return true;
 }
 
 export function Entry() {
@@ -232,7 +208,6 @@ export function compact(conn) {
 // not care if expired. |hostname| must be a string.
 function find_entry(conn, hostname) {
   return new Promise((resolve, reject) => {
-    // For convenience, no-op disconnected checks
     if (!conn) {
       resolve();
       return;
@@ -277,4 +252,8 @@ function put_entry(conn, entry) {
   });
 }
 
-export class RangeError extends Error {}
+export class RangeError extends Error {
+  constructor(message = 'Out of range') {
+    super(message);
+  }
+}
