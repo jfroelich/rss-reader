@@ -906,7 +906,7 @@ export class Db {
       entry.dateUpdated = new Date();
       object_utils.filter_empty_properties(entry);
       const txn = this.conn.transaction('entry', 'readwrite');
-      txn.oncomplete = resolve;
+      txn.oncomplete = event => resolve(entry);
       txn.onerror = event => reject(event.target.error);
       txn.objectStore('entry').put(entry);
     });

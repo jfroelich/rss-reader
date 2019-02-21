@@ -1,4 +1,4 @@
-import {Db} from '/src/core/db.js';
+import {Db, Entry} from '/src/core/db.js';
 import {assert} from '/src/lib/assert.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 
@@ -133,12 +133,18 @@ export class CDB {
 
   async setEntryReadState(id, read = false) {
     await this.db.setEntryReadState(id, read);
-    this.channel.postMessage({type: 'entry-read', id: id});
+    this.channel.postMessage({type: 'entry-updated', id: id, read: true});
   }
 
   async updateEntry(entry) {
-    await this.db.updateEntry(entry);
-    this.channel.postMessage({type: 'entry-updated', id: entry.id});
+    const is_unread_before = entry.readState === Entry.UNREAD;
+    const updated_entry = await this.db.updateEntry(entry);
+    const is_read_after = updated_entry.readState === Entry.READ;
+    this.channel.postMessage({
+      type: 'entry-updated',
+      id: updated_entry.id,
+      read: is_unread_before && is_read_after
+    });
   }
 
   async updateFeed(feed, overwrite) {

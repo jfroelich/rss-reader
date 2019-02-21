@@ -24,8 +24,7 @@ channel.onmessage = function options_page_onmessage(event) {
   // from here, and that could affect unread count. If unsubscribing from here
   // then slideshow may not be loaded, and also background page may not be
   // loaded.
-  const badge_types =
-      ['entry-created', 'entry-updated', 'entry-deleted', 'entry-read'];
+  const badge_types = ['entry-created', 'entry-updated', 'entry-deleted'];
   if (badge_types.includes(type)) {
     ops.badge_refresh();
   }
@@ -40,8 +39,6 @@ channel.onmessage = function options_page_onmessage(event) {
     // TODO: feeds can be added (such as by opml-import) through slideshow or
     // other pages, the feed-list displayed here needs to dynamically update
     // not implemented
-  } else if (type === 'entry-read') {
-    // ignore
   } else if (type === 'entry-created') {
     // not implemented
   } else if (type === 'entry-updated') {

@@ -310,6 +310,11 @@ function remove_slide(slide) {
 // sent to the channel by mark_slide_read_start to fully resolve the mark read
 // operation.
 function mark_slide_read_end(slide) {
+  if (slide.hasAttribute('read')) {
+    console.warn('Called mark-slide-read-end on an already read slide?', slide);
+    return;
+  }
+
   // Do not exit early if the slide is stale. Even though updating the state of
   // a stale slide seems meaningless, other algorithms such as counting unread
   // slides may be naive and only consider the read attribute
@@ -640,42 +645,34 @@ async function onmessage(event) {
   }
 
   // Common behavior for type handlers related to updating the badge
-  const badge_types =
-      ['entry-created', 'entry-updated', 'entry-deleted', 'entry-read'];
+  const badge_types = ['entry-created', 'entry-updated', 'entry-deleted'];
   if (badge_types.includes(message.type)) {
-    ops.badge_refresh();  // intentionally unawaited
+    ops.badge_refresh().catch(console.warn);  // intentionally unawaited
   }
 
-  // Type handlers are ordered by estimated frequency. Using if-blocks because I
-  // found the switch syntax hard to read.
-  const type = message.type;
-
-  if (type === 'entry-read') {
-    const slide = find_slide_by_entry_id(message.id);
-    if (slide) {
-      mark_slide_read_end(slide);
+  if (message.type === 'entry-updated') {
+    // If the update event represents a transition from unread to unread, it may
+    // relate to a slide presently loaded that needs to be updated.
+    if (message.read) {
+      const slide = find_slide_by_entry_id(message.id);
+      if (slide) {
+        mark_slide_read_end(slide);
+      }
     }
+
+    // Because we do not support hot-swapping there is nothing else to do
+    // TODO: maybe mark the entry as stale because it is now possibly out of
+    // sync?
     return;
   }
 
-  // TODO: this double test against type is awkward, need to revisit, but
-  // currently only focused on deprecating entry-write message type
-  if (type === 'entry-created' || type === 'entry-updated') {
-    // For now, we only care about newly added articles, because we do not
-    // support hot-swapping content
-    if (type !== 'entry-created') {
-      return;
-    }
-
-    // One of the objectives of synchronizing the view is to load additional
-    // articles that have since become available after the time the view was
-    // already loaded. To do this, the current criteria uses the number of
-    // unread articles in the view as an indicator.
+  if (message.type === 'entry-created') {
+    // Determine whether new articles should be loaded as a result of new
+    // articles being added to the database.
     // TODO: this should come from config
     const max_unread_before_suppress_load = 3;
     const unread_count = count_unread_slides();
-
-    // If there are already enough unread articles, do nothing.
+    // If there are already enough unread articles loaded, do nothing.
     if (unread_count > max_unread_before_suppress_load) {
       return;
     }
@@ -712,9 +709,8 @@ async function onmessage(event) {
     return;
   }
 
-  if (type === 'entry-deleted' || type === 'entry-archived') {
+  if (message.type === 'entry-deleted' || message.type === 'entry-archived') {
     const slide = find_slide_by_entry_id(message.id);
-    // The slide may not exist (this is routine and not an error)
     if (slide) {
       if (is_current_slide(slide)) {
         // TODO: set to empty string instead?
@@ -726,27 +722,27 @@ async function onmessage(event) {
     return;
   }
 
-  if (type === 'feed-deleted') {
+  if (message.type === 'feed-deleted') {
     // TODO: implement
     return;
   }
 
-  if (type === 'feed-activated') {
+  if (message.type === 'feed-activated') {
     // TODO: implement
     return;
   }
 
-  if (type === 'feed-deactivated') {
+  if (message.type === 'feed-deactivated') {
     // TODO: implement
     return;
   }
 
-  if (type === 'feed-created') {
+  if (message.type === 'feed-created') {
     // TODO: implement
     return;
   }
 
-  if (type === 'feed-updated') {
+  if (message.type === 'feed-updated') {
     // TODO: implement
     return;
   }

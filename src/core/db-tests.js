@@ -439,7 +439,7 @@ export async function iterate_entries_test() {
 }
 
 export async function set_entry_read_state_test() {
-  const db_name = 'mark-entry-read-test';
+  const db_name = set_entry_read_state_test.name;
   await idb.remove(db_name);
   const conn = new db.Db();
   conn.name = db_name;
