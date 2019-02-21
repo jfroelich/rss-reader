@@ -10,8 +10,11 @@ import {assert} from '/src/lib/assert.js';
 // the function is incorrectly targeted, it is written and named as to be
 // general application but I have a specific and particular situation in mind.
 export function has_valid_base_uri(doc) {
-  return doc instanceof Document && doc.baseURI &&
-      typeof doc.baseURI === 'string' &&
+  // It is a programmer error to call this function on anything other than an
+  // initialized Document
+  assert(doc instanceof Document);
+
+  return doc.baseURI && typeof doc.baseURI === 'string' &&
       !doc.baseURI.startsWith('chrome-extension');
 }
 
