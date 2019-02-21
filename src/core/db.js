@@ -326,31 +326,9 @@ export class Db {
 
   archiveEntry(entry) {
     const before_size = sizeof(entry);
-    const ce = this.compactEntry(entry);
-    const after_size = sizeof(ce);
-
-    if (after_size > before_size) {
-      console.warn('Entry increased size', entry);
-    }
-
-    ce.archiveState = Entry.ARCHIVED;
-    const current_date = new Date();
-    ce.dateArchived = current_date;
-    ce.dateUpdated = current_date;
-    return ce;
-  }
-
-  compactEntry(entry) {
     const ce = new Entry();
     ce.dateCreated = entry.dateCreated;
-
-    // Retain this past archival date so that it can still be displayed
-    // in front end queries on datePublished index as of version 26 of database.
     ce.datePublished = entry.datePublished;
-
-    // Prior to datePublished index being added in database version 26, entries
-    // could be created without a publish date. Now entries must have one. This
-    // is a migration fix.
     if (!ce.datePublished) {
       ce.datePublished = ce.dateCreated;
     }
@@ -363,6 +341,19 @@ export class Db {
     ce.id = entry.id;
     ce.readState = entry.readState;
     ce.urls = entry.urls;
+
+    // We do not measure all fields retained
+    const after_size = sizeof(ce);
+    if (after_size > before_size) {
+      console.warn(
+          'Archiving entry increased size by %d', after_size - before_size,
+          entry, ce);
+    }
+
+    ce.archiveState = Entry.ARCHIVED;
+    const current_date = new Date();
+    ce.dateArchived = current_date;
+    ce.dateUpdated = current_date;
     return ce;
   }
 
