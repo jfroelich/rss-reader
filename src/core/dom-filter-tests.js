@@ -4,6 +4,7 @@ import * as net from '/src/core/net.js';
 import {assert} from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
+import * as document_utils from '/src/lib/document-utils.js';
 import * as html_utils from '/src/lib/html-utils.js';
 
 export async function emphasis_filter_test() {
@@ -230,7 +231,7 @@ async function load_file(filename, set_base_uri_flag = true) {
   if (set_base_uri_flag) {
     const base_url_string = chrome.extension.getURL(base_path);
     const base_url = new URL(base_url_string);
-    dom_utils.set_base_uri(doc, base_url);
+    document_utils.set_base_uri(doc, base_url);
   }
 
   return doc;

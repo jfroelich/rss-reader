@@ -7,6 +7,7 @@ import * as net from '/src/core/net.js';
 import * as rewrite_rules from '/src/core/rewrite-rules.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import * as document_utils from '/src/lib/document-utils.js';
 import * as html_utils from '/src/lib/html-utils.js';
 import * as sniffer from '/src/lib/sniffer.js';
 import * as tls from '/src/lib/tls.js';
@@ -252,7 +253,7 @@ export class PollOperation {
     assert(doc instanceof Document);
 
     const old_base_uri = doc.baseURI;
-    dom_utils.set_base_uri(
+    document_utils.set_base_uri(
         doc, new URL(cdb.Entry.prototype.getURLString.call(entry)));
 
     // If title was not present in the feed xml, try and pull it from content

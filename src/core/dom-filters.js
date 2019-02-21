@@ -5,6 +5,7 @@ import * as boilerplate from '/src/lib/boilerplate.js';
 import {coerce_element} from '/src/lib/coerce-element.js';
 import * as color from '/src/lib/color.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import * as document_utils from '/src/lib/document-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
 import * as url_utils from '/src/lib/url-utils.js';
 
@@ -18,7 +19,7 @@ export async function composite_document_filter(doc, options = {}) {
   // TODO: this assert probably does not belong here. This concern is per filter
   // where some filters are concerned and some are not. The appropriate location
   // for this sanity check is within each filter that is concerned with it.
-  assert(dom_utils.has_valid_base_uri(doc));
+  assert(document_utils.has_valid_base_uri(doc));
 
   frame_filter(doc, options.empty_frame_body_message);
   ensure_body_element_filter(doc);
