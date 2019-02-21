@@ -1,7 +1,6 @@
 import * as cdb_tests from '/src/core/cdb-tests.js';
 import * as db_tests from '/src/core/db-tests.js';
 import * as dom_filter_tests from '/src/core/dom-filter-tests.js';
-import * as dom_utils_tests from '/src/core/dom-utils-tests.js';
 import * as favicon_tests from '/src/core/favicon-tests.js';
 import * as net_tests from '/src/core/net-tests.js';
 import * as ops_tests from '/src/core/ops-tests.js';
@@ -17,6 +16,7 @@ import {mime_test} from '/src/lib/mime-test.js';
 import {parse_feed_test} from '/src/lib/parse-feed-test.js';
 import {sniffer_test} from '/src/lib/sniffer-test.js';
 import * as string_utils_tests from '/src/lib/string-utils-tests.js';
+import * as unwrap_element_tests from '/src/lib/unwrap-element-tests.js';
 import * as url_utils_tests from '/src/lib/url-utils-tests.js';
 
 const registry = [];
@@ -25,7 +25,6 @@ register_test(coerce_element_test);
 register_test(color_test);
 register_module_tests(cdb_tests);
 register_module_tests(db_tests);
-register_module_tests(dom_utils_tests);
 register_module_tests(document_utils_tests);
 register_module_tests(dom_filter_tests);
 register_module_tests(favicon_tests);
@@ -39,6 +38,7 @@ register_test(parse_feed_test);
 register_module_tests(rewrite_url_tests);
 register_test(sniffer_test);
 register_module_tests(string_utils_tests);
+register_module_tests(unwrap_element_tests);
 register_module_tests(url_utils_tests);
 
 // On module load, expose console commands

@@ -7,6 +7,7 @@ import * as color from '/src/lib/color.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as document_utils from '/src/lib/document-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
+import {unwrap_element} from '/src/lib/unwrap-element.js';
 import * as url_utils from '/src/lib/url-utils.js';
 
 // Applies several content filters to a document. The filters are applied in a
@@ -79,7 +80,7 @@ export function anchor_format_filter(doc) {
   const anchors = doc.querySelectorAll('a');
   for (const anchor of anchors) {
     if (!anchor.hasAttribute('href')) {
-      dom_utils.unwrap_element(anchor);
+      unwrap_element(anchor);
     }
   }
 }
@@ -100,7 +101,7 @@ export function anchor_script_filter(doc) {
   const anchors = doc.querySelectorAll('a[href]');
   for (const anchor of anchors) {
     if (anchor.protocol === 'javascript:') {
-      dom_utils.unwrap_element(anchor);
+      unwrap_element(anchor);
     }
   }
 }
@@ -248,7 +249,7 @@ export function condense_tagnames_filter(doc) {
 export function container_filter(doc) {
   const elements = doc.querySelectorAll('div, ilayer, layer');
   for (const element of elements) {
-    dom_utils.unwrap_element(element);
+    unwrap_element(element);
   }
 }
 
@@ -277,7 +278,7 @@ export function emphasis_filter(doc, threshold = 0) {
   const redundants = doc.querySelectorAll(
       'strong strong, strong b, b strong, b b, u u, u em, em u, em em');
   for (const element of redundants) {
-    dom_utils.unwrap_element(element);
+    unwrap_element(element);
   }
 
   if (threshold > 0) {
@@ -285,7 +286,7 @@ export function emphasis_filter(doc, threshold = 0) {
     const elements = doc.querySelectorAll(selector);
     for (const element of elements) {
       if (element.textContent.replace(/\s+/, '').length > threshold) {
-        dom_utils.unwrap_element(element);
+        unwrap_element(element);
       }
     }
   }
@@ -299,10 +300,10 @@ export function figure_filter(doc) {
         // caption without an image, remove it all
         figure.remove();
       } else {
-        dom_utils.unwrap_element(figure);
+        unwrap_element(figure);
       }
     } else if (child_count === 0) {
-      dom_utils.unwrap_element(figure);
+      unwrap_element(figure);
     }
   }
 }
@@ -318,11 +319,11 @@ export function form_filter(doc) {
   }
 
   for (const label of doc.querySelectorAll('label')) {
-    dom_utils.unwrap_element(label);
+    unwrap_element(label);
   }
 
   for (const form of doc.querySelectorAll('form')) {
-    dom_utils.unwrap_element(form);
+    unwrap_element(form);
   }
 }
 
@@ -334,7 +335,7 @@ export function format_filter(doc) {
   ].join(',');
   const elements = doc.querySelectorAll(selector);
   for (const element of elements) {
-    dom_utils.unwrap_element(element);
+    unwrap_element(element);
   }
 }
 
@@ -728,7 +729,7 @@ export function list_filter(doc) {
       // The list has no child nodes, so continue to unwrap
     }
 
-    dom_utils.unwrap_element(list);
+    unwrap_element(list);
   }
 }
 
@@ -848,7 +849,7 @@ export function nest_filter(doc) {
 
   const nested_anchors = doc.querySelectorAll('a a');
   for (const descendant_anchor of nested_anchors) {
-    dom_utils.unwrap_element(descendant_anchor);
+    unwrap_element(descendant_anchor);
   }
 
   const captions = doc.querySelectorAll('figcaption');
@@ -918,7 +919,7 @@ export function semantic_filter(doc) {
   const selector = 'article, aside, footer, header, main, section';
   const elements = doc.querySelectorAll(selector);
   for (const element of elements) {
-    dom_utils.unwrap_element(element);
+    unwrap_element(element);
   }
 }
 
@@ -927,7 +928,7 @@ export function table_filter(doc, row_scan_max) {
   const elements =
       doc.querySelectorAll('colgroup, hgroup, multicol, tbody, tfoot, thead');
   for (const element of elements) {
-    dom_utils.unwrap_element(element);
+    unwrap_element(element);
   }
 
   const tables = doc.querySelectorAll('table');
@@ -950,7 +951,7 @@ export function table_filter(doc, row_scan_max) {
     }
 
     if (is_single_column) {
-      dom_utils.unwrap_element(table);
+      unwrap_element(table);
     }
   }
 }
@@ -1078,7 +1079,7 @@ export function visibility_filter(doc, matte, mcr) {
   for (const element of elements) {
     if (doc.documentElement.contains(element) &&
         dom_utils.is_hidden_inline(element)) {
-      dom_utils.unwrap_element(element);
+      unwrap_element(element);
     }
   }
 

@@ -1,6 +1,6 @@
-import * as dom_utils from '/src/core/dom-utils.js';
 import {assert} from '/src/lib/assert.js';
 import * as html_utils from '/src/lib/html-utils.js';
+import {unwrap_element} from '/src/lib/unwrap-element.js';
 
 export async function unwrap_element_test() {
   // Assert the typical case of a simple straightforward unwrap call completes
@@ -8,7 +8,7 @@ export async function unwrap_element_test() {
   let doc = html_utils.parse_html(
       '<html><head></head><body><div>hello</div></body></html>');
   let element = doc.querySelector('div');
-  dom_utils.unwrap_element(element);
+  unwrap_element(element);
   let expected_state = '<html><head></head><body>hello</body></html>';
   let after_state = doc.documentElement.outerHTML;
   assert(after_state === expected_state);
@@ -17,7 +17,7 @@ export async function unwrap_element_test() {
   // exception
   let unwrap_null_error;
   try {
-    dom_utils.unwrap_element(null, false);
+    unwrap_element(null, false);
   } catch (error) {
     unwrap_null_error = error;
   }
@@ -31,7 +31,7 @@ export async function unwrap_element_test() {
   element.remove();
   let before_state = doc.documentElement.outerHTML;
   let nag = false;  // disable the orphan warning
-  dom_utils.unwrap_element(element, nag);
+  unwrap_element(element, nag);
   after_state = doc.documentElement.outerHTML;
   assert(before_state === after_state);
 
@@ -40,7 +40,7 @@ export async function unwrap_element_test() {
       '<html><head></head><body><p>before</p>' +
       '<a>hello</a><p>after</p></body></html>');
   element = doc.querySelector('a');
-  dom_utils.unwrap_element(element);
+  unwrap_element(element);
   after_state = doc.documentElement.outerHTML;
   expected_state =
       '<html><head></head><body><p>before</p>hello<p>after</p></body></html>';
@@ -51,7 +51,7 @@ export async function unwrap_element_test() {
   doc = html_utils.parse_html(
       '<html><head></head><body>before<a>hello</a><p>after</p></body></html>');
   element = doc.querySelector('a');
-  dom_utils.unwrap_element(element);
+  unwrap_element(element);
   after_state = doc.documentElement.outerHTML;
   expected_state =
       '<html><head></head><body>before hello<p>after</p></body></html>';
@@ -62,7 +62,7 @@ export async function unwrap_element_test() {
   doc = html_utils.parse_html(
       '<html><head></head><body><p>before</p><a>hello</a>after</body></html>');
   element = doc.querySelector('a');
-  dom_utils.unwrap_element(element);
+  unwrap_element(element);
   after_state = doc.documentElement.outerHTML;
   expected_state =
       '<html><head></head><body><p>before</p>hello after</body></html>';
@@ -73,7 +73,7 @@ export async function unwrap_element_test() {
   doc = html_utils.parse_html(
       '<html><head></head><body>before<a>hello</a>after</body></html>');
   element = doc.querySelector('a');
-  dom_utils.unwrap_element(element);
+  unwrap_element(element);
   after_state = doc.documentElement.outerHTML;
   expected_state = '<html><head></head><body>before hello after</body></html>';
   assert(after_state === expected_state);
@@ -84,7 +84,7 @@ export async function unwrap_element_test() {
   doc = html_utils.parse_html(
       '<html><head></head><body>before<a></a>after</body></html>');
   element = doc.querySelector('a');
-  dom_utils.unwrap_element(element);
+  unwrap_element(element);
   after_state = doc.documentElement.outerHTML;
   expected_state = '<html><head></head><body>before after</body></html>';
   assert(after_state === expected_state);
@@ -94,18 +94,18 @@ export async function unwrap_element_test() {
   doc = html_utils.parse_html(
       '<html><head></head><body>before<a><b>hello</b></a>after</body></html>');
   element = doc.querySelector('a');
-  dom_utils.unwrap_element(element);
+  unwrap_element(element);
   after_state = doc.documentElement.outerHTML;
   expected_state =
       '<html><head></head><body>before<b>hello</b>after</body></html>';
   assert(after_state === expected_state);
 }
 
-export async function unwrap_list_test() {
+export async function unwrap_element_list_test() {
   let doc = html_utils.parse_html(
       '<html><body>1<ul><li>2</li><li>3</li></ul>4<body></html>');
   let element = doc.querySelector('ul');
-  dom_utils.unwrap_element(element);
+  unwrap_element(element);
   let after_state = doc.body.innerHTML;
 
   // NOTE: the whitespace manipulation is wonky/imperfect/inexact. Since it is
@@ -118,7 +118,7 @@ export async function unwrap_list_test() {
   // Test against simple empty list
   doc = html_utils.parse_html('<html><body><ul></ul><body></html>');
   element = doc.querySelector('ul');
-  dom_utils.unwrap_element(element);
+  unwrap_element(element);
   after_state = doc.body.innerHTML;
   expected_state = '';
   // Due to wonky whitespace manipulation, strip it out
@@ -129,7 +129,7 @@ export async function unwrap_list_test() {
   doc = html_utils.parse_html(
       '<html><body><dl><dd>1</dd><dt>2</dt></dl><body></html>');
   element = doc.querySelector('dl');
-  dom_utils.unwrap_element(element);
+  unwrap_element(element);
   after_state = doc.body.innerHTML;
   expected_state = '12';
   // Ignore whitespace as usual
@@ -140,7 +140,7 @@ export async function unwrap_list_test() {
   doc = html_utils.parse_html(
       '<html><body><ul><li>1</li><foo>2</foo></ul><body></html>');
   element = doc.querySelector('ul');
-  dom_utils.unwrap_element(element);
+  unwrap_element(element);
   after_state = doc.body.innerHTML;
   expected_state = '1<foo>2</foo>';
   after_state = after_state.replace(/\s/g, '');
