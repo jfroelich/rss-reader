@@ -712,7 +712,8 @@ export function list_filter(doc) {
           // the next list
           continue;
         } else {
-          if (dom_utils.is_list_item(firstElement)) {
+          const item_names = ['dd', 'dt', 'li'];
+          if (item_names.includes(firstElement.localName)) {
             // This is a list with just one element, so we want to unwrap
           } else {
             // Something like

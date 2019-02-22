@@ -56,8 +56,9 @@ export function unwrap_element(element) {
     // around the content within items, not the items themselves. Previously
     // this was a bug.
     let item = element.firstChild;
+    const list_item_names = ['dd', 'dt', 'li'];
     while (item) {
-      if (is_list_item(item)) {
+      if (list_item_names.includes(item.localName)) {
         // Unlike the outer loop, here firstChild does change each move
         for (let child = item.firstChild; child; child = item.firstChild) {
           frag.appendChild(child);
@@ -94,8 +95,4 @@ export function unwrap_element(element) {
   }
 
   parent.insertBefore(frag, next);
-}
-
-function is_list_item(node) {
-  return ['li', 'dd', 'dt'].includes(node.localName);
 }

@@ -4,10 +4,6 @@ import {assert} from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
 import {unwrap_element} from '/src/lib/unwrap-element.js';
 
-export function is_list_item(node) {
-  return ['li', 'dd', 'dt'].includes(node.localName);
-}
-
 export function element_derive_text_color(element) {
   const style = getComputedStyle(element);
   if (style) {
