@@ -1,4 +1,19 @@
-// Replace |element| with its child nodes
+// Replace an element with its child nodes in the DOM. Returns undefined.
+//
+// If the element is an orphan, where an orphan is defined as a node without a
+// parent, then this is a noop.
+//
+// The algorithm tries to consider the effect on whitespace as a result of
+// removing the element. It takes a few shortcuts so it is somewhat imperfect.
+// Some whitespace may be inserted before and after the child nodes in order
+// prevent merging of adjacent text nodes that were previously non-adjacent.
+//
+// Special handling is provided for tables and lists but not other elements that
+// involve 'semantic distance' between child nodes and the input element's
+// parent.
+//
+// Regarding performance, the algorithm considers whether the document is
+// implicitly live-flagged. However, recursive application is not optimized.
 export function unwrap_element(element) {
   if (!element.parentNode) {
     return;
@@ -79,4 +94,8 @@ export function unwrap_element(element) {
   }
 
   parent.insertBefore(frag, next);
+}
+
+function is_list_item(node) {
+  return ['li', 'dd', 'dt'].includes(node.localName);
 }
