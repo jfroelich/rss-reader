@@ -6,7 +6,7 @@ import * as ops from '/src/core/ops.js';
 
 // Open a channel with a lifetime equal to the background page lifetime.
 const channel = new BroadcastChannel('reader');
-channel.onmessage = async function(event) {
+channel.onmessage = function(event) {
   // Ensure the badge is refreshed when an entry changes and only the background
   // page is loaded
   const types = ['entry-created', 'entry-updated', 'entry-deleted'];
