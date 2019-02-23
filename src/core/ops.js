@@ -5,6 +5,7 @@ import * as net from '/src/core/net.js';
 import {assert} from '/src/lib/assert.js';
 import * as file_utils from '/src/lib/file-utils.js';
 import * as opml_utils from '/src/lib/opml-utils.js';
+import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar
@@ -13,9 +14,8 @@ export async function badge_refresh() {
   await session.open();
   const count = await session.countUnreadEntries();
   session.close();
-
   const text = count > 999 ? '1k+' : '' + count;
-  chrome.browserAction.setBadgeText({text: text});
+  platform.set_badge_text({text: text});
 }
 
 export function activate_feed(session, feed_id) {

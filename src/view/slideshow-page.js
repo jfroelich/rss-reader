@@ -6,6 +6,7 @@ import {PollOperation} from '/src/core/poll-feeds.js';
 import {assert} from '/src/lib/assert.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
 import * as html_utils from '/src/lib/html-utils.js';
+import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
 
 const splash_element = document.getElementById('initial-loading-panel');
@@ -177,7 +178,7 @@ async function slide_onclick(event) {
   event.preventDefault();
 
   // Open the link in a new tab via a technique that Chrome tolerates
-  chrome.tabs.create({active: true, url: url_string});
+  platform.create_tab({active: true, url: url_string});
 
   // Find the clicked slide. Start from parent because we know that the anchor
   // itself is not a slide. We know that a slide will always be found
@@ -495,9 +496,6 @@ function download_opml_document(opml_document, file_name = 'subs.xml') {
   const blob = new Blob([xml_string], {type: 'application/xml'});
 
   // Download the blob file by simulating an anchor click
-  // NOTE: this was broken in Chrome 65 and then fixed. For Chrome 65, using
-  // the chrome.downloads technique worked as an alternative, but now that also
-  // no longer works, and this anchor strategy works again
   const anchor = document.createElement('a');
   anchor.setAttribute('download', file_name);
   const url = URL.createObjectURL(blob);

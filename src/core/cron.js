@@ -2,7 +2,7 @@ import * as cdb from '/src/core/cdb.js';
 import * as favicon from '/src/core/favicon.js';
 import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';
-import * as idle from '/src/lib/idle.js';
+import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
@@ -25,13 +25,13 @@ const alarms = [
 
 export function create_alarms() {
   for (const desc of alarms) {
-    chrome.alarms.create(desc.name, {periodInMinutes: desc.period});
+    platform.create_alarm(desc.name, {periodInMinutes: desc.period});
   }
 }
 
 export function update_alarms(prev_version_string) {
   for (const name of deprecated_alarms) {
-    chrome.alarms.clear(name, cleared => {
+    platform.remove_alarm(name, cleared => {
       if (cleared) {
         console.log('Removed alarm', name);
       }
@@ -71,7 +71,7 @@ async function handle_alarm_poll() {
   if (Number.isInteger(idle_poll_secs) && idle_poll_secs > 0 &&
       tls.read_boolean('only_poll_if_idle')) {
     const idle_states = ['locked', 'idle'];
-    const idle_state = await idle.query_state(idle_poll_secs);
+    const idle_state = await platform.query_idle_state(idle_poll_secs);
     if (!idle_states.includes(idle_state)) {
       console.debug(
           'Canceling poll-feeds alarm as not idle for %d seconds',

@@ -1,4 +1,5 @@
 import * as extension from '/src/core/extension.js';
+import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
 
 // If notifications are enabled, generate and show a desktop notification.
@@ -15,7 +16,9 @@ export function show(note) {
   const details = {};
   details.body = message || '';
 
-  const default_icon = chrome.extension.getURL('/images/rss_icon_trans.gif');
+  const default_icon =
+      platform.get_extension_url_string('/images/rss_icon_trans.gif');
+
   details.icon = note.url || default_icon;
 
   const notification = new Notification(title, details);

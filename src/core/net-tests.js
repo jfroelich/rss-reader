@@ -1,10 +1,11 @@
 import * as net from '/src/core/net.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import * as platform from '/src/lib/platform.js';
 
 export async function fetch_image_test() {
   let path = '/src/core/fetch-image-test.png';
-  let url_string = chrome.extension.getURL(path);
+  let url_string = platform.get_extension_url_string(path);
   let url = new URL(url_string);
 
   // Test using explicit indefiniteness
@@ -20,7 +21,7 @@ export async function fetch_image_test() {
 
   // Test against a non-existent image
   path = '/test/i-do-not-exist.png';
-  url_string = chrome.extension.getURL(path);
+  url_string = platform.get_extension_url_string(path);
   url = new URL(url_string);
   options = undefined;  // reset for isolation, presumably indefinite default
   let error404;

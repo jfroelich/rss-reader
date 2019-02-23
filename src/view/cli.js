@@ -4,6 +4,7 @@ import * as cron_control from '/src/core/cron.js';
 import * as favicon from '/src/core/favicon.js';
 import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';
+import * as platform from '/src/lib/platform.js';
 
 // TODO: add and implement cli_archive_entries
 
@@ -58,7 +59,7 @@ async function cli_lookup_favicon(url_string, cached) {
 }
 
 function cli_print_alarms() {
-  chrome.alarms.getAll(alarms => {
+  platform.get_alarms(alarms => {
     for (const alarm of alarms) {
       console.debug('Alarm:', alarm.name);
     }
@@ -66,7 +67,7 @@ function cli_print_alarms() {
 }
 
 function cli_clear_alarms() {
-  chrome.alarms.clearAll(cleared => {
+  platform.clear_alarms(cleared => {
     console.debug('Cleared all alarms');
   });
 }

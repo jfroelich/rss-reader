@@ -2,6 +2,7 @@ import * as cdb from '/src/core/cdb.js';
 import * as favicon from '/src/core/favicon.js';
 import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';
+import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
 
 let current_menu_item;
@@ -500,9 +501,9 @@ function enable_notifications_checkbox_onclick(event) {
 
 function enable_bg_processing_checkbox_onclick(event) {
   if (event.target.checked) {
-    perm_request('background');
+    platform.request_permission('background');
   } else {
-    perm_remove('background');
+    platform.remove_permission('background');
   }
 }
 
@@ -511,7 +512,7 @@ function enable_bg_processing_checkbox_onclick(event) {
 async function enable_bg_processing_checkbox_init() {
   const checkbox = document.getElementById('enable-background');
   checkbox.onclick = enable_bg_processing_checkbox_onclick;
-  checkbox.checked = await perm_has('background');
+  checkbox.checked = await platform.has_permission('background');
 }
 
 function bg_image_menu_onchange(event) {
@@ -581,20 +582,6 @@ function body_line_height_input_oninput(event) {
   }
 }
 
-function perm_has(perm) {
-  return new Promise(
-      resolve => chrome.permissions.contains({permissions: [perm]}, resolve));
-}
-
-function perm_request(perm) {
-  return new Promise(
-      resolve => chrome.permissions.request({permissions: [perm]}, resolve));
-}
-
-function perm_remove(perm) {
-  return new Promise(
-      resolve => chrome.permissions.remove({permissions: [perm]}, resolve));
-}
 
 
 {  // Start on module load init
