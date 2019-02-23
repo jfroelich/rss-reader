@@ -3,7 +3,7 @@ import * as net from '/src/core/net.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import * as boilerplate from '/src/lib/boilerplate.js';
 import {coerce_element} from '/src/lib/coerce-element.js';
-import * as color from '/src/lib/color.js';
+import {color_contrast_filter} from '/src/lib/color-contrast-filter.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as document_utils from '/src/lib/document-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
@@ -192,33 +192,6 @@ export function breakrule_filter(doc) {
   }
 }
 
-// Removes elements containing text that is not perceptible by calculating the
-// approximate contrast between the foreground text color and the background
-// color. |matte| is an optional base background color used for alpha blending.
-// |min_contrast| is an optional minimum ratio determine whether contrast is too
-// low, defaults to a conservative threshold.
-export function color_contrast_filter(doc, matte, min_contrast) {
-  if (typeof matte === 'undefined') {
-    matte = color.WHITE;
-  }
-
-  if (typeof min_contrast === 'undefined') {
-    min_contrast = 1.2;
-  }
-
-  const it = doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_TEXT);
-  let node = it.nextNode();
-  while (node) {
-    const element = node.parentNode;
-    const fore = dom_utils.element_derive_text_color(element);
-    const back = dom_utils.element_derive_bgcolor(element, matte);
-    const contrast = color.get_contrast(fore, back);
-    if (contrast < min_contrast) {
-      node.remove();
-    }
-    node = it.nextNode();
-  }
-}
 
 // Removes all HTML comment nodes from the document
 export function comment_filter(doc) {
