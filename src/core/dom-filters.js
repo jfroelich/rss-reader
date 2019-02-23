@@ -6,6 +6,7 @@ import {coerce_element} from '/src/lib/coerce-element.js';
 import {color_contrast_filter} from '/src/lib/color-contrast-filter.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as document_utils from '/src/lib/document-utils.js';
+import {node_is_leaf} from '/src/lib/dom-hierarchy.js';
 import * as string_utils from '/src/lib/string-utils.js';
 import {unwrap_element} from '/src/lib/unwrap-element.js';
 import * as url_utils from '/src/lib/url-utils.js';
@@ -878,7 +879,7 @@ export function node_leaf_filter(doc) {
   const root = doc.documentElement;
   const elements = doc.querySelectorAll('*');
   for (const element of elements) {
-    if (root.contains(element) && dom_utils.node_is_leaf(element)) {
+    if (root.contains(element) && node_is_leaf(element)) {
       element.remove();
     }
   }
@@ -931,7 +932,7 @@ export function table_filter(doc, row_scan_max) {
       const cells = rows[i].cells;
       let filled = 0;
       for (let j = 0; j < cells.length; j++) {
-        if (!dom_utils.node_is_leaf(cells[j])) {
+        if (!node_is_leaf(cells[j])) {
           filled++;
           if (filled > 1) {
             is_single_column = false;
