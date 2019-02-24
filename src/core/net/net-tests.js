@@ -1,10 +1,10 @@
-import * as net from '/src/core/net.js';
+import * as net from '/src/core/net/net.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as platform from '/src/lib/platform.js';
 
 export async function fetch_image_test() {
-  let path = '/src/core/fetch-image-test.png';
+  let path = '/src/core/net/fetch-image-test.png';
   let url_string = platform.extension.get_url_string(path);
   let url = new URL(url_string);
 
@@ -20,7 +20,7 @@ export async function fetch_image_test() {
   assert(response);
 
   // Test against a non-existent image
-  path = '/test/i-do-not-exist.png';
+  path = '/src/core/net/i-do-not-exist.png';
   url_string = platform.extension.get_url_string(path);
   url = new URL(url_string);
   options = undefined;  // reset for isolation, presumably indefinite default

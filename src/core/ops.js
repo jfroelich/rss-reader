@@ -1,7 +1,7 @@
 import * as cdb from '/src/core/cdb.js';
 import * as desknote from '/src/core/desknote.js';
 import * as favicon from '/src/core/favicon.js';
-import * as net from '/src/core/net.js';
+import * as net from '/src/core/net/net.js';
 import {assert} from '/src/lib/assert.js';
 import * as file_utils from '/src/lib/file-utils.js';
 import * as opml_utils from '/src/lib/opml-utils.js';

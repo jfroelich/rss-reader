@@ -2,7 +2,7 @@ import * as cdb_tests from '/src/core/cdb-tests.js';
 import * as db_tests from '/src/core/db-tests.js';
 import * as dom_filter_tests from '/src/core/dom-filter-tests.js';
 import * as favicon_tests from '/src/core/favicon-tests.js';
-import * as net_tests from '/src/core/net-tests.js';
+import * as net_tests from '/src/core/net/net-tests.js';
 import * as ops_tests from '/src/core/ops-tests.js';
 import * as rewrite_url_tests from '/src/core/rewrite-url-test.js';
 import * as array_utils_tests from '/src/lib/array-utils-tests.js';
