@@ -58,18 +58,18 @@ async function cli_lookup_favicon(url_string, cached) {
   return result;
 }
 
-function cli_print_alarms() {
-  platform.get_alarms(alarms => {
-    for (const alarm of alarms) {
-      console.debug('Alarm:', alarm.name);
-    }
-  });
+async function cli_print_alarms() {
+  console.log('Enumerating alarms...');
+  const alarms = await platform.alarm.get_all();
+  for (const alarm of alarms) {
+    console.log('Alarm:', alarm.name);
+  }
 }
 
-function cli_clear_alarms() {
-  platform.clear_alarms(cleared => {
-    console.debug('Cleared all alarms');
-  });
+async function cli_clear_alarms() {
+  console.log('Clearing alarms...');
+  const cleared = await platform.alarm.clear();
+  console.log('Cleared alarms');
 }
 
 function cli_create_alarms() {

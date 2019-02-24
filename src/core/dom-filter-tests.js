@@ -224,13 +224,13 @@ function run_image_size_filter(doc) {
 
 // Fetch, parse, and prepare a local url
 async function load_file(filename, set_base_uri_flag = true) {
-  const url_string = platform.get_extension_url_string(filename);
+  const url_string = platform.extension.get_url_string(filename);
   const response = await fetch(url_string);
   const text = await response.text();
   const doc = html_utils.parse_html(text);
 
   if (set_base_uri_flag) {
-    const base_url_string = platform.get_extension_url_string(base_path);
+    const base_url_string = platform.extension.get_url_string(base_path);
     const base_url = new URL(base_url_string);
     document_utils.set_base_uri(doc, base_url);
   }

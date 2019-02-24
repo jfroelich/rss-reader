@@ -17,16 +17,16 @@ channel.onmessage = function(event) {
 };
 
 // TODO: re-inline the listener here
-platform.add_alarm_listener(cron_control.alarm_listener);
+platform.alarm.add_listener(cron_control.alarm_listener);
 
-platform.add_startup_listener(event => {
+platform.lifecylce.add_startup_listener(event => {
   ops.badge_refresh().catch(console.warn);
 });
 
 // TODO: re-inline the listener here
-platform.add_install_listener(config.install_listener);
+platform.lifecycle.add_install_listener(config.install_listener);
 
-platform.add_install_listener(async function(event) {
+platform.lifecycle.add_install_listener(async function(event) {
   if (event.reason === 'install') {
     const session = new cdb.CDB();
     await session.open();
@@ -34,11 +34,11 @@ platform.add_install_listener(async function(event) {
   }
 });
 
-platform.add_install_listener(event => {
+platform.lifecycle.add_install_listener(event => {
   if (event.reason === 'install') {
     cron_control.create_alarms();
   } else {
-    cron_control.update_alarms(event.previousVersion);
+    cron_control.update_alarms(event.previousVersion).catch(console.warn);
   }
 });
 
@@ -46,7 +46,7 @@ platform.add_install_listener(event => {
 // we only need to do this on install, reloading the extension from Chrome's
 // extensions page triggers an update event where for some reason the badge
 // text is unset.
-platform.add_install_listener(_ => ops.badge_refresh().catch(console.warn));
+platform.lifecycle.add_install_listener(
+    _ => ops.badge_refresh().catch(console.warn));
 
-platform.add_badge_click_listener(
-    _ => extension.open_view().catch(console.warn));
+platform.badge.add_listener(_ => extension.open_view().catch(console.warn));

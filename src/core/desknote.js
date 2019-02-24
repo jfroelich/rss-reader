@@ -17,7 +17,7 @@ export function show(note) {
   details.body = message || '';
 
   const default_icon =
-      platform.get_extension_url_string('/images/rss_icon_trans.gif');
+      platform.extension.get_url_string('/images/rss_icon_trans.gif');
 
   details.icon = note.url || default_icon;
 

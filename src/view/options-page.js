@@ -501,18 +501,21 @@ function enable_notifications_checkbox_onclick(event) {
 
 function enable_bg_processing_checkbox_onclick(event) {
   if (event.target.checked) {
-    platform.request_permission('background');
+    platform.permission.request('background');
   } else {
-    platform.remove_permission('background');
+    platform.permission.remove('background');
   }
 }
 
 // TODO: this should be using a configuration variable and instead the
 // permission should be permanently defined.
+// TODO: this no longer works because background is now a required permission,
+// so it cannot be removed (triggers an error that appears only in the console),
+// so now the app really needs to migrate to relying on a configuration variable
 async function enable_bg_processing_checkbox_init() {
   const checkbox = document.getElementById('enable-background');
   checkbox.onclick = enable_bg_processing_checkbox_onclick;
-  checkbox.checked = await platform.has_permission('background');
+  checkbox.checked = await platform.permission.has('background');
 }
 
 function bg_image_menu_onchange(event) {
@@ -690,7 +693,7 @@ function body_line_height_input_oninput(event) {
     body_line_height_input.value = body_line_height;
   }
 
-  const manifest = chrome.runtime.getManifest();
+  const manifest = platform.extension.get_manifest();
   const ext_name_element = document.getElementById('extension-name');
   ext_name_element.textContent = manifest.name;
   const ext_version_element = document.getElementById('extension-version');

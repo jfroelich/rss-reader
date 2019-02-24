@@ -178,7 +178,7 @@ async function slide_onclick(event) {
   event.preventDefault();
 
   // Open the link in a new tab via a technique that Chrome tolerates
-  platform.create_tab({active: true, url: url_string});
+  platform.tab.create({active: true, url: url_string});
 
   // Find the clicked slide. Start from parent because we know that the anchor
   // itself is not a slide. We know that a slide will always be found

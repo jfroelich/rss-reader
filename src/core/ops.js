@@ -15,7 +15,7 @@ export async function badge_refresh() {
   const count = await session.countUnreadEntries();
   session.close();
   const text = count > 999 ? '1k+' : '' + count;
-  platform.set_badge_text({text: text});
+  platform.badge.set_text({text: text});
 }
 
 export function activate_feed(session, feed_id) {

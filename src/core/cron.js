@@ -24,19 +24,17 @@ const alarms = [
 ];
 
 export function create_alarms() {
-  for (const desc of alarms) {
-    platform.create_alarm(desc.name, {periodInMinutes: desc.period});
+  for (const alarm of alarms) {
+    platform.alarm.create(alarm.name, {periodInMinutes: alarm.period});
   }
 }
 
 export function update_alarms(prev_version_string) {
+  const promises = [];
   for (const name of deprecated_alarms) {
-    platform.remove_alarm(name, cleared => {
-      if (cleared) {
-        console.log('Removed alarm', name);
-      }
-    });
+    promises.push(platform.alarm.remove(name));
   }
+  return Promise.all(promises);
 }
 
 export async function alarm_listener(alarm) {
@@ -71,7 +69,7 @@ async function handle_alarm_poll() {
   if (Number.isInteger(idle_poll_secs) && idle_poll_secs > 0 &&
       tls.read_boolean('only_poll_if_idle')) {
     const idle_states = ['locked', 'idle'];
-    const idle_state = await platform.query_idle_state(idle_poll_secs);
+    const idle_state = await platform.idle.query(idle_poll_secs);
     if (!idle_states.includes(idle_state)) {
       console.debug(
           'Canceling poll-feeds alarm as not idle for %d seconds',

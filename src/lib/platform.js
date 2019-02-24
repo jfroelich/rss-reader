@@ -1,79 +1,96 @@
-export function add_install_listener(listener) {
+export const lifecycle = {};
+
+lifecycle.add_install_listener = function(listener) {
   return chrome.runtime.onInstalled.addListener(listener);
-}
+};
 
-export function add_startup_listener(listener) {
+lifecycle.add_startup_listener = function(listener) {
   return chrome.runtime.onStartup.addListener(listener);
-}
+};
 
-export function add_alarm_listener(listener) {
+export const alarm = {};
+
+alarm.add_listener = function(listener) {
   return chrome.alarms.onAlarm.addListener(listener);
-}
+};
 
-export function clear_alarms(callback) {
-  return chrome.alarms.clearAll(callback);
-}
+alarm.clear = function() {
+  return new Promise(resolve => chrome.alarms.clearAll(resolve));
+};
 
-export function create_alarm(name, options) {
+alarm.create = function(name, options) {
   return chrome.alarms.create(name, options);
-}
+};
 
-export function get_alarms(callback) {
-  return chrome.alarms.getAll(callback);
-}
+alarm.get_all = function() {
+  return new Promise(resolve => chrome.alarms.getAll(resolve));
+};
 
-export function remove_alarm(name, callback) {
-  return chrome.alarms.clear(name, callback);
-}
-
-export function get_extension_url_string(url_string) {
-  return chrome.extension.getURL(url_string);
-}
-
-export function create_tab(options) {
-  return chrome.tabs.create(options);
-}
-
-export function update_tab(id, options) {
-  return chrome.tabs.update(id, options);
-}
-
-// Searches for an open tab with the given url
-export function find_tab(url_string) {
+alarm.remove = function(name, callback) {
   return new Promise(resolve => {
-    const query = {url: url_string};
-    chrome.tabs.query(query, tabs => {
-      if (tabs && tabs.length) {
-        resolve(tabs[0]);
-      }
-      resolve();
+    chrome.alarms.clear(name, function(cleared) {
+      resolve({name: name, cleared: cleared});
     });
   });
-}
+};
 
-export function set_badge_text(options) {
+export const extension = {};
+
+extension.get_manifest = function() {
+  return chrome.runtime.getManifest();
+};
+
+extension.get_url_string = function(url_string) {
+  return chrome.extension.getURL(url_string);
+};
+
+export const tab = {};
+
+tab.create = function(options) {
+  return chrome.tabs.create(options);
+};
+
+tab.update = function(id, options) {
+  return chrome.tabs.update(id, options);
+};
+
+tab.find = function(url_string) {
+  return new Promise(resolve => {
+    chrome.tabs.query({url: url_string}, tabs => {
+      resolve((tabs && tabs.length) ? tabs[0] : undefined);
+    });
+  });
+};
+
+export const badge = {};
+
+badge.set_text = function(options) {
   return chrome.browserAction.setBadgeText(options);
-}
+};
 
-export function add_badge_click_listener(listener) {
+badge.add_listener = function(listener) {
   return chrome.browserAction.onClicked.addListener(listener);
-}
+};
 
-export function query_idle_state(idle_secs) {
-  return new Promise(resolve => chrome.idle.queryState(idle_secs, resolve));
-}
+export const idle = {};
 
-export function has_permission(perm) {
+idle.query = function(seconds) {
+  return new Promise(resolve => chrome.idle.queryState(seconds, resolve));
+};
+
+export const permission = {};
+
+permission.has = function(name) {
   return new Promise(
-      resolve => chrome.permissions.contains({permissions: [perm]}, resolve));
-}
+      resolve => chrome.permissions.contains({permissions: [name]}, resolve));
+};
 
-export function request_permission(perm) {
+permission.request = function(name) {
   return new Promise(
-      resolve => chrome.permissions.request({permissions: [perm]}, resolve));
-}
+      resolve => chrome.permissions.request({permissions: [name]}, resolve));
+};
 
-export function remove_permission(perm) {
+permission.remove = function(name) {
   return new Promise(
-      resolve => chrome.permissions.remove({permissions: [perm]}, resolve));
-}
+      resolve => chrome.permissions.remove({permissions: [name]}, resolve));
+};
