@@ -1,4 +1,4 @@
-import * as cdb from '/src/core/cdb.js';
+import * as cdb from '/src/core/db/cdb.js';
 import * as fetch_policies from '/src/core/net/fetch-policies.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';

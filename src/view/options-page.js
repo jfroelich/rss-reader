@@ -1,4 +1,4 @@
-import * as cdb from '/src/core/cdb.js';
+import * as cdb from '/src/core/db/cdb.js';
 import * as favicon from '/src/core/favicon.js';
 import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';

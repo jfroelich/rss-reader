@@ -1,4 +1,4 @@
-import * as db from '/src/core/db.js';
+import * as db from '/src/core/db/db.js';
 import {assert} from '/src/lib/assert.js';
 import * as idb from '/src/lib/idb.js';
 

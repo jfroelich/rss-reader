@@ -1,4 +1,4 @@
-import * as cdb from '/src/core/cdb.js';
+import * as cdb from '/src/core/db/cdb.js';
 import {assert} from '/src/lib/assert.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 import * as idb from '/src/lib/idb.js';
