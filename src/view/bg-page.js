@@ -19,7 +19,7 @@ channel.onmessage = function(event) {
 // TODO: re-inline the listener here
 platform.alarm.add_listener(cron_control.alarm_listener);
 
-platform.lifecylce.add_startup_listener(event => {
+platform.lifecycle.add_startup_listener(event => {
   ops.badge_refresh().catch(console.warn);
 });
 
