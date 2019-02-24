@@ -1,9 +1,31 @@
 import * as cdb from '/src/core/db/cdb.js';
-import * as fetch_policies from '/src/core/net/fetch-policies.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
 import * as mime from '/src/lib/mime.js';
+
+// A default permit-all policy
+export function permit_all(request) {
+  return true;
+}
+
+// A simple, custom, hardcoded fetch policy
+// * allow only http/https/data
+// * allow only get/head
+// * disallow loopback
+// * disallow credentials
+export function permit_default(request) {
+  const good_protocols = ['data', 'http', 'https'];
+  const good_methods = ['get', 'head'];
+  const bad_hostnames = ['localhost', '127.0.0.1'];
+
+  const url = request.url;
+  const method = request.method ? request.method.toLowerCase() : 'get';
+  const protocol = url.protocol.substring(0, url.protocol.length - 1);
+
+  return good_protocols.includes(protocol) && !bad_hostnames(url.hostname) &&
+      !url.username && !url.password && good_methods.includes(method);
+}
 
 // Call the native fetch with a timeout. The native fetch does not have a
 // timeout, so we simulate it by racing it against a promise that resolves to
@@ -46,22 +68,6 @@ export async function fetch_with_timeout(url, options = {}) {
   return response;
 }
 
-export function fetch_html(url, options = {}) {
-  const opts = Object.assign({}, options);
-  const policy = options.policy || fetch_policies.permit_default;
-  const types = ['text/html'];
-  if (options.allow_text) {
-    types.push('text/plain');
-  }
-  opts.types = types;
-
-  // Delete non-standard options just in case the eventual native call to
-  // fetch would barf on seeing them
-  delete opts.allow_text;
-
-  return better_fetch(url, opts);
-}
-
 // Extends the builtin fetch with timeout, Accept validation, and policy
 // constraints. Returns a response or throws an error.
 // options.timeout - specify timeout as Deadline
@@ -76,8 +82,7 @@ export async function better_fetch(url, options = {}) {
     throw new OfflineError('Failed to fetch url while offline ' + url.href);
   }
 
-  const is_allowed_request =
-      options.is_allowed_request || fetch_policies.permit_all;
+  const is_allowed_request = options.is_allowed_request || permit_all;
 
   const request_data = {method: options.method, url: url};
   if (!is_allowed_request(request_data)) {
@@ -344,7 +349,7 @@ export async function fetch_feed(url, options) {
 // @param is_allowed_request {Function} optional, is given a request-like
 // object, throws a policy error if the function returns false
 export async function fetch_image_element(
-    url, timeout = INDEFINITE, is_allowed_request = fetch_policies.permit_all) {
+    url, timeout = INDEFINITE, is_allowed_request = permit_all) {
   assert(url instanceof URL);
   assert(timeout instanceof Deadline);
   assert(is_allowed_request instanceof Function);

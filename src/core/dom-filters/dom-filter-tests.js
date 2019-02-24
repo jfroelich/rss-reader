@@ -1,4 +1,5 @@
 import * as dom_filters from '/src/core/dom-filters/dom-filters.js';
+import {fetch_html} from '/src/core/net/fetch-html.js';
 import * as net from '/src/core/net/net.js';
 import {assert} from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
@@ -145,7 +146,7 @@ export async function image_lazy_filter_test() {
 
   // let url_string;
   // const request_url = new URL(url_string);
-  // const response = await net.fetch_html(request_url);
+  // const response = await fetch_html(request_url);
   // const response_text = await response.text();
   // const document = html_utils.parse_html(response_text);
   // dom_filters.image_lazy_filter(document);

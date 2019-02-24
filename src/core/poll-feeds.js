@@ -2,6 +2,7 @@ import * as cdb from '/src/core/db/cdb.js';
 import * as desknote from '/src/core/desknote.js';
 import * as dom_filters from '/src/core/dom-filters/dom-filters.js';
 import * as favicon from '/src/core/favicon.js';
+import {fetch_html} from '/src/core/net/fetch-html.js';
 import * as net from '/src/core/net/net.js';
 import * as rewrite_rules from '/src/core/rewrite-rules.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
@@ -194,8 +195,7 @@ export class PollOperation {
         sniffer.classify(url) !== sniffer.BINARY_CLASS &&
         !this.isAccessibleURL(url)) {
       try {
-        response =
-            await net.fetch_html(url, {timeout: this.fetch_html_timeout});
+        response = await fetch_html(url, {timeout: this.fetch_html_timeout});
       } catch (error) {
         if (error instanceof AssertionError) {
           throw error;

@@ -1,3 +1,4 @@
+import {fetch_html} from '/src/core/net/fetch-html.js';
 import * as net from '/src/core/net/net.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
@@ -44,17 +45,17 @@ export async function fetch_feed_test() {
   // TODO: implement me
 }
 
+// TODO: move to separate test file
 export async function fetch_html_test() {
   // TODO: run on a local resource
   // TODO: cannot accept param
   // TODO: assert something, do not just log
-  // TODO: implement me
 
   // OLD:
   // let url_string = undefined;
   // let timeout = undefined;
   // const request_url = new URL(url_string);
-  // const response = await net.fetch_html(request_url, {timeout: timeout});
+  // const response = await fetch_html(request_url, {timeout: timeout});
   // console.dir(response);
   // const response_text = await response.text();
   // console.log(response_text);
