@@ -7,6 +7,7 @@ import {color_contrast_filter} from '/src/lib/color-contrast-filter.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as document_utils from '/src/lib/document-utils.js';
 import {node_is_leaf} from '/src/lib/dom-hierarchy.js';
+import * as srcset_utils from '/src/lib/srcset-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
 import {unwrap_element} from '/src/lib/unwrap-element.js';
 import * as url_utils from '/src/lib/url-utils.js';
@@ -475,7 +476,7 @@ export function image_responsive_filter(doc) {
   const selector = 'img[srcset]:not([src])';
   const images = doc.querySelectorAll(selector);
   for (const image of images) {
-    const descs = dom_utils.srcset_parse(image.getAttribute('srcset'));
+    const descs = srcset_utils.parse(image.getAttribute('srcset'));
     let chosen_desc = null;
     for (const desc of descs) {
       if (desc.url) {
@@ -1042,7 +1043,7 @@ export function url_resolve_filter(doc) {
   const srcset_sel = 'img[srcset], source[srcset]';
   const srcset_els = doc.querySelectorAll(srcset_sel);
   for (const element of srcset_els) {
-    const descs = dom_utils.srcset_parse(element.getAttribute('srcset'));
+    const descs = srcset_utils.parse(element.getAttribute('srcset'));
 
     let change_count = 0;
     for (const desc of descs) {
@@ -1058,7 +1059,7 @@ export function url_resolve_filter(doc) {
     }
 
     if (change_count) {
-      const new_value = dom_utils.srcset_serialize(descs);
+      const new_value = srcset_utils.serialize(descs);
       if (new_value) {
         element.setAttribute('srcset', new_value);
       }
