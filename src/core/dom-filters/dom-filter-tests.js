@@ -1,5 +1,5 @@
-import * as dom_filters from '/src/core/dom-filters.js';
-import * as dom_utils from '/src/core/dom-utils.js';
+import * as dom_filters from '/src/core/dom-filters/dom-filters.js';
+import * as dom_utils from '/src/core/dom-filters/dom-utils.js';
 import * as net from '/src/core/net/net.js';
 import {assert} from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
@@ -155,8 +155,8 @@ export async function image_lazy_filter_test() {
 }
 
 export async function image_reachable_filter_test() {
-  const doc =
-      await load_file('/src/core/image-reachable-filter-test.html', false);
+  const doc = await load_file(
+      '/src/core/dom-filters/image-reachable-filter-test.html', false);
   const allow_all_requests = request => true;
   let image;
 
@@ -181,7 +181,8 @@ export async function image_reachable_filter_test() {
 // Assert the ordinary case of a basic html document with an image with unknown
 // attributes
 export async function image_size_filter_test() {
-  const doc = await load_file('/src/core/image-size-filter-basic.html');
+  const doc =
+      await load_file('/src/core/dom-filters/image-size-filter-basic.html');
   await run_image_size_filter(doc);
   const image = doc.querySelector('img');
   assert(image.width === 16);
@@ -190,7 +191,8 @@ export async function image_size_filter_test() {
 
 // Assert that fetching an image that does not exist skips over the image
 export async function image_size_filter_404_test() {
-  const doc = await load_file('/src/core/image-size-filter-404.html');
+  const doc =
+      await load_file('/src/core/dom-filters/image-size-filter-404.html');
   // This should not throw even though the image specified in the html is
   // missing
   await run_image_size_filter(doc);
@@ -204,14 +206,16 @@ export async function image_size_filter_404_test() {
 
 // Exercise running the function on a document without any images.
 export async function image_size_filter_text_only_test() {
-  const doc = await load_file('/src/core/image-size-filter-text-only.html');
+  const doc =
+      await load_file('/src/core/dom-filters/image-size-filter-text-only.html');
   await run_image_size_filter(doc);
 }
 
 // Test that an image devoid of source information does not cause an error, and
 // does not somehow init properties.
 export async function image_size_filter_sourceless_test() {
-  const doc = await load_file('/src/core/image-size-filter-sourceless.html');
+  const doc = await load_file(
+      '/src/core/dom-filters/image-size-filter-sourceless.html');
   await run_image_size_filter(doc);
   const image = doc.querySelector('img');
   assert(image.width === 0);

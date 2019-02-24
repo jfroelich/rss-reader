@@ -1,4 +1,4 @@
-import * as dom_utils from '/src/core/dom-utils.js';
+import * as dom_utils from '/src/core/dom-filters/dom-utils.js';
 import * as net from '/src/core/net/net.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import * as boilerplate from '/src/lib/boilerplate.js';

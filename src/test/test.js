@@ -1,6 +1,6 @@
 import * as cdb_tests from '/src/core/cdb-tests.js';
 import * as db_tests from '/src/core/db-tests.js';
-import * as dom_filter_tests from '/src/core/dom-filter-tests.js';
+import * as dom_filter_tests from '/src/core/dom-filters/dom-filter-tests.js';
 import * as favicon_tests from '/src/core/favicon-tests.js';
 import * as net_tests from '/src/core/net/net-tests.js';
 import * as ops_tests from '/src/core/ops-tests.js';
