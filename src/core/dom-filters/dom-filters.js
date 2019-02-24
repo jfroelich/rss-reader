@@ -1,4 +1,4 @@
-import * as dom_utils from '/src/core/dom-filters/dom-utils.js';
+import * as image_utils from '/src/core/dom-filters/image-utils.js';
 import * as net from '/src/core/net/net.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import * as boilerplate from '/src/lib/boilerplate.js';
@@ -437,8 +437,8 @@ export function iframe_filter(doc) {
 // Removes dead images from the document (e.g. no detectable associated url)
 export function image_dead_filter(doc) {
   for (const image of doc.querySelectorAll('img')) {
-    if (!dom_utils.image_has_source(image)) {
-      dom_utils.remove_image(image);
+    if (!image_utils.image_has_source(image)) {
+      image_utils.remove_image(image);
     }
   }
 }
@@ -456,7 +456,7 @@ export function image_lazy_filter(doc) {
 
   const images = doc.querySelectorAll('img');
   for (const image of images) {
-    if (!dom_utils.image_has_source(image)) {
+    if (!image_utils.image_has_source(image)) {
       const attr_names = image.getAttributeNames();
       for (const name of lazy_names) {
         if (attr_names.includes(name)) {
@@ -675,7 +675,7 @@ export function image_size_constrain_filter(doc) {
         image.height < 33) {
       // Remove small images because we assume those images are probably
       // boilerplate, part of a site's template, or telemetry.
-      dom_utils.remove_image(image);
+      image_utils.remove_image(image);
     }
   }
 }
@@ -766,7 +766,7 @@ export function lonestar_filter(doc) {
   const images = doc.querySelectorAll('img');
   for (const image of images) {
     if (lonestar_is_telemetric(image, document_url, host_patterns, false)) {
-      dom_utils.remove_image(image);
+      image_utils.remove_image(image);
     }
   }
 

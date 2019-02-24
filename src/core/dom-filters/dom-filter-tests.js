@@ -1,5 +1,4 @@
 import * as dom_filters from '/src/core/dom-filters/dom-filters.js';
-import * as dom_utils from '/src/core/dom-filters/dom-utils.js';
 import * as net from '/src/core/net/net.js';
 import {assert} from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';

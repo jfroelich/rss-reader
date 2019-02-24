@@ -1,7 +1,6 @@
 import * as cdb from '/src/core/db/cdb.js';
 import * as desknote from '/src/core/desknote.js';
 import * as dom_filters from '/src/core/dom-filters/dom-filters.js';
-import * as dom_utils from '/src/core/dom-filters/dom-utils.js';
 import * as favicon from '/src/core/favicon.js';
 import * as net from '/src/core/net/net.js';
 import * as rewrite_rules from '/src/core/rewrite-rules.js';
