@@ -7,6 +7,7 @@ import {color_contrast_filter} from '/src/lib/color-contrast-filter.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as document_utils from '/src/lib/document-utils.js';
 import {node_is_leaf} from '/src/lib/dom-hierarchy.js';
+import * as dom_visibility from '/src/lib/dom-visibility.js';
 import * as srcset_utils from '/src/lib/srcset-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
 import {unwrap_element} from '/src/lib/unwrap-element.js';
@@ -784,7 +785,7 @@ export function lonestar_filter(doc) {
 
 function lonestar_is_telemetric(
     element, document_url, host_patterns, is_strict) {
-  if (dom_utils.is_hidden_inline(element)) {
+  if (dom_visibility.is_hidden_inline(element)) {
     return true;
   }
 
@@ -1071,7 +1072,7 @@ export function visibility_filter(doc, matte, mcr) {
   const elements = doc.querySelectorAll('*');
   for (const element of elements) {
     if (doc.documentElement.contains(element) &&
-        dom_utils.is_hidden_inline(element)) {
+        dom_visibility.is_hidden_inline(element)) {
       unwrap_element(element);
     }
   }
