@@ -213,7 +213,7 @@ export class PollOperation {
       let url_changed = false;
       url = new URL(cdb.Entry.prototype.getURLString.call(entry));
       const response_url = new URL(response.url);
-      if (net.response_is_redirect(url, response)) {
+      if (net.is_redirect(url, response)) {
         url_changed = true;
         cdb.Entry.prototype.appendURL.call(entry, response_url);
         cdb.Entry.prototype.appendURL.call(

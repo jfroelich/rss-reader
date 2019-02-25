@@ -48,7 +48,7 @@ export async function lookup(request) {
     entry.hostname = hostname;
     entry.icon_url = icon_url;
     const now = new Date();
-    entry.expires = this.expires;
+    entry.expires = request.expires;
     entry.failures = 0;
 
     await put_entry(conn, entry);
@@ -71,7 +71,7 @@ export async function lookup(request) {
     entry.hostname = hostname;
     entry.icon_url = response.url;
     const now = new Date();
-    entry.expires = this.expires;
+    entry.expires = request.expires;
     entry.failures = 0;
     await put_entry(conn, entry);
     return response.url;
@@ -83,7 +83,7 @@ export async function lookup(request) {
   failure.failures = (entry && entry.failures) ? entry.failures + 1 : 1;
   failure.icon_url = entry ? entry.icon_url : undefined;
   const now = new Date();
-  failure.expires = new Date(this.expires.getTime() * 2);
+  failure.expires = new Date(request.expires.getTime() * 2);
   await put_entry(conn, failure);
 }
 

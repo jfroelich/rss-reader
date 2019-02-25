@@ -189,7 +189,7 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   const http_response = response.http_response;
 
   // If redirected, check if subscribed to the redirected url
-  if (net.response_is_redirect(url, http_response)) {
+  if (net.is_redirect(url, http_response)) {
     const rurl = new URL(http_response.url);
     let existing_feed = await session.getFeed('url', rurl, true);
     if (existing_feed) {

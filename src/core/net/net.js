@@ -25,61 +25,20 @@ export function permit_default(request) {
       !url.username && !url.password && good_methods.includes(method);
 }
 
-// Call the native fetch with a timeout. The native fetch does not have a
-// timeout, so we simulate it by racing it against a promise that resolves to
-// undefined after a given time elapsed. |url| should be a URL. This does not
-// supply any express default options and instead delegates to the browser, so
-// if you want explicit default options then set them in options parameter.
-export async function fetch_with_timeout(url, options = {}) {
-  assert(url instanceof URL);
-  assert(typeof options === 'object');
-
-  // We plan to mutate options, so clone it to avoid surprising the caller with
-  // a side effect
-  const local_options = Object.assign({}, options);
-
-  // Move timeout from options into a local
-  let timeout = INDEFINITE;
-  if (local_options.timeout) {
-    timeout = local_options.timeout;
-    assert(timeout instanceof Deadline);
-    delete local_options.timeout;
-  }
-
-  let response;
-  if (timeout.isDefinite()) {
-    const timed_promise = sleep(timeout);
-    const response_promise = fetch(url.href, local_options);
-    const promises = [timed_promise, response_promise];
-    response = await Promise.race(promises);
-  } else {
-    response = await fetch(url.href, local_options);
-  }
-
-  // The only case where response is ever undefined is when the timed promise
-  // won the race against the fetch promise. Do not use assert because this is
-  // ephemeral.
-  if (!response) {
-    throw new TimeoutError('Timed out fetching ' + url.href);
-  }
-
-  return response;
-}
-
 // Extends the builtin fetch with timeout, Accept validation, and policy
 // constraints. Returns a response or throws an error.
 // options.timeout - specify timeout as Deadline
 // options.types - optional array of strings of mime types to check against
 // options.is_allowed_request
 export async function better_fetch(url, options = {}) {
-  if (typeof url !== 'object' || !url.href) {
-    throw new TypeError('url is not a URL: ' + url);
-  }
+  assert(url instanceof URL);
+  assert(options && typeof options === 'object');
 
   if (!navigator.onLine) {
     throw new OfflineError('Failed to fetch url while offline ' + url.href);
   }
 
+  // TODO: rename is_allowed_request option to just policy
   const is_allowed_request = options.is_allowed_request || permit_all;
 
   const request_data = {method: options.method, url: url};
@@ -104,6 +63,9 @@ export async function better_fetch(url, options = {}) {
   let timeout;
   if ('timeout' in merged_options) {
     timeout = merged_options.timeout;
+
+    assert(timeout instanceof Deadline);
+
     // do not forward to native fetch
     delete merged_options.timeout;
   }
@@ -118,8 +80,6 @@ export async function better_fetch(url, options = {}) {
     delete merged_options.types;
   }
 
-  assert(timeout instanceof Deadline);
-
   const fetch_promise = fetch(url.href, merged_options);
 
   let response;
@@ -127,7 +87,6 @@ export async function better_fetch(url, options = {}) {
     response = await Promise.race([fetch_promise, sleep(timeout)]);
   } else {
     response = await fetch_promise;
-    assert(response);
   }
 
   if (!response) {
@@ -137,8 +96,7 @@ export async function better_fetch(url, options = {}) {
   // If response is defined, then it must be of type Response or there is
   // some kind of programming error present. This assert validates the
   // above logic (which previously had a surprise bug with ternary op + await).
-  assert(
-      response instanceof Response, 'response is not a Response: ' + response);
+  assert(response instanceof Response);
 
   if (!response.ok) {
     const error_message_parts = [
@@ -181,7 +139,7 @@ export function sleep(delay = INDEFINITE) {
 
 // Return whether the response url is "different" than the request url,
 // indicating a redirect, regardless of the value of response.redirected
-export function response_is_redirect(request_url, response) {
+export function is_redirect(request_url, response) {
   const response_url = new URL(response.url);
   return !url_compare_no_hash(request_url, response_url);
 }
@@ -193,13 +151,6 @@ function url_compare_no_hash(url1, url2) {
   modified_url1.hash = '';
   modified_url2.hash = '';
   return modified_url1.href === modified_url2.href;
-}
-
-// Return true if the error is a kind of temporary fetch error that is not
-// indicative of a programming error
-export function is_ephemeral_fetch_error(error) {
-  return error instanceof FetchError || error instanceof PolicyError ||
-      error instanceof TimeoutError;
 }
 
 // This error indicates a fetch operation failed for some reason like network
