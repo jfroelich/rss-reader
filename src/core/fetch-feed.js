@@ -1,8 +1,8 @@
 import * as cdb from '/src/core/db/cdb.js';
-import {better_fetch} from '/src/core/net/net.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline} from '/src/lib/deadline.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
+import {better_fetch} from '/src/lib/net.js';
 
 export async function fetch_feed(url, options) {
   const feed_mime_types = [

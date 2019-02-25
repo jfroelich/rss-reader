@@ -1,9 +1,9 @@
 import * as dom_filters from '/src/core/dom-filters/dom-filters.js';
-import {fetch_html} from '/src/core/net/fetch-html.js';
 import {assert} from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 import * as document_utils from '/src/lib/document-utils.js';
+import {fetch_html} from '/src/lib/fetch-html.js';
 import * as html_utils from '/src/lib/html-utils.js';
 import * as platform from '/src/lib/platform.js';
 

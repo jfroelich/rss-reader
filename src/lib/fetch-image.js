@@ -1,5 +1,5 @@
-import {better_fetch} from '/src/core/net/net.js';
 import {assert} from '/src/lib/assert.js';
+import {better_fetch} from '/src/lib/net.js';
 
 export function fetch_image(url, options = {}) {
   assert(url instanceof URL);

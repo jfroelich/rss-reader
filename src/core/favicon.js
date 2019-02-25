@@ -1,6 +1,6 @@
-import {fetch_image} from '/src/core/net/fetch-image.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import {fetch_image} from '/src/lib/fetch-image.js';
 import * as idb from '/src/lib/idb.js';
 
 const DEFAULT_NAME = 'favicon';

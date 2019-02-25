@@ -1,6 +1,6 @@
-import {FetchError, OfflineError, sleep, TimeoutError} from '/src/core/net/net.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import {FetchError, OfflineError, sleep, TimeoutError} from '/src/lib/net.js';
 
 // TODO: i do not need the element in any use case, just its dimensions, so the
 // vision for this module should be changed to something like
@@ -11,15 +11,7 @@ import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 // allow me to control the request parameters and does send cookies, but I need
 // to review this more, I am still unsure.
 
-// Return a promise that resolves to an image element. The image is loaded by
-// proxy, which in other words means that we use a new, separate image element
-// attached to the same document executing this function to load the image. The
-// resulting image is NOT attached to the document that contained the image that
-// had the given url. The proxy is used because we cannot reliably load images
-// using the HTMLImageElement src setter method if we do not know for certain
-// whether the document is live or inert. Documents created by DOMParser and
-// XMLHttpRequest are inert. In an inert document the src setter method does not
-// work.
+// Return a promise that resolves to an image element.
 // @param url {URL}
 // @param timeout {Number}
 export async function fetch_image_element(url, timeout = INDEFINITE) {

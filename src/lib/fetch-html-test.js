@@ -1,5 +1,5 @@
-import {fetch_html} from '/src/core/net/fetch-html.js';
 import {assert} from '/src/lib/assert.js';
+import {fetch_html} from '/src/lib/fetch-html.js';
 
 // TODO: run on a local resource
 // TODO: cannot accept param
