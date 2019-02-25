@@ -1,5 +1,4 @@
 import {fetch_image} from '/src/core/net/fetch-image.js';
-import * as net from '/src/core/net/net.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as idb from '/src/lib/idb.js';
