@@ -163,7 +163,7 @@ export class FetchError extends Error {
 
 // When the response is not acceptable
 export class AcceptError extends Error {
-  constructor(message = 'Refused to fetch url due to policy') {
+  constructor(message = 'Unacceptable response type') {
     super(message);
   }
 }
@@ -173,21 +173,21 @@ export class AcceptError extends Error {
 // is all relative to the caller policy. An example policy violation might be
 // that the policy only allows HTTPS requests but an HTTP request was made.
 export class PolicyError extends Error {
-  constructor(message = 'Refused to fetch url due to policy') {
+  constructor(message = 'Policy violation') {
     super(message);
   }
 }
 
 // When offline at time of sending request
 export class OfflineError extends Error {
-  constructor(message = 'Failed to fetch while offline') {
+  constructor(message = 'Offline') {
     super(message);
   }
 }
 
 // This error indicates a fetch operation took too long
 export class TimeoutError extends Error {
-  constructor(message = 'Failed to fetch due to timeout') {
+  constructor(message = 'Timeout') {
     super(message);
   }
 }
