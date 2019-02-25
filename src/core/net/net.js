@@ -198,17 +198,6 @@ function url_compare_no_hash(url1, url2) {
   return modified_url1.href === modified_url2.href;
 }
 
-// Returns a response (without reading its body).
-export function request_xml(url, options = {}) {
-  const feed_mime_types = [
-    'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
-    'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
-  ];
-
-  const opts = Object.assign({}, {types: feed_mime_types}, options);
-  return better_fetch(url, opts);
-}
-
 export async function fetch_feed(url, options) {
   const feed_mime_types = [
     'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
