@@ -1,4 +1,5 @@
 import * as image_utils from '/src/core/dom-filters/image-utils.js';
+import {fetch_image_element} from '/src/core/net/fetch-image-element.js';
 import * as net from '/src/core/net/net.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import * as boilerplate from '/src/lib/boilerplate.js';
@@ -530,7 +531,7 @@ export function image_reachable_filter(
 
     let result;
     try {
-      result = await net.fetch_image_element(url, timeout, fetch_policy);
+      result = await fetch_image_element(url, timeout, fetch_policy);
     } catch (error) {
       if (error instanceof AssertionError) {
         throw error;
@@ -651,7 +652,7 @@ async function image_size_filter_process_image(
   }
 
   try {
-    const fimg = await net.fetch_image_element(url, timeout, fetch_policy);
+    const fimg = await fetch_image_element(url, timeout, fetch_policy);
     image.setAttribute('width', fimg.width);
     image.setAttribute('height', fimg.height);
   } catch (error) {
