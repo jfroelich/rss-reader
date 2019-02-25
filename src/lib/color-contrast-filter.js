@@ -1,4 +1,4 @@
-import '/third-party/tinycolor-min.js';
+import '/src/ext/tinycolor-min.js';
 import * as color from '/src/lib/color.js';
 
 // Scans |doc| for difficult to read text (due to poor color contrast) and

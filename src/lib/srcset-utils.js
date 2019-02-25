@@ -1,4 +1,4 @@
-import '/third-party/parse-srcset.js';
+import '/src/ext/parse-srcset.js';
 
 // Parses a value into an array of descriptors. The value should be a string
 // representing the contents of an html element srcset attribute value. If the
