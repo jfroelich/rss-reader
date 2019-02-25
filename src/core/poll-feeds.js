@@ -2,6 +2,7 @@ import * as cdb from '/src/core/db/cdb.js';
 import * as desknote from '/src/core/desknote.js';
 import * as dom_filters from '/src/core/dom-filters/dom-filters.js';
 import * as favicon from '/src/core/favicon.js';
+import {fetch_feed} from '/src/core/net/fetch-feed.js';
 import {fetch_html} from '/src/core/net/fetch-html.js';
 import * as net from '/src/core/net/net.js';
 import * as rewrite_rules from '/src/core/rewrite-rules.js';
@@ -313,7 +314,7 @@ export class PollOperation {
     options.skip_entries = false;
     options.resolve_entry_urls = true;
     const url = new URL(cdb.Feed.prototype.getURLString.call(feed));
-    return net.fetch_feed(url, options);
+    return fetch_feed(url, options);
   }
 
   // Returns a new feed object that results from merging the old feed with the

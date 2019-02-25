@@ -1,6 +1,7 @@
 import * as cdb from '/src/core/db/cdb.js';
 import * as desknote from '/src/core/desknote.js';
 import * as favicon from '/src/core/favicon.js';
+import {fetch_feed} from '/src/core/net/fetch-feed.js';
 import * as net from '/src/core/net/net.js';
 import {assert} from '/src/lib/assert.js';
 import * as file_utils from '/src/lib/file-utils.js';
@@ -184,7 +185,7 @@ export async function subscribe(session, iconn, url, timeout, notify) {
     resolve_entry_urls: false
   };
   // Propagate fetch errors as subscribe errors by not catching
-  const response = await net.fetch_feed(url, fetch_options);
+  const response = await fetch_feed(url, fetch_options);
   const http_response = response.http_response;
 
   // If redirected, check if subscribed to the redirected url

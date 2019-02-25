@@ -1,7 +1,5 @@
-import * as cdb from '/src/core/db/cdb.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
-import * as feed_parser from '/src/lib/feed-parser.js';
 import * as mime from '/src/lib/mime.js';
 
 // A default permit-all policy
@@ -9,7 +7,7 @@ export function permit_all(request) {
   return true;
 }
 
-// A simple, custom, hardcoded fetch policy
+// A simple, custom, hardcoded, app-specific fetch policy
 // * allow only http/https/data
 // * allow only get/head
 // * disallow loopback
@@ -36,8 +34,8 @@ export async function fetch_with_timeout(url, options = {}) {
   assert(url instanceof URL);
   assert(typeof options === 'object');
 
-  // We plan to mutate options prefetch, so clone it to avoid surprising the
-  // caller
+  // We plan to mutate options, so clone it to avoid surprising the caller with
+  // a side effect
   const local_options = Object.assign({}, options);
 
   // Move timeout from options into a local
@@ -163,7 +161,6 @@ export async function better_fetch(url, options = {}) {
   return response;
 }
 
-
 // Returns a promise that resolves to undefined after a given delay.
 function sleep(delay = INDEFINITE) {
   assert(delay instanceof Deadline);
@@ -197,69 +194,6 @@ function url_compare_no_hash(url1, url2) {
   modified_url2.hash = '';
   return modified_url1.href === modified_url2.href;
 }
-
-export async function fetch_feed(url, options) {
-  const feed_mime_types = [
-    'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
-    'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
-  ];
-
-  assert(options.timeout === undefined || options.timeout instanceof Deadline);
-
-  const opts = {timeout: options.timeout, types: feed_mime_types};
-  const response = await better_fetch(url, opts);
-  const res_text = await response.text();
-
-  const skip_entries = 'skip_entries' in options ? options.skip_entries : true;
-  const resolve_entry_urls =
-      'resolve_entry_urls' in options ? options.resolve_entry_urls : false;
-
-  const parsed_feed =
-      feed_parser.parse(res_text, skip_entries, resolve_entry_urls);
-
-  // Convert the feed from the parse format to the storage format
-  const feed = new cdb.Feed();
-  feed.type = parsed_feed.type;
-
-  if (parsed_feed.link) {
-    let link_url;
-    try {
-      link_url = new URL(parsed_feed.link);
-    } catch (error) {
-    }
-
-    if (link_url) {
-      feed.link = link_url.href;
-    }
-  }
-
-  feed.title = parsed_feed.title;
-  feed.description = parsed_feed.description;
-  feed.datePublished = parsed_feed.date_published || new Date();
-
-  cdb.Feed.prototype.appendURL.call(feed, url);
-  cdb.Feed.prototype.appendURL.call(feed, new URL(response.url));
-
-  // Set the last modified date based on the response
-  const last_modified_string = response.headers.get('Last-Modified');
-  if (last_modified_string) {
-    const last_modified_date = new Date(last_modified_string);
-    if (!isNaN(last_modified_date.getTime())) {
-      feed.dateLastModifed = last_modified_date;
-    }
-  }
-
-  feed.dateFetched = new Date();
-
-  const output_response = {};
-  output_response.feed = feed;
-  output_response.entries = parsed_feed.entries;
-  output_response.http_response = response;
-  return output_response;
-}
-
-// TODO: the errors used by this class should be sourced from some lower
-// level shared fetch errors library
 
 // TODO: avoid sending cookies, probably need to use fetch api and give up on
 // using the simple element.src trick, it looks like HTMLImageElement does not
