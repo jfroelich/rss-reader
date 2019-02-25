@@ -1,3 +1,4 @@
+import {fetch_image} from '/src/core/net/fetch-image.js';
 import * as net from '/src/core/net/net.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
@@ -100,7 +101,7 @@ async function fetch_root_icon(request) {
   const fetch_options = {method: 'head', timeout: timeout};
 
   // Call without catching errors
-  const response = await net.fetch_image(root_icon, fetch_options);
+  const response = await fetch_image(root_icon, fetch_options);
 
   const content_length = response.headers.get('Content-Length');
   if (content_length) {
