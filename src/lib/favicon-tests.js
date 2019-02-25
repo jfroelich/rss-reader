@@ -1,5 +1,5 @@
 import {assert} from '/src/lib/assert.js';
-import * as favicon from '/src/core/favicon.js';
+import * as favicon from '/src/lib/favicon.js';
 import * as idb from '/src/lib/idb.js';
 
 export async function favicon_oracle_test() {
@@ -109,8 +109,8 @@ export async function favicon_cache_compact_test() {
 // This is not part of the built in api. It would exist only for test purposes.
 // So I violate abstraction here to get it. I think that is ok in test context
 // which is allowed to know of internals. Keep in mind this may fail
-// unexpectedly whenever core/favicon.js is modified. I might move this into favicon
-// but am undecided.
+// unexpectedly whenever favicon.js is modified. I might move this into
+// favicon but am undecided.
 function count_entries(conn) {
   return new Promise((resolve, reject) => {
     const txn = conn.transaction('entries');

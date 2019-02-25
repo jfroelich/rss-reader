@@ -1,7 +1,7 @@
 import * as cdb from '/src/core/db/cdb.js';
-import * as favicon from '/src/core/favicon.js';
 import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';
+import * as favicon from '/src/lib/favicon.js';
 import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
 

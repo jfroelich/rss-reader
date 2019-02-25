@@ -1,9 +1,9 @@
 import * as config from '/src/core/config.js';
 import * as cron_control from '/src/core/cron.js';
 import * as cdb from '/src/core/db/cdb.js';
-import * as favicon from '/src/core/favicon.js';
 import * as ops from '/src/core/ops.js';
 import {PollOperation} from '/src/core/poll-feeds.js';
+import * as favicon from '/src/lib/favicon.js';
 import * as platform from '/src/lib/platform.js';
 
 // TODO: add and implement cli_archive_entries
