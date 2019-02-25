@@ -1,11 +1,7 @@
 import * as dom_filters from '/src/core/dom-filters/dom-filters.js';
 import {assert} from '/src/lib/assert.js';
-import * as color from '/src/lib/color.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
-import * as document_utils from '/src/lib/document-utils.js';
-import {fetch_html} from '/src/lib/fetch-html.js';
 import * as html_utils from '/src/lib/html-utils.js';
-import * as platform from '/src/lib/platform.js';
 
 export async function emphasis_filter_test() {
   let input, doc;
@@ -136,35 +132,57 @@ export async function attribute_empty_filter_test() {
 }
 
 export async function image_lazy_filter_test() {
-  // TODO: rewrite without input, load a local file internally
+  // Exercise the ordinary case of a substitution
+  let input = '<img id="test" data-src="test.gif">';
+  let doc = html_utils.parse_html(input);
+  dom_filters.image_lazy_filter(doc);
+  let image = doc.querySelector('#test');
+  assert(image);
+  assert(image.getAttribute('src') === 'test.gif');
 
-  // let url_string;
-  // const request_url = new URL(url_string);
-  // const response = await fetch_html(request_url);
-  // const response_text = await response.text();
-  // const document = html_utils.parse_html(response_text);
-  // dom_filters.image_lazy_filter(document);
-  // Call this subsequently because it prints out missing images
-  // dom_filters.image_dead_filter(document);
+  // An image with a src is not lazy and should not be overwritten
+  input = '<img id="test" src="before.gif" lazy-src="after.gif">';
+  doc = html_utils.parse_html(input);
+  dom_filters.image_lazy_filter(doc);
+  image = doc.querySelector('#test');
+  assert(image);
+  assert(image.getAttribute('src') == 'before.gif');
+
+  // An image with an unrecognized attribute shouldn't affect src, only those
+  // explicit listed attribute names are candidates
+  input = '<img id="test" foo-bar-baz="test.gif">';
+  doc = html_utils.parse_html(input);
+  dom_filters.image_lazy_filter(doc);
+  image = doc.querySelector('#test');
+  assert(image);
+  let src_value = image.getAttribute('src');
+  assert(src_value === null || src_value === undefined);
+
+  // An image with a valid candidate that looks lazy, but the candidate has a
+  // bad value, should leave the source as is
+  input = '<img id="test" lazy-src="bad value">';
+  doc = html_utils.parse_html(input);
+  dom_filters.image_lazy_filter(doc);
+  image = doc.querySelector('#test');
+  assert(image);
+  src_value = image.getAttribute('src');
+  assert(src_value === null || src_value === undefined);
 }
 
 export async function image_reachable_filter_test() {
-  const doc = await load_file(
-      '/src/core/dom-filters/image-reachable-filter-test.html', false);
-  let image;
+  let input = '<img id="unreachable" src="not-reachable.gif">';
+  input += '<img class="reachable" src="/src/core/dom-filters/';
+  input += 'basic-image.png">';
+  let doc = html_utils.parse_html(input);
 
-  // Before applying the filter, ensure as a precondition that the test file
-  // is setup correctly (that images exist)
   assert(doc.querySelector('#unreachable'));
   assert(doc.querySelector('.reachable'));
-
   await dom_filters.image_reachable_filter(doc, INDEFINITE);
 
-  // The filter should have removed this image.
-  image = doc.querySelector('#unreachable');
+  let image = doc.querySelector('#unreachable');
   assert(!image);
 
-  // The fhilter should have retained this image, and further modified it.
+  // The filter should have retained this image, and further modified it.
   image = doc.querySelector('.reachable');
   assert(image);
   assert(image.hasAttribute('data-reachable-width'));
@@ -174,8 +192,8 @@ export async function image_reachable_filter_test() {
 // Assert the ordinary case of a basic html document with an image with unknown
 // attributes
 export async function image_size_filter_test() {
-  const doc =
-      await load_file('/src/core/dom-filters/image-size-filter-basic.html');
+  let input = '<img src="/src/core/dom-filters/basic-image.png">';
+  let doc = html_utils.parse_html(input);
   await dom_filters.image_size_filter(doc);
   const image = doc.querySelector('img');
   assert(image.width === 16);
@@ -184,14 +202,11 @@ export async function image_size_filter_test() {
 
 // Assert that fetching an image that does not exist skips over the image
 export async function image_size_filter_404_test() {
-  const doc =
-      await load_file('/src/core/dom-filters/image-size-filter-404.html');
-  // This should not throw even though the image specified in the html is
-  // missing
+  let input = '<img src="i-am-a-missing-image-example.gif">';
+  let doc = html_utils.parse_html(input);
+  // This should not throw
   await dom_filters.image_size_filter(doc);
-  // Because the image does not have express attributes, and because this is an
-  // inert file where images are not eagerly loaded by Chrome on document load,
-  // the properties for the image should not be initialized.
+  // The properties for the image should not be initialized.
   const image = doc.querySelector('img');
   assert(image.width === 0);
   assert(image.height === 0);
@@ -199,30 +214,19 @@ export async function image_size_filter_404_test() {
 
 // Exercise running the function on a document without any images.
 export async function image_size_filter_text_only_test() {
-  const doc =
-      await load_file('/src/core/dom-filters/image-size-filter-text-only.html');
+  let input = 'no images here';
+  let doc = html_utils.parse_html(input);
+  // should not throw
   await dom_filters.image_size_filter(doc);
 }
 
-// Test that an image devoid of source information does not cause an error, and
-// does not somehow init properties.
 export async function image_size_filter_sourceless_test() {
-  const doc = await load_file(
-      '/src/core/dom-filters/image-size-filter-sourceless.html');
+  let input = '<img title="missing src">';
+  let doc = html_utils.parse_html(input);
+  // This should not throw
   await dom_filters.image_size_filter(doc);
+  // Properties should not be initialized
   const image = doc.querySelector('img');
   assert(image.width === 0);
   assert(image.height === 0);
-}
-
-// Fetch, parse, and prepare a local url
-async function load_file(path, set_base_uri_flag = true) {
-  const url_string = platform.extension.get_url_string(path);
-  const response = await fetch(url_string);
-  const text = await response.text();
-  const doc = html_utils.parse_html(text);
-  if (set_base_uri_flag) {
-    document_utils.set_base_uri(doc, new URL(url_string));
-  }
-  return doc;
 }
