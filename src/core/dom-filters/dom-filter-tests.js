@@ -1,6 +1,5 @@
 import * as dom_filters from '/src/core/dom-filters/dom-filters.js';
 import {fetch_html} from '/src/core/net/fetch-html.js';
-import * as net from '/src/core/net/net.js';
 import {assert} from '/src/lib/assert.js';
 import * as color from '/src/lib/color.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
@@ -136,13 +135,8 @@ export async function attribute_empty_filter_test() {
   assert(doc.documentElement.outerHTML === output);
 }
 
-export async function color_contrast_filter_basic_test() {
-  // TODO: implement
-}
-
 export async function image_lazy_filter_test() {
   // TODO: rewrite without input, load a local file internally
-  // TODO: explicitly use fetch policy permit_all
 
   // let url_string;
   // const request_url = new URL(url_string);
@@ -157,7 +151,6 @@ export async function image_lazy_filter_test() {
 export async function image_reachable_filter_test() {
   const doc = await load_file(
       '/src/core/dom-filters/image-reachable-filter-test.html', false);
-  const allow_all_requests = request => true;
   let image;
 
   // Before applying the filter, ensure as a precondition that the test file
@@ -165,7 +158,7 @@ export async function image_reachable_filter_test() {
   assert(doc.querySelector('#unreachable'));
   assert(doc.querySelector('.reachable'));
 
-  await dom_filters.image_reachable_filter(doc, INDEFINITE, allow_all_requests);
+  await dom_filters.image_reachable_filter(doc, INDEFINITE);
 
   // The filter should have removed this image.
   image = doc.querySelector('#unreachable');
@@ -183,7 +176,7 @@ export async function image_reachable_filter_test() {
 export async function image_size_filter_test() {
   const doc =
       await load_file('/src/core/dom-filters/image-size-filter-basic.html');
-  await run_image_size_filter(doc);
+  await dom_filters.image_size_filter(doc);
   const image = doc.querySelector('img');
   assert(image.width === 16);
   assert(image.height === 12);
@@ -195,7 +188,7 @@ export async function image_size_filter_404_test() {
       await load_file('/src/core/dom-filters/image-size-filter-404.html');
   // This should not throw even though the image specified in the html is
   // missing
-  await run_image_size_filter(doc);
+  await dom_filters.image_size_filter(doc);
   // Because the image does not have express attributes, and because this is an
   // inert file where images are not eagerly loaded by Chrome on document load,
   // the properties for the image should not be initialized.
@@ -208,7 +201,7 @@ export async function image_size_filter_404_test() {
 export async function image_size_filter_text_only_test() {
   const doc =
       await load_file('/src/core/dom-filters/image-size-filter-text-only.html');
-  await run_image_size_filter(doc);
+  await dom_filters.image_size_filter(doc);
 }
 
 // Test that an image devoid of source information does not cause an error, and
@@ -216,28 +209,20 @@ export async function image_size_filter_text_only_test() {
 export async function image_size_filter_sourceless_test() {
   const doc = await load_file(
       '/src/core/dom-filters/image-size-filter-sourceless.html');
-  await run_image_size_filter(doc);
+  await dom_filters.image_size_filter(doc);
   const image = doc.querySelector('img');
   assert(image.width === 0);
   assert(image.height === 0);
 }
 
-function run_image_size_filter(doc) {
-  return dom_filters.image_size_filter(doc, undefined, request => true);
-}
-
 // Fetch, parse, and prepare a local url
-async function load_file(filename, set_base_uri_flag = true) {
-  const url_string = platform.extension.get_url_string(filename);
+async function load_file(path, set_base_uri_flag = true) {
+  const url_string = platform.extension.get_url_string(path);
   const response = await fetch(url_string);
   const text = await response.text();
   const doc = html_utils.parse_html(text);
-
   if (set_base_uri_flag) {
-    const base_url_string = platform.extension.get_url_string(base_path);
-    const base_url = new URL(base_url_string);
-    document_utils.set_base_uri(doc, base_url);
+    document_utils.set_base_uri(doc, new URL(url_string));
   }
-
   return doc;
 }

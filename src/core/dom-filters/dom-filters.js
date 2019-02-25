@@ -45,10 +45,8 @@ export async function composite_document_filter(doc, options = {}) {
   image_responsive_filter(doc);
   lonestar_filter(doc);
   image_dead_filter(doc);
-  await image_reachable_filter(
-      doc, options.image_size_timeout, options.is_allowed_request);
-  await image_size_filter(
-      doc, options.image_size_timeout, options.is_allowed_request);
+  await image_reachable_filter(doc, options.image_size_timeout);
+  await image_size_filter(doc, options.image_size_timeout);
   boilerplate_filter(doc);
   anchor_script_filter(doc);
   image_size_constrain_filter(doc);
@@ -507,8 +505,7 @@ export function image_responsive_filter(doc) {
   }
 }
 
-export function image_reachable_filter(
-    doc, timeout = INDEFINITE, fetch_policy) {
+export function image_reachable_filter(doc, timeout = INDEFINITE) {
   assert(doc.baseURI);
   assert(timeout instanceof Deadline);
 
@@ -531,7 +528,7 @@ export function image_reachable_filter(
 
     let result;
     try {
-      result = await fetch_image_element(url, timeout, fetch_policy);
+      result = await fetch_image_element(url, timeout);
     } catch (error) {
       if (error instanceof AssertionError) {
         throw error;
@@ -546,12 +543,6 @@ export function image_reachable_filter(
       // incorrectly conclude that all images are unreachable and this would
       // result in removing all images from all articles, which would be bad.
       if (error instanceof net.OfflineError) {
-        return;
-      }
-
-      // If fetch refused to fetch due to policy, we cannot determine whether
-      // the image is reachable. It would be wrong to remove it, so just bail.
-      if (error instanceof net.PolicyError) {
         return;
       }
 
@@ -581,21 +572,19 @@ export function image_reachable_filter(
 // Tries to set width/height attributes for all images. If also running the
 // image_reachable_filter, this should occur after that filter so as to avoid
 // duplicate network requests.
-export function image_size_filter(doc, timeout = INDEFINITE, fetch_policy) {
+export function image_size_filter(doc, timeout = INDEFINITE) {
   assert(doc.baseURI);
   assert(timeout instanceof Deadline);
   const images = doc.querySelectorAll('img');
   const promises = [];
   for (const image of images) {
-    const promise =
-        image_size_filter_process_image(image, doc, timeout, fetch_policy);
+    const promise = image_size_filter_process_image(image, doc, timeout);
     promises.push(promise);
   }
   return Promise.all(promises);
 }
 
-async function image_size_filter_process_image(
-    image, doc, timeout, fetch_policy) {
+async function image_size_filter_process_image(image, doc, timeout) {
   if (image.hasAttribute('width') && image.hasAttribute('height')) {
     return;
   }
@@ -652,7 +641,7 @@ async function image_size_filter_process_image(
   }
 
   try {
-    const fimg = await fetch_image_element(url, timeout, fetch_policy);
+    const fimg = await fetch_image_element(url, timeout);
     image.setAttribute('width', fimg.width);
     image.setAttribute('height', fimg.height);
   } catch (error) {

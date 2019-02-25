@@ -1,6 +1,10 @@
-import {FetchError, permit_all, PolicyError, sleep, TimeoutError} from '/src/core/net/net.js';
+import {FetchError, OfflineError, sleep, TimeoutError} from '/src/core/net/net.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+
+// TODO: i do not need the element in any use case, just its dimensions, so the
+// vision for this module should be changed to something like
+// fetch-image-dimensions that returns {x:0, y:0}.
 
 // TODO: avoid sending cookies, probably need to use fetch api and give up on
 // using the simple element.src trick, it looks like HTMLImageElement does not
@@ -18,17 +22,13 @@ import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 // work.
 // @param url {URL}
 // @param timeout {Number}
-// @param is_allowed_request {Function} optional, is given a request-like
-// object, throws a policy error if the function returns false
-export async function fetch_image_element(
-    url, timeout = INDEFINITE, is_allowed_request = permit_all) {
+export async function fetch_image_element(url, timeout = INDEFINITE) {
   assert(url instanceof URL);
   assert(timeout instanceof Deadline);
-  assert(is_allowed_request instanceof Function);
 
-  const request_data = {method: 'GET', url: url};
-  if (!is_allowed_request(request_data)) {
-    throw new PolicyError('Refused to fetch ' + url.href);
+  if (!navigator.onLine) {
+    const message = 'Failed to fetch image element while offline ' + url.href;
+    throw new OfflineError(message);
   }
 
   const fetch_promise = new Promise((resolve, reject) => {
@@ -40,8 +40,8 @@ export async function fetch_image_element(
     }
 
     proxy.onload = _ => resolve(proxy);
-    const error = new FetchError('Fetch image error ' + url.href);
-    proxy.onerror = _ => reject(error);
+    proxy.onerror = _ =>
+        reject(new FetchError('Fetch image error ' + url.href));
   });
 
   let image;

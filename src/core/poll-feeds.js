@@ -292,7 +292,6 @@ export class PollOperation {
       filter_options.emphasis_max_length = config_emph_max_len;
     }
 
-    filter_options.is_allowed_request = net.is_allowed_request;
     filter_options.empty_frame_body_message =
         'Unable to display document because it uses HTML frames';
     await dom_filters.composite_document_filter(doc, filter_options);

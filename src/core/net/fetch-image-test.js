@@ -1,4 +1,5 @@
 import {fetch_image} from '/src/core/net/fetch-image.js';
+import {FetchError} from '/src/core/net/net.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as platform from '/src/lib/platform.js';
@@ -32,6 +33,7 @@ export async function fetch_image_test() {
   }
 
   // The error should be the native error type thrown by native fetch call
-  // and not unexpectedly one of the custom error types
+  // and not unexpectedly one of the custom error types. The native error type
+  // is TypeError.
   assert(error404 instanceof TypeError);
 }

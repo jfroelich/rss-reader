@@ -10,8 +10,6 @@ export async function fetch_feed(url, options) {
     'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
   ];
 
-  assert(options.timeout === undefined || options.timeout instanceof Deadline);
-
   const opts = {timeout: options.timeout, types: feed_mime_types};
   const response = await better_fetch(url, opts);
   const res_text = await response.text();
