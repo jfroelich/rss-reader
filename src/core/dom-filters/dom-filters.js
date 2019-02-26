@@ -20,10 +20,6 @@ import * as url_utils from '/src/lib/url-utils.js';
 export async function composite_document_filter(doc, options = {}) {
   assert(doc instanceof Document);
   assert(typeof options === 'object');
-
-  // TODO: this assert probably does not belong here. This concern is per filter
-  // where some filters are concerned and some are not. The appropriate location
-  // for this sanity check is within each filter that is concerned with it.
   assert(document_utils.has_valid_base_uri(doc));
 
   frame_filter(doc, options.empty_frame_body_message);
