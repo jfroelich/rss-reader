@@ -75,7 +75,6 @@ export async function composite_document_filter(doc, options = {}) {
   attribute_unknown_filter(doc, attribute_whitelist);
   attribute_empty_filter(doc);
   base_filter(doc);
-  head_filter(doc);
 }
 
 export function anchor_format_filter(doc) {
@@ -414,15 +413,6 @@ export function horizontal_rule_filter(doc) {
     for (const hr of hrs) {
       hr.remove();
     }
-  }
-}
-
-export function head_filter(doc) {
-  // TODO: clarify whether a document can have multiple head elements by
-  // locating and citing the spec
-  const head_elements = doc.querySelectorAll('head');
-  for (const head_element of head_elements) {
-    head_element.remove();
   }
 }
 
