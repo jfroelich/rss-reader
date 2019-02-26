@@ -1,13 +1,6 @@
 import * as color from '/src/lib/color.js';
 import * as tls from '/src/lib/tls.js';
 
-// Keys that were previously in use and are no longer in use that should be
-// cleaned up when the extension is updated
-const deprecated_keys = [
-  'channel_name', 'db_name', 'db_open_timeout', 'db_version', 'debug',
-  'entry_title_max_length', 'refresh_badge_delay'
-];
-
 // Filenames of article background images
 // clang-format off
 const background_images = [
@@ -55,19 +48,12 @@ const fonts = [
 ];
 // clang-format on
 
-// React to the extension being installed or updated, or when chrome is updated,
-// to do config related things.
-// TODO: is it better to place this in the background page?
-export function install_listener(event) {
-  if (event.reason === 'install') {
-    init(event);
-  } else {
-    update_config(event);
-  }
-}
-
 // The extension updated, or the background page was reloaded
-function update_config(event) {
+export function update(event) {
+  const deprecated_keys = [
+    'channel_name', 'db_name', 'db_open_timeout', 'db_version', 'debug',
+    'entry_title_max_length', 'refresh_badge_delay'
+  ];
   for (const key of deprecated_keys) {
     tls.remove(key);
   }

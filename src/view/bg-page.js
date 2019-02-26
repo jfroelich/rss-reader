@@ -23,8 +23,13 @@ platform.lifecycle.add_startup_listener(event => {
   ops.badge_refresh().catch(console.warn);
 });
 
-// TODO: re-inline the listener here
-platform.lifecycle.add_install_listener(config.install_listener);
+platform.lifecycle.add_install_listener(function(event) {
+  if (event.reason === 'install') {
+    config.init(event);
+  } else {
+    config.update(event);
+  }
+});
 
 platform.lifecycle.add_install_listener(async function(event) {
   if (event.reason === 'install') {
