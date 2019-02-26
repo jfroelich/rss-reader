@@ -36,7 +36,7 @@ export async function composite_document_filter(doc, options = {}) {
     'applet', 'audio',  'basefont', 'bgsound', 'command',  'datalist',
     'dialog', 'embed',  'isindex',  'link',    'math',     'meta',
     'object', 'output', 'param',    'path',    'progress', 'spacer',
-    'style',  'svg',    'title',    'video',   'xmp'
+    'svg',    'title',  'video',    'xmp'
   ];
   blacklist_filter(doc, bad_element_names);
   script_filter(doc);
@@ -74,6 +74,7 @@ export async function composite_document_filter(doc, options = {}) {
   };
   attribute_unknown_filter(doc, attribute_whitelist);
   attribute_empty_filter(doc);
+  style_filter(doc);
   base_filter(doc);
 }
 
@@ -955,6 +956,15 @@ export function document_trim_filter(doc) {
     return node.nodeType === Node.TEXT_NODE ?
         !node.nodeValue.trim() :
         ['br', 'hr', 'nobr'].includes(node.localName);
+  }
+}
+
+// Remove style elements. This filter should typically only be called after any
+// filters that call getComputedStyle.
+export function style_filter(doc) {
+  const styles = doc.querySelectorAll('style');
+  for (const style of styles) {
+    style.remove();
   }
 }
 
