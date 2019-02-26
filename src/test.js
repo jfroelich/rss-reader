@@ -10,6 +10,7 @@ import {color_contrast_filter_test} from '/src/lib/color-contrast-filter-test.js
 import {color_test} from '/src/lib/color-test.js';
 import * as document_utils_tests from '/src/lib/document-utils-tests.js';
 import * as favicon_tests from '/src/lib/favicon-tests.js';
+import {parse_feed_test} from '/src/lib/feed-parser-test.js';
 import {fetch_html_test} from '/src/lib/fetch-html-test.js';
 import {fetch_image_element_test} from '/src/lib/fetch-image-element-test.js';
 import {fetch_image_test} from '/src/lib/fetch-image-test.js';
@@ -18,7 +19,6 @@ import * as html_utils_tests from '/src/lib/html-utils-tests.js';
 import * as idb_tests from '/src/lib/idb-test.js';
 import {mime_test} from '/src/lib/mime-test.js';
 import * as net_tests from '/src/lib/net-tests.js';
-import {parse_feed_test} from '/src/lib/parse-feed-test.js';
 import {sniffer_test} from '/src/lib/sniffer-test.js';
 import * as string_utils_tests from '/src/lib/string-utils-tests.js';
 import * as unwrap_element_tests from '/src/lib/unwrap-element-tests.js';
