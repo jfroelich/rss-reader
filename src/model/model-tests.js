@@ -1,21 +1,21 @@
 import {assert} from '/src/lib/assert.js';
-import * as idb from '/src/lib/idb.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 import {Entry, Feed, is_entry, is_feed, Model} from '/src/model/model.js';
 
 export async function archive_entries_test() {
   const db_name = 'archive-entries-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;
   await model.open();
   await model.archiveEntries(100);
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function count_unread_entries_by_feed_test() {
   const db_name = 'count-unread-entries-by-feed-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 
   const model = new Model();
   model.name = db_name;
@@ -48,12 +48,12 @@ export async function count_unread_entries_by_feed_test() {
   unread_count = await model.countUnreadEntriesByFeed(non_existent_id);
   assert(unread_count === 0);
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function count_unread_entries_test() {
   const db_name = 'count-unread-entries-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 
   const model = new Model();
   model.name = db_name;
@@ -94,7 +94,7 @@ export async function count_unread_entries_test() {
   assert(count === insert_unread_count);
 
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function create_entry_test() {
@@ -110,7 +110,7 @@ export async function create_entry_test() {
   assert(is_entry(stored_entry));
   assert(stored_entry.id === id);
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function create_feed_test() {
@@ -129,7 +129,7 @@ export async function create_feed_test() {
   stored_feed = await model.getFeed('id', stored_feed_id, false);
   assert(is_feed(stored_feed));
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function create_feed_url_constraint_test() {
@@ -154,7 +154,7 @@ export async function create_feed_url_constraint_test() {
   // Verify that the second attempt to store fails as expected
   assert(create_error instanceof DOMException);
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function create_feeds_test() {
@@ -179,12 +179,12 @@ export async function create_feeds_test() {
     assert(Feed.isValidId(feed.id));
   }
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function delete_entry_test() {
   const db_name = 'delete-entry-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;
   await model.open();
@@ -209,12 +209,12 @@ export async function delete_entry_test() {
   stored_entry = await model.getEntry('id', entry_id2, false);
   assert(stored_entry);
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function delete_feed_test() {
   const db_name = 'delete-feed-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;
   await model.open();
@@ -236,7 +236,7 @@ export async function delete_feed_test() {
   await model.deleteFeed(non_existent_id);
   await model.deleteFeed(feed_id2);
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function is_entry_test() {
@@ -287,7 +287,7 @@ export async function append_feed_url_test() {
 
 export async function get_entry_test() {
   const db_name = 'get-entry-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;
   await model.open();
@@ -300,12 +300,12 @@ export async function get_entry_test() {
   const bad_entry = await model.getEntry('id', non_existent_id, false);
   assert(bad_entry === undefined);
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function get_entries_test() {
   const db_name = 'get-entries-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;
   await model.open();
@@ -321,12 +321,12 @@ export async function get_entries_test() {
   const entries = await model.getEntries('all', 0, 0);
   assert(entries.length === n);
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function get_feed_ids_test() {
   const db_name = 'get-feed-ids-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;
   await model.open();
@@ -346,12 +346,12 @@ export async function get_feed_ids_test() {
     assert(feed_ids.includes(id));
   }
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function get_feed_test() {
   const db_name = 'get-feed-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;
   await model.open();
@@ -365,12 +365,12 @@ export async function get_feed_test() {
   const stored_feed2 = await model.getFeed('url', url, false);
   assert(stored_feed2);
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function get_feeds_test() {
   const db_name = 'get-feeds-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;
   await model.open();
@@ -408,12 +408,12 @@ export async function get_feeds_test() {
     assert(feed.active);
   }
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function iterate_entries_test() {
   const db_name = 'iterate-entries-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;
   await model.open();
@@ -435,12 +435,12 @@ export async function iterate_entries_test() {
   });
   assert(num_iterated === n);
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function set_entry_read_state_test() {
   const db_name = set_entry_read_state_test.name;
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;
   await model.open();
@@ -464,12 +464,12 @@ export async function set_entry_read_state_test() {
   assert(stored_entry.readState === Entry.UNREAD);
 
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function query_entries_test() {
   const db_name = 'query-entries-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;
   await model.open();
@@ -642,12 +642,12 @@ export async function query_entries_test() {
   }
 
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function update_entry_test() {
   const db_name = 'update-entry-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;
   await model.open();
@@ -661,12 +661,12 @@ export async function update_entry_test() {
   entry = await model.getEntry('id', entry_id, false);
   assert(entry.title === 'second-title');
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function update_feed_test() {
   const db_name = 'update-feed-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;
   await model.open();
@@ -682,7 +682,7 @@ export async function update_feed_test() {
   feed = await model.getFeed('id', new_id, false);
   assert(feed.title = 'second');
   model.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function sanitize_entry_content_test() {

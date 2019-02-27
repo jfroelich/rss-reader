@@ -1,11 +1,11 @@
 import * as channeled_model from '/src/model/channeled-model.js';
 import {assert} from '/src/lib/assert.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
-import * as idb from '/src/lib/idb.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 export async function cdb_delete_feed_test() {
   const db_name = 'channeled_model-delete-feed-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 
   const session = new channeled_model.ChanneledModel();
   session.db.name = db_name;
@@ -30,5 +30,5 @@ export async function cdb_delete_feed_test() {
   assert(first_message.id === feed_id1);
   assert(first_message.reason === delete_reason);
   session.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }

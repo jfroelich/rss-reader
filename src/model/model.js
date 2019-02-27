@@ -1,7 +1,7 @@
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as html_utils from '/src/lib/html-utils.js';
-import * as idb from '/src/lib/idb.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 import * as object_utils from '/src/lib/object-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
 import {sizeof} from '/src/lib/sizeof.js';
@@ -114,7 +114,7 @@ export class Model {
     assert(typeof this.name === 'string');
     assert(typeof this.upgradeHandler === 'function');
 
-    this.conn = await idb.open(
+    this.conn = await indexeddb_utils.open(
         this.name, this.version, this.upgradeHandler.bind(this), this.timeout);
   }
 

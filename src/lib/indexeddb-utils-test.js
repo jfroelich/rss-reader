@@ -1,5 +1,5 @@
 import {assert} from '/src/lib/assert.js';
-import * as idb from '/src/lib/idb.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 // TODO: test upgrade handler specified vs not specified and assert that
 // upgrade occurs
@@ -7,9 +7,9 @@ import * as idb from '/src/lib/idb.js';
 
 // Exercise the basic open, close, delete process
 export async function indexeddb_test() {
-  const conn = await idb.open('idb-test');
+  const conn = await indexeddb_utils.open('indexeddb_utils-test');
   conn.close();
-  await idb.remove(conn.name);
+  await indexeddb_utils.remove(conn.name);
 }
 
 // This test asserts my understanding of the serialization. indexedDB can store
@@ -23,7 +23,7 @@ export async function indexeddb_test() {
 export async function indexeddb_function_object_test() {
   // Create a really basic database with an object store
   const conn =
-      await idb.open('idb-function-object-test', undefined, function(event) {
+      await indexeddb_utils.open('indexeddb_utils-function-object-test', undefined, function(event) {
         const request = event.target;
         const db = request.result;
         if (!db.objectStoreNames.contains('objects')) {
@@ -83,5 +83,5 @@ export async function indexeddb_function_object_test() {
   }
 
   conn.close();
-  await idb.remove(conn.name);
+  await indexeddb_utils.remove(conn.name);
 }

@@ -1,7 +1,7 @@
 import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {fetch_image} from '/src/lib/fetch-image.js';
-import * as idb from '/src/lib/idb.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 const DEFAULT_NAME = 'favicon';
 const DEFAULT_VERSION = 1;
@@ -142,7 +142,7 @@ export function Entry() {
 // Return a promise that resolves to a connection
 export function open(
     name = DEFAULT_NAME, version = DEFAULT_VERSION, timeout = DEFAULT_TIMEOUT) {
-  return idb.open(name, version, on_upgrade_needed, timeout);
+  return indexeddb_utils.open(name, version, on_upgrade_needed, timeout);
 }
 
 // Create or upgrade the database

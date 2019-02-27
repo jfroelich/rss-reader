@@ -16,7 +16,7 @@ import {fetch_image_element_test} from '/src/lib/fetch-image-element-test.js';
 import {fetch_image_test} from '/src/lib/fetch-image-test.js';
 import {filter_publisher_test} from '/src/lib/filter-publisher-test.js';
 import * as html_utils_tests from '/src/lib/html-utils-tests.js';
-import * as idb_tests from '/src/lib/idb-test.js';
+import * as idb_tests from '/src/lib/indexeddb-utils-test.js';
 import {mime_test} from '/src/lib/mime-test.js';
 import * as net_tests from '/src/lib/net-tests.js';
 import {sniffer_test} from '/src/lib/sniffer-test.js';

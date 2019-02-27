@@ -1,11 +1,11 @@
 import * as channeled_model from '/src/model/channeled-model.js';
 import * as ops from '/src/control/ops.js';
 import {assert} from '/src/lib/assert.js';
-import * as idb from '/src/lib/idb.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 export async function activate_feed_test() {
   const db_name = 'ops-activate-feed-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 
   const session = new channeled_model.ChanneledModel();
   session.db.name = db_name;
@@ -85,12 +85,12 @@ export async function activate_feed_test() {
   assert(activation_error);
 
   session.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function deactivate_feed_test() {
   const db_name = 'ops-deactivate-feed-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 
   const session = new channeled_model.ChanneledModel();
   session.db.name = db_name;
@@ -117,7 +117,7 @@ export async function deactivate_feed_test() {
   const now = new Date();
   assert(stored_feed.deactivateDate <= now);
   session.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function import_opml_test() {
@@ -129,7 +129,7 @@ export async function import_opml_test() {
   }
 
   const db_name = 'ops-import-opml-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 
   const session = new channeled_model.ChanneledModel();
   session.db.name = db_name;
@@ -163,12 +163,12 @@ export async function import_opml_test() {
   assert(messages[0].id === 1);
 
   session.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function subscribe_test() {
   const db_name = 'subscribe-test';
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 
   const session = new channeled_model.ChanneledModel();
   session.db.name = db_name;
@@ -212,5 +212,5 @@ export async function subscribe_test() {
   assert(messages[0].id === feed.id);
 
   session.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }

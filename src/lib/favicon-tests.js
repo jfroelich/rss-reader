@@ -1,10 +1,10 @@
 import {assert} from '/src/lib/assert.js';
 import * as favicon from '/src/lib/favicon.js';
-import * as idb from '/src/lib/idb.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 export async function favicon_oracle_test() {
   const db_name = favicon_oracle_test.name;
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const conn = await favicon.open(db_name);
 
   const url = new URL('https://www.oracle.com');
@@ -16,21 +16,21 @@ export async function favicon_oracle_test() {
   const expected = 'https://www.oracle.com/favicon.ico';
   assert(result === expected);
   conn.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function favicon_cache_open_test() {
   const db_name = favicon_cache_open_test.name;
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const conn = await favicon.open(db_name);
   assert(typeof conn === 'object');
   assert(typeof conn.close === 'function');
   conn.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 export async function favicon_cache_put_find_test() {
-  await idb.remove(favicon_cache_put_find_test.name);
+  await indexeddb_utils.remove(favicon_cache_put_find_test.name);
   const conn = await favicon.open(favicon_cache_put_find_test.name);
   const entry = new favicon.Entry();
   entry.hostname = 'www.example.com';
@@ -39,11 +39,11 @@ export async function favicon_cache_put_find_test() {
   assert(found_entry);
   assert(found_entry.hostname === entry.hostname);
   conn.close();
-  await idb.remove(favicon_cache_put_find_test.name);
+  await indexeddb_utils.remove(favicon_cache_put_find_test.name);
 }
 
 export async function favicon_cache_clear_test() {
-  await idb.remove(favicon_cache_clear_test.name);
+  await indexeddb_utils.remove(favicon_cache_clear_test.name);
   const conn = await favicon.open(favicon_cache_clear_test.name);
 
   const num_inserted = 3;
@@ -62,14 +62,14 @@ export async function favicon_cache_clear_test() {
   assert(post_count === 0);
 
   conn.close();
-  await idb.remove(favicon_cache_clear_test.name);
+  await indexeddb_utils.remove(favicon_cache_clear_test.name);
 }
 
 // Insert a mix of expired and non-expired entries. Then run compact and check
 // the expired entries are gone and the non-expired entries remain.
 export async function favicon_cache_compact_test() {
   const db_name = favicon_cache_compact_test.name;
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
   const conn = await favicon.open(db_name);
 
   const six_months = 1000 * 60 * 60 * 24 * 31 * 6;
@@ -103,7 +103,7 @@ export async function favicon_cache_compact_test() {
   }
 
   conn.close();
-  await idb.remove(db_name);
+  await indexeddb_utils.remove(db_name);
 }
 
 // This is not part of the built in api. It would exist only for test purposes.
