@@ -6,10 +6,7 @@ import * as object_utils from '/src/lib/object-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
 import {sizeof} from '/src/lib/sizeof.js';
 import * as magic from '/src/model/magic.js';
-
-// TODO: both Entry and Feed can extend Resource, there is a large amount of
-// redundancy, good chance to review understanding of super and inheritance
-
+import * as utils from '/src/model/utils.js';
 
 export class Entry {
   constructor() {
@@ -18,7 +15,7 @@ export class Entry {
 
   appendURL(url) {
     assert(is_entry(this));
-    return append_url_common(this, url);
+    return utils.append_url_common(this, url);
   }
 
   // Returns the last url in this entry's url list
@@ -44,7 +41,6 @@ Entry.READ = 1;
 Entry.UNARCHIVED = 0;
 Entry.ARCHIVED = 1;
 
-
 export class Feed {
   constructor() {
     this.magic = magic.FEED_MAGIC;
@@ -52,7 +48,7 @@ export class Feed {
 
   appendURL(url) {
     assert(is_feed(this));
-    return append_url_common(this, url);
+    return utils.append_url_common(this, url);
   }
 
   getURLString() {
@@ -81,25 +77,6 @@ export function is_feed(value) {
   return typeof value === 'object' && value.magic === magic.FEED_MAGIC;
 }
 
-function append_url_common(object, url) {
-  assert(typeof object === 'object');
-  assert(
-      object.magic === magic.FEED_MAGIC || object.magic === magic.ENTRY_MAGIC);
-  assert(url instanceof URL);
-
-  const normal_url_string = url.href;
-  if (object.urls) {
-    if (object.urls.includes(normal_url_string)) {
-      return false;
-    }
-
-    object.urls.push(normal_url_string);
-  } else {
-    object.urls = [normal_url_string];
-  }
-
-  return true;
-}
 
 export class Model {
   constructor() {
