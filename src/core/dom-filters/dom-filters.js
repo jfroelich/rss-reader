@@ -20,7 +20,6 @@ import * as url_utils from '/src/lib/url-utils.js';
 export async function composite_document_filter(doc, options = {}) {
   assert(doc instanceof Document);
   assert(typeof options === 'object');
-  assert(document_utils.has_valid_base_uri(doc));
 
   frame_filter(doc, options.empty_frame_body_message);
   ensure_body_element_filter(doc);
@@ -493,7 +492,7 @@ export function image_responsive_filter(doc) {
 }
 
 export function image_reachable_filter(doc, timeout = INDEFINITE) {
-  assert(doc.baseURI);
+  assert(document_utils.has_valid_base_uri(doc));
   assert(timeout instanceof Deadline);
 
   // Given an image element, inspect its src value and try to fetch the
@@ -560,7 +559,7 @@ export function image_reachable_filter(doc, timeout = INDEFINITE) {
 // image_reachable_filter, this should occur after that filter so as to avoid
 // duplicate network requests.
 export function image_size_filter(doc, timeout = INDEFINITE) {
-  assert(doc.baseURI);
+  assert(document_utils.has_valid_base_uri(doc));
   assert(timeout instanceof Deadline);
   const images = doc.querySelectorAll('img');
   const promises = [];
@@ -707,7 +706,7 @@ export function list_filter(doc) {
 // The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
 // can be found here: https://youtu.be/rGvblGCD7qM
 export function lonestar_filter(doc) {
-  assert(doc.baseURI);
+  assert(document_utils.has_valid_base_uri(doc));
 
   const host_patterns = [
     /\/\/.*2o7\.net\//i,
@@ -971,6 +970,8 @@ export function url_resolve_filter(doc) {
   // the new model-viewer attribute also has a poster attribute. There may be
   // some other elements I have ignored too, like some of the attributes for
   // <object> or <embed>.
+
+  assert(document_utils.has_valid_base_uri(doc));
 
   const base_url = new URL(doc.baseURI);
   const map = {
