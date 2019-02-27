@@ -5,16 +5,15 @@ import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 import * as object_utils from '/src/lib/object-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
 import {sizeof} from '/src/lib/sizeof.js';
+import * as magic from '/src/model/magic.js';
 
 // TODO: both Entry and Feed can extend Resource, there is a large amount of
 // redundancy, good chance to review understanding of super and inheritance
 
-const ENTRY_MAGIC = 0xdeadbeef;
-const FEED_MAGIC = 0xfeedfeed;
 
 export class Entry {
   constructor() {
-    this.magic = ENTRY_MAGIC;
+    this.magic = magic.ENTRY_MAGIC;
   }
 
   appendURL(url) {
@@ -48,7 +47,7 @@ Entry.ARCHIVED = 1;
 
 export class Feed {
   constructor() {
-    this.magic = FEED_MAGIC;
+    this.magic = magic.FEED_MAGIC;
   }
 
   appendURL(url) {
@@ -75,16 +74,17 @@ export class Feed {
 Feed.INVALID_ID = 0;
 
 export function is_entry(value) {
-  return typeof value === 'object' && value.magic === ENTRY_MAGIC;
+  return typeof value === 'object' && value.magic === magic.ENTRY_MAGIC;
 }
 
 export function is_feed(value) {
-  return typeof value === 'object' && value.magic === FEED_MAGIC;
+  return typeof value === 'object' && value.magic === magic.FEED_MAGIC;
 }
 
 function append_url_common(object, url) {
   assert(typeof object === 'object');
-  assert(object.magic === FEED_MAGIC || object.magic === ENTRY_MAGIC);
+  assert(
+      object.magic === magic.FEED_MAGIC || object.magic === magic.ENTRY_MAGIC);
   assert(url instanceof URL);
 
   const normal_url_string = url.href;
@@ -234,7 +234,7 @@ export class Model {
       if (cursor) {
         const entry = cursor.value;
         if (!('magic' in entry)) {
-          entry.magic = ENTRY_MAGIC;
+          entry.magic = magic.ENTRY_MAGIC;
           entry.dateUpdated = new Date();
           cursor.update(entry);
         }
@@ -250,7 +250,7 @@ export class Model {
     request.onsuccess = function(event) {
       const feeds = event.target.result;
       for (const feed of feeds) {
-        feed.magic = FEED_MAGIC;
+        feed.magic = magic.FEED_MAGIC;
         feed.dateUpdated = new Date();
         store.put(feed);
       }
