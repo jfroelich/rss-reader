@@ -8,7 +8,7 @@ import * as html_utils from '/src/lib/html-utils.js';
 import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
 import * as channeled_model from '/src/model/channeled-model.js';
-import {is_entry} from '/src/model/is_entry.js';
+import {is_entry} from '/src/model/entry.js';
 
 const splash_element = document.getElementById('initial-loading-panel');
 const feeds_container = document.getElementById('feeds-container');
