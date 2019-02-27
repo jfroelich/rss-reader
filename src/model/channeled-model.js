@@ -1,4 +1,4 @@
-import {Db, Entry} from '/src/model/model.js';
+import {Model, Entry} from '/src/model/model.js';
 import {assert} from '/src/lib/assert.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 
@@ -14,9 +14,9 @@ export {
 } from '/src/model/model.js';
 // clang-format on
 
-export class CDB {
+export class ChanneledModel {
   constructor() {
-    this.db = new Db();
+    this.db = new Model();
     this.channel = undefined;
     this.channel_name = 'reader';
   }
@@ -37,19 +37,19 @@ export class CDB {
   }
 
   static validateFeed(feed) {
-    return Db.validateFeed(feed);
+    return Model.validateFeed(feed);
   }
 
   static validateEntry(entry) {
-    return Db.validateEntry(entry);
+    return Model.validateEntry(entry);
   }
 
   static sanitizeFeed(feed) {
-    return Db.sanitizeFeed(feed);
+    return Model.sanitizeFeed(feed);
   }
 
   static sanitizeEntry(entry) {
-    return Db.sanitizeEntry(entry);
+    return Model.sanitizeEntry(entry);
   }
 
   async archiveEntries(max_age) {

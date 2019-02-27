@@ -101,7 +101,7 @@ function append_url_common(object, url) {
   return true;
 }
 
-export class Db {
+export class Model {
   constructor() {
     this.conn = undefined;
     this.name = 'reader';
@@ -110,7 +110,7 @@ export class Db {
   }
 
   async open() {
-    assert(this instanceof Db);
+    assert(this instanceof Model);
     assert(typeof this.name === 'string');
     assert(typeof this.upgradeHandler === 'function');
 
@@ -553,8 +553,8 @@ export class Db {
 
   getEntries(mode = 'all', offset, limit) {
     return new Promise((resolve, reject) => {
-      assert(Db.isValidOffset(offset));
-      assert(Db.isValidLimit(limit));
+      assert(Model.isValidOffset(offset));
+      assert(Model.isValidLimit(limit));
       const entries = [];
       let advanced = false;
 
@@ -767,7 +767,7 @@ export class Db {
       assert(typeof query === 'object');
       assert(query.feed_id === undefined || Feed.isValidId(query.feed_id));
       assert(this.isValidReadState(query.read_state));
-      assert(Db.isValidOffset(query.offset));
+      assert(Model.isValidOffset(query.offset));
       assert(this.isValidDirection(query.direction));
 
       const offset = query.offset === undefined ? 0 : query.offset;
@@ -901,7 +901,7 @@ export class Db {
       assert(is_entry(entry));
       assert(Entry.isValidId(entry.id));
       // Do not assert that the entry has a url. Entries are not required to
-      // have urls in the db layer. Only higher layers are concerned with
+      // have urls in the model layer. Only higher layers are concerned with
       // imposing that constraint.
       entry.dateUpdated = new Date();
       object_utils.filter_empty_properties(entry);
@@ -1046,9 +1046,9 @@ export class Db {
     assert(is_entry(entry));
     const now = new Date();
 
-    const vassert = Db.vassert;
-    const isValidDate = Db.isValidDate;
-    const isDateLTE = Db.isDateLTE;
+    const vassert = Model.vassert;
+    const isValidDate = Model.isValidDate;
+    const isDateLTE = Model.isDateLTE;
 
     vassert(entry.id === undefined || Entry.isValidId(entry.id));
     vassert(entry.feed === undefined || Feed.isValidId(entry.feed));
@@ -1070,7 +1070,7 @@ export class Db {
     vassert(isDateLTE(entry.dateCreated, entry.dateUpdated));
     vassert(isValidDate(entry.datePublished));
     vassert(isDateLTE(entry.datePublished, now));
-    Db.validateEnclosure(entry.enclosure);
+    Model.validateEnclosure(entry.enclosure);
   }
 
   static isValidDate(value) {
@@ -1082,7 +1082,7 @@ export class Db {
   }
 
   static validateEnclosure(enc) {
-    const vassert = Db.vassert;
+    const vassert = Model.vassert;
 
     if (enc === undefined || enc === null) {
       return;
@@ -1104,9 +1104,9 @@ export class Db {
     assert(is_feed(feed));
     const now = new Date();
 
-    const vassert = Db.vassert;
-    const isValidDate = Db.isValidDate;
-    const isDateLTE = Db.isDateLTE;
+    const vassert = Model.vassert;
+    const isValidDate = Model.isValidDate;
+    const isDateLTE = Model.isDateLTE;
 
     vassert(feed.id === undefined || Feed.isValidId(feed.id));
     vassert(

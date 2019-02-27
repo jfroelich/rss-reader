@@ -1,4 +1,4 @@
-import * as cdb from '/src/model/channeled-model.js';
+import * as channeled_model from '/src/model/channeled-model.js';
 import * as desknote from '/src/control/desknote.js';
 import * as dom_filters from '/src/control/dom-filters/dom-filters.js';
 import {fetch_feed} from '/src/control/fetch-feed.js';
@@ -76,14 +76,14 @@ export class PollOperation {
   }
 
   async pollFeed(feed) {
-    assert(cdb.is_feed(feed));
+    assert(channeled_model.is_feed(feed));
 
-    if (!cdb.Feed.prototype.hasURL.call(feed)) {
+    if (!channeled_model.Feed.prototype.hasURL.call(feed)) {
       console.debug('Feed missing url', feed);
       return 0;
     }
 
-    console.debug('Polling feed', cdb.Feed.prototype.getURLString.call(feed));
+    console.debug('Polling feed', channeled_model.Feed.prototype.getURLString.call(feed));
 
     if (!feed.active) {
       console.debug('Feed is inactive', feed);
@@ -111,7 +111,7 @@ export class PollOperation {
       if (feed.errorCount > this.deactivation_threshold) {
         console.debug(
             'Marking feed inactive',
-            cdb.Feed.prototype.getURLString.call(feed));
+            channeled_model.Feed.prototype.getURLString.call(feed));
         feed.active = false;
         feed.deactivationReasonText = 'fetch';
         feed.deactivationDate = new Date();
@@ -135,8 +135,8 @@ export class PollOperation {
       delete feed.errorCount;
     }
 
-    cdb.CDB.validateFeed(feed);
-    cdb.CDB.sanitizeFeed(feed);
+    channeled_model.ChanneledModel.validateFeed(feed);
+    channeled_model.ChanneledModel.sanitizeFeed(feed);
     await this.session.updateFeed(feed, true);
 
     // Now poll the feed's entries
@@ -165,7 +165,7 @@ export class PollOperation {
 
     console.debug(
         'Completed polling feed %s, added %d entries',
-        cdb.Feed.prototype.getURLString.call(feed), count);
+        channeled_model.Feed.prototype.getURLString.call(feed), count);
     return count;
   }
 
@@ -174,16 +174,16 @@ export class PollOperation {
   // entry id, 0 if the entry exists, or rejects with an error.
   async pollEntry(entry) {
     assert(this instanceof PollOperation);
-    assert(cdb.is_entry(entry));
-    assert(cdb.Entry.prototype.hasURL.call(entry));
+    assert(channeled_model.is_entry(entry));
+    assert(channeled_model.Entry.prototype.hasURL.call(entry));
 
-    cdb.Entry.prototype.appendURL.call(
+    channeled_model.Entry.prototype.appendURL.call(
         entry,
         rewrite_url(
-            new URL(cdb.Entry.prototype.getURLString.call(entry)),
+            new URL(channeled_model.Entry.prototype.getURLString.call(entry)),
             this.rewrite_rules));
     let existing = await this.session.getEntry(
-        'url', new URL(cdb.Entry.prototype.getURLString.call(entry)), true);
+        'url', new URL(channeled_model.Entry.prototype.getURLString.call(entry)), true);
     if (existing) {
       return Promise.resolve(0);
     }
@@ -191,7 +191,7 @@ export class PollOperation {
     // Fetch the entry full text. Reuse the url from above since it has not
     // changed. Trap fetch errors so that we can fall back to using feed content
     let response;
-    let url = new URL(cdb.Entry.prototype.getURLString.call(entry));
+    let url = new URL(channeled_model.Entry.prototype.getURLString.call(entry));
     if ((url.protocol === 'http:' || url.protocol === 'https:') &&
         sniffer.classify(url) !== sniffer.BINARY_CLASS &&
         !this.isAccessibleURL(url)) {
@@ -211,14 +211,14 @@ export class PollOperation {
     let doc;
     if (response) {
       let url_changed = false;
-      url = new URL(cdb.Entry.prototype.getURLString.call(entry));
+      url = new URL(channeled_model.Entry.prototype.getURLString.call(entry));
       const response_url = new URL(response.url);
       if (net.is_redirect(url, response)) {
         url_changed = true;
-        cdb.Entry.prototype.appendURL.call(entry, response_url);
-        cdb.Entry.prototype.appendURL.call(
+        channeled_model.Entry.prototype.appendURL.call(entry, response_url);
+        channeled_model.Entry.prototype.appendURL.call(
             entry, rewrite_url(response_url, this.rewrite_rules));
-        url = new URL(cdb.Entry.prototype.getURLString.call(entry));
+        url = new URL(channeled_model.Entry.prototype.getURLString.call(entry));
         let existing = await this.session.getEntry('url', url, true);
         if (existing) {
           return Promise.resolve(0);
@@ -254,7 +254,7 @@ export class PollOperation {
 
     const old_base_uri = doc.baseURI;
     document_utils.set_base_uri(
-        doc, new URL(cdb.Entry.prototype.getURLString.call(entry)));
+        doc, new URL(channeled_model.Entry.prototype.getURLString.call(entry)));
 
     // If title was not present in the feed xml, try and pull it from content
     if (!entry.title) {
@@ -265,7 +265,7 @@ export class PollOperation {
     }
 
     // Set the entry's favicon
-    const lookup_url = new URL(cdb.Entry.prototype.getURLString.call(entry));
+    const lookup_url = new URL(channeled_model.Entry.prototype.getURLString.call(entry));
     const lookup_request = new favicon.LookupRequest();
     lookup_request.conn = this.iconn;
     lookup_request.url = lookup_url;
@@ -301,8 +301,8 @@ export class PollOperation {
     assert(doc.documentElement);
 
     entry.content = doc.documentElement.outerHTML;
-    cdb.CDB.sanitizeEntry(entry);
-    cdb.CDB.validateEntry(entry);
+    channeled_model.ChanneledModel.sanitizeEntry(entry);
+    channeled_model.ChanneledModel.validateEntry(entry);
 
     return await this.session.createEntry(entry);
   }
@@ -312,7 +312,7 @@ export class PollOperation {
     options.timeout = this.fetch_feed_timeout;
     options.skip_entries = false;
     options.resolve_entry_urls = true;
-    const url = new URL(cdb.Feed.prototype.getURLString.call(feed));
+    const url = new URL(channeled_model.Feed.prototype.getURLString.call(feed));
     return fetch_feed(url, options);
   }
 
@@ -320,11 +320,11 @@ export class PollOperation {
   // new feed. Values from the new feed take precedence, except for urls, which
   // are merged to generate an ordered set.
   mergeFeed(old_feed, new_feed) {
-    const merged_feed = Object.assign(new cdb.Feed(), old_feed, new_feed);
+    const merged_feed = Object.assign(new channeled_model.Feed(), old_feed, new_feed);
     merged_feed.urls = [...old_feed.urls];
     if (new_feed.urls) {
       for (const url_string of new_feed.urls) {
-        cdb.Feed.prototype.appendURL.call(merged_feed, new URL(url_string));
+        channeled_model.Feed.prototype.appendURL.call(merged_feed, new URL(url_string));
       }
     }
 
@@ -342,7 +342,7 @@ export class PollOperation {
         continue;
       }
 
-      // TODO: use cdb.Entry.prototype.hasURL
+      // TODO: use channeled_model.Entry.prototype.hasURL
       if (!entry.urls || entry.urls.length < 1) {
         distinct_entries.push(entry);
         continue;
@@ -368,10 +368,10 @@ export class PollOperation {
     return distinct_entries;
   }
 
-  // Convert a parsed entry into a cdb-formatted entry
+  // Convert a parsed entry into a channeled_model-formatted entry
   // TODO: skip clone and mutate
   coerceEntry(parsed_entry) {
-    const blank_entry = new cdb.Entry();
+    const blank_entry = new channeled_model.Entry();
     // Clone to avoid mutation
     const clone = Object.assign(blank_entry, parsed_entry);
 
@@ -379,7 +379,7 @@ export class PollOperation {
     delete clone.link;
     if (parsed_entry.link) {
       try {
-        cdb.Entry.prototype.appendURL.call(clone, new URL(parsed_entry.link));
+        channeled_model.Entry.prototype.appendURL.call(clone, new URL(parsed_entry.link));
       } catch (error) {
         if (error instanceof AssertionError) {
           throw error;

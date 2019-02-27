@@ -1,4 +1,4 @@
-import * as cdb from '/src/model/channeled-model.js';
+import * as channeled_model from '/src/model/channeled-model.js';
 import * as ops from '/src/control/ops.js';
 import {assert} from '/src/lib/assert.js';
 import * as idb from '/src/lib/idb.js';
@@ -7,7 +7,7 @@ export async function activate_feed_test() {
   const db_name = 'ops-activate-feed-test';
   await idb.remove(db_name);
 
-  const session = new cdb.CDB();
+  const session = new channeled_model.ChanneledModel();
   session.db.name = db_name;
   await session.open();
 
@@ -19,7 +19,7 @@ export async function activate_feed_test() {
   channel.postMessage = message => messages.push(message);
 
   // Create an inactive feed and store it
-  const feed = new cdb.Feed();
+  const feed = new channeled_model.Feed();
   feed.active = false;
   feed.appendURL(new URL('a://b.c'));
   const id = await session.createFeed(feed);
@@ -47,7 +47,7 @@ export async function activate_feed_test() {
   // Activation should not have somehow destroyed type info. For performance
   // reasons this check is NOT implicit in the getFeed call, so it is not
   // redundant or unreasonable to check here.
-  assert(cdb.is_feed(stored_feed));
+  assert(channeled_model.is_feed(stored_feed));
 
   // Activation should result in the active state
   assert(stored_feed.active === true);
@@ -92,11 +92,11 @@ export async function deactivate_feed_test() {
   const db_name = 'ops-deactivate-feed-test';
   await idb.remove(db_name);
 
-  const session = new cdb.CDB();
+  const session = new channeled_model.ChanneledModel();
   session.db.name = db_name;
   await session.open();
 
-  const feed = new cdb.Feed();
+  const feed = new channeled_model.Feed();
   const url = new URL('a://b.c');
   feed.appendURL(url);
   feed.active = true;
@@ -111,7 +111,7 @@ export async function deactivate_feed_test() {
   await ops.deactivate_feed(session, feed_id, 'testing');
   const stored_feed = await session.getFeed('id', feed_id, false);
   assert(stored_feed);
-  assert(cdb.is_feed(stored_feed));
+  assert(channeled_model.is_feed(stored_feed));
   assert(stored_feed.active === false);
   assert(stored_feed.deactivateDate);
   const now = new Date();
@@ -131,7 +131,7 @@ export async function import_opml_test() {
   const db_name = 'ops-import-opml-test';
   await idb.remove(db_name);
 
-  const session = new cdb.CDB();
+  const session = new channeled_model.ChanneledModel();
   session.db.name = db_name;
   await session.open();
 
@@ -156,7 +156,7 @@ export async function import_opml_test() {
   const results = await ops.opml_import(session, files);
   assert(results);
   assert(results.length === 1);
-  assert(cdb.Feed.isValidId(results[0]));
+  assert(channeled_model.Feed.isValidId(results[0]));
 
   assert(messages.length === 1);
   assert(messages[0].type === 'feed-created');
@@ -170,7 +170,7 @@ export async function subscribe_test() {
   const db_name = 'subscribe-test';
   await idb.remove(db_name);
 
-  const session = new cdb.CDB();
+  const session = new channeled_model.ChanneledModel();
   session.db.name = db_name;
   await session.open();
 
@@ -198,8 +198,8 @@ export async function subscribe_test() {
 
   // Test the subscription produced the desired result
   assert(feed);
-  assert(cdb.is_feed(feed));
-  assert(cdb.Feed.isValidId(feed.id));
+  assert(channeled_model.is_feed(feed));
+  assert(channeled_model.Feed.isValidId(feed.id));
 
   // Length may be 1 or 2 (may have redirected and captured new url)
   assert(feed.urls.length);

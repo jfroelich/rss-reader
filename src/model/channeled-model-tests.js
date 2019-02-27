@@ -1,17 +1,17 @@
-import * as cdb from '/src/model/channeled-model.js';
+import * as channeled_model from '/src/model/channeled-model.js';
 import {assert} from '/src/lib/assert.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 import * as idb from '/src/lib/idb.js';
 
 export async function cdb_delete_feed_test() {
-  const db_name = 'cdb-delete-feed-test';
+  const db_name = 'channeled_model-delete-feed-test';
   await idb.remove(db_name);
 
-  const session = new cdb.CDB();
+  const session = new channeled_model.ChanneledModel();
   session.db.name = db_name;
   await session.open();
 
-  const feed1 = new cdb.Feed();
+  const feed1 = new channeled_model.Feed();
   const url1 = new URL('http://www.example.com/foo.xml');
   feed1.appendURL(url1);
   const feed_id1 = await session.createFeed(feed1);

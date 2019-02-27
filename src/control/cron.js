@@ -1,4 +1,4 @@
-import * as cdb from '/src/model/channeled-model.js';
+import * as channeled_model from '/src/model/channeled-model.js';
 import * as ops from '/src/control/ops.js';
 import {PollOperation} from '/src/control/poll-feeds.js';
 import * as favicon from '/src/lib/favicon.js';
@@ -42,14 +42,14 @@ export async function alarm_listener(alarm) {
   tls.write_string('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
-    const session = new cdb.CDB();
+    const session = new channeled_model.ChanneledModel();
     await session.open();
     await session.archiveEntries();
     session.close();
   } else if (alarm.name === 'poll') {
     await handle_alarm_poll();
   } else if (alarm.name === 'refresh-feed-icons') {
-    const session = new cdb.CDB();
+    const session = new channeled_model.ChanneledModel();
     const proms = [session.open(), favicon.open()];
     const [_, iconn] = await Promise.all(proms);
     await ops.refresh_feed_icons(session, iconn);
@@ -78,7 +78,7 @@ async function handle_alarm_poll() {
     }
   }
 
-  const session = new cdb.CDB();
+  const session = new channeled_model.ChanneledModel();
   const promises = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(promises);
 

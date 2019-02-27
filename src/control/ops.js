@@ -1,4 +1,4 @@
-import * as cdb from '/src/model/channeled-model.js';
+import * as channeled_model from '/src/model/channeled-model.js';
 import * as desknote from '/src/control/desknote.js';
 import {fetch_feed} from '/src/control/fetch-feed.js';
 import {assert} from '/src/lib/assert.js';
@@ -11,7 +11,7 @@ import * as tls from '/src/lib/tls.js';
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar
 export async function badge_refresh() {
-  const session = new cdb.CDB();
+  const session = new channeled_model.ChanneledModel();
   await session.open();
   const count = await session.countUnreadEntries();
   session.close();
@@ -44,7 +44,7 @@ export function deactivate_feed(session, feed_id, reason) {
 export async function export_opml(document_title) {
   const doc = opml_utils.create_opml_template(document_title);
 
-  const session = new cdb.CDB();
+  const session = new channeled_model.ChanneledModel();
   await session.open();
   const feeds = await session.getFeeds('all', false);
   session.close();
@@ -118,7 +118,7 @@ export async function opml_import(session, files) {
 
   // Convert urls into feeds
   const feeds = url_set.map(url => {
-    const feed = new cdb.Feed();
+    const feed = new channeled_model.Feed();
     feed.appendURL(url);
     return feed;
   });
@@ -168,7 +168,7 @@ async function opml_import_read_feeds(file) {
 }
 
 export async function subscribe(session, iconn, url, timeout, notify) {
-  assert(session instanceof cdb.CDB);
+  assert(session instanceof channeled_model.ChanneledModel);
   assert(iconn === undefined || iconn instanceof IDBDatabase);
   assert(url instanceof URL);
 
@@ -204,12 +204,12 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   // reduce the number of global helpers that relate to only one use context
   await set_feed_favicon(iconn, feed);
 
-  cdb.CDB.validateFeed(feed);
-  cdb.CDB.sanitizeFeed(feed);
+  channeled_model.ChanneledModel.validateFeed(feed);
+  channeled_model.ChanneledModel.sanitizeFeed(feed);
   feed.id = await session.createFeed(feed);
 
   if (notify) {
-    // TODO: use cdb.Feed.getURLString
+    // TODO: use channeled_model.Feed.getURLString
     const feed_title = feed.title || feed.urls[feed.urls.length - 1];
     const note = {};
     note.title = 'Subscribed!';

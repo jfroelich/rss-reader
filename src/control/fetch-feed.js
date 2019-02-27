@@ -1,4 +1,4 @@
-import * as cdb from '/src/model/channeled-model.js';
+import * as channeled_model from '/src/model/channeled-model.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline} from '/src/lib/deadline.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
@@ -22,7 +22,7 @@ export async function fetch_feed(url, options) {
       feed_parser.parse(res_text, skip_entries, resolve_entry_urls);
 
   // Convert the feed from the parse format to the storage format
-  const feed = new cdb.Feed();
+  const feed = new channeled_model.Feed();
   feed.type = parsed_feed.type;
 
   if (parsed_feed.link) {
@@ -41,8 +41,8 @@ export async function fetch_feed(url, options) {
   // TODO: if feed is now type Feed intead of a generic object as in the prior
   // implementation, then we can just call feed.appendURL here?
 
-  cdb.Feed.prototype.appendURL.call(feed, url);
-  cdb.Feed.prototype.appendURL.call(feed, new URL(response.url));
+  channeled_model.Feed.prototype.appendURL.call(feed, url);
+  channeled_model.Feed.prototype.appendURL.call(feed, new URL(response.url));
 
   // Set the last modified date based on the response
   const last_modified_string = response.headers.get('Last-Modified');

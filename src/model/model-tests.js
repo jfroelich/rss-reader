@@ -1,11 +1,11 @@
-import * as db from '/src/model/model.js';
+import * as model from '/src/model/model.js';
 import {assert} from '/src/lib/assert.js';
 import * as idb from '/src/lib/idb.js';
 
 export async function archive_entries_test() {
   const db_name = 'archive-entries-test';
   await idb.remove(db_name);
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
   await conn.archiveEntries(100);
@@ -17,11 +17,11 @@ export async function count_unread_entries_by_feed_test() {
   const db_name = 'count-unread-entries-by-feed-test';
   await idb.remove(db_name);
 
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
 
-  const feed = new db.Feed();
+  const feed = new model.Feed();
   const url = new URL('http://www.example.com/feed.xml');
   feed.appendURL(url);
   const feed_id = await conn.createFeed(feed);
@@ -30,9 +30,9 @@ export async function count_unread_entries_by_feed_test() {
   const create_promises = [];
 
   for (let i = 0; i < 2; i++) {
-    const read_state = i === 0 ? db.Entry.UNREAD : db.Entry.READ;
+    const read_state = i === 0 ? model.Entry.UNREAD : model.Entry.READ;
     for (let j = 0; j < num_entries_created_per_type; j++) {
-      const entry = new db.Entry();
+      const entry = new model.Entry();
       entry.feed = feed_id;
       entry.readState = read_state;
       const promise = conn.createEntry(entry);
@@ -55,7 +55,7 @@ export async function count_unread_entries_test() {
   const db_name = 'count-unread-entries-test';
   await idb.remove(db_name);
 
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
 
@@ -66,8 +66,8 @@ export async function count_unread_entries_test() {
   const insert_unread_count = 3;
   const entries_to_insert = [];
   for (let i = 0; i < insert_unread_count; i++) {
-    const entry = new db.Entry();
-    entry.readState = db.Entry.UNREAD;
+    const entry = new model.Entry();
+    entry.readState = model.Entry.UNREAD;
     entry.appendURL(new URL('a://b.c' + i));
     entries_to_insert.push(entry);
   }
@@ -75,8 +75,8 @@ export async function count_unread_entries_test() {
   // Generate some read entries
   const insert_read_count = 5;
   for (let i = 0; i < insert_read_count; i++) {
-    const entry = new db.Entry();
-    entry.readState = db.Entry.READ;
+    const entry = new model.Entry();
+    entry.readState = model.Entry.READ;
     entry.appendURL(new URL('d://e.f' + i));
     entries_to_insert.push(entry);
   }
@@ -99,15 +99,15 @@ export async function count_unread_entries_test() {
 
 export async function create_entry_test() {
   const db_name = 'create-entry-test';
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
 
-  const entry = new db.Entry();
+  const entry = new model.Entry();
   const id = await conn.createEntry(entry);
   const stored_entry = await conn.getEntry('id', id, false);
   assert(stored_entry);
-  assert(db.is_entry(stored_entry));
+  assert(model.is_entry(stored_entry));
   assert(stored_entry.id === id);
   conn.close();
   await idb.remove(db_name);
@@ -115,32 +115,32 @@ export async function create_entry_test() {
 
 export async function create_feed_test() {
   const db_name = 'create-feed-test';
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
 
-  const feed = new db.Feed();
+  const feed = new model.Feed();
   const feed_url = new URL('http://www.example.com/example.rss');
   feed.appendURL(feed_url);
   const stored_feed_id = await conn.createFeed(feed);
-  assert(db.Feed.isValidId(stored_feed_id));
+  assert(model.Feed.isValidId(stored_feed_id));
   let stored_feed = await conn.getFeed('url', feed_url, true);
-  assert(db.is_feed(stored_feed));
+  assert(model.is_feed(stored_feed));
   stored_feed = await conn.getFeed('id', stored_feed_id, false);
-  assert(db.is_feed(stored_feed));
+  assert(model.is_feed(stored_feed));
   conn.close();
   await idb.remove(db_name);
 }
 
 export async function create_feed_url_constraint_test() {
   const db_name = 'create-feed-url-constraint-test';
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
 
-  const feed1 = new db.Feed();
+  const feed1 = new model.Feed();
   feed1.appendURL(new URL('http://www.example.com/example.rss'));
-  const feed2 = new db.Feed();
+  const feed2 = new model.Feed();
   feed2.appendURL(new URL('http://www.example.com/example.rss'));
 
   await conn.createFeed(feed1);
@@ -159,12 +159,12 @@ export async function create_feed_url_constraint_test() {
 
 export async function create_feeds_test() {
   const db_name = 'create-feeds-test';
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
   const num_feeds = 3, feeds = [];
   for (let i = 0; i < num_feeds; i++) {
-    const feed = new db.Feed();
+    const feed = new model.Feed();
     feed.appendURL(new URL('a://b.c' + i));
     feeds.push(feed);
   }
@@ -175,8 +175,8 @@ export async function create_feeds_test() {
   const get_proms = ids.map(id => conn.getFeed('id', id, false));
   const feeds_by_id = await Promise.all(get_proms);
   for (const feed of feeds_by_id) {
-    assert(db.is_feed(feed));
-    assert(db.Feed.isValidId(feed.id));
+    assert(model.is_feed(feed));
+    assert(model.Feed.isValidId(feed.id));
   }
   conn.close();
   await idb.remove(db_name);
@@ -185,15 +185,15 @@ export async function create_feeds_test() {
 export async function delete_entry_test() {
   const db_name = 'delete-entry-test';
   await idb.remove(db_name);
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
 
-  const entry1 = new db.Entry();
+  const entry1 = new model.Entry();
   const url1 = new URL('https://www.example1.com');
   entry1.appendURL(url1);
 
-  const entry2 = new db.Entry();
+  const entry2 = new model.Entry();
   const url2 = new URL('https://www.example2.com');
   entry2.appendURL(url2);
 
@@ -215,15 +215,15 @@ export async function delete_entry_test() {
 export async function delete_feed_test() {
   const db_name = 'delete-feed-test';
   await idb.remove(db_name);
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
 
-  const feed1 = new db.Feed();
+  const feed1 = new model.Feed();
   const url1 = new URL('http://www.example.com/foo.xml');
   feed1.appendURL(url1);
   const feed_id1 = await conn.createFeed(feed1);
-  const feed2 = new db.Feed();
+  const feed2 = new model.Feed();
   const url2 = new URL('http://www.example.com/bar.xml');
   feed2.appendURL(url2);
   const feed_id2 = await conn.createFeed(feed2);
@@ -240,15 +240,15 @@ export async function delete_feed_test() {
 }
 
 export async function is_entry_test() {
-  const correct = new db.Entry();
-  assert(db.is_entry(correct));
-  assert(!db.is_feed(correct));
+  const correct = new model.Entry();
+  assert(model.is_entry(correct));
+  assert(!model.is_feed(correct));
   const nomagic = {};
-  assert(!db.is_entry(nomagic));
+  assert(!model.is_entry(nomagic));
 }
 
 export async function append_entry_url_test() {
-  const entry = new db.Entry();
+  const entry = new model.Entry();
   assert(entry.urls === undefined || entry.urls.length === 0);
   entry.appendURL(new URL('a://b.c1'));
   assert(entry.urls);
@@ -261,19 +261,19 @@ export async function append_entry_url_test() {
   appended = entry.appendURL(url2);
   assert(entry.urls.length === 2);
   assert(appended === false);
-  assert(db.is_entry(entry));
+  assert(model.is_entry(entry));
 }
 
 export async function is_feed_test() {
-  const fcorrect = new db.Feed();
-  assert(db.is_feed(fcorrect));
-  assert(!db.is_entry(fcorrect));
+  const fcorrect = new model.Feed();
+  assert(model.is_feed(fcorrect));
+  assert(!model.is_entry(fcorrect));
   const nomagic = {};
-  assert(!db.is_feed(nomagic));
+  assert(!model.is_feed(nomagic));
 }
 
 export async function append_feed_url_test() {
-  const feed = new db.Feed();
+  const feed = new model.Feed();
   assert(!feed.hasURL());  // precondition
   feed.appendURL(new URL('a://b.c1'));
   assert(feed.hasURL());  // expect change
@@ -282,16 +282,16 @@ export async function append_feed_url_test() {
   assert(feed.urls.length === 2);  // expect increment
   feed.appendURL(url2);
   assert(feed.urls.length === 2);  // expect no change
-  assert(db.is_feed(feed));        // modifications preserved type
+  assert(model.is_feed(feed));        // modifications preserved type
 }
 
 export async function get_entry_test() {
   const db_name = 'get-entry-test';
   await idb.remove(db_name);
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
-  const entry = new db.Entry();
+  const entry = new model.Entry();
   entry.title = 'test';
   const entry_id = await conn.createEntry(entry);
   const stored_entry = await conn.getEntry('id', entry_id, false);
@@ -306,13 +306,13 @@ export async function get_entry_test() {
 export async function get_entries_test() {
   const db_name = 'get-entries-test';
   await idb.remove(db_name);
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
   const n = 5;
   const create_promises = [];
   for (let i = 0; i < n; i++) {
-    const entry = new db.Entry();
+    const entry = new model.Entry();
     entry.title = 'title ' + i;
     const promise = conn.createEntry(entry);
     create_promises.push(promise);
@@ -327,13 +327,13 @@ export async function get_entries_test() {
 export async function get_feed_ids_test() {
   const db_name = 'get-feed-ids-test';
   await idb.remove(db_name);
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
   const n = 5;
   const create_promises = [];
   for (let i = 0; i < n; i++) {
-    const feed = new db.Feed();
+    const feed = new model.Feed();
     const url = new URL('a://b.c/feed' + i + '.xml');
     feed.appendURL(url);
     const promise = conn.createFeed(feed);
@@ -352,14 +352,14 @@ export async function get_feed_ids_test() {
 export async function get_feed_test() {
   const db_name = 'get-feed-test';
   await idb.remove(db_name);
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
-  const feed = new db.Feed();
+  const feed = new model.Feed();
   const url = new URL('a://b.c');
   feed.appendURL(url);
   const feed_id = await conn.createFeed(feed);
-  assert(db.Feed.isValidId(feed_id));
+  assert(model.Feed.isValidId(feed_id));
   const stored_feed = await conn.getFeed('id', feed_id, false);
   assert(stored_feed);
   const stored_feed2 = await conn.getFeed('url', url, false);
@@ -371,14 +371,14 @@ export async function get_feed_test() {
 export async function get_feeds_test() {
   const db_name = 'get-feeds-test';
   await idb.remove(db_name);
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
   const n = 5;           // number of feeds to store and test against
   let active_count = 0;  // track number of not-inactive
   const create_promises = [];
   for (let i = 0; i < n; i++) {
-    const feed = new db.Feed();
+    const feed = new model.Feed();
     const url = new URL('a://b.c' + i);
     feed.appendURL(url);
     // make some inactive
@@ -414,14 +414,14 @@ export async function get_feeds_test() {
 export async function iterate_entries_test() {
   const db_name = 'iterate-entries-test';
   await idb.remove(db_name);
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
 
   const n = 5;
   const create_promises = [];
   for (let i = 0; i < n; i++) {
-    const entry = new db.Entry();
+    const entry = new model.Entry();
     entry.title = 'test' + i;
     const promise = conn.createEntry(entry);
     create_promises.push(promise);
@@ -441,27 +441,27 @@ export async function iterate_entries_test() {
 export async function set_entry_read_state_test() {
   const db_name = set_entry_read_state_test.name;
   await idb.remove(db_name);
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
-  const entry = new db.Entry();
-  entry.readState = db.Entry.UNREAD;
+  const entry = new model.Entry();
+  entry.readState = model.Entry.UNREAD;
   const id = await conn.createEntry(entry);
   let stored_entry = await conn.getEntry('id', id, false);
   assert(stored_entry);
-  assert(stored_entry.readState === db.Entry.UNREAD);
+  assert(stored_entry.readState === model.Entry.UNREAD);
   await conn.setEntryReadState(id, true);
   stored_entry = undefined;
   stored_entry = await conn.getEntry('id', id, false);
   assert(stored_entry);
-  assert(stored_entry.readState === db.Entry.READ);
+  assert(stored_entry.readState === model.Entry.READ);
 
   // Now mark it again as unread, and assert
   await conn.setEntryReadState(id, false);
   stored_entry = undefined;
   stored_entry = await conn.getEntry('id', id, false);
   assert(stored_entry);
-  assert(stored_entry.readState === db.Entry.UNREAD);
+  assert(stored_entry.readState === model.Entry.UNREAD);
 
   conn.close();
   await idb.remove(db_name);
@@ -470,7 +470,7 @@ export async function set_entry_read_state_test() {
 export async function query_entries_test() {
   const db_name = 'query-entries-test';
   await idb.remove(db_name);
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
 
@@ -479,8 +479,8 @@ export async function query_entries_test() {
 
   // Create 5 unread entries tied to feed 1
   for (let i = 0; i < 5; i++) {
-    entry = new db.Entry();
-    entry.readState = db.Entry.UNREAD;
+    entry = new model.Entry();
+    entry.readState = model.Entry.UNREAD;
     entry.feed = 1;
     entry.datePublished = new Date();
     const promise = conn.createEntry(entry);
@@ -489,8 +489,8 @@ export async function query_entries_test() {
 
   // Create 5 read entries tied to feed 1
   for (let i = 0; i < 5; i++) {
-    entry = new db.Entry();
-    entry.readState = db.Entry.READ;
+    entry = new model.Entry();
+    entry.readState = model.Entry.READ;
     entry.feed = 1;
     entry.datePublished = new Date();
     const promise = conn.createEntry(entry);
@@ -499,8 +499,8 @@ export async function query_entries_test() {
 
   // Create 5 unread entries tied to feed 2
   for (let i = 0; i < 5; i++) {
-    entry = new db.Entry();
-    entry.readState = db.Entry.UNREAD;
+    entry = new model.Entry();
+    entry.readState = model.Entry.UNREAD;
     entry.feed = 2;
     entry.datePublished = new Date();
     const promise = conn.createEntry(entry);
@@ -509,8 +509,8 @@ export async function query_entries_test() {
 
   // Create 5 read entries tied to feed 2
   for (let i = 0; i < 5; i++) {
-    entry = new db.Entry();
-    entry.readState = db.Entry.READ;
+    entry = new model.Entry();
+    entry.readState = model.Entry.READ;
     entry.feed = 2;
     entry.datePublished = new Date();
     const promise = conn.createEntry(entry);
@@ -530,13 +530,13 @@ export async function query_entries_test() {
 
   // Query for all unread entries, assert that it finds the expected number of
   // entries
-  query = {read_state: db.Entry.UNREAD};
+  query = {read_state: model.Entry.UNREAD};
   entries = await conn.queryEntries(query);
   assert(entries.length === 10);
 
   // Query for all read entries, assert that it finds the expected number of
   // entries
-  query = {read_state: db.Entry.READ};
+  query = {read_state: model.Entry.READ};
   entries = await conn.queryEntries(query);
   assert(entries.length === 10);
 
@@ -615,30 +615,30 @@ export async function query_entries_test() {
   }
 
   // Query using particular feed unread only
-  query = {feed_id: 1, read_state: db.Entry.UNREAD};
+  query = {feed_id: 1, read_state: model.Entry.UNREAD};
   entries = await conn.queryEntries(query);
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === db.Entry.UNREAD);
+    assert(entry.readState === model.Entry.UNREAD);
   }
 
   // Feed 1 read only
-  query = {feed_id: 1, read_state: db.Entry.READ};
+  query = {feed_id: 1, read_state: model.Entry.READ};
   entries = await conn.queryEntries(query);
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === db.Entry.READ);
+    assert(entry.readState === model.Entry.READ);
   }
 
   // Feed 1, unread, offset 3
-  query = {feed_id: 1, read_state: db.Entry.UNREAD, offset: 3};
+  query = {feed_id: 1, read_state: model.Entry.UNREAD, offset: 3};
   entries = await conn.queryEntries(query);
   assert(entries.length === 2);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === db.Entry.UNREAD);
+    assert(entry.readState === model.Entry.UNREAD);
   }
 
   conn.close();
@@ -648,11 +648,11 @@ export async function query_entries_test() {
 export async function update_entry_test() {
   const db_name = 'update-entry-test';
   await idb.remove(db_name);
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
 
-  let entry = new db.Entry();
+  let entry = new model.Entry();
   entry.title = 'first-title';
   const entry_id = await conn.createEntry(entry);
   entry = await conn.getEntry('id', entry_id, false);
@@ -667,10 +667,10 @@ export async function update_entry_test() {
 export async function update_feed_test() {
   const db_name = 'update-feed-test';
   await idb.remove(db_name);
-  const conn = new db.Db();
+  const conn = new model.Model();
   conn.name = db_name;
   await conn.open();
-  let feed = new db.Feed();
+  let feed = new model.Feed();
   feed.title = 'first';
   const url = new URL('a://b.c');
   feed.appendURL(url);
@@ -686,13 +686,13 @@ export async function update_feed_test() {
 }
 
 export async function sanitize_entry_content_test() {
-  const entry = new db.Entry();
+  const entry = new model.Entry();
   let content = 'hello world';
   entry.content = content;
 
-  const conn = new db.Db();
+  const conn = new model.Model();
 
-  Db.sanitizeEntry(entry);
+  Model.sanitizeEntry(entry);
   assert(entry.content === content);
 
   // Test that line breaks are not filtered from content. This was previously
@@ -701,7 +701,7 @@ export async function sanitize_entry_content_test() {
   // and such, but filter_unprintables does not
   content = '<html><head></head><body>hello\nworld</body></html>';
   entry.content = content;
-  Db.sanitizeEntry(entry);
+  Model.sanitizeEntry(entry);
   let expected = '<html><head></head><body>hello\nworld</body></html>';
   assert(entry.content === expected, entry.content);
 }

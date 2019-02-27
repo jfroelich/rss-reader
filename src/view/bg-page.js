@@ -1,6 +1,6 @@
 import * as config from '/src/control/config.js';
 import * as cron_control from '/src/control/cron.js';
-import * as cdb from '/src/model/channeled-model.js';
+import * as channeled_model from '/src/model/channeled-model.js';
 import * as extension from '/src/control/extension.js';
 import * as ops from '/src/control/ops.js';
 import * as platform from '/src/lib/platform.js';
@@ -33,7 +33,7 @@ platform.lifecycle.add_install_listener(function(event) {
 
 platform.lifecycle.add_install_listener(async function(event) {
   if (event.reason === 'install') {
-    const session = new cdb.CDB();
+    const session = new channeled_model.ChanneledModel();
     await session.open();
     session.close();
   }
