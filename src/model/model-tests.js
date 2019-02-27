@@ -1,15 +1,15 @@
-import * as model from '/src/model/model.js';
 import {assert} from '/src/lib/assert.js';
 import * as idb from '/src/lib/idb.js';
+import {Entry, Feed, is_entry, is_feed, Model} from '/src/model/model.js';
 
 export async function archive_entries_test() {
   const db_name = 'archive-entries-test';
   await idb.remove(db_name);
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
-  await conn.archiveEntries(100);
-  conn.close();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
+  await model.archiveEntries(100);
+  model.close();
   await idb.remove(db_name);
 }
 
@@ -17,37 +17,37 @@ export async function count_unread_entries_by_feed_test() {
   const db_name = 'count-unread-entries-by-feed-test';
   await idb.remove(db_name);
 
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
 
-  const feed = new model.Feed();
+  const feed = new Feed();
   const url = new URL('http://www.example.com/feed.xml');
   feed.appendURL(url);
-  const feed_id = await conn.createFeed(feed);
+  const feed_id = await model.createFeed(feed);
 
   const num_entries_created_per_type = 5;
   const create_promises = [];
 
   for (let i = 0; i < 2; i++) {
-    const read_state = i === 0 ? model.Entry.UNREAD : model.Entry.READ;
+    const read_state = i === 0 ? Entry.UNREAD : Entry.READ;
     for (let j = 0; j < num_entries_created_per_type; j++) {
-      const entry = new model.Entry();
+      const entry = new Entry();
       entry.feed = feed_id;
       entry.readState = read_state;
-      const promise = conn.createEntry(entry);
+      const promise = model.createEntry(entry);
       create_promises.push(promise);
     }
   }
   const entry_ids = await Promise.all(create_promises);
 
-  let unread_count = await conn.countUnreadEntriesByFeed(feed_id);
+  let unread_count = await model.countUnreadEntriesByFeed(feed_id);
   assert(unread_count === num_entries_created_per_type);
 
   const non_existent_id = 123456789;
-  unread_count = await conn.countUnreadEntriesByFeed(non_existent_id);
+  unread_count = await model.countUnreadEntriesByFeed(non_existent_id);
   assert(unread_count === 0);
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
@@ -55,19 +55,19 @@ export async function count_unread_entries_test() {
   const db_name = 'count-unread-entries-test';
   await idb.remove(db_name);
 
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
 
-  let count = await conn.countUnreadEntries();
+  let count = await model.countUnreadEntries();
   assert(0 === count);
 
   // Generate some unread entries
   const insert_unread_count = 3;
   const entries_to_insert = [];
   for (let i = 0; i < insert_unread_count; i++) {
-    const entry = new model.Entry();
-    entry.readState = model.Entry.UNREAD;
+    const entry = new Entry();
+    entry.readState = Entry.UNREAD;
     entry.appendURL(new URL('a://b.c' + i));
     entries_to_insert.push(entry);
   }
@@ -75,8 +75,8 @@ export async function count_unread_entries_test() {
   // Generate some read entries
   const insert_read_count = 5;
   for (let i = 0; i < insert_read_count; i++) {
-    const entry = new model.Entry();
-    entry.readState = model.Entry.READ;
+    const entry = new Entry();
+    entry.readState = Entry.READ;
     entry.appendURL(new URL('d://e.f' + i));
     entries_to_insert.push(entry);
   }
@@ -84,171 +84,171 @@ export async function count_unread_entries_test() {
   // Store both the read and unread entries
   const insert_promises = [];
   for (const entry of entries_to_insert) {
-    insert_promises.push(conn.createEntry(entry));
+    insert_promises.push(model.createEntry(entry));
   }
   await Promise.all(insert_promises);
 
   // Assert the count of unread entries is equal to the number of inserted
   // unread entries.
-  count = await conn.countUnreadEntries();
+  count = await model.countUnreadEntries();
   assert(count === insert_unread_count);
 
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function create_entry_test() {
   const db_name = 'create-entry-test';
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
 
-  const entry = new model.Entry();
-  const id = await conn.createEntry(entry);
-  const stored_entry = await conn.getEntry('id', id, false);
+  const entry = new Entry();
+  const id = await model.createEntry(entry);
+  const stored_entry = await model.getEntry('id', id, false);
   assert(stored_entry);
-  assert(model.is_entry(stored_entry));
+  assert(is_entry(stored_entry));
   assert(stored_entry.id === id);
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function create_feed_test() {
   const db_name = 'create-feed-test';
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
 
-  const feed = new model.Feed();
+  const feed = new Feed();
   const feed_url = new URL('http://www.example.com/example.rss');
   feed.appendURL(feed_url);
-  const stored_feed_id = await conn.createFeed(feed);
-  assert(model.Feed.isValidId(stored_feed_id));
-  let stored_feed = await conn.getFeed('url', feed_url, true);
-  assert(model.is_feed(stored_feed));
-  stored_feed = await conn.getFeed('id', stored_feed_id, false);
-  assert(model.is_feed(stored_feed));
-  conn.close();
+  const stored_feed_id = await model.createFeed(feed);
+  assert(Feed.isValidId(stored_feed_id));
+  let stored_feed = await model.getFeed('url', feed_url, true);
+  assert(is_feed(stored_feed));
+  stored_feed = await model.getFeed('id', stored_feed_id, false);
+  assert(is_feed(stored_feed));
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function create_feed_url_constraint_test() {
   const db_name = 'create-feed-url-constraint-test';
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
 
-  const feed1 = new model.Feed();
+  const feed1 = new Feed();
   feed1.appendURL(new URL('http://www.example.com/example.rss'));
-  const feed2 = new model.Feed();
+  const feed2 = new Feed();
   feed2.appendURL(new URL('http://www.example.com/example.rss'));
 
-  await conn.createFeed(feed1);
+  await model.createFeed(feed1);
   let create_error;
   try {
-    await conn.createFeed(feed2);
+    await model.createFeed(feed2);
   } catch (error) {
     create_error = error;
   }
 
   // Verify that the second attempt to store fails as expected
   assert(create_error instanceof DOMException);
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function create_feeds_test() {
   const db_name = 'create-feeds-test';
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
   const num_feeds = 3, feeds = [];
   for (let i = 0; i < num_feeds; i++) {
-    const feed = new model.Feed();
+    const feed = new Feed();
     feed.appendURL(new URL('a://b.c' + i));
     feeds.push(feed);
   }
-  const ids = await conn.createFeeds(feeds);
+  const ids = await model.createFeeds(feeds);
   assert(ids.length === num_feeds);
-  const stored_feeds = await conn.getFeeds('all', false);
+  const stored_feeds = await model.getFeeds('all', false);
   assert(stored_feeds.length === num_feeds);
-  const get_proms = ids.map(id => conn.getFeed('id', id, false));
+  const get_proms = ids.map(id => model.getFeed('id', id, false));
   const feeds_by_id = await Promise.all(get_proms);
   for (const feed of feeds_by_id) {
-    assert(model.is_feed(feed));
-    assert(model.Feed.isValidId(feed.id));
+    assert(is_feed(feed));
+    assert(Feed.isValidId(feed.id));
   }
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function delete_entry_test() {
   const db_name = 'delete-entry-test';
   await idb.remove(db_name);
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
 
-  const entry1 = new model.Entry();
+  const entry1 = new Entry();
   const url1 = new URL('https://www.example1.com');
   entry1.appendURL(url1);
 
-  const entry2 = new model.Entry();
+  const entry2 = new Entry();
   const url2 = new URL('https://www.example2.com');
   entry2.appendURL(url2);
 
-  const entry_id1 = await conn.createEntry(entry1);
-  const entry_id2 = await conn.createEntry(entry2);
-  let stored_entry = await conn.getEntry('id', entry_id1, false);
+  const entry_id1 = await model.createEntry(entry1);
+  const entry_id2 = await model.createEntry(entry2);
+  let stored_entry = await model.getEntry('id', entry_id1, false);
   assert(stored_entry);
-  await conn.deleteEntry(entry_id1, 'test');
+  await model.deleteEntry(entry_id1, 'test');
   stored_entry = undefined;
-  stored_entry = await conn.getEntry('id', entry_id1, false);
+  stored_entry = await model.getEntry('id', entry_id1, false);
   assert(!stored_entry);
   stored_entry = undefined;
-  stored_entry = await conn.getEntry('id', entry_id2, false);
+  stored_entry = await model.getEntry('id', entry_id2, false);
   assert(stored_entry);
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function delete_feed_test() {
   const db_name = 'delete-feed-test';
   await idb.remove(db_name);
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
 
-  const feed1 = new model.Feed();
+  const feed1 = new Feed();
   const url1 = new URL('http://www.example.com/foo.xml');
   feed1.appendURL(url1);
-  const feed_id1 = await conn.createFeed(feed1);
-  const feed2 = new model.Feed();
+  const feed_id1 = await model.createFeed(feed1);
+  const feed2 = new Feed();
   const url2 = new URL('http://www.example.com/bar.xml');
   feed2.appendURL(url2);
-  const feed_id2 = await conn.createFeed(feed2);
-  await conn.deleteFeed(feed_id1);
-  const stored_feed1 = await conn.getFeed('id', feed_id1, false);
+  const feed_id2 = await model.createFeed(feed2);
+  await model.deleteFeed(feed_id1);
+  const stored_feed1 = await model.getFeed('id', feed_id1, false);
   assert(!stored_feed1);
-  const stored_feed2 = await conn.getFeed('id', feed_id2, false);
+  const stored_feed2 = await model.getFeed('id', feed_id2, false);
   assert(stored_feed2);
   const non_existent_id = 123456789;
-  await conn.deleteFeed(non_existent_id);
-  await conn.deleteFeed(feed_id2);
-  conn.close();
+  await model.deleteFeed(non_existent_id);
+  await model.deleteFeed(feed_id2);
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function is_entry_test() {
-  const correct = new model.Entry();
-  assert(model.is_entry(correct));
-  assert(!model.is_feed(correct));
+  const correct = new Entry();
+  assert(is_entry(correct));
+  assert(!is_feed(correct));
   const nomagic = {};
-  assert(!model.is_entry(nomagic));
+  assert(!is_entry(nomagic));
 }
 
 export async function append_entry_url_test() {
-  const entry = new model.Entry();
+  const entry = new Entry();
   assert(entry.urls === undefined || entry.urls.length === 0);
   entry.appendURL(new URL('a://b.c1'));
   assert(entry.urls);
@@ -261,19 +261,19 @@ export async function append_entry_url_test() {
   appended = entry.appendURL(url2);
   assert(entry.urls.length === 2);
   assert(appended === false);
-  assert(model.is_entry(entry));
+  assert(is_entry(entry));
 }
 
 export async function is_feed_test() {
-  const fcorrect = new model.Feed();
-  assert(model.is_feed(fcorrect));
-  assert(!model.is_entry(fcorrect));
+  const fcorrect = new Feed();
+  assert(is_feed(fcorrect));
+  assert(!is_entry(fcorrect));
   const nomagic = {};
-  assert(!model.is_feed(nomagic));
+  assert(!is_feed(nomagic));
 }
 
 export async function append_feed_url_test() {
-  const feed = new model.Feed();
+  const feed = new Feed();
   assert(!feed.hasURL());  // precondition
   feed.appendURL(new URL('a://b.c1'));
   assert(feed.hasURL());  // expect change
@@ -282,103 +282,103 @@ export async function append_feed_url_test() {
   assert(feed.urls.length === 2);  // expect increment
   feed.appendURL(url2);
   assert(feed.urls.length === 2);  // expect no change
-  assert(model.is_feed(feed));        // modifications preserved type
+  assert(is_feed(feed));     // modifications preserved type
 }
 
 export async function get_entry_test() {
   const db_name = 'get-entry-test';
   await idb.remove(db_name);
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
-  const entry = new model.Entry();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
+  const entry = new Entry();
   entry.title = 'test';
-  const entry_id = await conn.createEntry(entry);
-  const stored_entry = await conn.getEntry('id', entry_id, false);
+  const entry_id = await model.createEntry(entry);
+  const stored_entry = await model.getEntry('id', entry_id, false);
   assert(stored_entry);
   const non_existent_id = 123456789;
-  const bad_entry = await conn.getEntry('id', non_existent_id, false);
+  const bad_entry = await model.getEntry('id', non_existent_id, false);
   assert(bad_entry === undefined);
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function get_entries_test() {
   const db_name = 'get-entries-test';
   await idb.remove(db_name);
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
   const n = 5;
   const create_promises = [];
   for (let i = 0; i < n; i++) {
-    const entry = new model.Entry();
+    const entry = new Entry();
     entry.title = 'title ' + i;
-    const promise = conn.createEntry(entry);
+    const promise = model.createEntry(entry);
     create_promises.push(promise);
   }
   await Promise.all(create_promises);
-  const entries = await conn.getEntries('all', 0, 0);
+  const entries = await model.getEntries('all', 0, 0);
   assert(entries.length === n);
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function get_feed_ids_test() {
   const db_name = 'get-feed-ids-test';
   await idb.remove(db_name);
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
   const n = 5;
   const create_promises = [];
   for (let i = 0; i < n; i++) {
-    const feed = new model.Feed();
+    const feed = new Feed();
     const url = new URL('a://b.c/feed' + i + '.xml');
     feed.appendURL(url);
-    const promise = conn.createFeed(feed);
+    const promise = model.createFeed(feed);
     create_promises.push(promise);
   }
   const created_feed_ids = await Promise.all(create_promises);
-  const feed_ids = await conn.getFeedIds();
+  const feed_ids = await model.getFeedIds();
   assert(feed_ids.length === created_feed_ids.length);
   for (const id of created_feed_ids) {
     assert(feed_ids.includes(id));
   }
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function get_feed_test() {
   const db_name = 'get-feed-test';
   await idb.remove(db_name);
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
-  const feed = new model.Feed();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
+  const feed = new Feed();
   const url = new URL('a://b.c');
   feed.appendURL(url);
-  const feed_id = await conn.createFeed(feed);
-  assert(model.Feed.isValidId(feed_id));
-  const stored_feed = await conn.getFeed('id', feed_id, false);
+  const feed_id = await model.createFeed(feed);
+  assert(Feed.isValidId(feed_id));
+  const stored_feed = await model.getFeed('id', feed_id, false);
   assert(stored_feed);
-  const stored_feed2 = await conn.getFeed('url', url, false);
+  const stored_feed2 = await model.getFeed('url', url, false);
   assert(stored_feed2);
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function get_feeds_test() {
   const db_name = 'get-feeds-test';
   await idb.remove(db_name);
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
   const n = 5;           // number of feeds to store and test against
   let active_count = 0;  // track number of not-inactive
   const create_promises = [];
   for (let i = 0; i < n; i++) {
-    const feed = new model.Feed();
+    const feed = new Feed();
     const url = new URL('a://b.c' + i);
     feed.appendURL(url);
     // make some inactive
@@ -387,133 +387,133 @@ export async function get_feeds_test() {
     } else {
       active_count++;
     }
-    const promise = conn.createFeed(feed);
+    const promise = model.createFeed(feed);
     create_promises.push(promise);
   }
   const ids = await Promise.all(create_promises);
-  const unsorted = await conn.getFeeds('all', false);
+  const unsorted = await model.getFeeds('all', false);
   assert(unsorted.length === n);
   for (const feed of unsorted) {
     assert(feed);
   }
-  const sorted = await conn.getFeeds('all', true);
+  const sorted = await model.getFeeds('all', true);
   assert(sorted.length === n);
   for (const feed of sorted) {
     assert(feed);
   }
-  const actives = await conn.getFeeds('active', false);
+  const actives = await model.getFeeds('active', false);
   assert(actives.length === active_count);
   for (const feed of actives) {
     assert(feed);
     assert(feed.active);
   }
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function iterate_entries_test() {
   const db_name = 'iterate-entries-test';
   await idb.remove(db_name);
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
 
   const n = 5;
   const create_promises = [];
   for (let i = 0; i < n; i++) {
-    const entry = new model.Entry();
+    const entry = new Entry();
     entry.title = 'test' + i;
-    const promise = conn.createEntry(entry);
+    const promise = model.createEntry(entry);
     create_promises.push(promise);
   }
   const ids = await Promise.all(create_promises);
 
   let num_iterated = 0;
-  await conn.iterateEntries(entry => {
+  await model.iterateEntries(entry => {
     assert(entry);
     num_iterated++;
   });
   assert(num_iterated === n);
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function set_entry_read_state_test() {
   const db_name = set_entry_read_state_test.name;
   await idb.remove(db_name);
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
-  const entry = new model.Entry();
-  entry.readState = model.Entry.UNREAD;
-  const id = await conn.createEntry(entry);
-  let stored_entry = await conn.getEntry('id', id, false);
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
+  const entry = new Entry();
+  entry.readState = Entry.UNREAD;
+  const id = await model.createEntry(entry);
+  let stored_entry = await model.getEntry('id', id, false);
   assert(stored_entry);
-  assert(stored_entry.readState === model.Entry.UNREAD);
-  await conn.setEntryReadState(id, true);
+  assert(stored_entry.readState === Entry.UNREAD);
+  await model.setEntryReadState(id, true);
   stored_entry = undefined;
-  stored_entry = await conn.getEntry('id', id, false);
+  stored_entry = await model.getEntry('id', id, false);
   assert(stored_entry);
-  assert(stored_entry.readState === model.Entry.READ);
+  assert(stored_entry.readState === Entry.READ);
 
   // Now mark it again as unread, and assert
-  await conn.setEntryReadState(id, false);
+  await model.setEntryReadState(id, false);
   stored_entry = undefined;
-  stored_entry = await conn.getEntry('id', id, false);
+  stored_entry = await model.getEntry('id', id, false);
   assert(stored_entry);
-  assert(stored_entry.readState === model.Entry.UNREAD);
+  assert(stored_entry.readState === Entry.UNREAD);
 
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function query_entries_test() {
   const db_name = 'query-entries-test';
   await idb.remove(db_name);
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
 
   const create_promises = [];
   let entry;
 
   // Create 5 unread entries tied to feed 1
   for (let i = 0; i < 5; i++) {
-    entry = new model.Entry();
-    entry.readState = model.Entry.UNREAD;
+    entry = new Entry();
+    entry.readState = Entry.UNREAD;
     entry.feed = 1;
     entry.datePublished = new Date();
-    const promise = conn.createEntry(entry);
+    const promise = model.createEntry(entry);
     create_promises.push(promise);
   }
 
   // Create 5 read entries tied to feed 1
   for (let i = 0; i < 5; i++) {
-    entry = new model.Entry();
-    entry.readState = model.Entry.READ;
+    entry = new Entry();
+    entry.readState = Entry.READ;
     entry.feed = 1;
     entry.datePublished = new Date();
-    const promise = conn.createEntry(entry);
+    const promise = model.createEntry(entry);
     create_promises.push(promise);
   }
 
   // Create 5 unread entries tied to feed 2
   for (let i = 0; i < 5; i++) {
-    entry = new model.Entry();
-    entry.readState = model.Entry.UNREAD;
+    entry = new Entry();
+    entry.readState = Entry.UNREAD;
     entry.feed = 2;
     entry.datePublished = new Date();
-    const promise = conn.createEntry(entry);
+    const promise = model.createEntry(entry);
     create_promises.push(promise);
   }
 
   // Create 5 read entries tied to feed 2
   for (let i = 0; i < 5; i++) {
-    entry = new model.Entry();
-    entry.readState = model.Entry.READ;
+    entry = new Entry();
+    entry.readState = Entry.READ;
     entry.feed = 2;
     entry.datePublished = new Date();
-    const promise = conn.createEntry(entry);
+    const promise = model.createEntry(entry);
     create_promises.push(promise);
   }
 
@@ -525,25 +525,25 @@ export async function query_entries_test() {
 
   // Query for all entries, assert that it finds the expected number of
   // entries. Also test an undefined query parameter here.
-  entries = await conn.queryEntries();
+  entries = await model.queryEntries();
   assert(entries.length === 20);
 
   // Query for all unread entries, assert that it finds the expected number of
   // entries
-  query = {read_state: model.Entry.UNREAD};
-  entries = await conn.queryEntries(query);
+  query = {read_state: Entry.UNREAD};
+  entries = await model.queryEntries(query);
   assert(entries.length === 10);
 
   // Query for all read entries, assert that it finds the expected number of
   // entries
-  query = {read_state: model.Entry.READ};
-  entries = await conn.queryEntries(query);
+  query = {read_state: Entry.READ};
+  entries = await model.queryEntries(query);
   assert(entries.length === 10);
 
   // Query using reverse direction. Assert that entries are returned in the
   // expected order.
   query = {direction: 'DESC'};
-  entries = await conn.queryEntries(query);
+  entries = await model.queryEntries(query);
   // Walk the array. When querying by DESC order, each entry's datePublished
   // value should be greater than or equal to the next one
   for (let i = 0; i < entries.length - 1; i++) {
@@ -555,52 +555,52 @@ export async function query_entries_test() {
   // Query using an offset and no limit. Here choose the smallest offset that
   // is not 0.
   query = {offset: 1};
-  entries = await conn.queryEntries(query);
+  entries = await model.queryEntries(query);
   assert(entries.length === 20 - query.offset);
 
   // Query using no limit and an offset one less than the max
   query = {offset: 19};
-  entries = await conn.queryEntries(query);
+  entries = await model.queryEntries(query);
   assert(entries.length === 20 - query.offset);
 
   // Query using no limit and an arbitrary offset
   query = {offset: 11};
-  entries = await conn.queryEntries(query);
+  entries = await model.queryEntries(query);
   assert(entries.length === 20 - query.offset);
 
   // Query using a limit greater than the number of existing entries
   query = {offset: 50000};
-  entries = await conn.queryEntries(query);
+  entries = await model.queryEntries(query);
   assert(entries.length === 0);
 
   // Query using a limit without an offset
   query = {limit: 10};
-  entries = await conn.queryEntries(query);
+  entries = await model.queryEntries(query);
   assert(entries.length <= 10);
 
   // Query using the smallest limit
   query = {limit: 1};
-  entries = await conn.queryEntries(query);
+  entries = await model.queryEntries(query);
   assert(entries.length <= 1);
 
   // Query using offset and the smallest limit
   query = {offset: 10, limit: 1};
-  entries = await conn.queryEntries(query);
+  entries = await model.queryEntries(query);
   assert(entries.length <= 1);
 
   // Query using limit greater than number of entries
   query = {limit: 9001};
-  entries = await conn.queryEntries(query);
+  entries = await model.queryEntries(query);
   assert(entries.length === 20);
 
   // Query using an arbitrary offset and an arbitrary limit
   query = {offset: 5, limit: 8};
-  entries = await conn.queryEntries(query);
+  entries = await model.queryEntries(query);
   assert(entries.length === 8);
 
   // Query using feed1
   query = {feed_id: 1};
-  entries = await conn.queryEntries(query);
+  entries = await model.queryEntries(query);
   assert(entries.length === 10);
   for (const entry of entries) {
     assert(entry.feed === 1);
@@ -608,89 +608,89 @@ export async function query_entries_test() {
 
   // Query using feed2
   query = {feed_id: 2};
-  entries = await conn.queryEntries(query);
+  entries = await model.queryEntries(query);
   assert(entries.length === 10);
   for (const entry of entries) {
     assert(entry.feed === 2);
   }
 
   // Query using particular feed unread only
-  query = {feed_id: 1, read_state: model.Entry.UNREAD};
-  entries = await conn.queryEntries(query);
+  query = {feed_id: 1, read_state: Entry.UNREAD};
+  entries = await model.queryEntries(query);
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === model.Entry.UNREAD);
+    assert(entry.readState === Entry.UNREAD);
   }
 
   // Feed 1 read only
-  query = {feed_id: 1, read_state: model.Entry.READ};
-  entries = await conn.queryEntries(query);
+  query = {feed_id: 1, read_state: Entry.READ};
+  entries = await model.queryEntries(query);
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === model.Entry.READ);
+    assert(entry.readState === Entry.READ);
   }
 
   // Feed 1, unread, offset 3
-  query = {feed_id: 1, read_state: model.Entry.UNREAD, offset: 3};
-  entries = await conn.queryEntries(query);
+  query = {feed_id: 1, read_state: Entry.UNREAD, offset: 3};
+  entries = await model.queryEntries(query);
   assert(entries.length === 2);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === model.Entry.UNREAD);
+    assert(entry.readState === Entry.UNREAD);
   }
 
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function update_entry_test() {
   const db_name = 'update-entry-test';
   await idb.remove(db_name);
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
 
-  let entry = new model.Entry();
+  let entry = new Entry();
   entry.title = 'first-title';
-  const entry_id = await conn.createEntry(entry);
-  entry = await conn.getEntry('id', entry_id, false);
+  const entry_id = await model.createEntry(entry);
+  entry = await model.getEntry('id', entry_id, false);
   entry.title = 'second-title';
-  await conn.updateEntry(entry);
-  entry = await conn.getEntry('id', entry_id, false);
+  await model.updateEntry(entry);
+  entry = await model.getEntry('id', entry_id, false);
   assert(entry.title === 'second-title');
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function update_feed_test() {
   const db_name = 'update-feed-test';
   await idb.remove(db_name);
-  const conn = new model.Model();
-  conn.name = db_name;
-  await conn.open();
-  let feed = new model.Feed();
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
+  let feed = new Feed();
   feed.title = 'first';
   const url = new URL('a://b.c');
   feed.appendURL(url);
-  let new_id = await conn.createFeed(feed);
+  let new_id = await model.createFeed(feed);
   feed.id = new_id;
   feed.title = 'second';
-  await conn.updateFeed(feed, true);
+  await model.updateFeed(feed, true);
   feed = undefined;  // paranoia
-  feed = await conn.getFeed('id', new_id, false);
+  feed = await model.getFeed('id', new_id, false);
   assert(feed.title = 'second');
-  conn.close();
+  model.close();
   await idb.remove(db_name);
 }
 
 export async function sanitize_entry_content_test() {
-  const entry = new model.Entry();
+  const entry = new Entry();
   let content = 'hello world';
   entry.content = content;
 
-  const conn = new model.Model();
+  const model = new Model();
 
   Model.sanitizeEntry(entry);
   assert(entry.content === content);
