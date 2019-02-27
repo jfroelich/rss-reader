@@ -21,7 +21,7 @@ export async function fetch_image_test() {
   assert(response);
 
   // Test against a non-existent image
-  path = '/src/core/net/i-do-not-exist.png';
+  path = '/src/control/net/i-do-not-exist.png';
   url_string = platform.extension.get_url_string(path);
   url = new URL(url_string);
   options = undefined;  // reset for isolation, presumably indefinite default

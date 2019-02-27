@@ -1,8 +1,8 @@
-import * as config from '/src/core/config.js';
-import * as cron_control from '/src/core/cron.js';
-import * as cdb from '/src/core/db/cdb.js';
-import * as extension from '/src/core/extension.js';
-import * as ops from '/src/core/ops.js';
+import * as config from '/src/control/config.js';
+import * as cron_control from '/src/control/cron.js';
+import * as cdb from '/src/model/channeled-model.js';
+import * as extension from '/src/control/extension.js';
+import * as ops from '/src/control/ops.js';
 import * as platform from '/src/lib/platform.js';
 
 // Open a channel with a lifetime equal to the background page lifetime.

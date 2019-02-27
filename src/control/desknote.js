@@ -1,4 +1,4 @@
-import * as extension from '/src/core/extension.js';
+import * as extension from '/src/control/extension.js';
 import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
 

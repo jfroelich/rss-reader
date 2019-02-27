@@ -1,6 +1,6 @@
-import * as cdb from '/src/core/db/cdb.js';
-import * as desknote from '/src/core/desknote.js';
-import {fetch_feed} from '/src/core/fetch-feed.js';
+import * as cdb from '/src/model/channeled-model.js';
+import * as desknote from '/src/control/desknote.js';
+import {fetch_feed} from '/src/control/fetch-feed.js';
 import {assert} from '/src/lib/assert.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as file_utils from '/src/lib/file-utils.js';

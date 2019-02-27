@@ -1,6 +1,6 @@
-import * as cdb from '/src/core/db/cdb.js';
-import * as ops from '/src/core/ops.js';
-import {PollOperation} from '/src/core/poll-feeds.js';
+import * as cdb from '/src/model/channeled-model.js';
+import * as ops from '/src/control/ops.js';
+import {PollOperation} from '/src/control/poll-feeds.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';

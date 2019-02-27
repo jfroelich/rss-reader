@@ -1,4 +1,4 @@
-import * as image_utils from '/src/core/dom-filters/image-utils.js';
+import * as image_utils from '/src/control/dom-filters/image-utils.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import * as boilerplate from '/src/lib/boilerplate.js';
 import {coerce_element} from '/src/lib/coerce-element.js';

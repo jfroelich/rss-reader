@@ -1,8 +1,8 @@
-import * as cdb from '/src/core/db/cdb.js';
-import * as desknote from '/src/core/desknote.js';
-import * as dom_filters from '/src/core/dom-filters/dom-filters.js';
-import {fetch_feed} from '/src/core/fetch-feed.js';
-import * as rewrite_rules from '/src/core/rewrite-rules.js';
+import * as cdb from '/src/model/channeled-model.js';
+import * as desknote from '/src/control/desknote.js';
+import * as dom_filters from '/src/control/dom-filters/dom-filters.js';
+import {fetch_feed} from '/src/control/fetch-feed.js';
+import * as rewrite_rules from '/src/control/rewrite-rules.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as document_utils from '/src/lib/document-utils.js';

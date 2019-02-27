@@ -1,5 +1,5 @@
-import * as cdb from '/src/core/db/cdb.js';
-import * as ops from '/src/core/ops.js';
+import * as cdb from '/src/model/channeled-model.js';
+import * as ops from '/src/control/ops.js';
 import {assert} from '/src/lib/assert.js';
 import * as idb from '/src/lib/idb.js';
 

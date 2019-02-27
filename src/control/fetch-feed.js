@@ -1,4 +1,4 @@
-import * as cdb from '/src/core/db/cdb.js';
+import * as cdb from '/src/model/channeled-model.js';
 import {assert} from '/src/lib/assert.js';
 import {Deadline} from '/src/lib/deadline.js';
 import * as feed_parser from '/src/lib/feed-parser.js';

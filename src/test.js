@@ -1,9 +1,9 @@
-import * as cdb_tests from '/src/core/db/cdb-tests.js';
-import * as db_tests from '/src/core/db/db-tests.js';
-import * as dom_filter_tests from '/src/core/dom-filters/dom-filter-tests.js';
-import {fetch_feed_test} from '/src/core/fetch-feed-test.js';
-import * as ops_tests from '/src/core/ops-tests.js';
-import * as rewrite_url_tests from '/src/core/rewrite-url-test.js';
+import * as cdb_tests from '/src/model/channeled-model-tests.js';
+import * as db_tests from '/src/model/model-tests.js';
+import * as dom_filter_tests from '/src/control/dom-filters/dom-filter-tests.js';
+import {fetch_feed_test} from '/src/control/fetch-feed-test.js';
+import * as ops_tests from '/src/control/ops-tests.js';
+import * as rewrite_url_tests from '/src/control/rewrite-url-test.js';
 import * as array_utils_tests from '/src/lib/array-utils-tests.js';
 import {coerce_element_test} from '/src/lib/coerce-element-test.js';
 import {color_contrast_filter_test} from '/src/lib/color-contrast-filter-test.js';

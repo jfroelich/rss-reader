@@ -1,4 +1,4 @@
-import * as dom_filters from '/src/core/dom-filters/dom-filters.js';
+import * as dom_filters from '/src/control/dom-filters/dom-filters.js';
 import {assert} from '/src/lib/assert.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 import * as html_utils from '/src/lib/html-utils.js';
@@ -171,7 +171,7 @@ export async function image_lazy_filter_test() {
 
 export async function image_reachable_filter_test() {
   let input = '<img id="unreachable" src="not-reachable.gif">';
-  input += '<img class="reachable" src="/src/core/dom-filters/';
+  input += '<img class="reachable" src="/src/control/dom-filters/';
   input += 'basic-image.png">';
   let doc = html_utils.parse_html(input);
 
@@ -192,7 +192,7 @@ export async function image_reachable_filter_test() {
 // Assert the ordinary case of a basic html document with an image with unknown
 // attributes
 export async function image_size_filter_test() {
-  let input = '<img src="/src/core/dom-filters/basic-image.png">';
+  let input = '<img src="/src/control/dom-filters/basic-image.png">';
   let doc = html_utils.parse_html(input);
   await dom_filters.image_size_filter(doc);
   const image = doc.querySelector('img');

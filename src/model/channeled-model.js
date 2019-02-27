@@ -1,4 +1,4 @@
-import {Db, Entry} from '/src/core/db/db.js';
+import {Db, Entry} from '/src/model/model.js';
 import {assert} from '/src/lib/assert.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 
@@ -11,7 +11,7 @@ export {
   is_feed,
   NotFoundError,
   ValidationError
-} from '/src/core/db/db.js';
+} from '/src/model/model.js';
 // clang-format on
 
 export class CDB {

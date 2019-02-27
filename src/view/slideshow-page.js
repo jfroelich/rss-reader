@@ -1,7 +1,7 @@
-import * as config from '/src/core/config.js';
-import * as cdb from '/src/core/db/cdb.js';
-import * as ops from '/src/core/ops.js';
-import {PollOperation} from '/src/core/poll-feeds.js';
+import * as config from '/src/control/config.js';
+import * as cdb from '/src/model/channeled-model.js';
+import * as ops from '/src/control/ops.js';
+import {PollOperation} from '/src/control/poll-feeds.js';
 import {assert} from '/src/lib/assert.js';
 import * as favicon from '/src/lib/favicon.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
