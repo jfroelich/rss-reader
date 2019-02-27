@@ -2,6 +2,7 @@ import {assert} from '/src/lib/assert.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 import {ChanneledModel} from '/src/model/channeled-model.js';
+import {Feed} from '/src/model/feed.js';
 
 export async function cdb_delete_feed_test() {
   const db_name = 'channeled_model-delete-feed-test';

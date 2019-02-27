@@ -1,18 +1,9 @@
-import {Model, Entry} from '/src/model/model.js';
 import {assert} from '/src/lib/assert.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
+import {Entry} from '/src/model/entry.js';
+import {Model} from '/src/model/model.js';
 
-// clang-format off
-export {
-  Entry,
-  Feed,
-  InvalidStateError,
-  is_entry,
-  is_feed,
-  NotFoundError,
-  ValidationError
-} from '/src/model/model.js';
-// clang-format on
+export {InvalidStateError, NotFoundError, ValidationError} from '/src/model/model.js';
 
 export class ChanneledModel {
   constructor() {

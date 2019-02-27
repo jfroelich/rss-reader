@@ -1,4 +1,3 @@
-import * as channeled_model from '/src/model/channeled-model.js';
 import * as desknote from '/src/control/desknote.js';
 import {fetch_feed} from '/src/control/fetch-feed.js';
 import {assert} from '/src/lib/assert.js';
@@ -8,6 +7,8 @@ import * as net from '/src/lib/net.js';
 import * as opml_utils from '/src/lib/opml-utils.js';
 import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
+import * as channeled_model from '/src/model/channeled-model.js';
+import {Feed} from '/src/model/feed.js';
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar
 export async function badge_refresh() {
@@ -118,7 +119,7 @@ export async function opml_import(session, files) {
 
   // Convert urls into feeds
   const feeds = url_set.map(url => {
-    const feed = new channeled_model.Feed();
+    const feed = new Feed();
     feed.appendURL(url);
     return feed;
   });
@@ -209,7 +210,7 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   feed.id = await session.createFeed(feed);
 
   if (notify) {
-    // TODO: use channeled_model.Feed.getURLString
+    // TODO: use Feed.getURLString
     const feed_title = feed.title || feed.urls[feed.urls.length - 1];
     const note = {};
     note.title = 'Subscribed!';

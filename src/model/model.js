@@ -9,11 +9,6 @@ import * as magic from '/src/model/magic.js';
 import {Entry, is_entry} from '/src/model/entry.js';
 import {Feed, is_feed} from '/src/model/feed.js';
 
-// TEMP: export from here until callers updated to directly access
-export {Entry, is_entry} from '/src/model/entry.js';
-export {Feed, is_feed} from '/src/model/feed.js';
-
-
 export class Model {
   constructor() {
     this.conn = undefined;

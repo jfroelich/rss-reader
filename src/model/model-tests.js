@@ -1,6 +1,8 @@
 import {assert} from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
-import {Entry, Feed, is_entry, is_feed, Model} from '/src/model/model.js';
+import {Entry, is_entry} from '/src/model/entry.js';
+import {Feed, is_feed} from '/src/model/feed.js';
+import {Model} from '/src/model/model.js';
 
 export async function archive_entries_test() {
   const db_name = 'archive-entries-test';
@@ -282,7 +284,7 @@ export async function append_feed_url_test() {
   assert(feed.urls.length === 2);  // expect increment
   feed.appendURL(url2);
   assert(feed.urls.length === 2);  // expect no change
-  assert(is_feed(feed));     // modifications preserved type
+  assert(is_feed(feed));           // modifications preserved type
 }
 
 export async function get_entry_test() {
