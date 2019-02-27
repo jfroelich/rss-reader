@@ -6,76 +6,12 @@ import * as object_utils from '/src/lib/object-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
 import {sizeof} from '/src/lib/sizeof.js';
 import * as magic from '/src/model/magic.js';
-import * as utils from '/src/model/utils.js';
+import {Entry, is_entry} from '/src/model/entry.js';
+import {Feed, is_feed} from '/src/model/feed.js';
 
-export class Entry {
-  constructor() {
-    this.magic = magic.ENTRY_MAGIC;
-  }
-
-  appendURL(url) {
-    assert(is_entry(this));
-    return utils.append_url_common(this, url);
-  }
-
-  // Returns the last url in this entry's url list
-  getURLString() {
-    assert(is_entry(this));
-    assert(Entry.prototype.hasURL.call(this));
-    return this.urls[this.urls.length - 1];
-  }
-
-  hasURL() {
-    assert(is_entry(this));
-    return Array.isArray(this.urls) && this.urls.length;
-  }
-
-  static isValidId(value) {
-    return Number.isInteger(value) && value > 0;
-  }
-}
-
-Entry.INVALID_ID = 0;
-Entry.UNREAD = 0;
-Entry.READ = 1;
-Entry.UNARCHIVED = 0;
-Entry.ARCHIVED = 1;
-
-export class Feed {
-  constructor() {
-    this.magic = magic.FEED_MAGIC;
-  }
-
-  appendURL(url) {
-    assert(is_feed(this));
-    return utils.append_url_common(this, url);
-  }
-
-  getURLString() {
-    assert(is_feed(this));
-    assert(Feed.prototype.hasURL.call(this));
-    return this.urls[this.urls.length - 1];
-  }
-
-  hasURL() {
-    assert(is_feed(this));
-    return Array.isArray(this.urls) && this.urls.length;
-  }
-
-  static isValidId(value) {
-    return Number.isInteger(value) && value > 0;
-  }
-}
-
-Feed.INVALID_ID = 0;
-
-export function is_entry(value) {
-  return typeof value === 'object' && value.magic === magic.ENTRY_MAGIC;
-}
-
-export function is_feed(value) {
-  return typeof value === 'object' && value.magic === magic.FEED_MAGIC;
-}
+// TEMP: export from here until callers updated to directly access
+export {Entry, is_entry} from '/src/model/entry.js';
+export {Feed, is_feed} from '/src/model/feed.js';
 
 
 export class Model {
