@@ -1,6 +1,7 @@
 import {assert} from '/src/lib/assert.js';
 import * as html_utils from '/src/lib/html-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
+import {Feed} from '/src/model/feed.js';
 import * as magic from '/src/model/magic.js';
 import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/model/utils.js';
 
