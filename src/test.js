@@ -21,6 +21,8 @@ import {sniffer_test} from '/src/lib/sniffer-test.js';
 import * as string_utils_tests from '/src/lib/string-utils-tests.js';
 import * as unwrap_element_tests from '/src/lib/unwrap-element-tests.js';
 import * as url_utils_tests from '/src/lib/url-utils-tests.js';
+import * as entry_tests from '/src/model/entry-tests.js';
+import * as feed_tests from '/src/model/feed-tests.js';
 import * as model_tests from '/src/model/model-tests.js';
 
 const registry = [];
@@ -30,7 +32,9 @@ register_test(color_contrast_filter_test);
 register_test(color_test);
 register_module_tests(document_utils_tests);
 register_module_tests(dom_filter_tests);
+register_module_tests(entry_tests);
 register_module_tests(favicon_tests);
+register_module_tests(feed_tests);
 register_test(fetch_feed_test);
 register_test(fetch_html_test);
 register_test(fetch_image_test);

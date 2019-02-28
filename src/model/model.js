@@ -24,13 +24,6 @@ export function Model() {
 // |timeout| is the optional maximum time in milliseconds of type Deadline
 // before considering an attempt to open a connection to the database a failure.
 Model.prototype.open = async function(timeout = INDEFINITE) {
-  assert(this.channel_class);
-  assert(timeout instanceof Deadline);
-
-  assert(typeof this.channel_name === 'string');
-  assert(typeof this.name === 'string');
-  assert(typeof this.upgradeHandler === 'function');
-
   this.conn = await indexeddb_utils.open(
       this.name, this.version, this.upgradeHandler.bind(this), timeout);
   this.channel = new this.channel_class(this.channel_name);

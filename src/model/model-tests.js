@@ -281,52 +281,6 @@ export async function delete_feed_test2() {
   await indexeddb_utils.remove(db_name);
 }
 
-export async function is_entry_test() {
-  const correct = new Entry();
-  assert(is_entry(correct));
-  assert(!is_feed(correct));
-  const nomagic = {};
-  assert(!is_entry(nomagic));
-}
-
-export async function append_entry_url_test() {
-  const entry = new Entry();
-  assert(entry.urls === undefined || entry.urls.length === 0);
-  entry.appendURL(new URL('a://b.c1'));
-  assert(entry.urls);
-  assert(entry.urls.length === 1);
-  const url2 = new URL('a://b.c2');
-  let appended = entry.appendURL(url2);
-  assert(entry.urls.length === 2);
-  assert(appended === true);
-  appended = false;
-  appended = entry.appendURL(url2);
-  assert(entry.urls.length === 2);
-  assert(appended === false);
-  assert(is_entry(entry));
-}
-
-export async function is_feed_test() {
-  const fcorrect = new Feed();
-  assert(is_feed(fcorrect));
-  assert(!is_entry(fcorrect));
-  const nomagic = {};
-  assert(!is_feed(nomagic));
-}
-
-export async function append_feed_url_test() {
-  const feed = new Feed();
-  assert(!feed.hasURL());  // precondition
-  feed.appendURL(new URL('a://b.c1'));
-  assert(feed.hasURL());  // expect change
-  const url2 = new URL('a://b.c2');
-  feed.appendURL(url2);
-  assert(feed.urls.length === 2);  // expect increment
-  feed.appendURL(url2);
-  assert(feed.urls.length === 2);  // expect no change
-  assert(is_feed(feed));           // modifications preserved type
-}
-
 export async function get_entry_test() {
   const db_name = 'get-entry-test';
   await indexeddb_utils.remove(db_name);
@@ -725,25 +679,4 @@ export async function update_feed_test() {
   assert(feed.title = 'second');
   model.close();
   await indexeddb_utils.remove(db_name);
-}
-
-export async function sanitize_entry_content_test() {
-  const entry = new Entry();
-  let content = 'hello world';
-  entry.content = content;
-
-  const model = new Model();
-
-  Entry.sanitize(entry);
-  assert(entry.content === content);
-
-  // Test that line breaks are not filtered from content. This was previously
-  // the source of a bug, where filter_controls was used in place of
-  // filter_unprintables within Entry.sanitize, where filter_controls matches \n
-  // and such, but filter_unprintables does not
-  content = '<html><head></head><body>hello\nworld</body></html>';
-  entry.content = content;
-  Entry.sanitize(entry);
-  let expected = '<html><head></head><body>hello\nworld</body></html>';
-  assert(entry.content === expected, entry.content);
 }
