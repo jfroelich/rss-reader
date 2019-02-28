@@ -250,8 +250,8 @@ Model.sanitizeFeed = function(
   }
 };
 
-Model.prototype.archiveEntries = async function(max_age) {
-  const ids = await new Promise((resolve, reject) => {
+Model.prototype.archiveEntries = function(max_age) {
+  return new Promise((resolve, reject) => {
     if (typeof max_age === 'undefined') {
       const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
       max_age = TWO_DAYS_MS;
@@ -259,7 +259,12 @@ Model.prototype.archiveEntries = async function(max_age) {
 
     const entry_ids = [];
     const txn = this.conn.transaction('entry', 'readwrite');
-    txn.oncomplete = _ => resolve(entry_ids);
+    txn.oncomplete = event => {
+      resolve(entry_ids);
+      for (const id of entry_ids) {
+        this.channel.postMessage({type: 'entry-archived', id: id});
+      }
+    };
     txn.onerror = event => reject(event.target.error);
     const store = txn.objectStore('entry');
     const index = store.index('archiveState-readState');
@@ -302,10 +307,6 @@ Model.prototype.archiveEntries = async function(max_age) {
       cursor.continue();
     };
   });
-
-  for (const id of ids) {
-    this.channel.postMessage({type: 'entry-archived', id: id});
-  }
 };
 
 Model.prototype.countUnreadEntriesByFeed = function(id) {
