@@ -144,14 +144,23 @@ export class PollOperation {
     let entries = fetch_result.entries.map(this.coerceEntry);
     entries = this.dedupEntries(entries);
 
+    // TODO: propagation of certain fields, like the favicon, is done
+    // prematurely because we do not yet know if the entry already exists, or
+    // has its own favicon. Rather than supply a default, it would be better to
+    // provide the feed info to the poll-entry call, and have it set the value
+    // later.
+
     for (const entry of entries) {
       entry.feed = feed.id;
       entry.feedTitle = feed.title;
 
-      // TEMP: tracing error related to relative urls
-      console.debug(
-          'Setting entry favicon to feed favicon', feed.faviconURLString);
-      entry.faviconURLString = feed.faviconURLString;
+      if (feed.faviconURLString) {
+        // TEMP: tracing error related to relative urls
+        console.debug(
+            'Setting entry favicon to feed favicon', feed.faviconURLString);
+        entry.faviconURLString = feed.faviconURLString;
+      }
+
       if (feed.datePublished && !entry.datePublished) {
         entry.datePublished = feed.datePublished;
       }
