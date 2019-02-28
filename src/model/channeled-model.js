@@ -7,15 +7,20 @@ export {InvalidStateError, NotFoundError, ValidationError} from '/src/model/mode
 
 export class ChanneledModel {
   constructor() {
+    // This should point to a class that implements the unspecified Channel
+    // interface. This should be set prior to calling open.
+    this.channel_class = BroadcastChannel;
+
     this.db = new Model();
     this.channel = undefined;
     this.channel_name = 'reader';
   }
 
   async open() {
+    assert(this.channel_class);
     assert(typeof this.channel_name === 'string');
     await this.db.open();
-    this.channel = new BroadcastChannel(this.channel_name);
+    this.channel = new this.channel_class(this.channel_name);
   }
 
   close() {
