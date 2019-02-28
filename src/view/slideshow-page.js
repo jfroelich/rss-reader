@@ -821,11 +821,26 @@ function create_feed_source_element(entry) {
   source_element.setAttribute('class', 'entry-source');
 
   if (entry.faviconURLString) {
-    const favicon_element = document.createElement('img');
-    favicon_element.setAttribute('src', entry.faviconURLString);
-    favicon_element.setAttribute('width', '16');
-    favicon_element.setAttribute('height', '16');
-    source_element.appendChild(favicon_element);
+    // BUG: there seems to be a bug with entry favicons, somehow the base uri
+    // for each one tends to be wrong. Check this here, and if it looks wrong,
+    // log a warning and do not embed it. It looks like somehow some of the
+    // entries have a relative favicon url.
+
+    let favicon_url;
+    try {
+      favicon_url = new URL(entry.faviconURLString);
+    } catch (error) {
+    }
+
+    if (!favicon_url || favicon_url.protocol === 'chrome-extension:') {
+      console.debug('Bad favicon url', entry.faviconURLString);
+    } else {
+      const favicon_element = document.createElement('img');
+      favicon_element.setAttribute('src', entry.faviconURLString);
+      favicon_element.setAttribute('width', '16');
+      favicon_element.setAttribute('height', '16');
+      source_element.appendChild(favicon_element);
+    }
   }
 
   const details = document.createElement('span');
