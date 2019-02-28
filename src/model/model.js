@@ -10,11 +10,6 @@ import {Entry, is_entry} from '/src/model/entry.js';
 import {Feed, is_feed} from '/src/model/feed.js';
 
 export function Model() {
-  // Optional open operation timeout
-  // TODO: if this really is only in use by open() then it would be more
-  // appropriate as a parameter to open
-  this.timeout = INDEFINITE;
-
   // Database connection properties
   this.conn = undefined;
   this.name = 'reader';
@@ -28,14 +23,18 @@ export function Model() {
   this.channel_name = 'reader';
 }
 
-Model.prototype.open = async function() {
+// |timeout| is the optional maximum time in milliseconds of type Deadline
+// before considering an attempt to open a connection to the database a failure.
+Model.prototype.open = async function(timeout = INDEFINITE) {
   assert(this.channel_class);
+  assert(timeout instanceof Deadline);
+
   assert(typeof this.channel_name === 'string');
   assert(typeof this.name === 'string');
   assert(typeof this.upgradeHandler === 'function');
 
   this.conn = await indexeddb_utils.open(
-      this.name, this.version, this.upgradeHandler.bind(this), this.timeout);
+      this.name, this.version, this.upgradeHandler.bind(this), timeout);
   this.channel = new this.channel_class(this.channel_name);
 };
 
@@ -481,8 +480,7 @@ Model.prototype.deleteFeed = async function(feed_id, reason) {
   }
 };
 
-Model.prototype.getEntry =
-    async function(mode = 'id', value, key_only) {
+Model.prototype.getEntry = async function(mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
     assert(mode !== 'id' || Entry.isValidId(value));
     assert(mode !== 'id' || !key_only);
@@ -1063,8 +1061,7 @@ Model.prototype.translateDirection = function(direction) {
 };
 
 // Compose an IDBRequest object based on query values
-Model.prototype.queryEntriesBuildRequest = function(
-    store, query, direction) {
+Model.prototype.queryEntriesBuildRequest = function(store, query, direction) {
   let request;
   // Several branches use these same two variables
   const min_date = new Date(1);
