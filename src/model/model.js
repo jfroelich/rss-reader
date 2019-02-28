@@ -260,10 +260,10 @@ Model.prototype.archiveEntries = function(max_age) {
     const entry_ids = [];
     const txn = this.conn.transaction('entry', 'readwrite');
     txn.oncomplete = event => {
-      resolve(entry_ids);
       for (const id of entry_ids) {
         this.channel.postMessage({type: 'entry-archived', id: id});
       }
+      resolve(entry_ids);
     };
     txn.onerror = event => reject(event.target.error);
     const store = txn.objectStore('entry');
@@ -332,10 +332,8 @@ Model.prototype.countUnreadEntries = function() {
   });
 };
 
-// This intentionally does not resolve until the transaction resolves
-// because resolving when the request completes would be premature.
-Model.prototype.createEntry = async function(entry) {
-  const id = await new Promise((resolve, reject) => {
+Model.prototype.createEntry = function(entry) {
+  return new Promise((resolve, reject) => {
     assert(is_entry(entry));
     assert(entry.id === undefined);
 
@@ -358,26 +356,27 @@ Model.prototype.createEntry = async function(entry) {
 
     delete entry.dateUpdated;
     object_utils.filter_empty_properties(entry);
+
     let id;
     const txn = this.conn.transaction('entry', 'readwrite');
-    txn.oncomplete = _ => resolve(id);
+    txn.oncomplete = _ => {
+      this.channel.postMessage({type: 'entry-created', id: id});
+      resolve(id);
+    };
     txn.onerror = event => reject(event.target.error);
     const store = txn.objectStore('entry');
     const request = store.put(entry);
     request.onsuccess = _ => id = request.result;
   });
-  this.channel.postMessage({type: 'entry-created', id: id});
-  return id;
 };
 
-Model.prototype.createFeed = async function(feed) {
-  const id = await new Promise((resolve, reject) => {
+Model.prototype.createFeed = function(feed) {
+  return new Promise((resolve, reject) => {
     assert(is_feed(feed));
-    // TODO: use Feed.hasURL instead here
-    assert(Array.isArray(feed.urls));
-    assert(feed.urls.length);
-    assert(typeof feed.urls[0] === 'string');
-    assert(feed.urls[0].length);
+
+    // A feed requires a url
+    assert(Feed.prototype.hasURL.call(feed));
+
     // If feed.active is true, then leave as true. If false, leave as false.
     // But if undefined, impute true. This allows the caller to create
     // inactive feeds
@@ -388,26 +387,27 @@ Model.prototype.createFeed = async function(feed) {
     feed.dateCreated = new Date();
     delete feed.dateUpdated;
     object_utils.filter_empty_properties(feed);
+
     let id = 0;
     const txn = this.conn.transaction('feed', 'readwrite');
     txn.onerror = event => reject(event.target.error);
-    // Do not settle until the transaction completes
-    txn.oncomplete = _ => resolve(id);
+    txn.oncomplete = event => {
+      this.channel.postMessage({type: 'feed-created', id: id});
+      resolve(id);
+    };
+
     const store = txn.objectStore('feed');
     const request = store.put(feed);
     request.onsuccess = _ => id = request.result;
   });
-  this.channel.postMessage({type: 'feed-created', id: id});
-  return id;
 };
 
-Model.prototype.createFeeds = async function(feeds) {
-  const ids = await new Promise((resolve, reject) => {
+Model.prototype.createFeeds = function(feeds) {
+  return new Promise((resolve, reject) => {
     assert(feeds);
     for (const feed of feeds) {
       assert(is_feed(feed));
-      // TODO: use Feed.hasURL
-      assert(feed.urls && feed.urls.length);
+      assert(Feed.prototype.hasURL.call(feed));
     }
 
     for (const feed of feeds) {
@@ -423,7 +423,12 @@ Model.prototype.createFeeds = async function(feeds) {
     const ids = [];
     const txn = this.conn.transaction('feed', 'readwrite');
     txn.onerror = event => reject(event.target.error);
-    txn.oncomplete = _ => resolve(ids);
+    txn.oncomplete = event => {
+      for (const id of ids) {
+        this.channel.postMessage({type: 'feed-created', id: id});
+      }
+      resolve(ids);
+    };
 
     function request_onsuccess(event) {
       ids.push(event.target.result);
@@ -435,35 +440,44 @@ Model.prototype.createFeeds = async function(feeds) {
       request.onsuccess = request_onsuccess;
     }
   });
-  for (const id of ids) {
-    this.channel.postMessage({type: 'feed-created', id: id});
-  }
-  return ids;
 };
 
-Model.prototype.deleteEntry = async function(id) {
-  await new Promise((resolve, reject) => {
+Model.prototype.deleteEntry = function(id) {
+  return new Promise((resolve, reject) => {
     assert(Entry.isValidId(id));
     const txn = this.conn.transaction('entry', 'readwrite');
-    txn.oncomplete = resolve;
+    txn.oncomplete = event => {
+      this.channel.postMessage({type: 'entry-deleted', id: id});
+      resolve();
+    };
     txn.onerror = event => reject(event.target.error);
     txn.objectStore('entry').delete(id);
   });
-  this.channel.postMessage({type: 'entry-deleted', id: id});
 };
 
-Model.prototype.deleteFeed = async function(feed_id, reason) {
-  const eids = await new Promise((resolve, reject) => {
+Model.prototype.deleteFeed = function(feed_id, reason) {
+  return new Promise((resolve, reject) => {
     assert(Feed.isValidId(feed_id));
     const entry_ids = [];
+
     const txn = this.conn.transaction(['feed', 'entry'], 'readwrite');
     txn.onerror = event => reject(event.target.error);
-    txn.oncomplete = _ => resolve(entry_ids);
+    txn.oncomplete = _ => {
+      this.channel.postMessage(
+          {type: 'feed-deleted', id: feed_id, reason: reason});
+      for (const id of entry_ids) {
+        this.channel.postMessage(
+            {type: 'entry-deleted', id: id, reason: reason, feed_id: feed_id});
+      }
+      resolve(entry_ids);
+    };
+
     const feed_store = txn.objectStore('feed');
     feed_store.delete(feed_id);
+
     const entry_store = txn.objectStore('entry');
     const feed_index = entry_store.index('feed');
-    // We use getAllKeys to avoid loading full entry data
+    // Avoid loading full entry data
     const request = feed_index.getAllKeys(feed_id);
     request.onsucess = function(event) {
       const keys = event.target.result;
@@ -473,22 +487,17 @@ Model.prototype.deleteFeed = async function(feed_id, reason) {
       }
     };
   });
-  this.channel.postMessage({type: 'feed-deleted', id: feed_id, reason: reason});
-
-  for (const id of eids) {
-    this.channel.postMessage(
-        {type: 'entry-deleted', id: id, reason: reason, feed_id: feed_id});
-  }
 };
 
-Model.prototype.getEntry = async function(mode = 'id', value, key_only) {
+Model.prototype.getEntry = function(mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
     assert(mode !== 'id' || Entry.isValidId(value));
     assert(mode !== 'id' || !key_only);
+
     const txn = this.conn.transaction('entry');
     txn.onerror = event => reject(event.target.error);
-    const store = txn.objectStore('entry');
 
+    const store = txn.objectStore('entry');
     let request;
     if (mode === 'url') {
       const index = store.index('urls');
@@ -576,8 +585,7 @@ Model.prototype.getFeedIds = function() {
 
 Model.prototype.getFeed = function(mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
-    // TODO: use value instanceof URL?
-    assert(mode !== 'url' || (value && typeof value.href === 'string'));
+    assert(mode !== 'url' || value instanceof URL);
     assert(mode !== 'id' || Feed.isValidId(value));
     assert(mode !== 'id' || !key_only);
     const txn = this.conn.transaction('feed');
@@ -596,7 +604,7 @@ Model.prototype.getFeed = function(mode = 'id', value, key_only) {
       return;
     }
 
-    request.onsuccess = _ => {
+    request.onsuccess = event => {
       let feed;
       if (key_only) {
         const feed_id = request.result;
@@ -730,13 +738,16 @@ Model.prototype.queryEntries = function(query = {}) {
 // Modify the read state property of an entry in the database. |id| is id of
 // entry in database to modify. |read| is boolean, true if marking as read,
 // false if marking as unread, defaults to false.
-Model.prototype.setEntryReadState = async function(id, read = false) {
-  await new Promise((resolve, reject) => {
+Model.prototype.setEntryReadState = function(id, read = false) {
+  return new Promise((resolve, reject) => {
     assert(Entry.isValidId(id));
     assert(typeof read === 'boolean');
     const txn = this.conn.transaction('entry', 'readwrite');
     txn.onerror = event => reject(event.target.error);
-    txn.oncomplete = resolve;
+    txn.oncomplete = event => {
+      this.channel.postMessage({type: 'entry-updated', id: id, read: read});
+      resolve();
+    };
     const store = txn.objectStore('entry');
     const request = store.get(id);
     request.onsuccess = function(event) {
@@ -784,44 +795,37 @@ Model.prototype.setEntryReadState = async function(id, read = false) {
         delete entry.dateRead;
       }
 
-      const entry_store = event.target.source;
-      entry_store.put(entry);
+      event.target.source.put(entry);
     };
   });
-  this.channel.postMessage({type: 'entry-updated', id: id, read: true});
 };
 
-Model.prototype.updateEntry = async function(entry) {
-  const is_unread_before = entry.readState === Entry.UNREAD;
-  const updated_entry = await new Promise((resolve, reject) => {
+Model.prototype.updateEntry = function(entry) {
+  return new Promise((resolve, reject) => {
     assert(is_entry(entry));
     assert(Entry.isValidId(entry.id));
-    // Do not assert that the entry has a url. Entries are not required to
-    // have urls in the model layer. Only higher layers are concerned with
-    // imposing that constraint.
+    // Entries are not required to have urls in the model layer.
+
     entry.dateUpdated = new Date();
     object_utils.filter_empty_properties(entry);
+
     const txn = this.conn.transaction('entry', 'readwrite');
-    txn.oncomplete = event => resolve(entry);
+    txn.oncomplete = event => {
+      this.channel.postMessage({
+        type: 'entry-updated',
+        id: entry.id,
+        // NOTE! This does not indicate transition, just current state
+        read: entry.readState === Entry.READ ? true : false
+      });
+      resolve(entry);
+    };
     txn.onerror = event => reject(event.target.error);
     txn.objectStore('entry').put(entry);
   });
-  const is_read_after = updated_entry.readState === Entry.READ;
-  this.channel.postMessage({
-    type: 'entry-updated',
-    id: updated_entry.id,
-    read: is_unread_before && is_read_after
-  });
 };
 
-// TODO: do not pass the entire giant feed object through the channel. Expose
-// only those properties needed by event consumers. Also, pass those properties
-// as properties of the event itself, not a nested feed object, because callers
-// should only expect a basic event, not a full fledged feed object. Also,
-// review why it is even needed. If the only things needed are things like the
-// cleaned feed title, then maybe just expose title.
-Model.prototype.updateFeed = async function(feed, overwrite) {
-  await new Promise((resolve, reject) => {
+Model.prototype.updateFeed = function(feed, overwrite) {
+  return new Promise((resolve, reject) => {
     // If overwriting, the new feed must be valid. If partial update, the new
     // feed is just a bag of properties, but it at least must be an object.
     if (overwrite) {
@@ -854,10 +858,24 @@ Model.prototype.updateFeed = async function(feed, overwrite) {
 
     const txn = this.conn.transaction('feed', 'readwrite');
     txn.onerror = event => reject(event.target.error);
-    txn.oncomplete = resolve;
+    txn.oncomplete = event => {
+      // TODO: do not pass the entire giant feed object through the channel.
+      // Expose only those properties needed by event consumers. Also, pass
+      // those properties as properties of the event itself, not a nested feed
+      // object, because callers should only expect a basic event, not a full
+      // fledged feed object. Also, review why it is even needed. If the only
+      // things needed are things like the cleaned feed title, then maybe just
+      // expose title.
+      this.channel.postMessage({
+        type: 'feed-updated',
+        id: feed.id,
+        feed: overwrite ? undefined : feed
+      });
+      resolve();
+    };
     const store = txn.objectStore('feed');
 
-    // In the overwrite case, it is simple and we are done
+    // The overwrite case is simple
     if (overwrite) {
       store.put(feed);
       return;
@@ -888,7 +906,7 @@ Model.prototype.updateFeed = async function(feed, overwrite) {
 
       // If you want to activate a feed, it must not already be active. If you
       // want to update the feed regardless, you should not have specified the
-      // active property in the partial use case.
+      // active property in the partial update use case.
       if (feed.active === true && old_feed.active === true) {
         const message =
             'Cannot activate already active feed with id ' + feed.id;
@@ -947,10 +965,9 @@ Model.prototype.updateFeed = async function(feed, overwrite) {
       event.target.source.put(old_feed);
     };
   });
-  this.channel.postMessage(
-      {type: 'feed-updated', id: feed.id, feed: overwrite ? undefined : feed});
 };
 
+// TODO: operate on the transaction, not the store
 Model.prototype.ensureEntriesHaveDatePublished = function(store) {
   const request = store.openCursor();
   request.onerror = _ => console.error(request.error);
@@ -1000,6 +1017,7 @@ Model.prototype.addMagicToFeeds = function(txn) {
   };
 };
 
+// TODO: operate on the transaction, not the store
 Model.prototype.addActiveFieldToFeeds = function(store) {
   const request = store.getAll();
   request.onerror = _ => console.error(request.error);
