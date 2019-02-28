@@ -136,7 +136,7 @@ export class PollOperation {
       delete feed.errorCount;
     }
 
-    Model.validateFeed(feed);
+    Feed.validate(feed);
     Feed.sanitize(feed);
     await this.session.updateFeed(feed, true);
 
@@ -302,7 +302,7 @@ export class PollOperation {
 
     entry.content = doc.documentElement.outerHTML;
     Entry.sanitize(entry);
-    Model.validateEntry(entry);
+    Entry.validate(entry);
 
     return await this.session.createEntry(entry);
   }

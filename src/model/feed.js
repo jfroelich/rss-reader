@@ -2,7 +2,7 @@ import {assert} from '/src/lib/assert.js';
 import * as html_utils from '/src/lib/html-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
 import * as magic from '/src/model/magic.js';
-import * as utils from '/src/model/utils.js';
+import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/model/utils.js';
 
 export function Feed() {
   this.magic = magic.FEED_MAGIC;
@@ -12,7 +12,7 @@ Feed.INVALID_ID = 0;
 
 Feed.prototype.appendURL = function(url) {
   assert(is_feed(this));
-  return utils.append_url_common(this, url);
+  return append_url_common(this, url);
 };
 
 Feed.prototype.getURLString = function() {
@@ -29,7 +29,6 @@ Feed.prototype.hasURL = function() {
 Feed.isValidId = function(value) {
   return Number.isInteger(value) && value > 0;
 };
-
 
 Feed.sanitize = function(feed, title_max_len = 1024, desc_max_len = 10240) {
   assert(is_feed(feed));
@@ -54,6 +53,42 @@ Feed.sanitize = function(feed, title_max_len = 1024, desc_max_len = 10240) {
     desc = html_utils.truncate_html(desc, desc_max_len, repl_suffix);
     feed.description = desc;
   }
+};
+
+Feed.validate = function(feed) {
+  assert(is_feed(feed));
+  const now = new Date();
+
+  vassert(feed.id === undefined || Feed.isValidId(feed.id));
+  vassert(
+      feed.active === undefined || feed.active === true ||
+      feed.active === false);
+  vassert(feed.urls === undefined || Array.isArray(feed.urls));
+  vassert(feed.title === undefined || typeof feed.title === 'string');
+  vassert(
+      feed.type === undefined || feed.type === 'rss' || feed.type === 'feed' ||
+      feed.type === 'rdf');
+  vassert(feed.link === undefined || typeof feed.link === 'string');
+  vassert(
+      feed.description === undefined || typeof feed.description === 'string');
+  vassert(
+      feed.deactivationReasonText === undefined ||
+      typeof feed.deactivationReasonText === 'string');
+
+  vassert(is_valid_date(feed.deactivateDate));
+  vassert(is_date_lte(feed.deactivateDate, now));
+  vassert(is_valid_date(feed.dateCreated));
+  vassert(is_date_lte(feed.dateCreated, now));
+  vassert(is_date_lte(feed.dateCreated, feed.deactivateDate));
+  vassert(is_valid_date(feed.dateUpdated));
+  vassert(is_date_lte(feed.dateUpdated, now));
+  vassert(is_date_lte(feed.dateCreated, feed.dateUpdated));
+  vassert(is_valid_date(feed.datePublished));
+  vassert(is_date_lte(feed.datePublished, now));
+  vassert(is_valid_date(feed.dateLastModifed));
+  vassert(is_date_lte(feed.dateLastModifed, now));
+  vassert(is_valid_date(feed.dateFetched));
+  vassert(is_date_lte(feed.dateFetched, now));
 };
 
 export function is_feed(value) {

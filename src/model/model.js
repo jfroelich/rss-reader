@@ -116,69 +116,6 @@ Model.prototype.upgradeHandler = function(event) {
   }
 };
 
-Model.validateFeed = function(feed) {
-  assert(is_feed(feed));
-  const now = new Date();
-
-  vassert(feed.id === undefined || Feed.isValidId(feed.id));
-  vassert(
-      feed.active === undefined || feed.active === true ||
-      feed.active === false);
-  vassert(feed.urls === undefined || Array.isArray(feed.urls));
-  vassert(feed.title === undefined || typeof feed.title === 'string');
-  vassert(
-      feed.type === undefined || feed.type === 'rss' || feed.type === 'feed' ||
-      feed.type === 'rdf');
-  vassert(feed.link === undefined || typeof feed.link === 'string');
-  vassert(
-      feed.description === undefined || typeof feed.description === 'string');
-  vassert(
-      feed.deactivationReasonText === undefined ||
-      typeof feed.deactivationReasonText === 'string');
-
-  vassert(is_valid_date(feed.deactivateDate));
-  vassert(is_date_lte(feed.deactivateDate, now));
-  vassert(is_valid_date(feed.dateCreated));
-  vassert(is_date_lte(feed.dateCreated, now));
-  vassert(is_date_lte(feed.dateCreated, feed.deactivateDate));
-  vassert(is_valid_date(feed.dateUpdated));
-  vassert(is_date_lte(feed.dateUpdated, now));
-  vassert(is_date_lte(feed.dateCreated, feed.dateUpdated));
-  vassert(is_valid_date(feed.datePublished));
-  vassert(is_date_lte(feed.datePublished, now));
-  vassert(is_valid_date(feed.dateLastModifed));
-  vassert(is_date_lte(feed.dateLastModifed, now));
-  vassert(is_valid_date(feed.dateFetched));
-  vassert(is_date_lte(feed.dateFetched, now));
-};
-
-Model.validateEntry = function(entry) {
-  assert(is_entry(entry));
-  const now = new Date();
-
-  vassert(entry.id === undefined || Entry.isValidId(entry.id));
-  vassert(entry.feed === undefined || Feed.isValidId(entry.feed));
-  vassert(entry.urls === undefined || Array.isArray(entry.urls));
-  vassert(
-      entry.readState === undefined || entry.readState === Entry.READ ||
-      entry.readState === Entry.UNREAD);
-  vassert(
-      entry.archiveState === undefined ||
-      entry.archiveState === Entry.ARCHIVED ||
-      entry.archiveState === Entry.UNARCHIVED);
-  vassert(entry.author === undefined || typeof entry.author === 'string');
-  vassert(entry.content === undefined || typeof entry.content === 'string');
-
-  vassert(is_valid_date(entry.dateCreated));
-  vassert(is_date_lte(entry.dateCreated, now));
-  vassert(is_valid_date(entry.dateUpdated));
-  vassert(is_date_lte(entry.dateUpdated, now));
-  vassert(is_date_lte(entry.dateCreated, entry.dateUpdated));
-  vassert(is_valid_date(entry.datePublished));
-  vassert(is_date_lte(entry.datePublished, now));
-  validate_enclosure(entry.enclosure);
-};
-
 Model.prototype.archiveEntries = function(max_age) {
   return new Promise((resolve, reject) => {
     if (typeof max_age === 'undefined') {
@@ -1065,38 +1002,6 @@ function is_valid_direction(dir) {
   return dir === undefined || dir === 'ASC' || dir === 'DESC';
 }
 
-function is_valid_date(value) {
-  return value === undefined || !isNaN(value.getTime());
-}
-
-function is_date_lte(date1, date2) {
-  return date1 === undefined || date2 === undefined || date1 <= date2;
-}
-
-// Validate the enclosure property of a feed
-function validate_enclosure(enc) {
-  if (enc === undefined || enc === null) {
-    return;
-  }
-
-  vassert(typeof enc === 'object');
-  vassert(
-      enc.url === undefined || enc.url === null || typeof enc.url === 'string');
-  vassert(
-      enc.enclosureLength === undefined || enc.enclosureLength === null ||
-      typeof enc.enclosureLength === 'string');
-  vassert(
-      enc.type === undefined || enc.type === null ||
-      typeof enc.type === 'string');
-}
-
-// An assertion-like utility for throwing validation errors
-function vassert(condition, message) {
-  if (!condition) {
-    throw new ValidationError(message);
-  }
-}
-
 function is_valid_read_state(state) {
   return state === undefined || state === Entry.READ || state === Entry.UNREAD;
 }
@@ -1123,12 +1028,6 @@ export class InvalidStateError extends Error {
 // database was not found.
 export class NotFoundError extends Error {
   constructor(message = 'The data expected to be found was not found') {
-    super(message);
-  }
-}
-
-export class ValidationError extends Error {
-  constructor(message = 'Validation error') {
     super(message);
   }
 }

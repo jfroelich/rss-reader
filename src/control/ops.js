@@ -205,7 +205,7 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   // reduce the number of global helpers that relate to only one use context
   await set_feed_favicon(iconn, feed);
 
-  Model.validateFeed(feed);
+  Feed.validate(feed);
   Feed.sanitize(feed);
   feed.id = await session.createFeed(feed);
 
