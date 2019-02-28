@@ -147,6 +147,10 @@ export class PollOperation {
     for (const entry of entries) {
       entry.feed = feed.id;
       entry.feedTitle = feed.title;
+
+      // TEMP: tracing error related to relative urls
+      console.debug(
+          'Setting entry favicon to feed favicon', feed.faviconURLString);
       entry.faviconURLString = feed.faviconURLString;
       if (feed.datePublished && !entry.datePublished) {
         entry.datePublished = feed.datePublished;
@@ -272,6 +276,8 @@ export class PollOperation {
     lookup_request.document = doc;
     const icon_url_string = await favicon.lookup(lookup_request);
     if (icon_url_string) {
+      // TEMP: tracing error related to setting non-absolute favicon urls
+      console.debug('Setting entry favicon url to', icon_url_string);
       entry.faviconURLString = icon_url_string;
     }
 

@@ -3,6 +3,10 @@ import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {fetch_image} from '/src/lib/fetch-image.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
+// TODO: change lookup to always return a URL instead of a URL string. This will
+// obviate the risk of returning a relative url. This may be the source of a bug
+// when rendering entries in the view.
+
 const DEFAULT_NAME = 'favicon';
 const DEFAULT_VERSION = 1;
 const DEFAULT_TIMEOUT = new Deadline(500);
