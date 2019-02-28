@@ -734,16 +734,16 @@ export async function sanitize_entry_content_test() {
 
   const model = new Model();
 
-  Model.sanitizeEntry(entry);
+  Entry.sanitize(entry);
   assert(entry.content === content);
 
   // Test that line breaks are not filtered from content. This was previously
   // the source of a bug, where filter_controls was used in place of
-  // filter_unprintables within sanitizeEntry, where filter_controls matches \n
+  // filter_unprintables within Entry.sanitize, where filter_controls matches \n
   // and such, but filter_unprintables does not
   content = '<html><head></head><body>hello\nworld</body></html>';
   entry.content = content;
-  Model.sanitizeEntry(entry);
+  Entry.sanitize(entry);
   let expected = '<html><head></head><body>hello\nworld</body></html>';
   assert(entry.content === expected, entry.content);
 }

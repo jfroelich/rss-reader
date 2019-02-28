@@ -206,7 +206,7 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   await set_feed_favicon(iconn, feed);
 
   Model.validateFeed(feed);
-  Model.sanitizeFeed(feed);
+  Feed.sanitize(feed);
   feed.id = await session.createFeed(feed);
 
   if (notify) {

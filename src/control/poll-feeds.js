@@ -137,7 +137,7 @@ export class PollOperation {
     }
 
     Model.validateFeed(feed);
-    Model.sanitizeFeed(feed);
+    Feed.sanitize(feed);
     await this.session.updateFeed(feed, true);
 
     // Now poll the feed's entries
@@ -301,7 +301,7 @@ export class PollOperation {
     assert(doc.documentElement);
 
     entry.content = doc.documentElement.outerHTML;
-    Model.sanitizeEntry(entry);
+    Entry.sanitize(entry);
     Model.validateEntry(entry);
 
     return await this.session.createEntry(entry);

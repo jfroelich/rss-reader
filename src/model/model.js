@@ -1,9 +1,7 @@
 import {assert} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
-import * as html_utils from '/src/lib/html-utils.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 import * as object_utils from '/src/lib/object-utils.js';
-import * as string_utils from '/src/lib/string-utils.js';
 import {sizeof} from '/src/lib/sizeof.js';
 import * as magic from '/src/model/magic.js';
 import {Entry, is_entry} from '/src/model/entry.js';
@@ -129,7 +127,6 @@ Model.validateFeed = function(feed) {
   assert(is_feed(feed));
   const now = new Date();
 
-
   vassert(feed.id === undefined || Feed.isValidId(feed.id));
   vassert(
       feed.active === undefined || feed.active === true ||
@@ -187,67 +184,6 @@ Model.validateEntry = function(entry) {
   vassert(is_valid_date(entry.datePublished));
   vassert(is_date_lte(entry.datePublished, now));
   validate_enclosure(entry.enclosure);
-};
-
-Model.sanitizeEntry = function(
-    entry, author_max_length = 200, title_max_length = 1000,
-    content_max_length = 50000) {
-  assert(is_entry(entry));
-
-  if (entry.author) {
-    let author = entry.author;
-    author = string_utils.filter_controls(author);
-    author = html_utils.replace_tags(author, '');
-    author = string_utils.condense_whitespace(author);
-    author = html_utils.truncate_html(author, author_max_length);
-    entry.author = author;
-  }
-
-  if (entry.content) {
-    let content = entry.content;
-    // We cannot use filter_controls because that matches \r\n. This was
-    // previously the source of a bug
-    content = string_utils.filter_unprintables(content);
-
-    // Temporarily disabled while debugging poll-feeds issue
-    // content = html_utils.truncate_html(content, content_max_length);
-    entry.content = content;
-  }
-
-  if (entry.title) {
-    let title = entry.title;
-    title = string_utils.filter_controls(title);
-    title = html_utils.replace_tags(title, '');
-    title = string_utils.condense_whitespace(title);
-    title = html_utils.truncate_html(title, title_max_length);
-    entry.title = title;
-  }
-};
-
-Model.sanitizeFeed = function(
-    feed, title_max_len = 1024, desc_max_len = 10240) {
-  assert(is_feed(feed));
-
-  const html_tag_replacement = '';
-  const repl_suffix = '';
-
-  if (feed.title) {
-    let title = feed.title;
-    title = string_utils.filter_controls(title);
-    title = html_utils.replace_tags(title, html_tag_replacement);
-    title = string_utils.condense_whitespace(title);
-    title = html_utils.truncate_html(title, title_max_len, repl_suffix);
-    feed.title = title;
-  }
-
-  if (feed.description) {
-    let desc = feed.description;
-    desc = string_utils.filter_controls(desc);
-    desc = html_utils.replace_tags(desc, html_tag_replacement);
-    desc = string_utils.condense_whitespace(desc);
-    desc = html_utils.truncate_html(desc, desc_max_len, repl_suffix);
-    feed.description = desc;
-  }
 };
 
 Model.prototype.archiveEntries = function(max_age) {
