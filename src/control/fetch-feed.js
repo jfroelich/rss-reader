@@ -2,7 +2,6 @@ import {assert} from '/src/lib/assert.js';
 import {Deadline} from '/src/lib/deadline.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
 import {better_fetch} from '/src/lib/net.js';
-import * as channeled_model from '/src/model/channeled-model.js';
 import {Feed} from '/src/model/feed.js';
 
 export async function fetch_feed(url, options) {

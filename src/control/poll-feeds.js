@@ -11,9 +11,9 @@ import * as html_utils from '/src/lib/html-utils.js';
 import * as net from '/src/lib/net.js';
 import * as sniffer from '/src/lib/sniffer.js';
 import * as tls from '/src/lib/tls.js';
-import * as channeled_model from '/src/model/channeled-model.js';
 import {Entry, is_entry} from '/src/model/entry.js';
 import {Feed, is_feed} from '/src/model/feed.js';
+import {Model} from '/src/model/model.js';
 
 export class PollOperation {
   constructor() {
@@ -136,8 +136,8 @@ export class PollOperation {
       delete feed.errorCount;
     }
 
-    channeled_model.ChanneledModel.validateFeed(feed);
-    channeled_model.ChanneledModel.sanitizeFeed(feed);
+    Model.validateFeed(feed);
+    Model.sanitizeFeed(feed);
     await this.session.updateFeed(feed, true);
 
     // Now poll the feed's entries
@@ -301,8 +301,8 @@ export class PollOperation {
     assert(doc.documentElement);
 
     entry.content = doc.documentElement.outerHTML;
-    channeled_model.ChanneledModel.sanitizeEntry(entry);
-    channeled_model.ChanneledModel.validateEntry(entry);
+    Model.sanitizeEntry(entry);
+    Model.validateEntry(entry);
 
     return await this.session.createEntry(entry);
   }
@@ -368,7 +368,7 @@ export class PollOperation {
     return distinct_entries;
   }
 
-  // Convert a parsed entry into a channeled_model-formatted entry
+  // Convert a parsed entry into a model-formatted entry
   // TODO: skip clone and mutate
   coerceEntry(parsed_entry) {
     const blank_entry = new Entry();

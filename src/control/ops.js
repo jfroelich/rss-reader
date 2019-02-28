@@ -7,12 +7,12 @@ import * as net from '/src/lib/net.js';
 import * as opml_utils from '/src/lib/opml-utils.js';
 import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
-import * as channeled_model from '/src/model/channeled-model.js';
 import {Feed} from '/src/model/feed.js';
+import {Model} from '/src/model/model.js';
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar
 export async function badge_refresh() {
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   await session.open();
   const count = await session.countUnreadEntries();
   session.close();
@@ -45,7 +45,7 @@ export function deactivate_feed(session, feed_id, reason) {
 export async function export_opml(document_title) {
   const doc = opml_utils.create_opml_template(document_title);
 
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   await session.open();
   const feeds = await session.getFeeds('all', false);
   session.close();
@@ -169,7 +169,7 @@ async function opml_import_read_feeds(file) {
 }
 
 export async function subscribe(session, iconn, url, timeout, notify) {
-  assert(session instanceof channeled_model.ChanneledModel);
+  assert(session instanceof Model);
   assert(iconn === undefined || iconn instanceof IDBDatabase);
   assert(url instanceof URL);
 
@@ -205,8 +205,8 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   // reduce the number of global helpers that relate to only one use context
   await set_feed_favicon(iconn, feed);
 
-  channeled_model.ChanneledModel.validateFeed(feed);
-  channeled_model.ChanneledModel.sanitizeFeed(feed);
+  Model.validateFeed(feed);
+  Model.sanitizeFeed(feed);
   feed.id = await session.createFeed(feed);
 
   if (notify) {

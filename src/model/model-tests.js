@@ -1,4 +1,5 @@
 import {assert} from '/src/lib/assert.js';
+import {INDEFINITE} from '/src/lib/deadline.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 import {Entry, is_entry} from '/src/model/entry.js';
 import {Feed, is_feed} from '/src/model/feed.js';
@@ -161,9 +162,11 @@ export async function create_feed_url_constraint_test() {
 
 export async function create_feeds_test() {
   const db_name = 'create-feeds-test';
+
   const model = new Model();
   model.name = db_name;
   await model.open();
+
   const num_feeds = 3, feeds = [];
   for (let i = 0; i < num_feeds; i++) {
     const feed = new Feed();
@@ -187,6 +190,7 @@ export async function create_feeds_test() {
 export async function delete_entry_test() {
   const db_name = 'delete-entry-test';
   await indexeddb_utils.remove(db_name);
+
   const model = new Model();
   model.name = db_name;
   await model.open();
@@ -214,8 +218,44 @@ export async function delete_entry_test() {
   await indexeddb_utils.remove(db_name);
 }
 
+// TODO: resolve conflict with delete_feed_test2
 export async function delete_feed_test() {
   const db_name = 'delete-feed-test';
+  await indexeddb_utils.remove(db_name);
+
+  const model = new Model();
+  model.name = db_name;
+  await model.open();
+
+  const feed1 = new Feed();
+  const url1 = new URL('http://www.example.com/foo.xml');
+  feed1.appendURL(url1);
+  const feed_id1 = await model.createFeed(feed1);
+
+  const messages = [];
+  const channel = {};
+  channel.name = 'delete-feed-test-channel';
+  channel.postMessage = message => messages.push(message);
+  channel.close = function() {};
+  model.channel = channel;
+
+  const delete_reason = 'test-reason';
+  await model.deleteFeed(feed_id1, delete_reason);
+
+  assert(messages.length === 1);
+  const first_message = messages[0];
+  assert(typeof first_message === 'object');
+  assert(first_message.type === 'feed-deleted');
+  assert(first_message.id === feed_id1);
+  assert(first_message.reason === delete_reason);
+
+  model.close();
+  await indexeddb_utils.remove(db_name);
+}
+
+// TODO: resolve conflict with delete_feed_test
+export async function delete_feed_test2() {
+  const db_name = 'delete-feed-test2';
   await indexeddb_utils.remove(db_name);
   const model = new Model();
   model.name = db_name;

@@ -7,8 +7,8 @@ import {filter_publisher} from '/src/lib/filter-publisher.js';
 import * as html_utils from '/src/lib/html-utils.js';
 import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
-import * as channeled_model from '/src/model/channeled-model.js';
 import {is_entry} from '/src/model/entry.js';
+import {Model} from '/src/model/model.js';
 
 const splash_element = document.getElementById('initial-loading-panel');
 const feeds_container = document.getElementById('feeds-container');
@@ -44,7 +44,7 @@ async function show_next_slide() {
     return;
   }
 
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   await session.open();
   await mark_slide_read_start(session, current_slide);
 
@@ -214,7 +214,7 @@ async function slide_onclick(event) {
   // the checks within mark_slide_read_start, it avoids opening the connection.
   if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
       !slide.hasAttribute('read-pending')) {
-    const session = new channeled_model.ChanneledModel();
+    const session = new Model();
     await session.open();
     await mark_slide_read_start(session, slide);
     session.close();
@@ -333,7 +333,7 @@ async function refresh_button_onclick(event) {
 
   refresh_in_progress = true;
 
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   const promises = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(promises);
 
@@ -444,7 +444,7 @@ function import_opml_prompt() {
     // For unknown reason we must grab this before the await, otherwise error.
     // This behavior changed sometime around Chrome 72 without warning
     const files = event.target.files;
-    const session = new channeled_model.ChanneledModel();
+    const session = new Model();
     await session.open();
     console.debug('Connected to model, importing %d files', files.length);
     await ops.opml_import(session, files);
@@ -696,7 +696,7 @@ async function onmessage(event) {
     // just inventing an approach that doesn't run headfirst into this crappy
     // logic.
 
-    const session = new channeled_model.ChanneledModel();
+    const session = new Model();
     await session.open();
     const entries =
         await session.getEntries('viewable', unread_count, undefined);
@@ -1116,7 +1116,7 @@ function hide_splash() {
 async function load_view() {
   show_splash();
 
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   await session.open();
 
   const get_entries_promise = session.getEntries('viewable', 0, 6);

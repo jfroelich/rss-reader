@@ -1,9 +1,9 @@
-import * as channeled_model from '/src/model/channeled-model.js';
 import * as ops from '/src/control/ops.js';
 import {PollOperation} from '/src/control/poll-feeds.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
+import {Model} from '/src/model/model.js';
 
 let current_menu_item;
 let current_section;
@@ -260,7 +260,7 @@ async function feed_list_item_onclick(event) {
   const feed_id_string = feed_list_item_element.getAttribute('feed');
   const feed_id = parseInt(feed_id_string, 10);
 
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   await session.open();
   const feed = await session.getFeed('id', feed_id, false);
   session.close();
@@ -344,7 +344,7 @@ async function subscribe_form_onsubmit(event) {
   // TODO: subscribe can now throw an error, this should catch the error and
   // show a nice error message or something instead of panic
 
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   const promises = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(promises);
   const feed =
@@ -376,7 +376,7 @@ async function subscribe_form_onsubmit(event) {
 }
 
 async function after_subscribe_poll_feed_async(feed) {
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   const promises = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(promises);
 
@@ -391,7 +391,7 @@ async function after_subscribe_poll_feed_async(feed) {
 }
 
 async function feed_list_init() {
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   await session.open();
   const feeds = await session.getFeeds('all', true);
   session.close();
@@ -441,7 +441,7 @@ function feed_list_remove_feed_by_id(feed_id) {
 async function unsubscribe_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   await session.open();
   await ops.unsubscribe(session, feed_id);
   session.close();
@@ -453,7 +453,7 @@ async function unsubscribe_button_onclick(event) {
 async function activate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   await session.open();
   await ops.activate_feed(session, feed_id);
   session.close();
@@ -474,7 +474,7 @@ async function activate_feed_button_onclick(event) {
 async function deactivate_feed_button_onclick(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   await session.open();
   await ops.deactivate_feed(session, feed_id, 'manual');
   session.close();

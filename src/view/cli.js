@@ -1,16 +1,16 @@
 import * as config from '/src/control/config.js';
 import * as cron_control from '/src/control/cron.js';
-import * as channeled_model from '/src/model/channeled-model.js';
 import * as ops from '/src/control/ops.js';
 import {PollOperation} from '/src/control/poll-feeds.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as platform from '/src/lib/platform.js';
+import {Model} from '/src/model/model.js';
 
 // TODO: add and implement cli_archive_entries
 
 async function cli_subscribe(url_string, fetch_entries = true) {
   const url = new URL(url_string);
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
 
   const proms = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
@@ -28,7 +28,7 @@ async function cli_subscribe(url_string, fetch_entries = true) {
 }
 
 async function cli_refresh_icons() {
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   const proms = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
   await ops.refresh_feed_icons(session, iconn);
@@ -37,7 +37,7 @@ async function cli_refresh_icons() {
 }
 
 async function cli_poll_feeds() {
-  const session = new channeled_model.ChanneledModel();
+  const session = new Model();
   const proms = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
   const poll = new PollOperation();

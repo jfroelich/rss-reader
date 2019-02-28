@@ -1,9 +1,9 @@
 import * as config from '/src/control/config.js';
 import * as cron_control from '/src/control/cron.js';
-import * as channeled_model from '/src/model/channeled-model.js';
 import * as extension from '/src/control/extension.js';
 import * as ops from '/src/control/ops.js';
 import * as platform from '/src/lib/platform.js';
+import {Model} from '/src/model/model.js';
 
 // Open a channel with a lifetime equal to the background page lifetime.
 const channel = new BroadcastChannel('reader');
@@ -33,7 +33,7 @@ platform.lifecycle.add_install_listener(function(event) {
 
 platform.lifecycle.add_install_listener(async function(event) {
   if (event.reason === 'install') {
-    const session = new channeled_model.ChanneledModel();
+    const session = new Model();
     await session.open();
     session.close();
   }

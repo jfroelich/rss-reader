@@ -1,15 +1,15 @@
 import * as ops from '/src/control/ops.js';
 import {assert} from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
-import * as channeled_model from '/src/model/channeled-model.js';
 import {Feed, is_feed} from '/src/model/feed.js';
+import {Model} from '/src/model/model.js';
 
 export async function activate_feed_test() {
   const db_name = 'ops-activate-feed-test';
   await indexeddb_utils.remove(db_name);
 
-  const session = new channeled_model.ChanneledModel();
-  session.db.name = db_name;
+  const session = new Model();
+  session.name = db_name;
   await session.open();
 
   // Setup a fake channel for recording messages for later assertions. Do not
@@ -93,8 +93,8 @@ export async function deactivate_feed_test() {
   const db_name = 'ops-deactivate-feed-test';
   await indexeddb_utils.remove(db_name);
 
-  const session = new channeled_model.ChanneledModel();
-  session.db.name = db_name;
+  const session = new Model();
+  session.name = db_name;
   await session.open();
 
   const feed = new Feed();
@@ -132,8 +132,8 @@ export async function import_opml_test() {
   const db_name = 'ops-import-opml-test';
   await indexeddb_utils.remove(db_name);
 
-  const session = new channeled_model.ChanneledModel();
-  session.db.name = db_name;
+  const session = new Model();
+  session.name = db_name;
   await session.open();
 
   let iconn = undefined;  // test without favicon caching support
@@ -171,8 +171,8 @@ export async function subscribe_test() {
   const db_name = 'subscribe-test';
   await indexeddb_utils.remove(db_name);
 
-  const session = new channeled_model.ChanneledModel();
-  session.db.name = db_name;
+  const session = new Model();
+  session.name = db_name;
   await session.open();
 
   session.channel.close();
