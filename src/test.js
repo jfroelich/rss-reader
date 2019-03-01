@@ -1,4 +1,3 @@
-import * as dom_filter_tests from '/src/control/dom-filters/dom-filter-tests.js';
 import {fetch_feed_test} from '/src/control/fetch-feed-test.js';
 import * as ops_tests from '/src/control/ops-tests.js';
 import * as rewrite_url_tests from '/src/control/rewrite-url-test.js';
@@ -7,6 +6,7 @@ import {coerce_element_test} from '/src/lib/coerce-element-test.js';
 import {color_contrast_filter_test} from '/src/lib/color-contrast-filter-test.js';
 import {color_test} from '/src/lib/color-test.js';
 import * as document_utils_tests from '/src/lib/document-utils-tests.js';
+import * as dom_filter_tests from '/src/lib/dom-filter-tests.js';
 import * as favicon_tests from '/src/lib/favicon-tests.js';
 import {parse_feed_test} from '/src/lib/feed-parser-test.js';
 import {fetch_html_test} from '/src/lib/fetch-html-test.js';

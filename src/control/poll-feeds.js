@@ -1,10 +1,10 @@
 import * as desknote from '/src/control/desknote.js';
-import * as dom_filters from '/src/control/dom-filters/dom-filters.js';
 import {fetch_feed} from '/src/control/fetch-feed.js';
 import * as rewrite_rules from '/src/control/rewrite-rules.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as document_utils from '/src/lib/document-utils.js';
+import * as dom_filters from '/src/lib/dom-filters.js';
 import * as favicon from '/src/lib/favicon.js';
 import {fetch_html} from '/src/lib/fetch-html.js';
 import * as html_utils from '/src/lib/html-utils.js';
