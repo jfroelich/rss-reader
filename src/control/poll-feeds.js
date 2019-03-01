@@ -283,11 +283,11 @@ export class PollOperation {
     lookup_request.conn = this.iconn;
     lookup_request.url = lookup_url;
     lookup_request.document = doc;
-    const icon_url_string = await favicon.lookup(lookup_request);
-    if (icon_url_string) {
+    const icon_url = await favicon.lookup(lookup_request);
+    if (icon_url) {
       // TEMP: tracing error related to setting non-absolute favicon urls
-      console.debug('Setting entry favicon url to', icon_url_string);
-      entry.faviconURLString = icon_url_string;
+      console.debug('Setting entry favicon url to', icon_url.href);
+      entry.faviconURLString = icon_url.href;
     }
 
     // Filter the document content

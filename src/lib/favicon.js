@@ -3,10 +3,6 @@ import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {fetch_image} from '/src/lib/fetch-image.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
-// TODO: change lookup to always return a URL instead of a URL string. This will
-// obviate the risk of returning a relative url. This may be the source of a bug
-// when rendering entries in the view.
-
 const DEFAULT_NAME = 'favicon';
 const DEFAULT_VERSION = 1;
 const DEFAULT_TIMEOUT = new Deadline(500);
@@ -32,13 +28,10 @@ export async function lookup(request) {
   assert(request.timeout instanceof Deadline);
   assert(request.expires instanceof Date);
 
-  const conn = request.conn;
-  const hostname = request.url.hostname;
   const lookup_date = new Date();
-
-  let entry = await find_entry(conn, hostname);
+  let entry = await find_entry(request.conn, request.url);
   if (entry && entry.icon_url && entry.expires >= lookup_date) {
-    return entry.icon_url;
+    return new URL(entry.icon_url);
   }
 
   if (entry && entry.failures > request.max_failure_count) {
@@ -48,12 +41,12 @@ export async function lookup(request) {
   const icon_url = search_document(request.document);
   if (icon_url) {
     const entry = new Entry();
-    entry.hostname = hostname;
-    entry.icon_url = icon_url;
+    entry.hostname = request.url.hostname;
+    entry.icon_url = icon_url.href;
     entry.expires = request.expires;
     entry.failures = 0;
 
-    await put_entry(conn, entry);
+    await put_entry(request.conn, entry);
     return icon_url;
   }
 
@@ -65,26 +58,27 @@ export async function lookup(request) {
       throw error;
     } else {
       // Ignore
+      console.debug(error.message);
     }
   }
 
   if (response) {
     const entry = new Entry();
-    entry.hostname = hostname;
+    entry.hostname = request.url.hostname;
     entry.icon_url = response.url;
     entry.expires = request.expires;
     entry.failures = 0;
-    await put_entry(conn, entry);
-    return response.url;
+    await put_entry(request.conn, entry);
+    return new URL(response.url);
   }
 
   // Memoize a failed lookup
   const failure = new Entry();
-  failure.hostname = hostname;
+  failure.hostname = request.url.hostname;
   failure.failures = (entry && entry.failures) ? entry.failures + 1 : 1;
   failure.icon_url = entry ? entry.icon_url : undefined;
   failure.expires = new Date(request.expires.getTime() * 2);
-  await put_entry(conn, failure);
+  await put_entry(request.conn, failure);
 }
 
 // Fetch /favicon.ico
@@ -93,7 +87,6 @@ async function fetch_root_icon(request) {
   const min_size = request.min_image_size;
   const max_size = request.max_image_size;
   const timeout = request.timeout;
-
   const root_icon = new URL(url.origin + '/favicon.ico');
 
   // NOTE: oracle.com returns "unknown" as the content type, which is why this
@@ -116,10 +109,19 @@ async function fetch_root_icon(request) {
   return response;
 }
 
+// Returns a URL (not a url string). Currently this is naive and just returns
+// the first one found in document order. For convenience, this accepts an
+// undefined document and simply exits if undefined.
+// TODO: stricter is better, require document to be defined
 function search_document(document) {
   if (!document || !document.head) {
     return;
   }
+
+  assert(document.baseURI);
+
+  // TEMP
+  console.debug('Favicon lookup document baseURI:', document.baseURI);
 
   const selector = [
     'link[rel="icon"][href]', 'link[rel="shortcut icon"][href]',
@@ -128,11 +130,12 @@ function search_document(document) {
   ].join(',');
   const links = document.head.querySelectorAll(selector);
 
-  // Assume the document has a valid baseURI. Although we are not even using
-  // that at the moment, for now we just trust the href is canonical (and a
-  // defined string)
   if (links.length > 1) {
-    return links[0].getAttribute('href');
+    // TODO: review whether it is possible to access link.href which implicitly
+    // is the absolute url that uses baseURI
+    // TODO: remove the debugging code from slideshow-page and poll-feeds if
+    // this was indeed the culprit of encountering unresolved urls
+    return new URL(links[0].getAttribute('href'), document.baseURI);
   }
 }
 
@@ -205,23 +208,22 @@ export function compact(conn) {
   });
 }
 
-// Find and return an entry corresponding to the given hostname. Note this does
-// not care if expired. |hostname| must be a string.
-function find_entry(conn, hostname) {
+// Find and return an entry corresponding to the given url. This does
+// not check if the entry is expired. |conn| is optional and must be either
+// undefined or of type IDBDatabase. |url| is type URL.
+function find_entry(conn, url) {
   return new Promise((resolve, reject) => {
-    if (!conn) {
+    if (conn) {
+      assert(conn instanceof IDBDatabase);
+    } else {
       resolve();
       return;
     }
-
-    if (typeof hostname !== 'string' || hostname.length < 1) {
-      reject(new TypeError('Invalid hostname ' + hostname));
-      return;
-    }
+    assert(url instanceof URL);
 
     const txn = conn.transaction('entries');
     const store = txn.objectStore('entries');
-    const request = store.get(hostname);
+    const request = store.get(url.hostname);
     request.onsuccess = _ => resolve(request.result);
     request.onerror = _ => reject(request.error);
   });
@@ -236,11 +238,11 @@ function put_entry(conn, entry) {
     }
 
     if (!entry || typeof entry !== 'object') {
-      return reject(new TypeError('Invalid entry parameter ' + entry));
+      return reject(new TypeError('Invalid entry ' + entry));
     }
 
     if (typeof entry.hostname !== 'string' || entry.hostname.length < 1) {
-      return reject(new TypeError('Entry missing hostname ' + entry));
+      return reject(new TypeError('Entry has invalid hostname ' + entry));
     }
 
     let result;

@@ -2,6 +2,10 @@ import {assert} from '/src/lib/assert.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
+// This is a very specific test that ensures favicon lookup functionality
+// matches browser functionality for the domain oracle.com. oracle.com for
+// some reason returns the content type "unknown" which was previously an
+// cause of failure for lookups.
 export async function favicon_oracle_test() {
   const db_name = favicon_oracle_test.name;
   await indexeddb_utils.remove(db_name);
@@ -12,9 +16,10 @@ export async function favicon_oracle_test() {
   request.conn = conn;
   request.url = url;
 
-  const result = await favicon.lookup(request);
+  const result_url = await favicon.lookup(request);
+  const result_url_string = result_url ? result_url.href : undefined;
   const expected = 'https://www.oracle.com/favicon.ico';
-  assert(result === expected);
+  assert(result_url_string === expected);
   conn.close();
   await indexeddb_utils.remove(db_name);
 }

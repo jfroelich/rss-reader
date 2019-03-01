@@ -235,7 +235,8 @@ async function set_feed_favicon(iconn, feed) {
   const lookup_url = get_feed_favicon_lookup_url(feed);
   const request = new favicon.LookupRequest();
   request.url = lookup_url;
-  feed.faviconURLString = await favicon.lookup(request);
+  const icon_url = await favicon.lookup(request);
+  feed.faviconURLString = icon_url ? icon_url.href : undefined;
 }
 
 // Create the url to use for lookups given a database feed object
@@ -288,7 +289,8 @@ async function refresh_feed_icon(session, iconn, feed) {
   const request = new favicon.LookupRequest();
   request.conn = iconn;
   request.url = lookup_url;
-  const icon_url_string = await favicon.lookup(request);
+  const icon_url = await favicon.lookup(request);
+  const icon_url_string = icon_url ? icon_url.href : undefined;
 
   if (feed.faviconURLString !== icon_url_string) {
     if (icon_url_string) {

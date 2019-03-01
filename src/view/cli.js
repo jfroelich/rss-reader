@@ -54,8 +54,8 @@ async function cli_lookup_favicon(url_string, cached) {
   request.conn = cached ? await favicon.open() : undefined;
   request.url = new URL(url_string);
   const result = await favicon.lookup(request);
-  cached && request.conn && request.conn.close();
-  return result;
+  request.conn && request.conn.close();
+  return result ? result.href : undefined;
 }
 
 async function cli_print_alarms() {
@@ -80,7 +80,7 @@ function cli_create_alarms() {
 async function cli_clear_icons() {
   console.log('Clearing favicon cache...');
   const conn = await favicon.open();
-  return favicon.clear(conn);
+  await favicon.clear(conn);
   conn.close();
   console.log('Cleared favicon cache');
 }
@@ -88,7 +88,7 @@ async function cli_clear_icons() {
 async function cli_compact_icons() {
   console.log('Compacting favicon cache...');
   const conn = await favicon.open();
-  return favicon.compact(conn);
+  await favicon.compact(conn);
   conn.close();
   console.log('Compacted favicon cache');
 }
