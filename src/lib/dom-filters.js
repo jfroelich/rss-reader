@@ -7,6 +7,7 @@ import * as document_utils from '/src/lib/document-utils.js';
 import {node_is_leaf} from '/src/lib/dom-hierarchy.js';
 import * as dom_visibility from '/src/lib/dom-visibility.js';
 import {fetch_image_element} from '/src/lib/fetch-image-element.js';
+import {image_dimensions_filter} from '/src/lib/image-dimensions-filter.js';
 import * as image_utils from '/src/lib/image-utils.js';
 import * as net from '/src/lib/net.js';
 import * as srcset_utils from '/src/lib/srcset-utils.js';
@@ -41,7 +42,7 @@ export async function composite_document_filter(doc, options = {}) {
   lonestar_filter(doc);
   image_dead_filter(doc);
   await image_reachable_filter(doc, options.image_size_timeout);
-  await image_size_filter(doc, options.image_size_timeout);
+  await image_dimensions_filter(doc, options.image_size_timeout);
   boilerplate_filter(doc);
   anchor_script_filter(doc);
   image_size_constrain_filter(doc);
@@ -554,87 +555,6 @@ export function image_reachable_filter(doc, timeout = INDEFINITE) {
   return Promise.all(promises);
 }
 
-// Tries to set width/height attributes for all images. If also running the
-// image_reachable_filter, this should occur after that filter so as to avoid
-// duplicate network requests.
-export function image_size_filter(doc, timeout = INDEFINITE) {
-  assert(document_utils.has_valid_base_uri(doc));
-  assert(timeout instanceof Deadline);
-  const images = doc.querySelectorAll('img');
-  const promises = [];
-  for (const image of images) {
-    const promise = image_size_filter_process_image(image, doc, timeout);
-    promises.push(promise);
-  }
-  return Promise.all(promises);
-}
-
-async function image_size_filter_process_image(image, doc, timeout) {
-  if (image.hasAttribute('width') && image.hasAttribute('height')) {
-    return;
-  }
-
-  // Check for whether the reachability filter has run. If so, grab width and
-  // height from its results and exit early.
-  if (image.hasAttribute('data-reachable-width') &&
-      image.hasAttribute('data-reachable-height')) {
-    image.setAttribute('width', image.getAttribute('data-reachable-width'));
-    image.setAttribute('height', image.getAttribute('data-reachable-height'));
-    return;
-  }
-
-  let width = 0, height = 0;
-
-  // Check inline css
-  if (image.style && image.hasAttribute('style')) {
-    width = parseInt(image.style.width, 10);
-    height = parseInt(image.style.height, 10);
-    if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
-      image.setAttribute('width', width);
-      image.setAttribute('height', height);
-      return;
-    } else {
-      width = height = 0;
-    }
-  }
-
-  if (!image.src) {
-    return;
-  }
-
-  let url;
-  try {
-    url = new URL(image.src);
-  } catch (error) {
-    return;
-  }
-
-  // Check characters in url
-  const exts = ['jpg', 'gif', 'svg', 'jpg', 'bmp', 'png'];
-  const pairs = [{w: 'w', h: 'h'}, {w: 'width', h: 'height'}];
-  if (url.protocol !== 'data:' &&
-      exts.includes(url_utils.url_get_extension(url))) {
-    for (const pair of pairs) {
-      width = parseInt(url.searchParams.get(pairs.w), 10);
-      height = parseInt(url.searchParams.get(pairs.h), 10);
-      if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
-        image.setAttribute('width', width);
-        image.setAttribute('height', height);
-        return;
-      }
-    }
-  }
-
-  try {
-    const fimg = await fetch_image_element(url, timeout);
-    image.setAttribute('width', fimg.width);
-    image.setAttribute('height', fimg.height);
-  } catch (error) {
-    if (error instanceof AssertionError) {
-      throw error;
-    }
-  }
-}
 
 // Remove or modify images based on size. Assumes images have dimensions.
 export function image_size_constrain_filter(doc) {
