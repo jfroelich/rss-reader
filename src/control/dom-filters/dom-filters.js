@@ -1,4 +1,3 @@
-import * as image_utils from '/src/control/dom-filters/image-utils.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import * as boilerplate from '/src/lib/boilerplate.js';
 import {coerce_element} from '/src/lib/coerce-element.js';
@@ -8,6 +7,7 @@ import * as document_utils from '/src/lib/document-utils.js';
 import {node_is_leaf} from '/src/lib/dom-hierarchy.js';
 import * as dom_visibility from '/src/lib/dom-visibility.js';
 import {fetch_image_element} from '/src/lib/fetch-image-element.js';
+import * as image_utils from '/src/lib/image-utils.js';
 import * as net from '/src/lib/net.js';
 import * as srcset_utils from '/src/lib/srcset-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
