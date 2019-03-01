@@ -82,19 +82,18 @@ export function anchor_format_filter(doc) {
   }
 }
 
+// Anchors that the browser recognizes as javascript executors will have the
+// javascript: protocol. Note the browser tolerates some loose syntax such as
+// having leading spaces before the protocol, but does not tolerate space
+// between the protocol and its colon. Our goal is performance and to match
+// browser behavior. In comparison to other strategies such as using a
+// regular expression or CSS starts-with, it is faster and more accurate to
+// rely on the browser's native behavior.
+//
+// The browser recognizes the protocol correctly regardless of the document's
+// baseURI, so there is no concern here regarding when this runs in relation to
+// other filters, or whether the baseURI was properly initialized.
 export function anchor_script_filter(doc) {
-  // Anchors that the browser recognizes as javascript executors will have the
-  // javascript: protocol. Note the browser tolerates some loose syntax such as
-  // having leading spaces before the protocol, but does not tolerate space
-  // between the protocol and its colon. Our goal is performance and to match
-  // browser behavior. In comparison to other strategies such as using a
-  // regular expression or CSS starts-with, it is faster and more accurate to
-  // rely on the browser's native behavior.
-  //
-  // The browser recognizes the protocol correctly regardless of the document's
-  // baseURI, so there is no concern here regarding when this runs in relation
-  // to other filters, or whether the baseURI was properly initialized.
-
   const anchors = doc.querySelectorAll('a[href]');
   for (const anchor of anchors) {
     if (anchor.protocol === 'javascript:') {
