@@ -53,7 +53,12 @@ async function process_image(image, timeout) {
   }
 
   // TODO: give up on the idea of inline-only processing. This should probably
-  // revert to using getComputedStyle
+  // revert to using getComputedStyle. Check out the feature introduced in
+  // Chrome 66 called the attributeStyleMap, and the new CSS global.
+  // https://developers.google.com/web/updates/2018/03/cssom
+  // Does it use computed style or inline style though?
+  // Remember, document may be inert. offsetWidth and offsetHeight are
+  // unavailable.
 
   // Check whether dimensions are available from css
   if (image.style && image.hasAttribute('style')) {
