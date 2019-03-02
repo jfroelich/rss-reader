@@ -56,6 +56,17 @@ export async function css_offset_props_test() {
   */
 }
 
+// Test with image.src is present in the case where there is a picture, a
+// source, and an image, all well-formed, but image has no src attribute. In
+// this case, src should not be provided.
+export async function picture_without_src_attr_test() {
+  let input, doc, image;
+  input = '<picture><source srcset="foo.gif"><img></picture>';
+  doc = html_utils.parse_html(input);
+  image = doc.querySelector('img');
+  assert(!image.src);
+}
+
 export async function image_dimensions_filter_css_test() {
   let input, doc, image;
 
