@@ -8,6 +8,7 @@ import * as dom_visibility from '/src/lib/dom-visibility.js';
 import {fetch_image_element} from '/src/lib/fetch-image-element.js';
 import {image_dimensions_filter} from '/src/lib/image-dimensions-filter.js';
 import * as image_utils from '/src/lib/image-utils.js';
+import {lonestar_filter} from '/src/lib/lonestar-filter.js';
 import * as net from '/src/lib/net.js';
 import * as srcset_utils from '/src/lib/srcset-utils.js';
 import * as string_utils from '/src/lib/string-utils.js';
@@ -619,112 +620,6 @@ export function list_filter(doc) {
 
     unwrap_element(list);
   }
-}
-
-// The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
-// can be found here: https://youtu.be/rGvblGCD7qM
-export function lonestar_filter(doc) {
-  assert(doc.baseURI);
-
-  const host_patterns = [
-    /\/\/.*2o7\.net\//i,
-    /\/\/ad\.doubleclick\.net\//i,
-    /\/\/ad\.linksynergy\.com\//i,
-    /\/\/analytics\.twitter\.com\//i,
-    /\/\/anon-stats\.eff\.org\//i,
-    /\/\/bat\.bing\.com\//i,
-    /\/\/b\.scorecardresearch\.com\//i,
-    /\/\/beacon\.gu-web\.net\//i,
-    /\/\/.*cloudfront\.net\//,
-    /\/\/googleads\.g\.doubleclick\.net\//i,
-    /\/\/in\.getclicky\.com\//i,
-    /\/\/insight\.adsrvr\.org\//i,
-    /\/\/me\.effectivemeasure\.net\//i,
-    /\/\/metrics\.foxnews\.com\//i,
-    /\/\/.*moatads\.com\//i,
-    /\/\/pagead2\.googlesyndication\.com\//i,
-    /\/\/pixel\.quantserve\.com\//i,
-    /\/\/pixel\.wp\.com\//i,
-    /\/\/pubads\.g\.doubleclick\.net\//i,
-    /\/\/sb\.scorecardresearch\.com\//i,
-    /\/\/stats\.bbc\.co\.uk\//i,
-    /\/\/statse\.webtrendslive\.com\//i,
-    /\/\/pixel\.wp\.com\//i,
-    /\/\/t\.co\//i,
-    /\/\/www\.facebook\.com\/tr/i
-  ];
-
-  const document_url = new URL(doc.baseURI);
-
-  // Remove images that look like telemetry beacons
-  const images = doc.querySelectorAll('img');
-  for (const image of images) {
-    if (lonestar_is_telemetric(image, document_url, host_patterns, false)) {
-      image_utils.remove_image(image);
-    }
-  }
-
-  // Specify all hyperlink anchors as noreferrer
-  const anchors = doc.querySelectorAll('a[href]');
-  for (const anchor of anchors) {
-    anchor.setAttribute('rel', 'noreferrer');
-  }
-
-  // Remove ping attributes from anchors
-  const ping_anchors = doc.querySelectorAll('a[ping]');
-  for (const anchor of ping_anchors) {
-    anchor.removeAttribute('ping');
-  }
-}
-
-function lonestar_is_telemetric(
-    element, document_url, host_patterns, is_strict) {
-  if (dom_visibility.is_hidden_inline(element)) {
-    return true;
-  }
-
-  // naturalWidth and naturalHeight are unavailable in inert documents
-  // TODO: also match common names for pixel images like "pixel.gif", and
-  // I think facebook uses "/p"
-  if (element.localName === 'img' && element.hasAttribute('src') &&
-      element.hasAttribute('width') && element.width < 2 &&
-      element.hasAttribute('height') && element.height < 2) {
-    return true;
-  }
-
-  if (element.localName === 'img' && element.hasAttribute('src')) {
-    const src = element.getAttribute('src');
-    let url;
-    try {
-      url = new URL(src, document_url);
-    } catch (error) {
-      // Ignore
-    }
-
-    if (url) {
-      const local_protocols = ['data:', 'mailto:', 'tel:', 'javascript:'];
-      if (!local_protocols.includes(url.protocol)) {
-        if (is_strict) {
-          if (document_url.origin !== url.origin) {
-            return true;
-          }
-        } else {
-          if (url_utils.url_get_upper_domain(document_url) !==
-              url_utils.url_get_upper_domain(url)) {
-            return true;
-          }
-        }
-      }
-
-      for (const pattern of host_patterns) {
-        if (pattern.test(src)) {
-          return true;
-        }
-      }
-    }
-  }
-
-  return false;
 }
 
 // Searches the document for misnested elements and tries to fix each
