@@ -3,7 +3,6 @@ import * as boilerplate from '/src/lib/boilerplate.js';
 import {coerce_element} from '/src/lib/coerce-element.js';
 import {color_contrast_filter} from '/src/lib/color-contrast-filter.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
-import * as document_utils from '/src/lib/document-utils.js';
 import {node_is_leaf} from '/src/lib/dom-hierarchy.js';
 import * as dom_visibility from '/src/lib/dom-visibility.js';
 import {fetch_image_element} from '/src/lib/fetch-image-element.js';
@@ -492,7 +491,7 @@ export function image_responsive_filter(doc) {
 }
 
 export function image_reachable_filter(doc, timeout = INDEFINITE) {
-  assert(document_utils.has_valid_base_uri(doc));
+  assert(doc.baseURI);
   assert(timeout instanceof Deadline);
 
   // Given an image element, inspect its src value and try to fetch the
@@ -625,7 +624,7 @@ export function list_filter(doc) {
 // The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
 // can be found here: https://youtu.be/rGvblGCD7qM
 export function lonestar_filter(doc) {
-  assert(document_utils.has_valid_base_uri(doc));
+  assert(doc.baseURI);
 
   const host_patterns = [
     /\/\/.*2o7\.net\//i,
@@ -890,7 +889,7 @@ export function url_resolve_filter(doc) {
   // some other elements I have ignored too, like some of the attributes for
   // <object> or <embed>.
 
-  assert(document_utils.has_valid_base_uri(doc));
+  assert(doc.baseURI);
 
   const base_url = new URL(doc.baseURI);
   const map = {

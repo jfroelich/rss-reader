@@ -1,23 +1,5 @@
 import {assert} from '/src/lib/assert.js';
 
-// TODO: maybe it is better to check for base as a required element because
-// this avoids the ambiguity with chrome-extension default being implicit or
-// explicit? checking for explicit base would guarantee the baseURI is explicit,
-// in fact that might be the only way. false negative when all urls absolute
-// however, but maybe that is immaterial.
-// TODO: I really do not like the chrome-extension check, except that, that is
-// exactly the url i want to avoid in the particular use case. it feels like
-// the function is incorrectly targeted, it is written and named as to be
-// general application but I have a specific and particular situation in mind.
-export function has_valid_base_uri(doc) {
-  // It is a programmer error to call this function on anything other than an
-  // initialized Document
-  assert(doc instanceof Document);
-
-  return doc.baseURI && typeof doc.baseURI === 'string' &&
-      !doc.baseURI.startsWith('chrome-extension');
-}
-
 export function set_base_uri(doc, url, overwrite) {
   assert(doc instanceof Document);
   assert(url instanceof URL);
@@ -52,7 +34,7 @@ export function set_base_uri(doc, url, overwrite) {
       doc.documentElement.insertBefore(head, body);
     }
 
-    assert(has_valid_base_uri(doc));
+    assert(doc.baseURI);
     return;
   }
 
@@ -68,7 +50,7 @@ export function set_base_uri(doc, url, overwrite) {
       doc.documentElement.insertBefore(head, body);
     }
 
-    assert(has_valid_base_uri(doc));
+    assert(doc.baseURI);
     return;
   }
 
@@ -106,5 +88,5 @@ export function set_base_uri(doc, url, overwrite) {
     }
   }
 
-  assert(has_valid_base_uri(doc));
+  assert(doc.baseURI);
 }

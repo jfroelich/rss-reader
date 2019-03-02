@@ -1,5 +1,5 @@
 import {assert} from '/src/lib/assert.js';
-import * as document_utils from '/src/lib/document-utils.js';
+import {set_base_uri} from '/src/lib/set-base-uri.js';
 
 export async function set_base_uri_test() {
   // If a document has no base elements, and overwrite is true, then this should
@@ -8,7 +8,7 @@ export async function set_base_uri_test() {
   let title = 'no existing base and overwrite';
   let doc = document.implementation.createHTMLDocument(title);
   let url = new URL('http://www.example.com');
-  document_utils.set_base_uri(doc, url, true);
+  set_base_uri(doc, url, true);
   assert(doc.baseURI === url.href);
   assert(doc.querySelectorAll('base').length === 1);
 
@@ -17,7 +17,7 @@ export async function set_base_uri_test() {
   title = 'no existing base and not overwrite';
   doc = document.implementation.createHTMLDocument(title);
   url = new URL('http://www.example.com');
-  document_utils.set_base_uri(doc, url, false);
+  set_base_uri(doc, url, false);
   assert(doc.baseURI === url.href);
   assert(doc.getElementsByTagName('base').length === 1);
 
@@ -30,7 +30,7 @@ export async function set_base_uri_test() {
   doc.head.appendChild(base);
   assert(doc.baseURI === 'http://www.example1.com/');
   url = new URL('http://www.example2.com');
-  document_utils.set_base_uri(doc, url, false);
+  set_base_uri(doc, url, false);
   // After the change, is the document in the expected state
   assert(doc.baseURI === 'http://www.example1.com/');
   assert(doc.getElementsByTagName('base').length === 1);
@@ -48,7 +48,7 @@ export async function set_base_uri_test() {
   // the extension's base url (because that is the 'page' executing the script
   // that created the document without a base element).
   url = new URL('http://www.example.com');
-  document_utils.set_base_uri(doc, url);
+  set_base_uri(doc, url);
   assert(doc.baseURI === 'http://www.example.com/path');
 
   // If a document has a base element, and that base element has an href value
@@ -63,6 +63,6 @@ export async function set_base_uri_test() {
   base.setAttribute('href', '  \t\r\n   foo  bar     ');
   doc.head.appendChild(base);
   url = new URL('http://www.example.com');
-  document_utils.set_base_uri(doc, url);
+  set_base_uri(doc, url);
   assert(doc.baseURI === 'http://www.example.com/foo%20%20bar');
 }

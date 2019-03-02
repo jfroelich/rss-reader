@@ -1,6 +1,5 @@
 import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
-import * as document_utils from '/src/lib/document-utils.js';
 import {fetch_image_element} from '/src/lib/fetch-image-element.js';
 import * as url_utils from '/src/lib/url-utils.js';
 

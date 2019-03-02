@@ -3,12 +3,12 @@ import {fetch_feed} from '/src/control/fetch-feed.js';
 import * as rewrite_rules from '/src/control/rewrite-rules.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
-import * as document_utils from '/src/lib/document-utils.js';
 import * as dom_filters from '/src/lib/dom-filters.js';
 import * as favicon from '/src/lib/favicon.js';
 import {fetch_html} from '/src/lib/fetch-html.js';
 import * as html_utils from '/src/lib/html-utils.js';
 import * as net from '/src/lib/net.js';
+import {set_base_uri} from '/src/lib/set-base-uri.js';
 import * as sniffer from '/src/lib/sniffer.js';
 import * as tls from '/src/lib/tls.js';
 import {Entry, is_entry} from '/src/model/entry.js';
@@ -266,8 +266,7 @@ export class PollOperation {
     assert(doc instanceof Document);
 
     const old_base_uri = doc.baseURI;
-    document_utils.set_base_uri(
-        doc, new URL(Entry.prototype.getURLString.call(entry)));
+    set_base_uri(doc, new URL(Entry.prototype.getURLString.call(entry)));
 
     // If title was not present in the feed xml, try and pull it from content
     if (!entry.title) {
