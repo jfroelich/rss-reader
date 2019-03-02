@@ -91,15 +91,14 @@ async function process_image(image, timeout) {
   }
 
   // Check characters in url for non-data-uris
+  const pairs = [{w: 'w', h: 'h'}, {w: 'width', h: 'height'}];
   const exts = ['jpg', 'gif', 'svg', 'bmp', 'png'];
   if (url.protocol !== 'data:' &&
       exts.includes(url_utils.url_get_extension(url))) {
-    const pairs = [{w: 'w', h: 'h'}, {w: 'width', h: 'height'}];
-
     for (const pair of pairs) {
       let width = parseInt(url.searchParams.get(pairs.w), 10);
       let height = parseInt(url.searchParams.get(pairs.h), 10);
-      if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
+      if (width > 0 && height > 0) {
         image.setAttribute('width', width);
         image.setAttribute('height', height);
         return;
