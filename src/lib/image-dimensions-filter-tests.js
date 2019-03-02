@@ -1,11 +1,11 @@
 import {assert} from '/src/lib/assert.js';
-import * as html_utils from '/src/lib/html-utils.js';
+import {parse_html} from '/src/lib/html-utils.js';
 import {image_dimensions_filter} from '/src/lib/image-dimensions-filter.js';
 
 export async function css_offset_props_test() {
   let input, doc, image;
   input = '<img style="width: 1px; height: 1px;">';
-  doc = html_utils.parse_html(input);
+  doc = parse_html(input);
   await image_dimensions_filter(doc);
   image = doc.querySelector('img');
 
@@ -39,7 +39,7 @@ export async function css_offset_props_test() {
   // Test when specified only via style element, not style attribute
   input = '<html><head><style>img{ width: 1px; height: 1px; }</style></head>' +
       '<body><img></body></html>';
-  doc = html_utils.parse_html(input);
+  doc = parse_html(input);
   await image_dimensions_filter(doc);
   image = doc.querySelector('img');
   assert(image.width === 0);
@@ -62,7 +62,7 @@ export async function css_offset_props_test() {
 export async function picture_without_src_attr_test() {
   let input, doc, image;
   input = '<picture><source srcset="foo.gif"><img></picture>';
-  doc = html_utils.parse_html(input);
+  doc = parse_html(input);
   image = doc.querySelector('img');
   assert(!image.src);
 }
@@ -71,13 +71,13 @@ export async function image_dimensions_filter_css_test() {
   let input, doc, image;
 
   input = '<img style="width: 1px; height: 1px;">';
-  doc = html_utils.parse_html(input);
+  doc = parse_html(input);
   await image_dimensions_filter(doc);
   image = doc.querySelector('img');
   console.debug(image.outerHTML);
 
   input = '<img style="width: 100%; height: 100%;">';
-  doc = html_utils.parse_html(input);
+  doc = parse_html(input);
   await image_dimensions_filter(doc);
   image = doc.querySelector('img');
   console.debug(image.outerHTML);
@@ -87,7 +87,7 @@ export async function image_dimensions_filter_css_test() {
 // unknown attributes
 export async function image_dimensions_filter_test() {
   const input = '<img src="/src/lib/basic-image.png">';
-  const doc = html_utils.parse_html(input);
+  const doc = parse_html(input);
   await image_dimensions_filter(doc);
   const image = doc.querySelector('img');
   assert(image.width === 16);
@@ -97,7 +97,7 @@ export async function image_dimensions_filter_test() {
 // Assert that fetching an image that does not exist skips over the image
 export async function image_dimensions_filter_404_test() {
   let input = '<img src="i-am-a-missing-image-example.gif">';
-  let doc = html_utils.parse_html(input);
+  let doc = parse_html(input);
   // This should not throw
   await image_dimensions_filter(doc);
   // The properties for the image should not be initialized.
@@ -109,14 +109,14 @@ export async function image_dimensions_filter_404_test() {
 // Exercise running the function on a document without any images.
 export async function image_dimensions_filter_text_only_test() {
   let input = 'no images here';
-  let doc = html_utils.parse_html(input);
+  let doc = parse_html(input);
   // should not throw
   await image_dimensions_filter(doc);
 }
 
 export async function image_dimensions_filter_sourceless_test() {
   let input = '<img title="missing src">';
-  let doc = html_utils.parse_html(input);
+  let doc = parse_html(input);
   // This should not throw
   await image_dimensions_filter(doc);
   // Properties should not be initialized
