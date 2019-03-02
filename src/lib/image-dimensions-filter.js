@@ -22,8 +22,9 @@ export function image_dimensions_filter(doc, timeout = INDEFINITE) {
   assert(timeout instanceof Deadline);
 
   // This accesses an image's full url via its src property, so this relies on
-  // the document having a valid baseURI property.
-  assert(document_utils.has_valid_base_uri(doc));
+  // the document having a valid baseURI property. Note that for testing
+  // purposes this cannot assert that the url protocol is not chrome-extension
+  assert(doc.baseURI);
 
   // Concurrently traverse and possibly update each image.
   const images = doc.querySelectorAll('img');
@@ -35,13 +36,14 @@ export function image_dimensions_filter(doc, timeout = INDEFINITE) {
   return Promise.all(promises);
 }
 
+// Attempt to set the width and height of an image element. This uses some basic
+// heuristics to guess from other information, and if necessary, falls back to
+// doing a network request. If everything fails then the image is left as is.
 async function process_image(image, timeout) {
   // Attempt to avoid any processing
   if (image.hasAttribute('width') && image.hasAttribute('height')) {
     return;
   }
-
-  // Before involving the network, use some heuristics to discern dimensions
 
   // Check for whether the reachability filter has run. If so, grab width and
   // height from its results and exit early so as to avoid wasted processing.
@@ -52,28 +54,24 @@ async function process_image(image, timeout) {
     return;
   }
 
-  // TODO: give up on the idea of inline-only processing. This should probably
-  // revert to using getComputedStyle. Check out the feature introduced in
-  // Chrome 66 called the attributeStyleMap, and the new CSS global.
-  // https://developers.google.com/web/updates/2018/03/cssom
-  // Does it use computed style or inline style though?
-  // Remember, document may be inert. offsetWidth and offsetHeight are
-  // unavailable.
-
-  // Check whether dimensions are available from css
-  if (image.style && image.hasAttribute('style')) {
-    let width = parseInt(image.style.width, 10);
-    let height = parseInt(image.style.height, 10);
-    if (!isNaN(width) && !isNaN(height) && width > 0 && height > 0) {
-      image.setAttribute('width', width);
-      image.setAttribute('height', height);
-      return;
-    }
+  // When the image is missing width or height attributes, is inert or live, but
+  // has a style attribute specifying width and height, then the width and
+  // height properties are initialized through the CSS. There is no need to
+  // manually parse the css style properties because that was done when the
+  // document was created. Note this only works for inline style, not dimensions
+  // specified via a style element or a linked stylesheet. Note there is no need
+  // to check for NaN as implicitly NaN > 0 is false.
+  if (image.width > 0 && image.height > 0) {
+    image.setAttribute('width', image.width);
+    image.setAttribute('height', image.height);
+    return;
   }
 
   // TODO: this should not rely on whether the responsive image filter has run.
   // Therefore this actually needs to be aware of the picture/source tactic for
-  // getting an images source.
+  // getting an images source. but i need to check if src prop initialized in
+  // case of picture/source without src attribute, maybe it is so there is no
+  // real concern
 
   // The remaining checks rely on the image having a source. While there are
   // other filters that may have already removed such images, leaving this as
