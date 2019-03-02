@@ -1,5 +1,12 @@
 import '/src/ext/he.js';
 
+// TODO: use class Feed, and class Entry, and export them. I went off on the
+// wrong tangent when trying to merge this with the Feed format coming out of
+// model. It is fine to have two classes named the same thing from different
+// modules. They mean different things. Whatever composes the modules has to
+// integrate them, and that is the concern of that integrator, not this module's
+// concern.
+
 // Represents a deserialized feed in memory. Note this format may not correspond
 // to the feed format in other modules (and does not care).
 export function feed_t() {
