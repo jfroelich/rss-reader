@@ -13,7 +13,7 @@ import {assert} from '/src/lib/assert.js';
 // that removes style attributes.
 //
 // The filter accepts a required |options| parameter with a required property
-// |min_font_size| that must be an integer, or an assertion error is thrown.
+// |min_font_size| that must be a CSSUnitValue, or an assertion error is thrown.
 
 // NOTE: this is a very raw first draft, probably several things wrong, I am
 // trying to proceed despite not having a clear vision for the implementation.
@@ -54,7 +54,10 @@ import {assert} from '/src/lib/assert.js';
 
 export function legible_text_filter(doc, options) {
   const min_font_size = options.min_font_size;
-  assert(Number.isInteger(min_font_size));
+  assert(min_font_size instanceof CSSUnitValue);
+
+  // TODO: to simplify and make the comparison of min-font-size to
+  // avg-font-size, both should be CSSUnitValue types of the same unit.
 
   const avg_font_size = calc_avg_font_size(doc);
   if (isNaN(avg_font_size)) {
@@ -67,7 +70,7 @@ export function legible_text_filter(doc, options) {
     return;
   }
 
-  if (avg_font_size < min_font_size) {
+  if (avg_font_size < min_font_size.value) {
     console.debug(
         'Average font size is smaller than minimum', avg_font_size,
         min_font_size);
@@ -83,7 +86,7 @@ export function legible_text_filter(doc, options) {
       continue;
     }
 
-    if (font_size < min_font_size) {
+    if (font_size < min_font_size.value) {
       console.debug(
           'Removing text node with small font', node.nodeValue, font_size);
       parent.removeChild(node);
