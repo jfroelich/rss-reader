@@ -1,5 +1,9 @@
 import {assert} from '/src/lib/assert.js';
 
+// NOTE: there is no point to using this filter in its current state. Without
+// getComputedStyle availability it is horribly inaccurate and could
+// unintentionally remove desired content.
+
 // The legible_text_filter removes text nodes from the input document that the
 // filter considers illegible due to having too small of a font size.
 //
@@ -53,14 +57,19 @@ export function legible_text_filter(doc, options) {
   assert(Number.isInteger(min_font_size));
 
   const avg_font_size = calc_avg_font_size(doc);
+  if (isNaN(avg_font_size)) {
+    console.debug('Failed to calc average font size', doc.baseURI);
+    return;
+  }
+
   if (avg_font_size < 1) {
     console.debug('Average font size is < 1', avg_font_size);
     return;
   }
 
-  if (avg_font_size < (min_font_size + 2)) {
+  if (avg_font_size < min_font_size) {
     console.debug(
-        'Average font size is smaller than minimum tolerance', avg_font_size,
+        'Average font size is smaller than minimum', avg_font_size,
         min_font_size);
     return;
   }
@@ -68,21 +77,59 @@ export function legible_text_filter(doc, options) {
   const it = doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_TEXT);
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     const parent = node.parentNode;
-    const style = getComputedStyle(parent);
-    const font_size = parseInt(style.fontSize, 10);
+    const font_size = get_element_font_size(parent);
     if (isNaN(font_size)) {
       console.debug('Could not determine text font size', node.nodeValue);
       continue;
     }
 
     if (font_size < min_font_size) {
-      console.debug('Removing node with small font', node.nodeValue, font_size);
-      // Only remove the text node, not its parent element, because that could
-      // remove many other unrelated things. remove() is only available to
-      // elements, so use the older syntax to remove the node
+      console.debug(
+          'Removing text node with small font', node.nodeValue, font_size);
       parent.removeChild(node);
     }
   }
+}
+
+// Returns an element's font size
+export function get_element_font_size(element, units = 'px') {
+  // NOTE: in order to support processing of inert documents, we cannot use
+  // getComputedStyle. Using element.style.fontSize is fickle because it means
+  // we have to properly interpret values like 100%, 10px, 10em, etc. So, for
+  // now, experiment with the new typed CSS object model approach and only
+  // support pixel-based font sizes.
+  // https://developers.google.com/web/updates/2018/03/cssom
+
+  // TODO: somehow support relative size like percent and EM and smaller
+  // TODO: support inherited CSS styles
+  // TODO: support other CSS properties or html attribtues that affect font
+  // size (e.g. zoom?).
+  // TODO: maybe this belongs in its own library because there may be other
+  // filters and modules that want to use this functionality.
+  // TODO: consider returning a default value?
+
+  // If map size is 0 then there are no inline properties, so exit. We could
+  // skip this step, this may be a premature optimization, leaving it here for
+  // now as a reference.
+  const inline_property_count = element.attributeStyleMap.size;
+  if (inline_property_count < 1) {
+    return NaN;
+  }
+
+  let font_size_unit_value = element.attributeStyleMap.get('font-size');
+  if (!font_size_unit_value) {
+    return NaN;
+  }
+
+  // This can throw if the conversion is not supported, this only supports
+  // physical metric conversion like in/cm/mm/px/pt
+  try {
+    font_size_unit_value = font_size_unit_value.to(units);
+  } catch (error) {
+    console.debug(error);
+    return NaN;
+  }
+  return font_size_unit_value.value;
 }
 
 // Returns the average font size of text in the document
@@ -97,19 +144,17 @@ export function calc_avg_font_size(doc) {
   let text_node_count = 0;
   const it = doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_TEXT);
   for (let node = it.nextNode(); node; node = it.nextNode()) {
+    text_node_count++;
+
     const parent = node.parentNode;
-    const style = getComputedStyle(parent);
-    const font_size = parseInt(style.fontSize, 10);
+    const font_size = get_element_font_size(parent);
     if (!isNaN(font_size)) {
       total_font_size += font_size;
     }
-    text_node_count++;
   }
 
   if (text_node_count < 1) {
-    // TEMP: initial tracing, will remove
-    console.debug('text_node_count < 1');
-    return 0;
+    return NaN;
   }
 
   // TEMP: initial tracing, will remove
