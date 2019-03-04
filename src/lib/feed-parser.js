@@ -19,6 +19,15 @@ export function Feed() {
   this.entries = [];
 }
 
+export function Entry() {
+  this.title = undefined;
+  this.author = undefined;
+  this.link = undefined;
+  this.datePublished = undefined;
+  this.content = undefined;
+  this.enclosure = undefined;
+}
+
 // Parses a String into a Feed object. May throw errors.
 export function parse_from_string(value) {
   return parse_from_document(parse_xml(value));
@@ -47,7 +56,7 @@ export function parse_from_document(doc) {
   feed.date_published = find_feed_date(chan_element);
 
   const entry_elements = find_entry_elements(chan_element);
-  feed.entries = entry_elements.map(create_entry);
+  feed.entries = entry_elements.map(element_to_entry);
   feed_resolve_entry_urls(feed.entries, feed.link);
 
   return feed;
@@ -187,15 +196,15 @@ function element_is_link_without_href(element) {
   return element.localName === 'link' && !element.hasAttribute('href');
 }
 
-function create_entry(entry_element) {
-  return {
-    title: find_entry_title(entry_element),
-    author: find_entry_author(entry_element),
-    link: find_entry_link(entry_element),
-    datePublished: find_entry_date(entry_element),
-    content: find_entry_content(entry_element),
-    enclosure: find_entry_enclosure(entry_element)
-  };
+function element_to_entry(entry_element) {
+  const entry = new Entry();
+  entry.title = find_entry_title(entry_element);
+  entry.author = find_entry_author(entry_element);
+  entry.link = find_entry_link(entry_element);
+  entry.datePublished = find_entry_date(entry_element);
+  entry.content = find_entry_content(entry_element);
+  entry.enclosure = find_entry_enclosure(entry_element);
+  return entry;
 }
 
 function find_entry_title(entry_element) {
