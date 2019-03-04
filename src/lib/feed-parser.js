@@ -1,4 +1,5 @@
 import '/src/ext/he.js';
+import {parse_xml} from '/src/lib/parse-xml.js';
 
 // TODO: use class Feed, and class Entry, and export them. I went off on the
 // wrong tangent when trying to merge this with the Feed format coming out of
@@ -32,24 +33,10 @@ export function feed_t() {
 // represents one of the xml items (or entries).
 export function parse(value) {
   const doc = parse_xml(value);
-  return unmarshall_xml(doc);
+  return parse_from_document(doc);
 }
 
-function parse_xml(value) {
-  if (typeof value !== 'string') {
-    throw new Error('value is not a string');
-  }
-
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(value, 'application/xml');
-  const error = doc.querySelector('parsererror');
-  if (error) {
-    throw new Error(error.textContent);
-  }
-  return doc;
-}
-
-function unmarshall_xml(doc) {
+function parse_from_document(doc) {
   const doc_element = doc.documentElement;
   const doc_element_name = element_get_local_name(doc_element);
 
