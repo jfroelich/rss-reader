@@ -28,8 +28,6 @@ export async function fetch_feed(url, timeout = INDEFINITE) {
   feed.appendURL(url);
   feed.appendURL(new URL(response.url));
 
-  feed.dateFetched = new Date();
-
   // Convert parsed entries into model entries
   for (const entry of parsed_feed.entries) {
     entry.datePublished = entry.date_published;

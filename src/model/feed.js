@@ -85,8 +85,6 @@ Feed.validate = function(feed) {
   vassert(is_date_lte(feed.dateCreated, feed.dateUpdated));
   vassert(is_valid_date(feed.datePublished));
   vassert(is_date_lte(feed.datePublished, now));
-  vassert(is_valid_date(feed.dateFetched));
-  vassert(is_date_lte(feed.dateFetched, now));
 };
 
 export function is_feed(value) {
