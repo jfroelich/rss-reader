@@ -28,15 +28,6 @@ export async function fetch_feed(url, timeout = INDEFINITE) {
   feed.appendURL(url);
   feed.appendURL(new URL(response.url));
 
-  // Set the last modified date based on the response
-  const last_modified_string = response.headers.get('Last-Modified');
-  if (last_modified_string) {
-    const last_modified_date = new Date(last_modified_string);
-    if (!isNaN(last_modified_date.getTime())) {
-      feed.dateLastModifed = last_modified_date;
-    }
-  }
-
   feed.dateFetched = new Date();
 
   // Convert parsed entries into model entries
