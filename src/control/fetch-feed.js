@@ -4,13 +4,10 @@ import * as feed_parser from '/src/lib/feed-parser.js';
 import {better_fetch} from '/src/lib/net.js';
 import {Feed} from '/src/model/feed.js';
 
-export async function fetch_feed(
-    url, skip_entries = true, resolve_entry_urls = false,
-    timeout = INDEFINITE) {
+export async function fetch_feed(url, timeout = INDEFINITE) {
   const response = await better_fetch(url, {timeout: timeout});
   const response_text = await response.text();
-  const parsed_feed =
-      feed_parser.parse(response_text, skip_entries, resolve_entry_urls);
+  const parsed_feed = feed_parser.parse(response_text);
 
   // Convert the feed from the parse format to the storage format
   const feed = new Feed();

@@ -30,19 +30,9 @@ export function feed_t() {
 // properties are stored in the parsed object. The output object contains an
 // entries property that is an array of entry objects, where each entry
 // represents one of the xml items (or entries).
-
-// Parses the input string into a feed object. The feed object will always have
-// a defined entries array, although it may be zero length. Returns a feed
-// object or throws
-
-// @param value {String} the xml string to parse
-// @param skip_entries {Boolean} if true, entries are not processed, and an
-// empty entries array is included in the result
-// @param resolve_entry_urls {Boolean} if true, entry urls are canonicalized
-// using feed.link as the base url
-export function parse(value, skip_entries, resolve_entry_urls) {
+export function parse(value) {
   const doc = parse_xml(value);
-  return unmarshall_xml(doc, skip_entries, resolve_entry_urls);
+  return unmarshall_xml(doc);
 }
 
 function parse_xml(value) {
@@ -59,7 +49,7 @@ function parse_xml(value) {
   return doc;
 }
 
-function unmarshall_xml(doc, skip_entries, resolve_entry_urls) {
+function unmarshall_xml(doc) {
   const doc_element = doc.documentElement;
   const doc_element_name = element_get_local_name(doc_element);
 
@@ -80,14 +70,9 @@ function unmarshall_xml(doc, skip_entries, resolve_entry_urls) {
   feed.link = find_feed_link(chan_element);
   feed.date_published = find_feed_date(chan_element);
 
-  if (!skip_entries) {
-    const entry_elements = find_entry_elements(chan_element);
-    feed.entries = entry_elements.map(create_entry);
-
-    if (resolve_entry_urls) {
-      feed_resolve_entry_urls(feed.entries, feed.link);
-    }
-  }
+  const entry_elements = find_entry_elements(chan_element);
+  feed.entries = entry_elements.map(create_entry);
+  feed_resolve_entry_urls(feed.entries, feed.link);
 
   return feed;
 }

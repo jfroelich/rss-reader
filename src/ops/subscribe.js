@@ -20,7 +20,7 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   }
 
   // Propagate fetch errors as subscribe errors by not catching
-  const response = await fetch_feed(url, true, false, timeout);
+  const response = await fetch_feed(url, timeout);
   const http_response = response.http_response;
 
   // If redirected, check if subscribed to the redirected url

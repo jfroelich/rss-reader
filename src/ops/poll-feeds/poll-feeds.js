@@ -321,7 +321,7 @@ export class PollOperation {
 
   fetchFeed(feed) {
     const url = new URL(Feed.prototype.getURLString.call(feed));
-    return fetch_feed(url, false, true, this.fetch_feed_timeout);
+    return fetch_feed(url, this.fetch_feed_timeout);
   }
 
   // Returns a new feed object that results from merging the old feed with the
