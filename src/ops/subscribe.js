@@ -19,14 +19,8 @@ export async function subscribe(session, iconn, url, timeout, notify) {
     throw new ConstraintError(message);
   }
 
-  // Fetch the feed
-  const fetch_options = {
-    timeout: timeout,
-    skip_entries: true,
-    resolve_entry_urls: false
-  };
   // Propagate fetch errors as subscribe errors by not catching
-  const response = await fetch_feed(url, fetch_options);
+  const response = await fetch_feed(url, true, false, timeout);
   const http_response = response.http_response;
 
   // If redirected, check if subscribed to the redirected url

@@ -320,12 +320,8 @@ export class PollOperation {
   }
 
   fetchFeed(feed) {
-    const options = {};
-    options.timeout = this.fetch_feed_timeout;
-    options.skip_entries = false;
-    options.resolve_entry_urls = true;
     const url = new URL(Feed.prototype.getURLString.call(feed));
-    return fetch_feed(url, options);
+    return fetch_feed(url, false, true, this.fetch_feed_timeout);
   }
 
   // Returns a new feed object that results from merging the old feed with the

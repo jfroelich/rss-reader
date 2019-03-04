@@ -1,20 +1,16 @@
 import {assert} from '/src/lib/assert.js';
-import {Deadline} from '/src/lib/deadline.js';
+import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
 import {better_fetch} from '/src/lib/net.js';
 import {Feed} from '/src/model/feed.js';
 
-export async function fetch_feed(url, options) {
-  const opts = {timeout: options.timeout};
-  const response = await better_fetch(url, opts);
-  const res_text = await response.text();
-
-  const skip_entries = 'skip_entries' in options ? options.skip_entries : true;
-  const resolve_entry_urls =
-      'resolve_entry_urls' in options ? options.resolve_entry_urls : false;
-
+export async function fetch_feed(
+    url, skip_entries = true, resolve_entry_urls = false,
+    timeout = INDEFINITE) {
+  const response = await better_fetch(url, {timeout: timeout});
+  const response_text = await response.text();
   const parsed_feed =
-      feed_parser.parse(res_text, skip_entries, resolve_entry_urls);
+      feed_parser.parse(response_text, skip_entries, resolve_entry_urls);
 
   // Convert the feed from the parse format to the storage format
   const feed = new Feed();
