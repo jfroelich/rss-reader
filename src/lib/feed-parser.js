@@ -1,15 +1,6 @@
 import '/src/ext/he.js';
 import {parse_xml} from '/src/lib/parse-xml.js';
 
-// TODO: use class Feed, and class Entry, and export them. I went off on the
-// wrong tangent when trying to merge this with the Feed format coming out of
-// model. It is fine to have two classes named the same thing from different
-// modules. They mean different things. Whatever composes the modules has to
-// integrate them, and that is the concern of that integrator, not this module's
-// concern.
-
-// Represents a deserialized feed in memory. Note this format may not correspond
-// to the feed format in other modules (and does not care).
 export function Feed() {
   this.type = undefined;
   this.title = undefined;
@@ -23,7 +14,7 @@ export function Entry() {
   this.title = undefined;
   this.author = undefined;
   this.link = undefined;
-  this.datePublished = undefined;
+  this.date_published = undefined;
   this.content = undefined;
   this.enclosure = undefined;
 }
@@ -201,7 +192,7 @@ function element_to_entry(entry_element) {
   entry.title = find_entry_title(entry_element);
   entry.author = find_entry_author(entry_element);
   entry.link = find_entry_link(entry_element);
-  entry.datePublished = find_entry_date(entry_element);
+  entry.date_published = find_entry_date(entry_element);
   entry.content = find_entry_content(entry_element);
   entry.enclosure = find_entry_enclosure(entry_element);
   return entry;
