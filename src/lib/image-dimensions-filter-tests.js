@@ -45,7 +45,7 @@ export async function css_offset_props_test() {
   assert(image.width === 0);
   assert(image.height === 0);
 
-  // getComputedStyle apparently is not available to us, I guess.
+  // getComputedStyle apparently is not available to us
   // https://github.com/w3c/csswg-drafts/issues/1548
 
   /*

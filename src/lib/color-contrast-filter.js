@@ -56,7 +56,7 @@ function element_derive_bgcolor_inline(element) {
 }
 
 function element_derive_text_color(element) {
-  const style = getComputedStyle(element);
+  const style = element.style;
   if (style) {
     const color_value = css_color_parse(style.color);
     if (typeof color_value !== 'undefined') {

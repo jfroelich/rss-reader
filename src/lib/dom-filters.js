@@ -767,8 +767,7 @@ export function document_trim_filter(doc) {
   }
 }
 
-// Remove style elements. This filter should typically only be called after any
-// filters that call getComputedStyle.
+// Remove style elements.
 export function style_filter(doc) {
   const styles = doc.querySelectorAll('style');
   for (const style of styles) {

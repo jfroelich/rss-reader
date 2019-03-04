@@ -2,7 +2,8 @@ import {assert} from '/src/lib/assert.js';
 
 // NOTE: there is no point to using this filter in its current state. Without
 // getComputedStyle availability it is horribly inaccurate and could
-// unintentionally remove desired content.
+// unintentionally remove desired content. Note that Element.computedStyleMap
+// also does not appear to work.
 
 // The filter removes text nodes from the input document that the filter
 // considers illegible due to having too small of a font size.
