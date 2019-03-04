@@ -26,7 +26,7 @@ export async function fetch_feed(url, timeout = INDEFINITE) {
 
   feed.title = parsed_feed.title;
   feed.description = parsed_feed.description;
-  feed.datePublished = parsed_feed.date_published || new Date();
+  feed.datePublished = parsed_feed.date_published;
   feed.appendURL(url);
   feed.appendURL(new URL(response.url));
 
