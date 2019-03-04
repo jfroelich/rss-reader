@@ -35,7 +35,7 @@ export async function activate_feed_test() {
   await ops.activate_feed(session, id);
 
   // Detach the channel. Just rules out any chance of awkwardness with out of
-  // order execution in this test.
+  // order execution in this test
   session.channel = undefined;
 
   // Activating a feed should have produced a single message of a certain type
@@ -47,7 +47,7 @@ export async function activate_feed_test() {
 
   // Activation should not have somehow destroyed type info. For performance
   // reasons this check is NOT implicit in the getFeed call, so it is not
-  // redundant or unreasonable to check here.
+  // redundant or unreasonable to check here
   assert(is_feed(stored_feed));
 
   // Activation should result in the active state
@@ -61,7 +61,7 @@ export async function activate_feed_test() {
   const now = new Date();
   assert(stored_feed.dateUpdated <= now);
 
-  // Assert that activating a feed that is already active should fail.
+  // Activating a feed that is already active should fail
   let activation_error;
   try {
     await ops.activate_feed(session, id);
@@ -188,7 +188,7 @@ export async function subscribe_test() {
   // TODO: use a local url. First, this url no longer is valid because Google
   // discontinued this service. Second, it is bad practice to ping live
   // third-party services and may be a TOS violation of those services. Third,
-  // we do not really need to exercise network failure case.
+  // there is little benefit to exercising the network failure case.
 
   const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
   const url = new URL(test_url);

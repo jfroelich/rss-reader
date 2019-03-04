@@ -24,8 +24,10 @@ const background_images = [
   'subtle-patterns-witewall-3.png',
   'thomas-zucx-noise-lines.png'
 ];
+// clang-format on
 
 // Available font names. These must correspond to the names used in CSS.
+// clang-format off
 const fonts = [
   'ArchivoNarrow-Regular',
   'Arial',
@@ -80,34 +82,24 @@ export function update(event) {
   tls.rename('SHOW_NOTIFICATIONS', 'show_notifications');
   tls.rename('ONLY_POLL_IF_IDLE', 'only_poll_if_idle');
 
-  // In a prior version of the extension, I stored the path prefix in the images
-  // array. This is no longer done, so check if the stored value still has the
-  // path and if so remove it.
+  // Strip old path from bg_image setting
   const path = tls.read_string('bg_image');
   if (path && path.startsWith('/images/')) {
-    console.debug('Stripping /images/ from bg image path', path);
     tls.write_string('bg_image', path.substring('/images/'.length));
   }
 }
 
 export function init(event) {
-  // General settings
   tls.write_boolean('reuse_newtab', true);
   tls.write_boolean('show_notifications', true);
-
-  // Poll settings
   tls.write_boolean('only_poll_if_idle', true);
   tls.write_int('idle_poll_secs', 30);
-
-  // Content filter settings
   tls.write_int('contrast_default_matte', color.WHITE);
   tls.write_int('emphasis_max_length', 200);
   tls.write_int('table_scan_max_rows', 20);
   tls.write_float('min_contrast_ratio', 4.5);
   tls.write_int('set_image_sizes_timeout', 300);
   tls.write_int('initial_entry_load_limit', 3);
-
-  // View settings
   tls.write_float('slide_transition_duration', 0.16);
   tls.write_int('padding', 180);
   tls.write_string('bg_color', '#fefdfd');
@@ -134,16 +126,7 @@ export function install_fonts() {
 // Note this event listener should only be bound by a page where the appropriate
 // stylesheets are loaded. This assumes those stylesheets exist.
 export function storage_onchange(event) {
-  // TODO: do not use units for 0? maybe that is pendantic
-  // TODO: review https://developers.google.com/web/updates/2018/03/cssom
-
-  if (!event.isTrusted) {
-    console.warn('Untrusted event', event);
-    return;
-  }
-
-  if (event.type !== 'storage') {
-    console.debug('Ignoring non-storage event', event);
+  if (!event.isTrusted || event.type !== 'storage') {
     return;
   }
 
@@ -221,8 +204,7 @@ export function storage_onchange(event) {
   }
 }
 
-// Initialize the dom with css settings from config. This should only be bound
-// if stylesheets are present, and to an event later than DOMContentLoaded.
+// Initialize the dom with css settings from config.
 export function dom_load_listener() {
   const sheet = document.styleSheets[0];
   sheet.addRule('.entry', page_style_entry_rule_create());

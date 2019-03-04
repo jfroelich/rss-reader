@@ -41,7 +41,7 @@ export class PollOperation {
     // Cancel the run if the last run was too recent
     if (this.recency_period && !this.ignore_recency_check) {
       // TODO: access via local storage utils or config
-      // TODO: if this is a date, why am i using parseInt? Rename or revise
+      // TODO: if this is a date, why parseInt? Rename or revise
       // to use Date.parse or something to be consistent.
       const stamp = parseInt(localStorage.last_poll_date, 10);
       if (!isNaN(stamp)) {
@@ -311,10 +311,6 @@ export class PollOperation {
     filter_options.empty_frame_body_message =
         'Unable to display document because it uses HTML frames';
     await dom_filters.composite_document_filter(doc, filter_options);
-
-    // TODO: this is overly paranoid and should be removed, I believe it is an
-    // artifact of a previous bug
-    assert(doc.documentElement);
 
     entry.content = doc.documentElement.outerHTML;
     Entry.sanitize(entry);

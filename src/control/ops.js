@@ -173,7 +173,7 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   assert(iconn === undefined || iconn instanceof IDBDatabase);
   assert(url instanceof URL);
 
-  // Throw an error if already subscribed
+  // Check if already subscribed
   let existing_feed = await session.getFeed('url', url, true);
   if (existing_feed) {
     const message = 'Found existing feed with url ' + url.href;
@@ -246,7 +246,6 @@ export function get_feed_favicon_lookup_url(feed) {
   }
 
   // TODO: use Feed.getURLString
-
   if (!feed.urls) {
     return;
   }
