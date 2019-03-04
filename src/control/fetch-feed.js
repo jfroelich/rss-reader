@@ -7,7 +7,7 @@ import {Feed} from '/src/model/feed.js';
 export async function fetch_feed(url, timeout = INDEFINITE) {
   const response = await better_fetch(url, {timeout: timeout});
   const response_text = await response.text();
-  const parsed_feed = feed_parser.parse(response_text);
+  const parsed_feed = feed_parser.parse_from_string(response_text);
 
   // Convert the feed from the parse format to the storage format
   const feed = new Feed();

@@ -10,33 +10,22 @@ import {parse_xml} from '/src/lib/parse-xml.js';
 
 // Represents a deserialized feed in memory. Note this format may not correspond
 // to the feed format in other modules (and does not care).
-export function feed_t() {
-  // {String}
+export function Feed() {
   this.type = undefined;
-  // {String}
   this.title = undefined;
-  // {String}
   this.description = undefined;
-  // {String}
   this.link = undefined;
-  // {Date}
   this.date_published = undefined;
-  // {Array<Object>}
   this.entries = [];
 }
 
-// The parse function accepts a string as input. The string should be the
-// full text of an xml file. The xml is parsed into a Document object, and then
-// the Document object is coerced into a basic JavaScript object. Feed
-// properties are stored in the parsed object. The output object contains an
-// entries property that is an array of entry objects, where each entry
-// represents one of the xml items (or entries).
-export function parse(value) {
-  const doc = parse_xml(value);
-  return parse_from_document(doc);
+// Parses a String into a Feed object. May throw errors.
+export function parse_from_string(value) {
+  return parse_from_document(parse_xml(value));
 }
 
-function parse_from_document(doc) {
+// Parses a Document object into a Feed object
+export function parse_from_document(doc) {
   const doc_element = doc.documentElement;
   const doc_element_name = element_get_local_name(doc_element);
 
@@ -50,7 +39,7 @@ function parse_from_document(doc) {
     throw new Error('Missing channel element');
   }
 
-  const feed = new feed_t();
+  const feed = new Feed();
   feed.type = find_feed_type(doc_element);
   feed.title = find_feed_title(chan_element);
   feed.description = find_feed_description(doc, chan_element);
