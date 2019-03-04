@@ -5,12 +5,7 @@ import {better_fetch} from '/src/lib/net.js';
 import {Feed} from '/src/model/feed.js';
 
 export async function fetch_feed(url, options) {
-  const feed_mime_types = [
-    'application/octet-stream', 'application/rss+xml', 'application/rdf+xml',
-    'application/atom+xml', 'application/xml', 'text/html', 'text/xml'
-  ];
-
-  const opts = {timeout: options.timeout, types: feed_mime_types};
+  const opts = {timeout: options.timeout};
   const response = await better_fetch(url, opts);
   const res_text = await response.text();
 
