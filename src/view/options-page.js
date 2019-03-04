@@ -1,9 +1,13 @@
-import * as ops from '/src/control/ops.js';
-import {PollOperation} from '/src/control/poll-feeds.js';
+import * as badge from '/src/control/badge.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
 import {Model} from '/src/model/model.js';
+import {activate_feed} from '/src/ops/activate-feed.js';
+import {deactivate_feed} from '/src/ops/deactivate-feed.js';
+import {PollOperation} from '/src/ops/poll-feeds/poll-feeds.js';
+import {subscribe} from '/src/ops/subscribe.js';
+import {unsubscribe} from '/src/ops/unsubscribe.js';
 
 let current_menu_item;
 let current_section;
@@ -27,7 +31,7 @@ channel.onmessage = function options_page_onmessage(event) {
   // loaded.
   const badge_types = ['entry-created', 'entry-updated', 'entry-deleted'];
   if (badge_types.includes(type)) {
-    ops.badge_refresh();
+    badge.badge_refresh();
   }
 
   if (type === 'feed-activated') {
@@ -347,8 +351,7 @@ async function subscribe_form_onsubmit(event) {
   const session = new Model();
   const promises = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(promises);
-  const feed =
-      await ops.subscribe(session, iconn, subscribe_url, undefined, true);
+  const feed = await subscribe(session, iconn, subscribe_url, undefined, true);
   session.close();
   iconn.close();
 
@@ -443,7 +446,7 @@ async function unsubscribe_button_onclick(event) {
 
   const session = new Model();
   await session.open();
-  await ops.unsubscribe(session, feed_id);
+  await unsubscribe(session, feed_id);
   session.close();
 
   feed_list_remove_feed_by_id(feed_id);
@@ -455,7 +458,7 @@ async function activate_feed_button_onclick(event) {
 
   const session = new Model();
   await session.open();
-  await ops.activate_feed(session, feed_id);
+  await activate_feed(session, feed_id);
   session.close();
 
   // TODO: handling the event here may be wrong, it should be done in the
@@ -476,7 +479,7 @@ async function deactivate_feed_button_onclick(event) {
 
   const session = new Model();
   await session.open();
-  await ops.deactivate_feed(session, feed_id, 'manual');
+  await deactivate_feed(session, feed_id, 'manual');
   session.close();
 
   // TODO: this should be done in the event handler instead of here

@@ -1,6 +1,5 @@
+import * as badge from '/src/control/badge.js';
 import * as config from '/src/control/config.js';
-import * as ops from '/src/control/ops.js';
-import {PollOperation} from '/src/control/poll-feeds.js';
 import {assert} from '/src/lib/assert.js';
 import * as favicon from '/src/lib/favicon.js';
 import {filter_publisher} from '/src/lib/filter-publisher.js';
@@ -9,6 +8,9 @@ import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
 import {is_entry} from '/src/model/entry.js';
 import {Model} from '/src/model/model.js';
+import {export_opml} from '/src/ops/export-opml.js';
+import {import_opml} from '/src/ops/import-opml.js';
+import {PollOperation} from '/src/ops/poll-feeds/poll-feeds.js';
 
 const splash_element = document.getElementById('initial-loading-panel');
 const feeds_container = document.getElementById('feeds-container');
@@ -447,7 +449,7 @@ function import_opml_prompt() {
     const session = new Model();
     await session.open();
     console.debug('Connected to model, importing %d files', files.length);
-    await ops.opml_import(session, files);
+    await import_opml(session, files);
     session.close();
   };
   input.click();
@@ -471,7 +473,7 @@ async function options_menu_onclick(event) {
       break;
     case 'menu-option-export':
       const document_title = 'Subscriptions';
-      const opml_document = await ops.export_opml(document_title);
+      const opml_document = await export_opml(document_title);
       const file_name = 'subscriptions.xml';
       download_opml_document(opml_document, file_name);
       break;
@@ -646,7 +648,7 @@ async function onmessage(event) {
   // Common behavior for type handlers related to updating the badge
   const badge_types = ['entry-created', 'entry-updated', 'entry-deleted'];
   if (badge_types.includes(message.type)) {
-    ops.badge_refresh().catch(console.warn);  // intentionally unawaited
+    badge.badge_refresh().catch(console.warn);  // intentionally unawaited
   }
 
   if (message.type === 'entry-updated') {

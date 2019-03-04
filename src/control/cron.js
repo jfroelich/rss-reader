@@ -1,9 +1,9 @@
-import * as ops from '/src/control/ops.js';
-import {PollOperation} from '/src/control/poll-feeds.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
 import {Model} from '/src/model/model.js';
+import {PollOperation} from '/src/ops/poll-feeds/poll-feeds.js';
+import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
 const ONE_WEEK_MINUTES = 60 * 24 * 7;
@@ -52,7 +52,7 @@ export async function alarm_listener(alarm) {
     const session = new Model();
     const proms = [session.open(), favicon.open()];
     const [_, iconn] = await Promise.all(proms);
-    await ops.refresh_feed_icons(session, iconn);
+    await refresh_feed_icons(session, iconn);
     session.close();
     iconn.close();
   } else if (alarm.name === 'compact-favicon-db') {

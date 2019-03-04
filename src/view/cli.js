@@ -1,10 +1,11 @@
 import * as config from '/src/control/config.js';
 import * as cron_control from '/src/control/cron.js';
-import * as ops from '/src/control/ops.js';
-import {PollOperation} from '/src/control/poll-feeds.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as platform from '/src/lib/platform.js';
 import {Model} from '/src/model/model.js';
+import {PollOperation} from '/src/ops/poll-feeds/poll-feeds.js';
+import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
+import {subscribe} from '/src/ops/subscribe.js';
 
 // TODO: add and implement cli_archive_entries
 
@@ -14,7 +15,7 @@ async function cli_subscribe(url_string, fetch_entries = true) {
 
   const proms = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
-  const feed = await ops.subscribe(session, iconn, url, options, 3000, true);
+  const feed = await subscribe(session, iconn, url, options, 3000, true);
   if (fetch_entries) {
     const op = new PollOperation();
     op.session = session;
@@ -31,7 +32,7 @@ async function cli_refresh_icons() {
   const session = new Model();
   const proms = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
-  await ops.refresh_feed_icons(session, iconn);
+  await refresh_feed_icons(session, iconn);
   session.close();
   iconn.close();
 }

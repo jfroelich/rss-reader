@@ -1,6 +1,5 @@
 import * as desknote from '/src/control/desknote.js';
 import {fetch_feed} from '/src/control/fetch-feed.js';
-import * as rewrite_rules from '/src/control/rewrite-rules.js';
 import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as dom_filters from '/src/lib/dom-filters.js';
@@ -14,6 +13,7 @@ import * as tls from '/src/lib/tls.js';
 import {Entry, is_entry} from '/src/model/entry.js';
 import {Feed, is_feed} from '/src/model/feed.js';
 import {Model} from '/src/model/model.js';
+import * as rewrite_rules from '/src/ops/poll-feeds/rewrite-rules.js';
 
 export class PollOperation {
   constructor() {

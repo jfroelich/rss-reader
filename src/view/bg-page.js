@@ -1,7 +1,7 @@
+import * as badge from '/src/control/badge.js';
 import * as config from '/src/control/config.js';
 import * as cron_control from '/src/control/cron.js';
 import * as extension from '/src/control/extension.js';
-import * as ops from '/src/control/ops.js';
 import * as platform from '/src/lib/platform.js';
 import {Model} from '/src/model/model.js';
 
@@ -12,7 +12,7 @@ channel.onmessage = function(event) {
   // page is loaded
   const types = ['entry-created', 'entry-updated', 'entry-deleted'];
   if (event.isTrusted && event.data && types.includes(event.data.type)) {
-    ops.badge_refresh().catch(console.warn);
+    badge.badge_refresh().catch(console.warn);
   }
 };
 
@@ -20,7 +20,7 @@ channel.onmessage = function(event) {
 platform.alarm.add_listener(cron_control.alarm_listener);
 
 platform.lifecycle.add_startup_listener(event => {
-  ops.badge_refresh().catch(console.warn);
+  badge.badge_refresh().catch(console.warn);
 });
 
 platform.lifecycle.add_install_listener(function(event) {
@@ -52,6 +52,6 @@ platform.lifecycle.add_install_listener(event => {
 // extensions page triggers an update event where for some reason the badge
 // text is unset.
 platform.lifecycle.add_install_listener(
-    _ => ops.badge_refresh().catch(console.warn));
+    _ => badge.badge_refresh().catch(console.warn));
 
 platform.badge.add_listener(_ => extension.open_view().catch(console.warn));
