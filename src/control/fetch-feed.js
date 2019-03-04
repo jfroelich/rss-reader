@@ -5,6 +5,8 @@ import {better_fetch} from '/src/lib/net.js';
 import {Feed} from '/src/model/feed.js';
 
 export async function fetch_feed(url, timeout = INDEFINITE) {
+  assert(timeout instanceof Deadline);
+
   const response = await better_fetch(url, {timeout: timeout});
   const response_text = await response.text();
   const parsed_feed = feed_parser.parse_from_string(response_text);
