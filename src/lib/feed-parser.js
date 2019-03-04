@@ -27,7 +27,7 @@ export function parse_from_string(value) {
 // Parses a Document object into a Feed object
 export function parse_from_document(doc) {
   const doc_element = doc.documentElement;
-  const doc_element_name = element_get_local_name(doc_element);
+  const doc_element_name = get_element_name(doc_element);
 
   const supported_feed_names = ['feed', 'rdf', 'rss'];
   if (!supported_feed_names.includes(doc_element_name)) {
@@ -74,7 +74,7 @@ function find_channel_element(doc_element) {
 
 function find_entry_elements(chan_element) {
   const doc_element = chan_element.ownerDocument.documentElement;
-  const doc_element_name = element_get_local_name(doc_element);
+  const doc_element_name = get_element_name(doc_element);
 
   let parent_node, entry_element_name;
   if (doc_element_name === 'feed') {
@@ -92,7 +92,7 @@ function find_entry_elements(chan_element) {
 
   const entries = [];
   for (let c = parent_node.firstElementChild; c; c = c.nextElementSibling) {
-    if (element_get_local_name(c) === entry_element_name) {
+    if (get_element_name(c) === entry_element_name) {
       entries.push(c);
     }
   }
@@ -147,7 +147,7 @@ function find_atom_link_element(chan_element) {
 
 function find_feed_link(chan_element) {
   const doc_element = chan_element.ownerDocument.documentElement;
-  const doc_element_name = element_get_local_name(doc_element);
+  const doc_element_name = get_element_name(doc_element);
   let link_text, link_element;
   if (doc_element_name === 'feed') {
     link_element = find_atom_link_element(chan_element);
@@ -233,7 +233,7 @@ function find_entry_author(entry_element) {
 
 function find_entry_link(entry_element) {
   const doc_element = entry_element.ownerDocument.documentElement;
-  const doc_element_name = element_get_local_name(doc_element);
+  const doc_element_name = get_element_name(doc_element);
   let link_text;
   if (doc_element_name === 'feed') {
     let link = find_child_element(entry_element, element_is_link_rel_alt);
@@ -249,7 +249,7 @@ function find_entry_link(entry_element) {
 
 function find_entry_date(entry_element) {
   const doc_element = entry_element.ownerDocument.documentElement;
-  const doc_element_name = element_get_local_name(doc_element);
+  const doc_element_name = get_element_name(doc_element);
   let date_string;
   if (doc_element_name === 'feed') {
     date_string = find_child_element_text(entry_element, 'published') ||
@@ -273,7 +273,7 @@ function find_entry_date(entry_element) {
 
 function find_entry_content(entry_element) {
   const doc_element = entry_element.ownerDocument.documentElement;
-  const doc_element_name = element_get_local_name(doc_element);
+  const doc_element_name = get_element_name(doc_element);
   let result;
   if (doc_element_name === 'feed') {
     const content = find_child_element_by_name(entry_element, 'content');
@@ -369,31 +369,10 @@ function find_child_element_text(parent_element, element_name) {
   }
 }
 
-// One of the counter-intuitive things about the Document object is that it
-// secretly holds a flag for whether the document is xml or html. Certain
-// Document method behavior changes based on this private flag. The flag is not
-// exposed. One of the behaviors that changes is how node names are produced. In
-// xml-flagged documents, element.localName is case-sensitive. This function
-// exists so that it can normalize the name to lowercase. I've chosen lowercase
-// arbitrarily over uppercase. I simply need a canonical form for element names.
-// This function largely exists to expose this subtlety in a very clear manner,
-// to highlight how fundamental this knowledge is to properly processing parsed
-// xml. It is quite unfortunate that it is not clear on its face from the
-// documentation. It is also surprising that behavior changes based on a private
-// flag. So this is trying to abstract away the surprise by making the
-// non-simple logic very clear. There is a required overhead to get the name of
-// an element. I think of this as a design flaw. This uses local name to avoid
-// dealing with qualified names.
-function element_get_local_name(element) {
+function get_element_name(element) {
   return element.localName.toLowerCase();
 }
 
-// Replaces html entities. Relies on third-party library. Exported just for
-// testing purposes.
-// @param value {DOMString} the value to decode
-// @param is_attr_value {Boolean} true if value comes from element attribute
-// @return {String} the decoded value
-export function decode_entities(value, is_attr_value = false) {
-  const decode_options = {strict: false, isAttributeValue: is_attr_value};
-  return he.decode(value, decode_options);
+function decode_entities(value, is_attr_value = false) {
+  return he.decode(value, {strict: false, isAttributeValue: is_attr_value});
 }
