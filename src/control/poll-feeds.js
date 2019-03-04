@@ -41,6 +41,8 @@ export class PollOperation {
     // Cancel the run if the last run was too recent
     if (this.recency_period && !this.ignore_recency_check) {
       // TODO: access via local storage utils or config
+      // TODO: if this is a date, why am i using parseInt? Rename or revise
+      // to use Date.parse or something to be consistent.
       const stamp = parseInt(localStorage.last_poll_date, 10);
       if (!isNaN(stamp)) {
         const now = new Date();
