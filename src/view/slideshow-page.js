@@ -472,8 +472,12 @@ async function options_menu_onclick(event) {
       import_opml_prompt();
       break;
     case 'menu-option-export':
+      const session = new Model();
+      await session.open();
       const document_title = 'Subscriptions';
-      const opml_document = await export_opml(document_title);
+      const opml_document = await export_opml(session, document_title);
+      session.close();
+
       const file_name = 'subscriptions.xml';
       download_opml_document(opml_document, file_name);
       break;

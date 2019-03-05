@@ -1,18 +1,12 @@
 import * as opml_utils from '/src/lib/opml-utils.js';
-import {Model} from '/src/model/model.js';
 
 // Returns an in memory OPML document object filled with the feeds from the
 // database. document_title is optional.
-export async function export_opml(document_title) {
-  const doc = opml_utils.create_opml_template(document_title);
-
-  const session = new Model();
-  await session.open();
+export async function export_opml(session, document_title) {
   const feeds = await session.getFeeds('all', false);
-  session.close();
-
   const outlines = feeds.map(feed_to_outline);
 
+  const doc = opml_utils.create_opml_template(document_title);
   // The document.body shortcut is html-flagged documents only
   const body_element = doc.querySelector('body');
 
