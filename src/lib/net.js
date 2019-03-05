@@ -95,6 +95,7 @@ export function sleep(delay = INDEFINITE) {
 
 // Return whether the response url is "different" than the request url,
 // indicating a redirect, regardless of the value of response.redirected
+// TODO: change response to response_url, it will greatly decrease friction
 export function is_redirect(request_url, response) {
   const response_url = new URL(response.url);
   return !url_compare_no_hash(request_url, response_url);
