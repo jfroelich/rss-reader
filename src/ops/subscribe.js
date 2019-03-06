@@ -24,11 +24,12 @@ export async function subscribe(session, iconn, url, timeout, notify) {
   const http_response = response.http_response;
 
   // If redirected, check if subscribed to the redirected url
-  if (net.is_redirect(url, http_response)) {
-    const rurl = new URL(http_response.url);
-    let existing_feed = await session.getFeed('url', rurl, true);
+  const response_url = new URL(http_response.url);
+  if (net.is_redirect(url, response_url)) {
+    let existing_feed = await session.getFeed('url', response_url, true);
     if (existing_feed) {
-      const message = 'Found existing feed with redirect url ' + rurl.href;
+      const message =
+          'Found existing feed with redirect url ' + response_url.href;
       throw new ConstraintError(message);
     }
   }

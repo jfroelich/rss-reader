@@ -40,7 +40,7 @@ export function maybe_import_entry(args) {
 
   if (response) {
     const response_url = new URL(response.url);
-    if (net.is_redirect(fetch_url, response)) {
+    if (net.is_redirect(fetch_url, response_url)) {
       // unfinished
     }
   }

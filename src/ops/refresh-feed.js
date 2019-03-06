@@ -112,16 +112,10 @@ export async function refresh_feed(
   // redirect and update the feed's terminal url. When polling, we only care
   // about possibly updating the feed's terminal url.
 
-  // TODO: i added a note to the net lib. is-redirect's 2nd parameter should
-  // really be of type url, not response. i have completely forgotten why it
-  // ended up that way. this should be able to pass along a url instead of the
-  // response. however I am delaying that change because it is outside the
-  // scope of the current refactor.
-
   // TODO: see earlier todo regarding unique flag. only perform this check if
   // unique is true?
 
-  if (create && is_redirect(fetch_url, response)) {
+  if (create && is_redirect(fetch_url, response_url)) {
     const existing_feed = await model.getFeed('url', response_url, true);
     if (existing_feed) {
       const message =
