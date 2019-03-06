@@ -3,6 +3,7 @@ import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
 import {better_fetch, is_redirect} from '/src/lib/net.js';
+import {Entry} from '/src/model/entry.js';
 import {Feed} from '/src/model/feed.js';
 import {Model} from '/src/model/model.js';
 import * as op_utils from '/src/ops/op-utils.js';
@@ -48,7 +49,8 @@ import * as op_utils from '/src/ops/op-utils.js';
 // create expresses intent clearly where as feed.id presence/absence does not.
 
 export async function refresh_feed(
-    feed, model, iconn, create = false, fetch_feed_timeout = INDEFINITE,
+    feed, model, iconn, rewrite_rules, inaccessible_descriptors, create = false,
+    fetch_feed_timeout = INDEFINITE, fetch_html_timeout = INDEFINITE,
     feed_stored_callback = noop) {
   // TEMP: in the poll-feeds case, the previous implementation accepted a data
   // object loaded from the model. In the new implementation the caller will
@@ -64,7 +66,7 @@ export async function refresh_feed(
     // Check if already subscribed to the feed. For now, use only the tail url
     // to determine and assume the feed only has one url.
     const url = new URL(feed.getURLString());
-    let existing_feed = await model.getFeed('url', url, /* key_only */ true);
+    const existing_feed = await model.getFeed('url', url, /* key_only */ true);
     if (existing_feed) {
       const message = 'Already subscribed to feed with url ' + url.href;
       throw new ConstraintError(message);
@@ -164,45 +166,15 @@ export async function refresh_feed(
   const response_text = await response.text();
   const parsed_feed = feed_parser.parse_from_string(response_text);
 
-  // Update the properties of the local model/Feed object using the
-  // newly-fetched data.
+  delete feed.errorCount;
+
   update_model_feed_from_parsed_feed(feed, parsed_feed);
 
-  // The next step in subscribe was to update the feed's favicon. The next step
-  // in poll-feeds was to possibly decrement the error count
-
-  // If updating the feed with new data, record a success by decrementing the
-  // error count.
-  // TODO: given that this is a success, it may make more sense to just do a
-  // total reset instead of a decrement? However, that change is outside the
-  // scope of the current refactor so I defering it. I change change this block
-  // to just: delete feed.errorCount;
-
-  // TODO: see earlier todos about dropping create flag. This would coincide
-  // with above idea of just doing a reset, because I do not need to check the
-  // create flag any longer.
-
-  if (!create && feed.errorCount) {
-    feed.errorCount--;
-    if (!feed.errorCount) {
-      delete feed.errorCount;
-    }
-  }
-
-  // The next step in poll-feeds use case is to sanitize, validate, and store.
-  // The next step in subscribe case is to set the feed's favicon.
-  // I am not sure why I am not updating the feed's favicon every update.
-  // I think it is just because I want to avoid doing a ton of processing and
-  // instead amortize the cost over the refresh-feed-icons schedule. So we
-  // really only care about updating the feed icon here the first time when
-  // subscribing.
-
+  // If creating, set the favicon. If updating, skip it because we leave that
+  // to refresh-feed-icons that amortizes this cost.
   // TODO: if I want to drop the create flag, I need to rethink this. I could
   // do this by having a separate flag, set_feed_favicon, which poll-feeds set
-  // to false and subscribe sets to true. alternatively, I could just rely on
-  // iconn being defined or not? but what about entry favicons that need it, so
-  // yeah, separate flag.
-
+  // to false and subscribe sets to true.
   if (create && iconn) {
     const lookup_url = op_utils.get_feed_favicon_lookup_url(feed);
     const request = new favicon.LookupRequest();
@@ -216,12 +188,10 @@ export async function refresh_feed(
   Feed.sanitize(feed);
   Feed.validate(feed);
 
-  // TODO: review why I am branching based on feed.id here instead of create.
-  // it is inconsistent. either do this everywhere or nowhere.
-  if (feed.id) {
-    await model.updateFeed(feed, /* overwrite */ true);
-  } else {
+  if (create) {
     feed.id = await model.createFeed(feed);
+  } else {
+    await model.updateFeed(feed, /* overwrite */ true);
   }
 
   // TEMP: at this point, poll-feeds continues to process entries, and then
@@ -242,20 +212,16 @@ export async function refresh_feed(
   // in that issue. So, this implementation of poll-feed will not show desktop
   // notifications. the caller is responsible if they want to do it.
 
-  feed_stored_callback(feed);
-
-  // subscribe is done at this point. poll-feeds continue to process entries.
-  // in the new implementation, we always process entries. Note that the
-  // subscribe caller will need to decide what to do (e.g. continue in the fork
-  // from within the callback that was just called, or wait until the end of
-  // entry processing, or both, or neither)
   // TODO: alternatively, we could dispatch an event here? So no direct callback
   // at all, and complete decoupling of listeners. Then the options-page or
   // whatever needs to handle the event instead of the callback.
+  feed_stored_callback(feed);
 
-
-  const new_entry_count =
-      await process_entries(feed, parsed_feed.entries, model, iconn);
+  // Process the entries for the feed
+  const model_entries = parsed_feed.entries.map(parsed_entry_to_model_entry);
+  const new_entry_count = await process_entries(
+      feed, model_entries, model, iconn, rewrite_rules,
+      inaccessible_descriptors, fetch_html_timeout);
 
   // subscribe returns the feed that was added. poll-entries cared about the
   // number of new entries. for now the easiest solution is to just return
@@ -267,24 +233,50 @@ export async function refresh_feed(
 }
 
 // Resolves when all entries processed. Returns the number of entries added.
-async function process_entries(feed, entries, model, iconn) {
-  // TODO: implement
+async function process_entries(
+    feed, entries, model, iconn, rewrite_rules, inaccessible_descriptors,
+    fetch_html_timeout) {
+  // Propagate feed information down to entries
+  for (const entry of entries) {
+    entry.feed = feed.id;
+    entry.feedTitle = feed.title;
+    entry.faviconURLString = feed.faviconURLString;
+    entry.datePublished = entry.datePublished || feed.datePublished;
+  }
 
+  const promises = [];
+  for (const entry of entries) {
+    const promise = process_entry_noexcept(
+        entry, feed, model, iconn, rewrite_rules, inaccessible_descriptors,
+        fetch_html_timeout);
+    promises.push(promise);
+  }
 
-  // TODO: the entries are no longer coerced as was previously done in the
-  // poll-feeds case. so explicitly do it now. note this produces side effects
-  // on the input because we update by reference.
+  const results = await Promise.all(promises);
 
-  // for (const entry of entries) {
-  //  entry.datePublished = entry.date_published;
-  //  delete entry.date_published;
-  //}
+  let sum = 0;
+  for (const added of results) {
+    if (added) {
+      sum++;
+    }
+  }
+  return sum;
+}
 
-  // TODO: do whatever poll-feeds was doing with entry processing. note that
-  // the feed to entry data propagation no longer takes place earlier like it
-  // was in the poll-feeds case, so that needs to be done here too.
-
-  // also note that coercion no longer takes place
+async function process_entry_noexcept(
+    entry, feed, model, iconn, rewrite_rules, inaccessible_descriptors,
+    fetch_html_timeout) {
+  try {
+    return await process_entry(
+        entry, feed, model, iconn, rewrite_rules, inaccessible_descriptors,
+        fetch_html_timeout);
+  } catch (error) {
+    if (error instanceof AssertionError) {
+      throw error;
+    } else {
+      console.debug(error);
+    }
+  }
 }
 
 
@@ -293,8 +285,10 @@ async function process_entries(feed, entries, model, iconn) {
 // and that the local feed may already have one or more urls. Note that this
 // updates by reference so it produces side effects on the input.
 function update_model_feed_from_parsed_feed(feed, parsed_feed) {
-  // Overwrite the prior type, if one existed.
   feed.type = parsed_feed.type;
+  feed.title = parsed_feed.title;
+  feed.description = parsed_feed.description;
+  feed.datePublished = parsed_feed.date_published;
 
   // Try to normalize the new link value and overwrite. The link value comes
   // from the raw data and we are not sure if it is valid or if it is in the
@@ -307,32 +301,26 @@ function update_model_feed_from_parsed_feed(feed, parsed_feed) {
       // Ignore
     }
   }
+}
 
-  // NOTE: in the old fetch-feed implementation, here is where input url and
-  // redirect url were appended. in the new implementation, we do not need to
-  // do that. nor do we want to. in the poll-feeds case there could be multiple
-  // urls. so we leave all url concerns to something external to this function.
+// Convert parsed entries into model entries
+function parsed_entry_to_model_entry(parsed_entry) {
+  const entry = new Entry();
+  entry.title = parsed_entry.title;
+  entry.author = parsed_entry.author;
+  entry.datePublished = parsed_entry.date_published;
+  entry.content = parsed_entry.content;
+  entry.enclosure = parsed_entry.enclosure;
 
-  feed.title = parsed_feed.title;
-  feed.description = parsed_feed.description;
-  feed.datePublished = parsed_feed.date_published;
-
-  // Convert parsed entries into model entries. Note that we update by ref so
-  // this produces side effects on the input.
-
-  // TODO: this is disabled for now. This is a concern of the entry processing
-  // that I still need to implement. This task should occur there, not here.
-  // This function should only be concerned with properly updating the feed
-  // object. While parsed feed objects have an entries array, model feed objects
-  // do not.
-
-
-
-  // NOTE: this is all that fetch-feed used to do, so no more work.
-  // NOTE: subscribe did nothing more with the feed after this point.
-  // NOTE: in the poll-feeds case, it called mergeFeeds, that did a careful
-  // merging of existing urls with the coerced-to-model new feed. We do not need
-  // to do that at all.
+  if (parsed_entry.link) {
+    try {
+      const link_url = new URL(parsed_entry.link);
+      entry.appendURL(link_url);
+    } catch (error) {
+      // Ignore
+    }
+  }
+  return entry;
 }
 
 function noop() {}
