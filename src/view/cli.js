@@ -1,11 +1,13 @@
 import * as config from '/src/control/config.js';
 import * as cron_control from '/src/control/cron.js';
+import {Deadline} from '/src/lib/deadline.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as platform from '/src/lib/platform.js';
 import {Model} from '/src/model/model.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
 import {subscribe} from '/src/ops/subscribe.js';
+import {unsubscribe} from '/src/ops/unsubscribe.js';
 
 // TODO: add and implement cli_archive_entries
 
@@ -20,11 +22,34 @@ async function cli_subscribe(url_string) {
     console.debug('Stored new feed, now storing entries...');
   };
 
-  const feed =
-      await subscribe(session, iconn, url, options, 3000, true, callback);
+  const timeout = new Deadline(3000);
+  const notify = true;
+  const feed = await subscribe(session, iconn, url, timeout, notify, callback);
 
   session.close();
   iconn.close();
+
+  console.log('Successfully subscribed to feed', feed.getURLString());
+}
+
+async function cli_unsubscribe(url_string) {
+  console.log('Unsubscribing from', url_string);
+  const url = new URL(url_string);
+  const model = new Model();
+  await model.open();
+
+  const feed = await model.getFeed('url', url, true);
+  if (feed) {
+    await unsubscribe(model, feed.id);
+    console.log(
+        'Unsubscribed from feed %s {id: %d, title: %s}', url.href, feed.id,
+        feed.title);
+  } else {
+    console.warn(
+        'Unsubscribe failed. You are not subscribed to the feed', url.href);
+  }
+
+  model.close();
 }
 
 async function cli_refresh_icons() {
@@ -108,7 +133,8 @@ const cli = {
   lookup_favicon: cli_lookup_favicon,
   poll_feeds: cli_poll_feeds,
   refresh_icons: cli_refresh_icons,
-  subscribe: cli_subscribe
+  subscribe: cli_subscribe,
+  unsubscribe: cli_unsubscribe
 };
 
 window.cli = cli;

@@ -166,6 +166,9 @@ async function import_entry_noexcept(args) {
   } catch (error) {
     if (error instanceof AssertionError) {
       throw error;
+    } else if (error instanceof ConstraintError) {
+      console.debug(
+          'Skipping entry that already exists', args.entry.getURLString());
     } else {
       // Prevent the error from affecting logic, but log it for now to assist
       // in debugging. There are a plethora of unanticipated errors that could
