@@ -1,8 +1,10 @@
-import {assert} from '/src/lib/assert.js';
-import {INDEFINITE} from '/src/lib/deadline.js';
+import {assert, AssertionError} from '/src/lib/assert.js';
+import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {composite_document_filter} from '/src/lib/dom-filters.js';
+import * as favicon from '/src/lib/favicon.js';
 import {fetch_html} from '/src/lib/fetch-html.js';
 import {parse_html} from '/src/lib/html-utils.js';
+import * as net from '/src/lib/net.js';
 import {set_base_uri} from '/src/lib/set-base-uri.js';
 import * as sniffer from '/src/lib/sniffer.js';
 import * as tls from '/src/lib/tls.js';
@@ -10,6 +12,13 @@ import {Entry} from '/src/model/entry.js';
 
 // TODO: this should not directly access tls. instead, config should provide
 // tls function wrappers, and this should access config
+
+// TODO: import-feed throws a constraint error if something already exists.
+// this should follow similar pattern. move constraint error into model.js or
+// model/errors.js. then, import constraint pattern here and in import-feed.
+// then, change this to throw a constraint error if entry exists instead of
+// returning 0.
+
 
 export function ImportEntryArgs() {
   this.entry = undefined;
@@ -24,10 +33,11 @@ export function ImportEntryArgs() {
 // Imports the entry into the model if it does not already exist. Returns
 // undefined if the entry exists. Returns the new entry's id if the entry was
 // added.
-export function import_entry(args) {
-  assert(args instanceof ImportEntryArgs);
-
+export async function import_entry(args) {
   const entry = args.entry;
+
+  // TEMP: tracing new functionality
+  console.debug('Importing entry', entry.getURLString());
 
   // Rewrite the entry's url. This is always done before processing, so there
   // no need to check whether the original url exists in the database.
@@ -40,7 +50,7 @@ export function import_entry(args) {
   const existing_entry =
       await args.model.getEntry('url', after_rewrite_url, true);
   if (existing_entry) {
-    return;
+    return 0;
   }
 
   // Fetch the entry's full content. Rethrow any errors.
@@ -48,7 +58,7 @@ export function import_entry(args) {
   const response = await fetch_entry_html(
       fetch_url, args.fetch_html_timeout, args.inaccessible_descriptors);
 
-  // Check for redirection
+  // Handle redirection
   if (response) {
     const response_url = new URL(response.url);
     if (net.is_redirect(fetch_url, response_url)) {
@@ -57,7 +67,7 @@ export function import_entry(args) {
       entry.appendURL(rewritten_url);
       const existing_entry = args.model.getEntry('url', rewritten_url, true);
       if (existing_entry) {
-        return;
+        return 0;
       }
     }
   }
@@ -73,6 +83,11 @@ export function import_entry(args) {
     doc = parse_html(entry.content || '');
   }
 
+  // This must occur before doing favicon lookups because the lookup may inspect
+  // the document and expects DOM element property getters like image.src to
+  // have the proper base uri set.
+  set_base_uri(doc, new URL(entry.getURLString()));
+
   if (args.iconn) {
     // Only provide if doc came from remote. If it came from feed-xml then it
     // will not have embedded favicon link.
@@ -80,7 +95,8 @@ export function import_entry(args) {
     await set_entry_favicon(entry, args.iconn, lookup_doc);
   }
 
-  // If title was not present in the feed xml, try and pull it from content
+  // If title was not present in the feed xml, try and pull it from fetched
+  // content
   if (!entry.title && response && doc) {
     const title_element = doc.querySelector('html > head > title');
     if (title_element) {
@@ -108,8 +124,6 @@ async function set_entry_favicon(entry, conn, doc) {
 }
 
 async function filter_entry_content(entry, doc) {
-  set_base_uri(doc, new URL(entry.getURLString()));
-
   // Filter the document content
   const options = {};
   options.contrast_matte = tls.read_int('contrast_default_matte');

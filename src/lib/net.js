@@ -95,6 +95,7 @@ export function sleep(delay = INDEFINITE) {
 
 // Return whether the response url is "different" than the request url,
 // indicating a redirect
+// TODO: deprecate, i don't think the hashless is providing much benefit
 export function is_redirect(request_url, response_url) {
   // Operate on clones so as to avoid surprising side effects
   const url1 = new URL(request_url.href);

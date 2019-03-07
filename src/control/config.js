@@ -1,5 +1,26 @@
+import * as rewrite_rules from '/src/control/rewrite-rules.js';
 import * as color from '/src/lib/color.js';
 import * as tls from '/src/lib/tls.js';
+
+// TODO: eventually figure out how to persist in localStorage
+export function get_inaccessible_content_descriptors() {
+  return [
+    {pattern: /forbes\.com$/i, reason: 'interstitial-advert'},
+    {pattern: /productforums\.google\.com$/i, reason: 'script-generated'},
+    {pattern: /groups\.google\.com$/i, reason: 'script-generated'},
+    {pattern: /nytimes\.com$/i, reason: 'paywall'},
+    {pattern: /wsj\.com$/i, reason: 'paywall'}
+  ];
+}
+
+// TODO: eventually think of how to persist in localStorage
+export function get_rewrite_rules() {
+  const rules = [];
+  rules.push(rewrite_rules.google_news_rule);
+  rules.push(rewrite_rules.techcrunch_rule);
+  rules.push(rewrite_rules.facebook_exit_rule);
+  return rules;
+}
 
 // Filenames of article background images
 // clang-format off

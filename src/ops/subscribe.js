@@ -1,73 +1,39 @@
 import * as desknote from '/src/control/desknote.js';
-import {fetch_feed} from '/src/control/fetch-feed.js';
-import {assert} from '/src/lib/assert.js';
-import * as favicon from '/src/lib/favicon.js';
-import * as net from '/src/lib/net.js';
 import {Feed} from '/src/model/feed.js';
-import {Model} from '/src/model/model.js';
-import * as op_utils from '/src/ops/op-utils.js';
+import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';
 
-export async function subscribe(session, iconn, url, timeout, notify) {
-  assert(session instanceof Model);
-  assert(iconn === undefined || iconn instanceof IDBDatabase);
-  assert(url instanceof URL);
+// Subscribes to a feed. Imports the feed and its entries into the database.
+// Throws an error if already subscribed or if something goes wrong. This
+// resolves when both the feed and the entries are fully imported. The callback
+// is invoked with the feed once it is stored, earlier.
+export async function subscribe(
+    model, iconn, url, timeout, notify, feed_stored_callback) {
+  const feed = new Feed();
+  feed.appendURL(url);
 
-  // Check if already subscribed
-  let existing_feed = await session.getFeed('url', url, true);
-  if (existing_feed) {
-    const message = 'Found existing feed with url ' + url.href;
-    throw new ConstraintError(message);
-  }
+  const args = new ImportFeedArgs();
+  args.model = model;
+  args.iconn = iconn;
+  args.feed = feed;
+  args.create = true;
+  args.fetch_feed_timeout = timeout;
+  args.feed_stored_callback = feed_stored_callback;
 
-  // Propagate fetch errors as subscribe errors by not catching
-  const response = await fetch_feed(url, timeout);
-  const http_response = response.http_response;
+  const import_result = await import_feed(args);
 
-  // If redirected, check if subscribed to the redirected url
-  const response_url = new URL(http_response.url);
-  if (net.is_redirect(url, response_url)) {
-    let existing_feed = await session.getFeed('url', response_url, true);
-    if (existing_feed) {
-      const message =
-          'Found existing feed with redirect url ' + response_url.href;
-      throw new ConstraintError(message);
-    }
-  }
-
-  const feed = response.feed;
-  await set_feed_favicon(feed, iconn);
-
-  Feed.validate(feed);
-  Feed.sanitize(feed);
-  feed.id = await session.createFeed(feed);
+  // NOTE: import-feed produces side effects, it modifies its input, so we
+  // can rely on the input feed object here to be updated, instead of grabbing
+  // the feed object reference from import_result, because that just refers to
+  // the same object.
 
   if (notify) {
-    // TODO: use Feed.getURLString
-    const feed_title = feed.title || feed.urls[feed.urls.length - 1];
+    const feed_title = feed.title || feed.getURLString();
     const note = {};
-    note.title = 'Subscribed!';
+    note.title = 'RSS Reader';
     note.message = 'Subscribed to ' + feed_title;
     note.url = feed.faviconURLString;
     desknote.show(note);
   }
 
   return feed;
-}
-
-async function set_feed_favicon(feed, iconn) {
-  if (!iconn) {
-    return;
-  }
-
-  const lookup_url = op_utils.get_feed_favicon_lookup_url(feed);
-  const request = new favicon.LookupRequest();
-  request.url = lookup_url;
-  const icon_url = await favicon.lookup(request);
-  feed.faviconURLString = icon_url ? icon_url.href : undefined;
-}
-
-export class ConstraintError extends Error {
-  constructor(message) {
-    super(message);
-  }
 }

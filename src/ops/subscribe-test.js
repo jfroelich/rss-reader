@@ -30,18 +30,28 @@ export async function subscribe_test() {
   const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
   const url = new URL(test_url);
 
+  let callback_called = false;
+  const feed_stored_callback(feed) {
+    callback_called = true;
+  };
+
   // Rethrow subscribe exceptions just like assertion failures by omitting
   // try/catch.
-  const feed = await subscribe(session, undefined, url, 7000, false);
+  const feed = await subscribe(
+      session, undefined, url, 7000, false, feed_stored_callback);
 
   // Test the subscription produced the desired result
   assert(feed);
   assert(is_feed(feed));
   assert(Feed.isValidId(feed.id));
 
+  // subscribe should have invoked the callback
+  assert(callback_called);
+
   // Length may be 1 or 2 (may have redirected and captured new url)
   assert(feed.urls.length);
   assert(feed.urls.includes(url.href));
+
   assert(feed.active);
 
   // Assert that the subscription sent out correct messages

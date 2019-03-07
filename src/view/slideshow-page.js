@@ -10,7 +10,7 @@ import {is_entry} from '/src/model/entry.js';
 import {Model} from '/src/model/model.js';
 import {export_opml} from '/src/ops/export-opml.js';
 import {import_opml} from '/src/ops/import-opml.js';
-import {PollOperation} from '/src/ops/poll-feeds/poll-feeds.js';
+import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 
 const splash_element = document.getElementById('initial-loading-panel');
 const feeds_container = document.getElementById('feeds-container');
@@ -339,11 +339,11 @@ async function refresh_button_onclick(event) {
   const promises = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(promises);
 
-  const poll = new PollOperation();
-  poll.session = session;
-  poll.iconn = iconn;
-  poll.ignore_recency_check = true;
-  await poll.run();
+  const args = new PollFeedsArgs();
+  args.model = session;
+  args.iconn = iconn;
+  args.ignore_recency_check = true;
+  await poll_feeds(args);
   session.close();
   iconn.close();
 

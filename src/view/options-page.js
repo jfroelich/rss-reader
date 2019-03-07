@@ -5,7 +5,6 @@ import * as tls from '/src/lib/tls.js';
 import {Model} from '/src/model/model.js';
 import {activate_feed} from '/src/ops/activate-feed.js';
 import {deactivate_feed} from '/src/ops/deactivate-feed.js';
-import {PollOperation} from '/src/ops/poll-feeds/poll-feeds.js';
 import {subscribe} from '/src/ops/subscribe.js';
 import {unsubscribe} from '/src/ops/unsubscribe.js';
 
@@ -345,53 +344,24 @@ async function subscribe_form_onsubmit(event) {
   subscription_monitor_show();
   subscription_monitor_append_message(`Subscribing to ${subscribe_url.href}`);
 
-  // TODO: subscribe can now throw an error, this should catch the error and
-  // show a nice error message or something instead of panic
+  const on_feed_stored = function(feed) {
+    feed_list_append_feed(feed);
+
+    subscription_monitor_append_message('Subscribed to ' + feed.getURLString());
+
+    subscription_monitor_hide();
+    section_show_by_id('subs-list-section');
+  };
 
   const session = new Model();
   const promises = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(promises);
-  const feed = await subscribe(session, iconn, subscribe_url, undefined, true);
-  session.close();
-  iconn.close();
-
-  feed_list_append_feed(feed);
-
-  const final_url_string = feed.urls[feed.urls.length - 1];
-  subscription_monitor_append_message('Subscribed to ' + final_url_string);
-
-  subscription_monitor_hide();
-  section_show_by_id('subs-list-section');
-
-  // intentionally non-blocking
-  // NOTE: we must use setTimeout or we can get a 503 error for requesting the
-  // feed again too quickly
-
-  setTimeout(function() {
-    try {
-      after_subscribe_poll_feed_async(feed).catch(console.error);
-    } catch (error) {
-      console.debug(error);
-    }
-  }, 5000);
-
-  return false;
-}
-
-async function after_subscribe_poll_feed_async(feed) {
-  const session = new Model();
-  const promises = [session.open(), favicon.open()];
-  const [_, iconn] = await Promise.all(promises);
-
-  const op = new PollOperation();
-  op.session = session;
-  op.iconn = iconn;
-  op.ignore_recency_check = true;
-  op.notify = true;
-  await op.pollFeed(feed);
+  const feed = await subscribe(
+      session, iconn, subscribe_url, undefined, true, on_feed_stored);
   session.close();
   iconn.close();
 }
+
 
 async function feed_list_init() {
   const session = new Model();

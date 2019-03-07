@@ -3,27 +3,26 @@ import * as cron_control from '/src/control/cron.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as platform from '/src/lib/platform.js';
 import {Model} from '/src/model/model.js';
-import {PollOperation} from '/src/ops/poll-feeds/poll-feeds.js';
+import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
 import {subscribe} from '/src/ops/subscribe.js';
 
 // TODO: add and implement cli_archive_entries
 
-async function cli_subscribe(url_string, fetch_entries = true) {
+async function cli_subscribe(url_string) {
   const url = new URL(url_string);
   const session = new Model();
 
   const proms = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
-  const feed = await subscribe(session, iconn, url, options, 3000, true);
-  if (fetch_entries) {
-    const op = new PollOperation();
-    op.session = session;
-    op.iconn = iconn;
-    op.ignore_recency_check = true;
-    op.notify = true;
-    await op.pollFeed(feed);
-  }
+
+  const callback = feed => {
+    console.debug('Stored new feed, now storing entries...');
+  };
+
+  const feed =
+      await subscribe(session, iconn, url, options, 3000, true, callback);
+
   session.close();
   iconn.close();
 }
@@ -41,11 +40,12 @@ async function cli_poll_feeds() {
   const session = new Model();
   const proms = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(proms);
-  const poll = new PollOperation();
-  poll.session = session;
-  poll.iconn = iconn;
-  poll.ignore_recency_check = true;
-  await poll.run();
+
+  const args = new PollFeedsArgs();
+  args.model = session;
+  args.iconn = iconn;
+  args.ignore_recency_check = true;
+  await poll_feeds(args);
   session.close();
   iconn.close();
 }

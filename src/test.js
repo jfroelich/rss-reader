@@ -1,4 +1,4 @@
-import {fetch_feed_test} from '/src/control/fetch-feed-test.js';
+import * as rewrite_url_tests from '/src/control/rewrite-rules-tests.js';
 import * as array_utils_tests from '/src/lib/array-utils-tests.js';
 import {coerce_element_test} from '/src/lib/coerce-element-test.js';
 import * as color_contrast_filter_tests from '/src/lib/color-contrast-filter-test.js';
@@ -27,7 +27,6 @@ import * as model_tests from '/src/model/model-tests.js';
 import {activate_feed_test} from '/src/ops/activate-feed-test.js';
 import {deactivate_feed_test} from '/src/ops/deactivate-feed-test.js';
 import {import_opml_test} from '/src/ops/import-opml-test.js';
-import * as rewrite_url_tests from '/src/ops/poll-feeds/rewrite-rules-tests.js';
 import {susbcribe_test} from '/src/ops/subscribe-test.js';
 
 const registry = [];
@@ -42,7 +41,6 @@ register_module_tests(dom_filter_tests);
 register_module_tests(entry_tests);
 register_module_tests(favicon_tests);
 register_module_tests(feed_tests);
-register_test(fetch_feed_test);
 register_test(fetch_html_test);
 register_test(fetch_image_test);
 register_test(fetch_image_element_test);

@@ -2,7 +2,7 @@ import * as favicon from '/src/lib/favicon.js';
 import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
 import {Model} from '/src/model/model.js';
-import {PollOperation} from '/src/ops/poll-feeds/poll-feeds.js';
+import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
@@ -82,12 +82,12 @@ async function handle_alarm_poll() {
   const promises = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(promises);
 
-  const poll = new PollOperation();
-  poll.session = session;
-  poll.iconn = iconn;
-  poll.ignore_recency_check = false;
-  poll.notify = true;
-  await poll.run();
+  const poll_args = new PollFeedsArgs();
+  poll_args.model = session;
+  poll_args.iconn = iconn;
+  poll_args.ignore_recency_check = false;
+  poll_args.notify = true;
+  await poll_feeds(poll_args);
   session.close();
   iconn.close();
 }
