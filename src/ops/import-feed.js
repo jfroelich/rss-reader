@@ -2,7 +2,7 @@ import {assert, AssertionError} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
-import {better_fetch, is_redirect} from '/src/lib/net.js';
+import {better_fetch} from '/src/lib/net.js';
 import {Entry} from '/src/model/entry.js';
 import {Feed} from '/src/model/feed.js';
 import {Model} from '/src/model/model.js';
@@ -74,7 +74,7 @@ export async function import_feed(args) {
   const response_url = new URL(response.url);
 
   // Check if redirected
-  if (create && is_redirect(fetch_url, response_url)) {
+  if (create && fetch_url.href !== response_url.href) {
     const existing_feed = await model.getFeed('url', response_url, true);
     if (existing_feed) {
       const message =

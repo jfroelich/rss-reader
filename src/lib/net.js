@@ -93,18 +93,6 @@ export function sleep(delay = INDEFINITE) {
   });
 }
 
-// Return whether the response url is "different" than the request url,
-// indicating a redirect
-// TODO: deprecate, i don't think the hashless is providing much benefit
-export function is_redirect(request_url, response_url) {
-  // Operate on clones so as to avoid surprising side effects
-  const url1 = new URL(request_url.href);
-  const url2 = new URL(response_url.href);
-  url1.hash = '';
-  url2.hash = '';
-  return url1.href !== url2.href;
-}
-
 // This error indicates a fetch operation failed for some reason like network
 // unavailable, url could not be reached, etc
 export class FetchError extends Error {

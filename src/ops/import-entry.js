@@ -4,7 +4,6 @@ import {composite_document_filter} from '/src/lib/dom-filters.js';
 import * as favicon from '/src/lib/favicon.js';
 import {fetch_html} from '/src/lib/fetch-html.js';
 import {parse_html} from '/src/lib/html-utils.js';
-import * as net from '/src/lib/net.js';
 import {set_base_uri} from '/src/lib/set-base-uri.js';
 import * as sniffer from '/src/lib/sniffer.js';
 import * as tls from '/src/lib/tls.js';
@@ -61,7 +60,7 @@ export async function import_entry(args) {
   // Handle redirection
   if (response) {
     const response_url = new URL(response.url);
-    if (net.is_redirect(fetch_url, response_url)) {
+    if (fetch_url.href !== response_url.href) {
       entry.appendURL(response_url);
       const rewritten_url = rewrite_url(response_url, args.rewrite_rules);
       entry.appendURL(rewritten_url);
