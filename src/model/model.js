@@ -1016,6 +1016,12 @@ function is_valid_limit(limit) {
       (Number.isInteger(limit) && limit >= 0);
 }
 
+export class ConstraintError extends Error {
+  constructor(message) {
+    super(message);
+  }
+}
+
 // This error should occur when either an operation against the database is in
 // the wrong state, or the data involved in the operation is in the wrong state.
 export class InvalidStateError extends Error {

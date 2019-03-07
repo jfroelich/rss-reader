@@ -8,16 +8,10 @@ import {set_base_uri} from '/src/lib/set-base-uri.js';
 import * as sniffer from '/src/lib/sniffer.js';
 import * as tls from '/src/lib/tls.js';
 import {Entry} from '/src/model/entry.js';
+import {ConstraintError} from '/src/model/model.js';
 
 // TODO: this should not directly access tls. instead, config should provide
 // tls function wrappers, and this should access config
-
-// TODO: import-feed throws a constraint error if something already exists.
-// this should follow similar pattern. move constraint error into model.js or
-// model/errors.js. then, import constraint pattern here and in import-feed.
-// then, change this to throw a constraint error if entry exists instead of
-// returning 0.
-
 
 export function ImportEntryArgs() {
   this.entry = undefined;
@@ -49,7 +43,9 @@ export async function import_entry(args) {
   const existing_entry =
       await args.model.getEntry('url', after_rewrite_url, true);
   if (existing_entry) {
-    return 0;
+    const message =
+        'The entry with url ' + after_rewrite_url.href + ' already exists.';
+    throw new ConstraintError(message);
   }
 
   // Fetch the entry's full content. Rethrow any errors.
@@ -66,7 +62,9 @@ export async function import_entry(args) {
       entry.appendURL(rewritten_url);
       const existing_entry = args.model.getEntry('url', rewritten_url, true);
       if (existing_entry) {
-        return 0;
+        const message =
+            'The entry with url ' + rewritten_url.href + ' already exists.';
+        throw new ConstraintError(message);
       }
     }
   }

@@ -5,22 +5,9 @@ import * as feed_parser from '/src/lib/feed-parser.js';
 import {better_fetch} from '/src/lib/net.js';
 import {Entry} from '/src/model/entry.js';
 import {Feed} from '/src/model/feed.js';
-import {Model} from '/src/model/model.js';
+import {ConstraintError, Model} from '/src/model/model.js';
 import {import_entry, ImportEntryArgs} from '/src/ops/import-entry.js';
 import * as op_utils from '/src/ops/op-utils.js';
-
-// TODO: instead of a create flag, consider a flag like 'unique'. If unique
-// is true, then uniqueness checks are done. for example, instead of a create
-// flag, branch based on whether feed.id is set? in some sense create is a
-// functional dependency of feed.id. on the other hand, create expresses intent
-// clearly where as feed.id presence/absence does not.
-// TODO: instead of a feed_stored_callback, consider dispatching an event to a
-// channel so that anything else can listen to it in a decoupled manner. Or
-// even better, consider not doing anything at all, because the call to
-// create-feed issues a feed-created event, and basically callers should
-// recognize that as the point in time of the create. the only problem, though,
-// is that it is not clear which feed was created. so it would still make more
-// sense to issue some kind of specific operation event.
 
 export function ImportFeedArgs() {
   this.feed = undefined;
@@ -230,15 +217,4 @@ function parsed_entry_to_model_entry(parsed_entry) {
     }
   }
   return entry;
-}
-
-
-// TODO: this is more appropriately defined at the model layer. For example, if
-// I want to modify import-entry to throw a similar error, I would rather reuse
-// the model error definition. Defering until after revising poll-feeds to use
-// this new operation.
-export class ConstraintError extends Error {
-  constructor(message) {
-    super(message);
-  }
 }
