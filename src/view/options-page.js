@@ -1,8 +1,10 @@
 import * as badge from '/src/control/badge.js';
+import {AssertionError} from '/src/lib/assert.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as platform from '/src/lib/platform.js';
 import * as tls from '/src/lib/tls.js';
 import {Model} from '/src/model/model.js';
+import {ConstraintError} from '/src/model/model.js';
 import {activate_feed} from '/src/ops/activate-feed.js';
 import {deactivate_feed} from '/src/ops/deactivate-feed.js';
 import {subscribe} from '/src/ops/subscribe.js';
@@ -315,21 +317,16 @@ async function subscribe_form_onsubmit(event) {
   let monitor_element = document.getElementById('submon');
   if (monitor_element && monitor_element.style.display === 'block') {
     console.debug('prior subscription in progress');
-    return false;
+    return;
   }
-
-  subscription_monitor_show();
-
-  // TODO: this seems redundant with above???
-  monitor_element = document.getElementById('submon');
 
   const subscribe_url_input_element = document.getElementById('subscribe-url');
   let subscribe_url_string = subscribe_url_input_element.value;
   subscribe_url_string = subscribe_url_string || '';
   subscribe_url_string = subscribe_url_string.trim();
-
   if (!subscribe_url_string) {
-    return false;
+    console.debug('empty input value');
+    return;
   }
 
   let subscribe_url;
@@ -337,7 +334,7 @@ async function subscribe_form_onsubmit(event) {
     subscribe_url = new URL(subscribe_url_string);
   } catch (exception) {
     console.debug(exception);
-    return false;
+    return;
   }
 
   subscribe_url_input_element.value = '';
@@ -356,8 +353,24 @@ async function subscribe_form_onsubmit(event) {
   const session = new Model();
   const promises = [session.open(), favicon.open()];
   const [_, iconn] = await Promise.all(promises);
-  const feed = await subscribe(
-      session, iconn, subscribe_url, undefined, true, on_feed_stored);
+  try {
+    await subscribe(
+        session, iconn, subscribe_url, undefined, true, on_feed_stored);
+  } catch (error) {
+    if (error instanceof AssertionError) {
+      throw error;
+    } else if (error instanceof ConstraintError) {
+      console.debug(error);
+      subscription_monitor_append_message(
+          'Already subscribed to feed with similar url ' + subscribe_url.href);
+      subscription_monitor_hide();
+    } else {
+      console.debug(error);
+      subscription_monitor_append_message(
+          'An error occurred while subscribing');
+    }
+  }
+
   session.close();
   iconn.close();
 }

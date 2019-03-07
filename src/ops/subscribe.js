@@ -1,4 +1,5 @@
 import * as desknote from '/src/control/desknote.js';
+import {INDEFINITE} from '/src/lib/deadline.js';
 import {Feed} from '/src/model/feed.js';
 import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';
 
@@ -7,7 +8,7 @@ import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';
 // resolves when both the feed and the entries are fully imported. The callback
 // is invoked with the feed once it is stored, earlier.
 export async function subscribe(
-    model, iconn, url, timeout, notify, feed_stored_callback) {
+    model, iconn, url, timeout = INDEFINITE, notify, feed_stored_callback) {
   const feed = new Feed();
   feed.appendURL(url);
 

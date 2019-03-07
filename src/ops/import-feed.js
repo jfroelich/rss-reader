@@ -13,8 +13,8 @@ export function ImportFeedArgs() {
   this.feed = undefined;
   this.model = undefined;
   this.iconn = undefined;
-  this.rewrite_rules = undefined;
-  this.inaccessible_descriptors = undefined;
+  this.rewrite_rules = [];
+  this.inaccessible_descriptors = [];
   this.create = false;
   this.fetch_feed_timeout = INDEFINITE;
   this.fetch_html_timeout = INDEFINITE;
