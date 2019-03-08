@@ -9,7 +9,6 @@ import {export_opml} from '/src/ops/export-opml.js';
 import {import_opml} from '/src/ops/import-opml/import-opml.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import {filter_publisher} from '/src/slideshow-page/filter-publisher.js';
-import * as tls from '/src/typed-localstorage.js';
 
 const splash_element = document.getElementById('initial-loading-panel');
 const feeds_container = document.getElementById('feeds-container');
@@ -23,7 +22,7 @@ if (feeds_container) {
 let transition_duration;
 function init_transition_duration() {
   const default_duration = 0.16;
-  const duration_float = tls.read_float('slide_transition_duration');
+  const duration_float = config.read_float('slide_transition_duration');
   transition_duration =
       isNaN(duration_float) ? default_duration : duration_float;
 }
@@ -53,7 +52,7 @@ async function show_next_slide() {
   let entries = [];
   if (slide_unread_count < 3) {
     let limit = undefined;
-    const config_limit = tls.read_int('initial_entry_load_limit');
+    const config_limit = config.read_int('initial_entry_load_limit');
     if (!isNaN(config_limit)) {
       limit = config_limit;
     }
@@ -513,7 +512,7 @@ function download_opml_document(opml_document, file_name = 'subs.xml') {
 function header_font_menu_init(fonts) {
   const menu = document.getElementById('header-font-menu');
   menu.onchange = header_font_menu_onchange;
-  const current_header_font = tls.read_string('header_font_family');
+  const current_header_font = config.read_string('header_font_family');
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Header Font';
@@ -533,7 +532,7 @@ function header_font_menu_init(fonts) {
 function body_font_menu_init(fonts) {
   const menu = document.getElementById('body-font-menu');
   menu.onchange = body_font_menu_onchange;
-  const current_body_font = tls.read_string('body_font_family');
+  const current_body_font = config.read_string('body_font_family');
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Body Font';
@@ -552,11 +551,11 @@ function body_font_menu_init(fonts) {
 
 function header_font_menu_onchange(event) {
   const font_name = event.target.value;
-  const old_value = tls.read_string('header_font_family');
+  const old_value = config.read_string('header_font_family');
   if (font_name) {
-    tls.write_string('header_font_family', font_name);
+    config.write_string('header_font_family', font_name);
   } else {
-    tls.remove('header_font_family');
+    config.remove('header_font_family');
   }
 
   // HACK: dispatch a fake local change because storage change event listener
@@ -572,11 +571,11 @@ function header_font_menu_onchange(event) {
 
 function body_font_menu_onchange(event) {
   const font_name = event.target.value;
-  const old_value = tls.read_string('body_font_family');
+  const old_value = config.read_string('body_font_family');
   if (font_name) {
-    tls.write_string('body_font_family', font_name);
+    config.write_string('body_font_family', font_name);
   } else {
-    tls.remove('body_font_family');
+    config.remove('body_font_family');
   }
 
   // HACK: dispatch a fake local change because storage change event listener
@@ -617,7 +616,7 @@ function leftpanel_init() {
   menu_options.onclick = options_menu_onclick;
 
   // Load fonts from configuration once for both init helpers
-  const fonts = tls.read_array('fonts');
+  const fonts = config.read_array('fonts');
   header_font_menu_init(fonts);
   body_font_menu_init(fonts);
 

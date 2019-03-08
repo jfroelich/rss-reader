@@ -1,6 +1,65 @@
-import * as rewrite_rules from '/src/config/rewrite-rules.js';
 import * as color from '/src/color/color.js';
-import * as tls from '/src/typed-localstorage.js';
+import * as rewrite_rules from '/src/config/rewrite-rules.js';
+import * as tls from '/src/config/typed-localstorage.js';
+
+// TODO: rather than module methods, consider exporting a Config class. This
+// way config is injectable, and thereby more easily mocked in tests.
+
+export function rename(old_name, new_name) {
+  return tls.rename(old_name, new_name);
+}
+
+export function has_key(key) {
+  return tls.has_key(key);
+}
+
+export function read_boolean(key) {
+  return tls.read_boolean(key);
+}
+
+export function write_boolean(key, value) {
+  return tls.write_boolean(key, value);
+}
+
+export function read_int(key, fallback_value) {
+  return tls.read_int(key, fallback_value);
+}
+
+export function write_int(key, value) {
+  return tls.write_int(key, value);
+}
+
+export function read_float(key) {
+  return tls.read_float(key);
+}
+
+export function write_float(key, value) {
+  return tls.write_float(key, value);
+}
+
+export function read_string(key) {
+  return tls.read_string(key);
+}
+
+export function write_string(key, value) {
+  return tls.write_string(key, value);
+}
+
+export function read_array(key) {
+  return tls.read_array(key);
+}
+
+export function write_array(key, array) {
+  return tls.write_array(key, array);
+}
+
+export function remove(key) {
+  return tls.remove(key);
+}
+
+export function remove_all(keys) {
+  return tls.remove_all(keys);
+}
 
 // TODO: eventually figure out how to persist in localStorage
 export function get_inaccessible_content_descriptors() {
@@ -72,7 +131,7 @@ const fonts = [
 // clang-format on
 
 // The extension updated, or the background page was reloaded
-export function update(event) {
+export function handle_update(event) {
   const deprecated_keys = [
     'channel_name', 'db_name', 'db_open_timeout', 'db_version', 'debug',
     'entry_title_max_length', 'refresh_badge_delay'

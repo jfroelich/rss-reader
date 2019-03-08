@@ -1,6 +1,6 @@
+import * as config from '/src/config/config.js';
 import * as extension from '/src/extension.js';
 import {resolve_extension_path} from '/src/resolve-extension-path.js';
-import * as tls from '/src/typed-localstorage.js';
 
 // TODO: notifications work on mobile too. This module should be renamed so it
 // is less misleading.
@@ -18,12 +18,11 @@ import * as tls from '/src/typed-localstorage.js';
 // while the browser window is closed.
 // * Linking the notification click handler to the app's show view function.
 export function show(note = {}) {
-  if (!tls.read_boolean('show_notifications')) {
+  if (!config.read_boolean('show_notifications')) {
     return;
   }
 
-  const default_icon =
-      resolve_extension_path('/images/rss_icon_trans.gif');
+  const default_icon = resolve_extension_path('/images/rss_icon_trans.gif');
 
   const title = note.title || 'Untitled';
   const details = {};

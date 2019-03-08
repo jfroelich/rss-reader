@@ -1,5 +1,5 @@
+import * as config from '/src/config/config.js';
 import {resolve_extension_path} from '/src/resolve-extension-path.js';
-import * as tls from '/src/typed-localstorage.js';
 
 // Open the slideshow view in a tab.
 export async function open_view() {
@@ -12,7 +12,7 @@ export async function open_view() {
   }
 
   // Otherwise, try and reuse the newtab tab
-  const reuse_newtab = tls.read_boolean('reuse_newtab');
+  const reuse_newtab = config.read_boolean('reuse_newtab');
   if (reuse_newtab) {
     const newtab = await find_tab('chrome://newtab/');
     if (newtab) {

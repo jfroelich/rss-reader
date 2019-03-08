@@ -42,7 +42,7 @@ add_install_listener(function(event) {
   if (event.reason === 'install') {
     config.init(event);
   } else {
-    config.update(event);
+    config.handle_update(event);
   }
 });
 

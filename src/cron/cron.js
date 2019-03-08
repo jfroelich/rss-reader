@@ -1,8 +1,8 @@
+import * as config from '/src/config/config.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {Model} from '/src/model/model.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
-import * as tls from '/src/typed-localstorage.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
 const ONE_WEEK_MINUTES = 60 * 24 * 7;
@@ -54,7 +54,7 @@ export function update_alarms(prev_version_string) {
 
 export async function alarm_listener(alarm) {
   console.debug('Alarm wokeup:', alarm.name);
-  tls.write_string('last_alarm', alarm.name);
+  config.write_string('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
     const session = new Model();
@@ -82,9 +82,9 @@ export async function alarm_listener(alarm) {
 
 
 async function handle_alarm_poll() {
-  const idle_poll_secs = tls.read_int('idle_poll_secs');
+  const idle_poll_secs = config.read_int('idle_poll_secs');
   if (Number.isInteger(idle_poll_secs) && idle_poll_secs > 0 &&
-      tls.read_boolean('only_poll_if_idle')) {
+      config.read_boolean('only_poll_if_idle')) {
     const idle_states = ['locked', 'idle'];
     const idle_state = await query_idle_state(idle_poll_secs);
     if (!idle_states.includes(idle_state)) {
