@@ -1,8 +1,8 @@
 import {assert} from '/src/assert/assert.js';
-import * as string_utils from '/src/string-utils/string-utils.js';
+import {filter_unprintables} from '/src/model/filter-unprintables.js';
 
 export async function filter_unprintables_test() {
-  const f = string_utils.filter_unprintables;
+  const f = filter_unprintables;
 
   for (let i = 0; i < 9; i++) {
     assert(f(String.fromCharCode(i)).length === 0);

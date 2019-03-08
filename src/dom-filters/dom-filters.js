@@ -1,18 +1,18 @@
 import {assert, AssertionError} from '/src/assert/assert.js';
+import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
 import * as boilerplate from '/src/dom-filters/boilerplate.js';
 import {coerce_element} from '/src/dom-filters/coerce-element.js';
 import {color_contrast_filter} from '/src/dom-filters/color-contrast-filter.js';
-import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
 import {node_is_leaf} from '/src/dom-filters/dom-hierarchy.js';
 import * as dom_visibility from '/src/dom-filters/dom-visibility.js';
 import {fetch_image_element} from '/src/dom-filters/fetch-image-element.js';
 import {image_dimensions_filter} from '/src/dom-filters/image-dimensions-filter.js';
 import * as image_utils from '/src/dom-filters/image-utils.js';
 import {lonestar_filter} from '/src/dom-filters/lonestar-filter.js';
-import * as net from '/src/net/net.js';
 import * as srcset_utils from '/src/dom-filters/srcset-utils.js';
-import * as string_utils from '/src/string-utils/string-utils.js';
 import {unwrap_element} from '/src/dom-filters/unwrap-element.js';
+import * as net from '/src/net/net.js';
+import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
 import * as url_utils from '/src/url-utils/url-utils.js';
 
 // Applies several content filters to a document. The filters are applied in a
@@ -683,7 +683,7 @@ export function node_whitespace_filter(doc) {
   for (let node = it.nextNode(); node; node = it.nextNode()) {
     const val = node.nodeValue;
     if (val.length > 3 && !node.parentNode.closest(ws_sense)) {
-      const new_val = string_utils.condense_whitespace(val);
+      const new_val = condense_whitespace(val);
       if (new_val.length !== val.length) {
         node.nodeValue = new_val;
       }

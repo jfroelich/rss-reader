@@ -25,7 +25,7 @@ import * as rewrite_url_tests from '/src/config/rewrite-rules-tests.js';
 import * as set_base_uri_tests from '/set/ops/import-entry/set-base-uri-tests.js';
 import {filter_publisher_test} from '/src/slideshow-page/filter-publisher-test.js';
 import {sniffer_test} from '/src/ops/import-entry/sniffer-test.js';
-import * as string_utils_tests from '/src/string-utils/string-utils-tests.js';
+import * as string_utils_tests from '/src/model/filter-unprintables-tests.js';
 import * as unwrap_element_tests from '/src/dom-filters/unwrap-element-tests.js';
 import * as url_utils_tests from '/src/url-utils/url-utils-tests.js';
 

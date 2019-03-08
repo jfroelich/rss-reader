@@ -1,8 +1,9 @@
 import {assert} from '/src/assert/assert.js';
 import * as html_utils from '/src/html-utils/html-utils.js';
-import * as string_utils from '/src/string-utils/string-utils.js';
 import * as magic from '/src/model/magic.js';
 import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/model/utils.js';
+import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
+import {filter_controls} from '/src/model/filter-controls.js';
 
 export function Feed() {
   this.magic = magic.FEED_MAGIC;
@@ -38,18 +39,18 @@ Feed.sanitize = function(feed, title_max_len = 1024, desc_max_len = 10240) {
 
   if (feed.title) {
     let title = feed.title;
-    title = string_utils.filter_controls(title);
+    title = filter_controls(title);
     title = html_utils.replace_tags(title, html_tag_replacement);
-    title = string_utils.condense_whitespace(title);
+    title = condense_whitespace(title);
     title = html_utils.truncate_html(title, title_max_len, repl_suffix);
     feed.title = title;
   }
 
   if (feed.description) {
     let desc = feed.description;
-    desc = string_utils.filter_controls(desc);
+    desc = filter_controls(desc);
     desc = html_utils.replace_tags(desc, html_tag_replacement);
-    desc = string_utils.condense_whitespace(desc);
+    desc = condense_whitespace(desc);
     desc = html_utils.truncate_html(desc, desc_max_len, repl_suffix);
     feed.description = desc;
   }

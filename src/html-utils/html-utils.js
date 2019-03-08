@@ -1,5 +1,5 @@
 import {assert} from '/src/assert/assert.js';
-import * as string_utils from '/src/string-utils/string-utils.js';
+import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
 
 // Returns a new string where certain characters in the input string have been
 // replaced with html entities. If input is not a string returns undefined.
@@ -23,7 +23,7 @@ export function parse_html(html) {
 
   const error = doc.querySelector('parsererror');
   if (error) {
-    const message = string_utils.condense_whitespace(error.textContent);
+    const message = condense_whitespace(error.textContent);
     throw new Error(message);
   }
 

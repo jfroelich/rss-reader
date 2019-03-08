@@ -1,5 +1,9 @@
 import {assert} from '/src/assert/assert.js';
-import * as string_utils from '/src/string-utils/string-utils.js';
+
+// Not a url utility but exported for testing
+export function is_alphanumeric(value) {
+  return !/[^\p{L}\d]/u.test(value);
+}
 
 // Very minimally validate a url string
 export function is_valid_url_string(value) {
@@ -14,7 +18,7 @@ export function url_get_extension(url) {
     const last_dot_pos_p1 = path.lastIndexOf('.') + 1;
     if (last_dot_pos_p1 > 0 && last_dot_pos_p1 < path.length) {
       const ext = path.substring(last_dot_pos_p1);
-      if (ext.length < 5 && string_utils.is_alphanumeric(ext)) {
+      if (ext.length < 5 && is_alphanumeric(ext)) {
         return ext;
       }
     }
