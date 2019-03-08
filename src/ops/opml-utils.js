@@ -1,5 +1,3 @@
-import {condense_whitespace} from '/src/condense-whitespace.js';
-
 // TODO: while these are indeed all opml related functions, opml is highly
 // unlikely to change. i think each of the two dependencies on this module do
 // not share usage of these functions, they each use there own function that
@@ -59,4 +57,8 @@ export class OPMLParseError extends Error {
   constructor(message = 'OPML parse error') {
     super(message);
   }
+}
+
+function condense_whitespace(value) {
+  return value.replace(/\s\s+/g, ' ');
 }

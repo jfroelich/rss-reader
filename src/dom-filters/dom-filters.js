@@ -1,5 +1,4 @@
 import {assert, AssertionError} from '/src/assert.js';
-import {condense_whitespace} from '/src/condense-whitespace.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as boilerplate from '/src/dom-filters/boilerplate.js';
 import {coerce_element} from '/src/dom-filters/coerce-element.js';
@@ -882,4 +881,8 @@ export function visibility_filter(doc, matte, mcr) {
 export function is_valid_url_string(value) {
   return typeof value === 'string' && value.length > 1 &&
       value.length <= 3000 && !value.trim().includes(' ');
+}
+
+function condense_whitespace(value) {
+  return value.replace(/\s\s+/g, ' ');
 }

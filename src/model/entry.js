@@ -1,12 +1,11 @@
 import {assert} from '/src/assert.js';
-import {condense_whitespace} from '/src/condense-whitespace.js';
 import {Feed} from '/src/model/feed.js';
 import {filter_controls} from '/src/model/filter-controls.js';
 import {filter_unprintables} from '/src/model/filter-unprintables.js';
 import * as magic from '/src/model/magic.js';
 import {replace_tags} from '/src/model/replace-tags.js';
-import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/model/utils.js';
 import {truncate_html} from '/src/model/truncate-html.js';
+import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/model/utils.js';
 
 // TODO: consider a getter/setter on virtual property url instead of the append
 // and getURLString methods. But how does that work with idb serialization?
@@ -127,4 +126,8 @@ function validate_enclosure(enc) {
   vassert(
       enc.type === undefined || enc.type === null ||
       typeof enc.type === 'string');
+}
+
+function condense_whitespace(value) {
+  return value.replace(/\s\s+/g, ' ');
 }

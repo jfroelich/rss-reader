@@ -1,5 +1,4 @@
 import {assert} from '/src/assert.js';
-import {condense_whitespace} from '/src/condense-whitespace.js';
 
 // Parses a string into an html document. When html is a fragment, it will be
 // inserted into a new document using a default template provided by the
@@ -18,4 +17,8 @@ export function parse_html(html) {
   }
 
   return doc;
+}
+
+function condense_whitespace(value) {
+  return value.replace(/\s\s+/g, ' ');
 }

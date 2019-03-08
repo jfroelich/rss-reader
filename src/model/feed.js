@@ -1,10 +1,9 @@
 import {assert} from '/src/assert.js';
-import {condense_whitespace} from '/src/condense-whitespace.js';
 import {filter_controls} from '/src/model/filter-controls.js';
 import * as magic from '/src/model/magic.js';
 import {replace_tags} from '/src/model/replace-tags.js';
-import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/model/utils.js';
 import {truncate_html} from '/src/model/truncate-html.js';
+import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/model/utils.js';
 
 export function Feed() {
   this.magic = magic.FEED_MAGIC;
@@ -91,4 +90,8 @@ Feed.validate = function(feed) {
 
 export function is_feed(value) {
   return value && typeof value === 'object' && value.magic === magic.FEED_MAGIC;
+}
+
+function condense_whitespace(value) {
+  return value.replace(/\s\s+/g, ' ');
 }
