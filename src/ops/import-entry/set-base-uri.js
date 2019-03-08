@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 
 export function set_base_uri(doc, url, overwrite) {
   assert(doc instanceof Document);

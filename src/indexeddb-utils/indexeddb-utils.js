@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
 
 // Opens a connection to an indexedDB database. The primary benefits over using

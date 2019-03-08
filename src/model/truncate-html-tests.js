@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {truncate_html} from '/src/model/truncate-html.js';
 
 export async function truncate_html_test() {

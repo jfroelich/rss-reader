@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {image_dimensions_filter} from '/src/dom-filters/image-dimensions-filter.js';
 import {parse_html} from '/src/parse-html/parse-html.js';
 

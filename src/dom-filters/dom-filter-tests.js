@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {INDEFINITE} from '/src/deadline/deadline.js';
 import * as dom_filters from '/src/dom-filters/dom-filters.js';
 import {parse_html} from '/src/parse-html/parse-html.js';

@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import * as file_utils from '/src/ops/import-opml/file-utils.js';
 import * as opml_utils from '/src/ops/opml-utils.js';
 

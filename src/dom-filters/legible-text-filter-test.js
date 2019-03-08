@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import * as ltf from '/src/dom-filters/legible-text-filter.js';
 import {parse_html} from '/src/parse-html/parse-html.js';
 

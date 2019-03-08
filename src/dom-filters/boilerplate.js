@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 
 // TODO: export a function like block-is-boilerplate or block-is-content instead
 // of exporting this raw score. I prefer score to be as opaque as possible and

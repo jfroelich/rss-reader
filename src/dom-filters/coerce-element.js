@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 
 // Change an element from one element type to another by renaming it. As the DOM
 // does not allow renaming, we create a new element in place of the old. Returns

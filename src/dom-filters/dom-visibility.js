@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 
 // Returns true if an element is hidden. This function is inexact and inspects
 // various element properties to make a guess.

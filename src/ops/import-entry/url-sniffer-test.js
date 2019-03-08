@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import * as sniffer from '/src/ops/import-entry/url-sniffer.js';
 
 export async function sniffer_test() {

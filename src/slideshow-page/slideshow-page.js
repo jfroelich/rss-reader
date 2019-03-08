@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import * as badge from '/src/badge/badge.js';
 import * as config from '/src/config/config.js';
 import * as favicon from '/src/favicon/favicon.js';

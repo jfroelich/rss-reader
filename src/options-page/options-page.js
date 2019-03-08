@@ -1,5 +1,5 @@
 import * as badge from '/src/badge/badge.js';
-import {AssertionError} from '/src/assert/assert.js';
+import {AssertionError} from '/src/assert.js';
 import * as favicon from '/src/favicon/favicon.js';
 import * as platform from '/src/platform/platform.js';
 import * as tls from '/src/tls/tls.js';

@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {filter_publisher} from '/src/slideshow-page/filter-publisher.js';
 
 // TODO: store input-ouput pairs then simply iterate

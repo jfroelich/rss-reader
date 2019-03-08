@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 
 // Returns a new string where the publisher information has been stripped. For
 // example, in the string "Florida man shoots self - Your Florida News", the

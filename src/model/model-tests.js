@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {INDEFINITE} from '/src/deadline/deadline.js';
 import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
 import {Entry, is_entry} from '/src/model/entry.js';

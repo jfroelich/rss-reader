@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
 import {fetch_image} from '/src/favicon/fetch-image.js';
 import {FetchError} from '/src/net/net.js';

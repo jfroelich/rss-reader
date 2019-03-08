@@ -1,4 +1,4 @@
-import {assert, AssertionError} from '/src/assert/assert.js';
+import {assert, AssertionError} from '/src/assert.js';
 import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
 import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
 import * as boilerplate from '/src/dom-filters/boilerplate.js';

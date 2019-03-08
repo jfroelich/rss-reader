@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 
 // NOTE: there is no point to using this filter in its current state. Without
 // getComputedStyle availability it is horribly inaccurate and could

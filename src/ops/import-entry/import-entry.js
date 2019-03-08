@@ -1,4 +1,4 @@
-import {assert, AssertionError} from '/src/assert/assert.js';
+import {assert, AssertionError} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
 import {composite_document_filter} from '/src/dom-filters/dom-filters.js';
 import * as favicon from '/src/favicon/favicon.js';

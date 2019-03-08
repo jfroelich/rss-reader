@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {parse_html} from '/src/parse-html/parse-html.js';
 
 // TODO: no callers use this for the purpose of replacement. all use it only

@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
 import {FetchError, OfflineError, sleep, TimeoutError} from '/src/net/net.js';
 

@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {set_base_uri} from '/src/ops/import-entry/set-base-uri.js';
 
 export async function set_base_uri_test() {

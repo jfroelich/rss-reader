@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {get_url_extension} from '/src/get-url-extension/get-url-extension.js';
 import * as mime from '/src/mime/mime.js';
 

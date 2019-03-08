@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 
 // A deadline represents the latest time by which something should be completed,
 // such as a timeout value. A deadline can also represent an initial delay

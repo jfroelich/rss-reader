@@ -1,5 +1,5 @@
 import * as array_utils from '/src/array-utils/array-utils.js';
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 
 export async function unique_test() {
   let input = [0, 1, 2];

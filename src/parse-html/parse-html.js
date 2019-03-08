@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
 
 // Parses a string into an html document. When html is a fragment, it will be

@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {get_url_extension} from '/src/get-url-extension/get-url-extension.js';
 
 export async function get_url_extension_tests() {

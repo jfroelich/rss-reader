@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import * as magic from '/src/model/magic.js';
 
 export function append_url_common(object, url) {

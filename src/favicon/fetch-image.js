@@ -1,4 +1,4 @@
-import {assert} from '/src/assert/assert.js';
+import {assert} from '/src/assert.js';
 import {better_fetch} from '/src/net/net.js';
 
 export function fetch_image(url, options = {}) {
