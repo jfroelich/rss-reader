@@ -10,7 +10,7 @@ import {legible_text_filter_test} from '/src/dom-filters/legible-text-filter-tes
 import * as unwrap_element_tests from '/src/dom-filters/unwrap-element-tests.js';
 import * as favicon_tests from '/src/favicon/favicon-tests.js';
 import {fetch_image_test} from '/src/favicon/fetch-image-test.js';
-import * as get_url_extension_tests from '/src/get-url-extension/get-url-extension-tests.js';
+import * as get_url_filename_extension_tests from '/src/get-url-filename-extension/get-url-filename-extension-tests.js';
 import * as idb_tests from '/src/indexeddb-utils/indexeddb-utils-test.js';
 import {mime_test} from '/src/mime/mime-test.js';
 import * as entry_tests from '/src/model/entry-tests.js';
@@ -43,7 +43,7 @@ register_test(fetch_html_test);
 register_test(fetch_image_test);
 register_test(fetch_image_element_test);
 register_test(filter_publisher_test);
-register_module_tests(get_url_extension_tests);
+register_module_tests(get_url_filename_extension_tests);
 register_module_tests(idb_tests);
 register_module_tests(image_size_filter_tests);
 register_test(import_opml_test);

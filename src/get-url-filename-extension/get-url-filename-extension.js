@@ -1,4 +1,4 @@
-export function get_url_extension(url) {
+export function get_url_filename_extension(url) {
   const path = url.pathname;
 
   if (path.length > 2) {

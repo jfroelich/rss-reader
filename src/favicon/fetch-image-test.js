@@ -2,11 +2,11 @@ import {assert} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {fetch_image} from '/src/favicon/fetch-image.js';
 import {FetchError} from '/src/net/net.js';
-import {resolve_extension_url_string} from '/src/resolve-extension-url.js';
+import {resolve_extension_path} from '/src/resolve-extension-path.js';
 
 export async function fetch_image_test() {
   let path = '/src/favicon/fetch-image-test.png';
-  let url_string = resolve_extension_url_string(path);
+  let url_string = resolve_extension_path(path);
   let url = new URL(url_string);
 
   // Test using explicit indefiniteness
@@ -22,7 +22,7 @@ export async function fetch_image_test() {
 
   // Test against a non-existent image
   path = '/src/control/net/i-do-not-exist.png';
-  url_string = resolve_extension_url_string(path);
+  url_string = resolve_extension_path(path);
   url = new URL(url_string);
   options = undefined;  // reset for isolation, presumably indefinite default
   let error404;

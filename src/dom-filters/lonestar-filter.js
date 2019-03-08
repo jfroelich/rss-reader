@@ -1,10 +1,9 @@
-// The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
-// can be found here: https://youtu.be/rGvblGCD7qM
-
 import {assert} from '/src/assert.js';
 import {is_hidden_inline} from '/src/dom-filters/dom-visibility.js';
 import * as image_utils from '/src/dom-filters/image-utils.js';
-import {get_url_extension} from '/src/get-url-extension/get-url-extension.js';
+
+// The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
+// can be found here: https://youtu.be/rGvblGCD7qM
 
 const host_patterns = [
   /\/\/.*2o7\.net\//i,

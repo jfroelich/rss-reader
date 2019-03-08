@@ -1,10 +1,10 @@
-import {resolve_extension_url_string} from '/src/resolve-extension-url.js';
+import {resolve_extension_path} from '/src/resolve-extension-path.js';
 import * as tls from '/src/typed-localstorage.js';
 
 // Open the slideshow view in a tab.
 export async function open_view() {
   // Check if the view is already open and switch to it
-  const url_string = resolve_extension_url_string('slideshow.html');
+  const url_string = resolve_extension_path('slideshow.html');
   const view_tab = await find_tab(url_string);
   if (view_tab) {
     update_tab(view_tab.id, {active: true});
