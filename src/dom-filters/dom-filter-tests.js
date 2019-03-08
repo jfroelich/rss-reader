@@ -1,7 +1,7 @@
 import {assert} from '/src/assert.js';
-import {INDEFINITE} from '/src/deadline/deadline.js';
+import {INDEFINITE} from '/src/deadline.js';
 import * as dom_filters from '/src/dom-filters/dom-filters.js';
-import {parse_html} from '/src/parse-html/parse-html.js';
+import {parse_html} from '/src/parse-html.js';
 
 export async function emphasis_filter_test() {
   let input, doc;

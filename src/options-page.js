@@ -1,8 +1,8 @@
-import * as badge from '/src/badge/badge.js';
+import * as badge from '/src/badge.js';
 import {AssertionError} from '/src/assert.js';
 import * as favicon from '/src/favicon/favicon.js';
-import * as platform from '/src/platform/platform.js';
-import * as tls from '/src/tls/tls.js';
+import * as platform from '/src/platform.js';
+import * as tls from '/src/typed-localstorage.js';
 import {Model} from '/src/model/model.js';
 import {ConstraintError} from '/src/model/model.js';
 import {activate_feed} from '/src/ops/activate-feed.js';

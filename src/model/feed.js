@@ -1,5 +1,5 @@
 import {assert} from '/src/assert.js';
-import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
+import {condense_whitespace} from '/src/condense-whitespace.js';
 import {filter_controls} from '/src/model/filter-controls.js';
 import * as magic from '/src/model/magic.js';
 import {replace_tags} from '/src/model/replace-tags.js';

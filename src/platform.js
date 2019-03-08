@@ -1,3 +1,11 @@
+// TODO: deprecate this module. there are a couple problems with it. first, it
+// is a misrepresentation because it does not encapsulate all platform specific
+// behavior, only platform api behavior. platforms can differ in behavior in
+// many places, such as the behavior of any built-in javascript object or global
+// function. the second problem is the cohesion, none of these functions make
+// use of each other. this is a perfect example of mistakenly using logical
+// cohesion over functional cohesion.
+
 export const lifecycle = {};
 
 lifecycle.add_install_listener = function(listener) {

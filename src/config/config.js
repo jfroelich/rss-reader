@@ -1,6 +1,6 @@
 import * as rewrite_rules from '/src/config/rewrite-rules.js';
 import * as color from '/src/color/color.js';
-import * as tls from '/src/tls/tls.js';
+import * as tls from '/src/typed-localstorage.js';
 
 // TODO: eventually figure out how to persist in localStorage
 export function get_inaccessible_content_descriptors() {

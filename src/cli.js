@@ -1,8 +1,8 @@
 import * as config from '/src/config/config.js';
 import * as cron_control from '/src/cron/cron.js';
-import {Deadline} from '/src/deadline/deadline.js';
+import {Deadline} from '/src/deadline.js';
 import * as favicon from '/src/favicon/favicon.js';
-import * as platform from '/src/platform/platform.js';
+import * as platform from '/src/platform.js';
 import {Model} from '/src/model/model.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';

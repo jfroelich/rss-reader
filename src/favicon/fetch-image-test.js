@@ -1,8 +1,8 @@
 import {assert} from '/src/assert.js';
-import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {fetch_image} from '/src/favicon/fetch-image.js';
 import {FetchError} from '/src/net/net.js';
-import * as platform from '/src/platform/platform.js';
+import * as platform from '/src/platform.js';
 
 export async function fetch_image_test() {
   let path = '/src/favicon/fetch-image-test.png';

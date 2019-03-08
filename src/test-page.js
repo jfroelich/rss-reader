@@ -1,5 +1,4 @@
 import * as set_base_uri_tests from '/set/ops/import-entry/set-base-uri-tests.js';
-import * as array_utils_tests from '/src/array-utils/array-utils-tests.js';
 import {color_test} from '/src/color/color-test.js';
 import * as rewrite_url_tests from '/src/config/rewrite-rules-tests.js';
 import {coerce_element_test} from '/src/dom-filters/coerce-element-test.js';
@@ -32,7 +31,6 @@ import {filter_publisher_test} from '/src/slideshow-page/filter-publisher-test.j
 
 const registry = [];
 register_test(activate_feed_test);
-register_module_tests(array_utils_tests);
 register_test(coerce_element_test);
 register_module_tests(color_contrast_filter_tests);
 register_test(color_test);

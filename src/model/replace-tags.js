@@ -1,5 +1,5 @@
 import {assert} from '/src/assert.js';
-import {parse_html} from '/src/parse-html/parse-html.js';
+import {parse_html} from '/src/parse-html.js';
 
 // TODO: no callers use this for the purpose of replacement. all use it only
 // for removing tags. this should be renamed to strip-tags and the replacement

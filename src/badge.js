@@ -1,4 +1,4 @@
-import * as platform from '/src/platform/platform.js';
+import * as platform from '/src/platform.js';
 import {Model} from '/src/model/model.js';
 
 // Refreshes the unread count displayed the badge in Chrome's toolbar

@@ -1,14 +1,14 @@
 import {assert, AssertionError} from '/src/assert.js';
-import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {composite_document_filter} from '/src/dom-filters/dom-filters.js';
 import * as favicon from '/src/favicon/favicon.js';
-import {parse_html} from '/src/parse-html/parse-html.js';
+import {parse_html} from '/src/parse-html.js';
 import {Entry} from '/src/model/entry.js';
 import {ConstraintError} from '/src/model/model.js';
 import {fetch_html} from '/src/ops/import-entry/fetch-html.js';
 import {set_base_uri} from '/src/ops/import-entry/set-base-uri.js';
 import * as sniffer from '/src/ops/import-entry/url-sniffer.js';
-import * as tls from '/src/tls/tls.js';
+import * as tls from '/src/typed-localstorage.js';
 
 // TODO: this should not directly access tls. instead, config should provide
 // tls function wrappers, and this should access config

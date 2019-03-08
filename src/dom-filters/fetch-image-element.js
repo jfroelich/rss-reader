@@ -1,5 +1,5 @@
 import {assert} from '/src/assert.js';
-import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {FetchError, OfflineError, sleep, TimeoutError} from '/src/net/net.js';
 
 // TODO: i do not need the element in any use case, just its dimensions, so the

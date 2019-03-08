@@ -1,5 +1,5 @@
 import {assert} from '/src/assert.js';
-import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
+import {condense_whitespace} from '/src/condense-whitespace.js';
 import {Feed} from '/src/model/feed.js';
 import {filter_controls} from '/src/model/filter-controls.js';
 import {filter_unprintables} from '/src/model/filter-unprintables.js';

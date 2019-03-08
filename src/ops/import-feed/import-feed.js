@@ -1,5 +1,5 @@
 import {assert, AssertionError} from '/src/assert.js';
-import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as favicon from '/src/favicon/favicon.js';
 import * as feed_parser from '/src/ops/import-feed/feed-parser.js';
 import {better_fetch} from '/src/net/net.js';

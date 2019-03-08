@@ -1,4 +1,4 @@
-import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
+import {condense_whitespace} from '/src/condense-whitespace.js';
 
 // TODO: while these are indeed all opml related functions, opml is highly
 // unlikely to change. i think each of the two dependencies on this module do

@@ -1,6 +1,6 @@
 import {assert, AssertionError} from '/src/assert.js';
-import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
-import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
+import {condense_whitespace} from '/src/condense-whitespace.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as boilerplate from '/src/dom-filters/boilerplate.js';
 import {coerce_element} from '/src/dom-filters/coerce-element.js';
 import {color_contrast_filter} from '/src/dom-filters/color-contrast-filter.js';

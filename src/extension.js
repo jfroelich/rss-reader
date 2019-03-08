@@ -1,5 +1,9 @@
-import * as platform from '/src/platform/platform.js';
-import * as tls from '/src/tls/tls.js';
+import * as platform from '/src/platform.js';
+import * as tls from '/src/typed-localstorage.js';
+
+// TODO: if this module only exports one function it should be named after that
+// one function because that way the name better communicates the simplicity of
+// the module (the lack of complexity).
 
 // Open the slideshow view in a tab.
 export async function open_view() {

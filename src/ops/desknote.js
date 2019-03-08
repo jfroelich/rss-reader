@@ -1,6 +1,9 @@
-import * as extension from '/src/extension/extension.js';
-import * as platform from '/src/platform/platform.js';
-import * as tls from '/src/tls/tls.js';
+import * as extension from '/src/extension.js';
+import * as platform from '/src/platform.js';
+import * as tls from '/src/typed-localstorage.js';
+
+// TODO: notifications work on mobile too. This module should be renamed so it
+// is less misleading.
 
 // Show a desktop notification with optional title, message, and icon. |note|
 // properties include title (string), message (string), and url (string).

@@ -1,6 +1,6 @@
 import * as favicon from '/src/favicon/favicon.js';
-import * as platform from '/src/platform/platform.js';
-import * as tls from '/src/tls/tls.js';
+import * as platform from '/src/platform.js';
+import * as tls from '/src/typed-localstorage.js';
 import {Model} from '/src/model/model.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';

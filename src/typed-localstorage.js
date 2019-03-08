@@ -1,3 +1,7 @@
+// TODO: this should only be a helper to the config module, and possibly even
+// entirely inlined within that module. no other modules should be accessing
+// this module directly.
+
 // Provides type-specific i/o operations for storing configuration values, and
 // serves an abstraction layer in case I change my mind regarding how values
 // are stored.

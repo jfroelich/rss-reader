@@ -1,8 +1,8 @@
-import * as badge from '/src/badge/badge.js';
+import * as badge from '/src/badge.js';
 import * as config from '/src/config/config.js';
 import * as cron_control from '/src/cron/cron.js';
-import * as extension from '/src/extension/extension.js';
-import * as platform from '/src/platform/platform.js';
+import * as extension from '/src/extension.js';
+import * as platform from '/src/platform.js';
 import {Model} from '/src/model/model.js';
 
 // Open a channel with a lifetime equal to the background page lifetime.

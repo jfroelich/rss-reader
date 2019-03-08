@@ -1,5 +1,5 @@
 import {assert, AssertionError} from '/src/assert.js';
-import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {fetch_image_element} from '/src/dom-filters/fetch-image-element.js';
 import {get_url_extension} from '/src/get-url-extension/get-url-extension.js';
 

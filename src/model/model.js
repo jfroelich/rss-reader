@@ -1,5 +1,5 @@
 import {assert} from '/src/assert.js';
-import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
 import * as object_utils from '/src/model/object-utils.js';
 import {sizeof} from '/src/model/sizeof.js';
