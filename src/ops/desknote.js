@@ -1,5 +1,5 @@
 import * as extension from '/src/extension.js';
-import * as platform from '/src/platform.js';
+import {resolve_extension_url_string} from '/src/resolve-extension-url.js';
 import * as tls from '/src/typed-localstorage.js';
 
 // TODO: notifications work on mobile too. This module should be renamed so it
@@ -23,7 +23,7 @@ export function show(note = {}) {
   }
 
   const default_icon =
-      platform.extension.get_url_string('/images/rss_icon_trans.gif');
+      resolve_extension_url_string('/images/rss_icon_trans.gif');
 
   const title = note.title || 'Untitled';
   const details = {};

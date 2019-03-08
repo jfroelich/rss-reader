@@ -1,13 +1,13 @@
 import {assert} from '/src/assert.js';
 import * as badge from '/src/badge.js';
 import * as config from '/src/config/config.js';
+import {create_tab} from '/src/extension.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {is_entry} from '/src/model/entry.js';
 import {Model} from '/src/model/model.js';
 import {export_opml} from '/src/ops/export-opml.js';
 import {import_opml} from '/src/ops/import-opml/import-opml.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
-import * as platform from '/src/platform.js';
 import {filter_publisher} from '/src/slideshow-page/filter-publisher.js';
 import * as tls from '/src/typed-localstorage.js';
 
@@ -180,7 +180,7 @@ async function slide_onclick(event) {
   event.preventDefault();
 
   // Open the link in a new tab via a technique that Chrome tolerates
-  platform.tab.create({active: true, url: url_string});
+  create_tab({active: true, url: url_string});
 
   // Find the clicked slide. Start from parent because we know that the anchor
   // itself is not a slide. We know that a slide will always be found

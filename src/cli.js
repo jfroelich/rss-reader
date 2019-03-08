@@ -2,7 +2,6 @@ import * as config from '/src/config/config.js';
 import * as cron_control from '/src/cron/cron.js';
 import {Deadline} from '/src/deadline.js';
 import * as favicon from '/src/favicon/favicon.js';
-import * as platform from '/src/platform.js';
 import {Model} from '/src/model/model.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
@@ -10,6 +9,14 @@ import {subscribe} from '/src/ops/subscribe.js';
 import {unsubscribe} from '/src/ops/unsubscribe.js';
 
 // TODO: add and implement cli_archive_entries
+
+function clear_alarms() {
+  return new Promise(resolve => chrome.alarms.clearAll(resolve));
+}
+
+function get_all_alarms() {
+  return new Promise(resolve => chrome.alarms.getAll(resolve));
+}
 
 async function cli_subscribe(url_string) {
   const url = new URL(url_string);
@@ -86,7 +93,7 @@ async function cli_lookup_favicon(url_string, cached) {
 
 async function cli_print_alarms() {
   console.log('Enumerating alarms...');
-  const alarms = await platform.alarm.get_all();
+  const alarms = await get_all_alarms();
   for (const alarm of alarms) {
     console.log('Alarm:', alarm.name);
   }
@@ -94,9 +101,11 @@ async function cli_print_alarms() {
 
 async function cli_clear_alarms() {
   console.log('Clearing alarms...');
-  const cleared = await platform.alarm.clear();
+  const cleared = await clear_alarms();
   console.log('Cleared alarms');
 }
+
+
 
 function cli_create_alarms() {
   cron_control.create_alarms();

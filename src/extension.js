@@ -1,30 +1,42 @@
-import * as platform from '/src/platform.js';
+import {resolve_extension_url_string} from '/src/resolve-extension-url.js';
 import * as tls from '/src/typed-localstorage.js';
-
-// TODO: if this module only exports one function it should be named after that
-// one function because that way the name better communicates the simplicity of
-// the module (the lack of complexity).
 
 // Open the slideshow view in a tab.
 export async function open_view() {
   // Check if the view is already open and switch to it
-  const url_string = platform.extension.get_url_string('slideshow.html');
-  const view_tab = await platform.tab.find(url_string);
+  const url_string = resolve_extension_url_string('slideshow.html');
+  const view_tab = await find_tab(url_string);
   if (view_tab) {
-    platform.tab.update(view_tab.id, {active: true});
+    update_tab(view_tab.id, {active: true});
     return;
   }
 
   // Otherwise, try and reuse the newtab tab
   const reuse_newtab = tls.read_boolean('reuse_newtab');
   if (reuse_newtab) {
-    const newtab = await platform.tab.find('chrome://newtab/');
+    const newtab = await find_tab('chrome://newtab/');
     if (newtab) {
-      platform.tab.update(newtab.id, {active: true, url: url_string});
+      update_tab(newtab.id, {active: true, url: url_string});
       return;
     }
   }
 
   // Otherwise, open the view in a new tab
-  platform.tab.create({active: true, url: url_string});
+  create_tab({active: true, url: url_string});
+}
+
+export function update_tab(id, options) {
+  return chrome.tabs.update(id, options);
+}
+
+export function create_tab(options) {
+  return chrome.tabs.create(options);
+}
+
+export function find_tab(url_string) {
+  return new Promise(resolve => {
+    chrome.tabs.query({url: url_string}, tabs => {
+      resolve((tabs && tabs.length) ? tabs[0] : undefined);
+    });
+  });
 }

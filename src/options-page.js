@@ -1,14 +1,29 @@
-import * as badge from '/src/badge.js';
 import {AssertionError} from '/src/assert.js';
+import * as badge from '/src/badge.js';
 import * as favicon from '/src/favicon/favicon.js';
-import * as platform from '/src/platform.js';
-import * as tls from '/src/typed-localstorage.js';
 import {Model} from '/src/model/model.js';
 import {ConstraintError} from '/src/model/model.js';
 import {activate_feed} from '/src/ops/activate-feed.js';
 import {deactivate_feed} from '/src/ops/deactivate-feed.js';
 import {subscribe} from '/src/ops/subscribe.js';
 import {unsubscribe} from '/src/ops/unsubscribe.js';
+import * as tls from '/src/typed-localstorage.js';
+
+function has_permission(name) {
+  return new Promise(
+      resolve => chrome.permissions.contains({permissions: [name]}, resolve));
+}
+
+function request_permission(name) {
+  return new Promise(
+      resolve => chrome.permissions.request({permissions: [name]}, resolve));
+}
+
+function remove_permission(name) {
+  return new Promise(
+      resolve => chrome.permissions.remove({permissions: [name]}, resolve));
+}
+
 
 let current_menu_item;
 let current_section;
@@ -487,9 +502,9 @@ function enable_notifications_checkbox_onclick(event) {
 
 function enable_bg_processing_checkbox_onclick(event) {
   if (event.target.checked) {
-    platform.permission.request('background');
+    request_permission('background');
   } else {
-    platform.permission.remove('background');
+    remove_permission('background');
   }
 }
 
@@ -501,7 +516,7 @@ function enable_bg_processing_checkbox_onclick(event) {
 async function enable_bg_processing_checkbox_init() {
   const checkbox = document.getElementById('enable-background');
   checkbox.onclick = enable_bg_processing_checkbox_onclick;
-  checkbox.checked = await platform.permission.has('background');
+  checkbox.checked = await has_permission('background');
 }
 
 function bg_image_menu_onchange(event) {
@@ -679,7 +694,7 @@ function body_line_height_input_oninput(event) {
     body_line_height_input.value = body_line_height;
   }
 
-  const manifest = platform.extension.get_manifest();
+  const manifest = get_extension_manifest();
   const ext_name_element = document.getElementById('extension-name');
   ext_name_element.textContent = manifest.name;
   const ext_version_element = document.getElementById('extension-version');
@@ -693,3 +708,7 @@ function body_line_height_input_oninput(event) {
 
   section_show_by_id('subs-list-section');
 }  // End on module load init
+
+function get_extension_manifest() {
+  return chrome.runtime.getManifest();
+}

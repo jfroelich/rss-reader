@@ -1,9 +1,8 @@
 import * as favicon from '/src/favicon/favicon.js';
-import * as platform from '/src/platform.js';
-import * as tls from '/src/typed-localstorage.js';
 import {Model} from '/src/model/model.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
+import * as tls from '/src/typed-localstorage.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
 const ONE_WEEK_MINUTES = 60 * 24 * 7;
@@ -23,16 +22,32 @@ const alarms = [
   {name: 'compact-favicon-db', period: ONE_WEEK_MINUTES}
 ];
 
+export function query_idle_state(seconds) {
+  return new Promise(resolve => chrome.idle.queryState(seconds, resolve));
+}
+
 export function create_alarms() {
   for (const alarm of alarms) {
-    platform.alarm.create(alarm.name, {periodInMinutes: alarm.period});
+    create_alarm(alarm.name, {periodInMinutes: alarm.period});
   }
+}
+
+export function create_alarm(name, options) {
+  return chrome.alarms.create(name, options);
+}
+
+export function remove_alarm(name, callback) {
+  return new Promise(resolve => {
+    chrome.alarms.clear(name, function(cleared) {
+      resolve({name: name, cleared: cleared});
+    });
+  });
 }
 
 export function update_alarms(prev_version_string) {
   const promises = [];
   for (const name of deprecated_alarms) {
-    promises.push(platform.alarm.remove(name));
+    promises.push(remove_alarm(name));
   }
   return Promise.all(promises);
 }
@@ -64,12 +79,14 @@ export async function alarm_listener(alarm) {
   }
 }
 
+
+
 async function handle_alarm_poll() {
   const idle_poll_secs = tls.read_int('idle_poll_secs');
   if (Number.isInteger(idle_poll_secs) && idle_poll_secs > 0 &&
       tls.read_boolean('only_poll_if_idle')) {
     const idle_states = ['locked', 'idle'];
-    const idle_state = await platform.idle.query(idle_poll_secs);
+    const idle_state = await query_idle_state(idle_poll_secs);
     if (!idle_states.includes(idle_state)) {
       console.debug(
           'Canceling poll-feeds alarm as not idle for %d seconds',
