@@ -1,5 +1,11 @@
 import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
 
+// TODO: while these are indeed all opml related functions, opml is highly
+// unlikely to change. i think each of the two dependencies on this module do
+// not share usage of these functions, they each use there own function that
+// happens to be located in this module. this smells like bad coupling.
+// therefore, this module should be broken up into individual components
+
 export function create_opml_template(document_title) {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');

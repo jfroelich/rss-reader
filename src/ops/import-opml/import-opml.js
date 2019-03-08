@@ -1,6 +1,6 @@
 import {assert} from '/src/assert/assert.js';
 import * as file_utils from '/src/ops/import-opml/file-utils.js';
-import * as opml_utils from '/src/opml-utils/opml-utils.js';
+import * as opml_utils from '/src/ops/opml-utils.js';
 
 // Create and store feed objects in the database based on urls extracted from
 // zero or more opml files. |files| should be a FileList or an Array.
