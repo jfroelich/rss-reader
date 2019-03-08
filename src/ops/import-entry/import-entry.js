@@ -7,7 +7,7 @@ import {Entry} from '/src/model/entry.js';
 import {ConstraintError} from '/src/model/model.js';
 import {fetch_html} from '/src/ops/import-entry/fetch-html.js';
 import {set_base_uri} from '/src/ops/import-entry/set-base-uri.js';
-import * as sniffer from '/src/ops/import-entry/sniffer.js';
+import * as sniffer from '/src/ops/import-entry/url-sniffer.js';
 import * as tls from '/src/tls/tls.js';
 
 // TODO: this should not directly access tls. instead, config should provide
