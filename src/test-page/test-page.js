@@ -11,6 +11,7 @@ import {legible_text_filter_test} from '/src/dom-filters/legible-text-filter-tes
 import * as unwrap_element_tests from '/src/dom-filters/unwrap-element-tests.js';
 import * as favicon_tests from '/src/favicon/favicon-tests.js';
 import {fetch_image_test} from '/src/favicon/fetch-image-test.js';
+import * as get_url_extension_tests from '/src/get-url-extension/get-url-extension-tests.js';
 import * as idb_tests from '/src/indexeddb-utils/indexeddb-utils-test.js';
 import {mime_test} from '/src/mime/mime-test.js';
 import * as entry_tests from '/src/model/entry-tests.js';
@@ -28,7 +29,6 @@ import {parse_feed_test} from '/src/ops/import-feed/feed-parser-test.js';
 import {import_opml_test} from '/src/ops/import-opml/import-opml-test.js';
 import {susbcribe_test} from '/src/ops/subscribe-test.js';
 import {filter_publisher_test} from '/src/slideshow-page/filter-publisher-test.js';
-import * as url_utils_tests from '/src/url-utils/url-utils-tests.js';
 
 const registry = [];
 register_test(activate_feed_test);
@@ -36,7 +36,6 @@ register_module_tests(array_utils_tests);
 register_test(coerce_element_test);
 register_module_tests(color_contrast_filter_tests);
 register_test(color_test);
-register_module_tests(set_base_uri_tests);
 register_test(deactivate_feed_test);
 register_module_tests(dom_filter_tests);
 register_module_tests(entry_tests);
@@ -46,7 +45,7 @@ register_test(fetch_html_test);
 register_test(fetch_image_test);
 register_test(fetch_image_element_test);
 register_test(filter_publisher_test);
-register_module_tests(truncate_html_tests);
+register_module_tests(get_url_extension_tests);
 register_module_tests(idb_tests);
 register_module_tests(image_size_filter_tests);
 register_test(import_opml_test);
@@ -57,11 +56,12 @@ register_module_tests(net_tests);
 register_test(parse_feed_test);
 register_test(replace_tags_test);
 register_module_tests(rewrite_url_tests);
+register_module_tests(set_base_uri_tests);
 register_test(sniffer_test);
 register_module_tests(string_utils_tests);
 register_test(subscribe_test);
+register_module_tests(truncate_html_tests);
 register_module_tests(unwrap_element_tests);
-register_module_tests(url_utils_tests);
 
 // On module load, expose console commands
 window.run = cli_run;

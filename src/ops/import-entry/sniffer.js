@@ -1,6 +1,6 @@
 import {assert} from '/src/assert/assert.js';
+import {get_url_extension} from '/src/get-url-extension/get-url-extension.js';
 import * as mime from '/src/mime/mime.js';
-import * as url_utils from '/src/url-utils/url-utils.js';
 
 export const UNKNOWN_CLASS = 0;
 export const TEXT_CLASS = 1;
@@ -26,7 +26,7 @@ export function classify(url) {
     return mime_type ? mime_type_is_binary(mime_type) : UNKNOWN_CLASS;
   }
 
-  const extension = url_utils.url_get_extension(url);
+  const extension = get_url_extension(url);
   if (extension) {
     const mime_type = EXTENSION_TYPE_MAP[extension];
     if (mime_type) {

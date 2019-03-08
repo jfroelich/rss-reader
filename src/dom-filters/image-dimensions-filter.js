@@ -1,7 +1,7 @@
 import {assert, AssertionError} from '/src/assert/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
 import {fetch_image_element} from '/src/dom-filters/fetch-image-element.js';
-import * as url_utils from '/src/url-utils/url-utils.js';
+import {get_url_extension} from '/src/get-url-extension/get-url-extension.js';
 
 // Asynchronously tries to set width/height attributes for all images.
 //
@@ -92,8 +92,7 @@ async function process_image(image, timeout) {
   // Check characters in url for non-data-uris
   const pairs = [{w: 'w', h: 'h'}, {w: 'width', h: 'height'}];
   const exts = ['jpg', 'gif', 'svg', 'bmp', 'png'];
-  if (url.protocol !== 'data:' &&
-      exts.includes(url_utils.url_get_extension(url))) {
+  if (url.protocol !== 'data:' && exts.includes(get_url_extension(url))) {
     for (const pair of pairs) {
       let width = parseInt(url.searchParams.get(pairs.w), 10);
       let height = parseInt(url.searchParams.get(pairs.h), 10);

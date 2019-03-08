@@ -1,4 +1,5 @@
 import {assert, AssertionError} from '/src/assert/assert.js';
+import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
 import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
 import * as boilerplate from '/src/dom-filters/boilerplate.js';
 import {coerce_element} from '/src/dom-filters/coerce-element.js';
@@ -12,8 +13,6 @@ import {lonestar_filter} from '/src/dom-filters/lonestar-filter.js';
 import * as srcset_utils from '/src/dom-filters/srcset-utils.js';
 import {unwrap_element} from '/src/dom-filters/unwrap-element.js';
 import * as net from '/src/net/net.js';
-import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
-import * as url_utils from '/src/url-utils/url-utils.js';
 
 // Applies several content filters to a document. The filters are applied in a
 // logical order that tries to minimize the amount of work done, and to preserve
@@ -446,7 +445,7 @@ export function image_lazy_filter(doc) {
       for (const name of lazy_names) {
         if (attr_names.includes(name)) {
           const value = image.getAttribute(name);
-          if (url_utils.is_valid_url_string(value)) {
+          if (is_valid_url_string(value)) {
             image.removeAttribute(name);
             image.setAttribute('src', value);
             break;
@@ -877,4 +876,10 @@ export function visibility_filter(doc, matte, mcr) {
   }
 
   color_contrast_filter(doc, matte, mcr);
+}
+
+// Very minimally validate a url string. Exported for testing
+export function is_valid_url_string(value) {
+  return typeof value === 'string' && value.length > 1 &&
+      value.length <= 3000 && !value.trim().includes(' ');
 }

@@ -4,7 +4,7 @@
 import {assert} from '/src/assert/assert.js';
 import {is_hidden_inline} from '/src/dom-filters/dom-visibility.js';
 import * as image_utils from '/src/dom-filters/image-utils.js';
-import * as url_utils from '/src/url-utils/url-utils.js';
+import {get_url_extension} from '/src/get-url-extension/get-url-extension.js';
 
 const host_patterns = [
   /\/\/.*2o7\.net\//i,
@@ -93,8 +93,7 @@ function is_telemetric(element, doc_url, is_strict) {
             return true;
           }
         } else {
-          if (url_utils.url_get_upper_domain(doc_url) !==
-              url_utils.url_get_upper_domain(url)) {
+          if (url_get_upper_domain(doc_url) !== url_get_upper_domain(url)) {
             return true;
           }
         }
@@ -109,4 +108,50 @@ function is_telemetric(element, doc_url, is_strict) {
   }
 
   return false;
+}
+
+// Ignores port. Exported for testing.
+export function url_get_upper_domain(url) {
+  assert(url instanceof URL);
+  if (hostname_is_ipv4(url.hostname) || hostname_is_ipv6(url.hostname)) {
+    return url.hostname;
+  }
+
+  const levels = url.hostname.split('.');
+
+  // Handle the simple case of localhost or example.com
+  if (levels.length < 3) {
+    return url.hostname;
+  }
+
+  // Using a full geo-suffix list is overkill so use tld length to guess
+  const top_level = levels[levels.length - 1];
+  const reverse_offset = top_level.length === 2 ? -3 : -2;
+  return levels.slice(reverse_offset).join('.');
+}
+
+// Exported for testing
+export function hostname_is_ipv4(string) {
+  if (typeof string !== 'string') {
+    return false;
+  }
+
+  const parts = string.split('.');
+  if (parts.length !== 4) {
+    return false;
+  }
+
+  for (const part of parts) {
+    const digit = parseInt(part, 10);
+    if (isNaN(digit) || digit < 0 || digit > 255) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+// Exported for testing
+export function hostname_is_ipv6(value) {
+  return typeof value === 'string' && value.includes(':');
 }
