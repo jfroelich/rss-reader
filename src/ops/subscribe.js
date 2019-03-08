@@ -1,5 +1,5 @@
-import * as desknote from '/src/control/desknote.js';
-import {INDEFINITE} from '/src/lib/deadline.js';
+import * as desknote from '/src/desknote/desknote.js';
+import {INDEFINITE} from '/src/deadline/deadline.js';
 import {Feed} from '/src/model/feed.js';
 import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';
 

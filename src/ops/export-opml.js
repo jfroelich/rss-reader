@@ -1,4 +1,4 @@
-import * as opml_utils from '/src/lib/opml-utils.js';
+import * as opml_utils from '/src/opml-utils/opml-utils.js';
 
 // Returns an in memory OPML document object filled with the feeds from the
 // database. document_title is optional.

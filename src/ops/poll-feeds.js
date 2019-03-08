@@ -1,7 +1,7 @@
-import * as config from '/src/control/config.js';
-import * as desknote from '/src/control/desknote.js';
-import {assert, AssertionError} from '/src/lib/assert.js';
-import {Deadline} from '/src/lib/deadline.js';
+import * as config from '/src/config/config.js';
+import * as desknote from '/src/desknote/desknote.js';
+import {assert, AssertionError} from '/src/assert/assert.js';
+import {Deadline} from '/src/deadline/deadline.js';
 import {Feed} from '/src/model/feed.js';
 import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';
 

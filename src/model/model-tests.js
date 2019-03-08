@@ -1,6 +1,6 @@
-import {assert} from '/src/lib/assert.js';
-import {INDEFINITE} from '/src/lib/deadline.js';
-import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
+import {assert} from '/src/assert/assert.js';
+import {INDEFINITE} from '/src/deadline/deadline.js';
+import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
 import {Entry, is_entry} from '/src/model/entry.js';
 import {Feed, is_feed} from '/src/model/feed.js';
 import {Model} from '/src/model/model.js';

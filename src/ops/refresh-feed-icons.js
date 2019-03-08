@@ -1,4 +1,4 @@
-import * as favicon from '/src/lib/favicon.js';
+import * as favicon from '/src/favicon/favicon.js';
 import {Feed} from '/src/model/feed.js';
 import * as op_utils from '/src/ops/op-utils.js';
 

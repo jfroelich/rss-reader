@@ -1,12 +1,12 @@
-import {assert, AssertionError} from '/src/lib/assert.js';
-import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
-import {composite_document_filter} from '/src/lib/dom-filters.js';
-import * as favicon from '/src/lib/favicon.js';
-import {fetch_html} from '/src/lib/fetch-html.js';
-import {parse_html} from '/src/lib/html-utils.js';
-import {set_base_uri} from '/src/lib/set-base-uri.js';
-import * as sniffer from '/src/lib/sniffer.js';
-import * as tls from '/src/lib/tls.js';
+import {assert, AssertionError} from '/src/assert/assert.js';
+import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
+import {composite_document_filter} from '/src/dom-filters/dom-filters.js';
+import * as favicon from '/src/favicon/favicon.js';
+import {fetch_html} from '/src/fetch-html/fetch-html.js';
+import {parse_html} from '/src/html-utils/html-utils.js';
+import {set_base_uri} from '/src/set-base-uri/set-base-uri.js';
+import * as sniffer from '/src/sniffer/sniffer.js';
+import * as tls from '/src/tls/tls.js';
 import {Entry} from '/src/model/entry.js';
 import {ConstraintError} from '/src/model/model.js';
 

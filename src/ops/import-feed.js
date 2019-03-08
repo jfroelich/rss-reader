@@ -1,8 +1,8 @@
-import {assert, AssertionError} from '/src/lib/assert.js';
-import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
-import * as favicon from '/src/lib/favicon.js';
-import * as feed_parser from '/src/lib/feed-parser.js';
-import {better_fetch} from '/src/lib/net.js';
+import {assert, AssertionError} from '/src/assert/assert.js';
+import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
+import * as favicon from '/src/favicon/favicon.js';
+import * as feed_parser from '/src/feed-parser/feed-parser.js';
+import {better_fetch} from '/src/net/net.js';
 import {Entry} from '/src/model/entry.js';
 import {Feed} from '/src/model/feed.js';
 import {ConstraintError, Model} from '/src/model/model.js';

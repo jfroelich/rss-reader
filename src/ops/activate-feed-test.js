@@ -1,5 +1,5 @@
-import {assert} from '/src/lib/assert.js';
-import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
+import {assert} from '/src/assert/assert.js';
+import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
 import {Feed, is_feed} from '/src/model/feed.js';
 import {Model} from '/src/model/model.js';
 import {activate_feed} from '/src/ops/activate-feed.js';
