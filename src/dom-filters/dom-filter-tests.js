@@ -173,7 +173,7 @@ export async function image_reachable_filter_test() {
   let input = '<img id="unreachable" src="not-reachable.gif">';
   // TODO: circular dependency?
   input +=
-      '<img class="reachable" src="/src/image-dimensions-filter/basic-image.png">';
+      '<img class="reachable" src="/src/dom-filters/basic-image.png">';
   let doc = html_utils.parse_html(input);
 
   assert(doc.querySelector('#unreachable'));

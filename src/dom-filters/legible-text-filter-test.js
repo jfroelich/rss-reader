@@ -1,6 +1,6 @@
 import {assert} from '/src/assert/assert.js';
+import * as ltf from '/src/dom-filters/legible-text-filter.js';
 import {parse_html} from '/src/html-utils/html-utils.js';
-import * as ltf from '/src/legible-text-filter/legible-text-filter.js';
 
 export async function legible_text_filter_test() {
   let input = '<p style="font-size:10px">some text</p>';

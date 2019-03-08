@@ -3,7 +3,7 @@ import * as desknote from '/src/desknote/desknote.js';
 import {assert, AssertionError} from '/src/assert/assert.js';
 import {Deadline} from '/src/deadline/deadline.js';
 import {Feed} from '/src/model/feed.js';
-import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';
+import {import_feed, ImportFeedArgs} from '/src/ops/import-feed/import-feed.js';
 
 export function PollFeedsArgs() {
   this.ignore_recency_check = false;

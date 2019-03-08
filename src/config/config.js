@@ -1,4 +1,4 @@
-import * as rewrite_rules from '/src/rewrite-rules/rewrite-rules.js';
+import * as rewrite_rules from '/src/config/rewrite-rules.js';
 import * as color from '/src/color/color.js';
 import * as tls from '/src/tls/tls.js';
 

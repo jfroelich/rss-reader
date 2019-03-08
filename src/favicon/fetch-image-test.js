@@ -1,11 +1,11 @@
 import {assert} from '/src/assert/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
-import {fetch_image} from '/src/fetch-image/fetch-image.js';
+import {fetch_image} from '/src/favicon/fetch-image.js';
 import {FetchError} from '/src/net/net.js';
 import * as platform from '/src/platform/platform.js';
 
 export async function fetch_image_test() {
-  let path = '/src/fetch-image/fetch-image-test.png';
+  let path = '/src/favicon/fetch-image-test.png';
   let url_string = platform.extension.get_url_string(path);
   let url = new URL(url_string);
 

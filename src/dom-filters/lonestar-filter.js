@@ -2,8 +2,8 @@
 // can be found here: https://youtu.be/rGvblGCD7qM
 
 import {assert} from '/src/assert/assert.js';
-import {is_hidden_inline} from '/src/dom-visibility/dom-visibility.js';
-import * as image_utils from '/src/image-utils/image-utils.js';
+import {is_hidden_inline} from '/src/dom-filters/dom-visibility.js';
+import * as image_utils from '/src/dom-filters/image-utils.js';
 import * as url_utils from '/src/url-utils/url-utils.js';
 
 const host_patterns = [

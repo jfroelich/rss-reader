@@ -1,5 +1,5 @@
 import '/src/third-party/he.js';
-import {parse_xml} from '/src/parse-xml/parse-xml.js';
+import {parse_xml} from '/src/ops/import-feed/parse-xml.js';
 
 export function Feed() {
   this.type = undefined;

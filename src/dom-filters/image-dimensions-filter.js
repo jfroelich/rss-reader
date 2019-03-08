@@ -1,6 +1,6 @@
 import {assert, AssertionError} from '/src/assert/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
-import {fetch_image_element} from '/src/fetch-image-element/fetch-image-element.js';
+import {fetch_image_element} from '/src/dom-filters/fetch-image-element.js';
 import * as url_utils from '/src/url-utils/url-utils.js';
 
 // Asynchronously tries to set width/height attributes for all images.

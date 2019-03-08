@@ -1,5 +1,5 @@
 import {assert} from '/src/assert/assert.js';
-import {filter_publisher} from '/src/filter-publisher/filter-publisher.js';
+import {filter_publisher} from '/src/slideshow-page/filter-publisher.js';
 
 // TODO: store input-ouput pairs then simply iterate
 // TODO: store input/output in a json file, then change this test to load the

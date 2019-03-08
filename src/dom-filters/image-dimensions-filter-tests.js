@@ -1,6 +1,6 @@
 import {assert} from '/src/assert/assert.js';
 import {parse_html} from '/src/html-utils/html-utils.js';
-import {image_dimensions_filter} from '/src/image-dimensions-filter/image-dimensions-filter.js';
+import {image_dimensions_filter} from '/src/dom-filters/image-dimensions-filter.js';
 
 export async function css_offset_props_test() {
   let input, doc, image;
@@ -86,7 +86,7 @@ export async function image_dimensions_filter_css_test() {
 // Exercise the ordinary case of a basic html document with an image with
 // unknown attributes
 export async function image_dimensions_filter_test() {
-  const input = '<img src="/src/image-dimensions-filter/basic-image.png">';
+  const input = '<img src="/src/dom-filters/basic-image.png">';
   const doc = parse_html(input);
   await image_dimensions_filter(doc);
   const image = doc.querySelector('img');

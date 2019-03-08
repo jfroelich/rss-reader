@@ -1,8 +1,8 @@
 import {assert} from '/src/assert/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
 import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
-import * as object_utils from '/src/object-utils/object-utils.js';
-import {sizeof} from '/src/sizeof/sizeof.js';
+import * as object_utils from '/src/model/object-utils.js';
+import {sizeof} from '/src/model/sizeof.js';
 import * as magic from '/src/model/magic.js';
 import {Entry, is_entry} from '/src/model/entry.js';
 import {Feed, is_feed} from '/src/model/feed.js';

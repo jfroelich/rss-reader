@@ -1,5 +1,5 @@
 import {assert} from '/src/assert/assert.js';
-import * as file_utils from '/src/file-utils/file-utils.js';
+import * as file_utils from '/src/ops/import-opml/file-utils.js';
 import * as opml_utils from '/src/opml-utils/opml-utils.js';
 
 // Create and store feed objects in the database based on urls extracted from

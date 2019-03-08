@@ -1,6 +1,6 @@
 import {assert, AssertionError} from '/src/assert/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
-import {fetch_image} from '/src/fetch-image/fetch-image.js';
+import {fetch_image} from '/src/favicon/fetch-image.js';
 import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
 
 const DEFAULT_NAME = 'favicon';

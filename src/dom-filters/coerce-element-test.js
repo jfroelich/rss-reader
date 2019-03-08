@@ -1,5 +1,5 @@
 import {assert} from '/src/assert/assert.js';
-import {coerce_element} from '/src/coerce-element/coerce-element.js';
+import {coerce_element} from '/src/dom-filters/coerce-element.js';
 import * as html_utils from '/src/html-utils/html-utils.js';
 
 export async function coerce_element_test() {
