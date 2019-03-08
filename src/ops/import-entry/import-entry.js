@@ -2,7 +2,7 @@ import {assert, AssertionError} from '/src/assert/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
 import {composite_document_filter} from '/src/dom-filters/dom-filters.js';
 import * as favicon from '/src/favicon/favicon.js';
-import {parse_html} from '/src/html-utils/html-utils.js';
+import {parse_html} from '/src/parse-html/parse-html.js';
 import {Entry} from '/src/model/entry.js';
 import {ConstraintError} from '/src/model/model.js';
 import {fetch_html} from '/src/ops/import-entry/fetch-html.js';

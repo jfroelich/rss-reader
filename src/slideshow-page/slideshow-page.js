@@ -1,16 +1,15 @@
+import {assert} from '/src/assert/assert.js';
 import * as badge from '/src/badge/badge.js';
 import * as config from '/src/config/config.js';
-import {assert} from '/src/assert/assert.js';
 import * as favicon from '/src/favicon/favicon.js';
-import {filter_publisher} from '/src/slideshow-page/filter-publisher.js';
-import * as html_utils from '/src/html-utils/html-utils.js';
-import * as platform from '/src/platform/platform.js';
-import * as tls from '/src/tls/tls.js';
 import {is_entry} from '/src/model/entry.js';
 import {Model} from '/src/model/model.js';
 import {export_opml} from '/src/ops/export-opml.js';
 import {import_opml} from '/src/ops/import-opml/import-opml.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
+import * as platform from '/src/platform/platform.js';
+import {filter_publisher} from '/src/slideshow-page/filter-publisher.js';
+import * as tls from '/src/tls/tls.js';
 
 const splash_element = document.getElementById('initial-loading-panel');
 const feeds_container = document.getElementById('feeds-container');

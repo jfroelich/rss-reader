@@ -1,11 +1,12 @@
 import {assert} from '/src/assert/assert.js';
-import * as html_utils from '/src/html-utils/html-utils.js';
+import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
 import {Feed} from '/src/model/feed.js';
+import {filter_controls} from '/src/model/filter-controls.js';
 import {filter_unprintables} from '/src/model/filter-unprintables.js';
 import * as magic from '/src/model/magic.js';
+import {replace_tags} from '/src/model/replace-tags.js';
 import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/model/utils.js';
-import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
-import {filter_controls} from '/src/model/filter-controls.js';
+import {truncate_html} from '/src/model/truncate-html.js';
 
 // TODO: consider a getter/setter on virtual property url instead of the append
 // and getURLString methods. But how does that work with idb serialization?
@@ -51,9 +52,9 @@ Entry.sanitize = function(
   if (entry.author) {
     let author = entry.author;
     author = filter_controls(author);
-    author = html_utils.replace_tags(author, '');
+    author = replace_tags(author, '');
     author = condense_whitespace(author);
-    author = html_utils.truncate_html(author, author_max_length);
+    author = truncate_html(author, author_max_length);
     entry.author = author;
   }
 
@@ -65,16 +66,16 @@ Entry.sanitize = function(
 
     // Temporarily disabled while debugging poll-feeds issue
     // TODO: re-enable
-    // content = html_utils.truncate_html(content, content_max_length);
+    // content = truncate_html(content, content_max_length);
     entry.content = content;
   }
 
   if (entry.title) {
     let title = entry.title;
     title = filter_controls(title);
-    title = html_utils.replace_tags(title, '');
+    title = replace_tags(title, '');
     title = condense_whitespace(title);
-    title = html_utils.truncate_html(title, title_max_length);
+    title = truncate_html(title, title_max_length);
     entry.title = title;
   }
 };

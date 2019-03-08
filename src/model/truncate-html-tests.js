@@ -1,12 +1,7 @@
 import {assert} from '/src/assert/assert.js';
-import * as html_utils from '/src/html-utils/html-utils.js';
-
-export async function replace_tags_test() {
-  // TODO: implement me
-}
+import {truncate_html} from '/src/model/truncate-html.js';
 
 export async function truncate_html_test() {
-  const truncate_html = html_utils.truncate_html;
   const e = '.';
   let input = 'a<p>b</p>c';
   let output = 'a<p>b.</p>';

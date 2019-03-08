@@ -1,10 +1,10 @@
 import {assert} from '/src/assert/assert.js';
 import {coerce_element} from '/src/dom-filters/coerce-element.js';
-import * as html_utils from '/src/html-utils/html-utils.js';
+import {parse_html} from '/src/parse-html/parse-html.js';
 
 export async function coerce_element_test() {
   const input = '<html><head></head><body><p></p><a></a></body></html>';
-  const doc = html_utils.parse_html(input);
+  const doc = parse_html(input);
 
   // Replace the as with bs
   const anchors = doc.querySelectorAll('a');
