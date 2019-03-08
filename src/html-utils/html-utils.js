@@ -1,16 +1,6 @@
 import {assert} from '/src/assert/assert.js';
 import {condense_whitespace} from '/src/condense-whitespace/condense-whitespace.js';
 
-// Returns a new string where certain characters in the input string have been
-// replaced with html entities. If input is not a string returns undefined.
-// Adapted from https://stackoverflow.com/questions/784586.
-export function escape_html(html) {
-  const pattern = /[<>"'`&]/g;
-  if (typeof html === 'string') {
-    return html.replace(pattern, match => '&#' + match.charCodeAt(0) + ';');
-  }
-}
-
 // Parses a string into an html document. When html is a fragment, it will be
 // inserted into a new document using a default template provided by the
 // browser, that includes a document element and usually a body. If not a
