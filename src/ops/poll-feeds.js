@@ -1,9 +1,9 @@
-import * as config from '/src/config/config.js';
-import * as desknote from '/src/ops/desknote.js';
 import {assert, AssertionError} from '/src/assert.js';
+import * as config from '/src/config/config.js';
 import {Deadline} from '/src/deadline.js';
 import {Feed} from '/src/model/feed.js';
 import {import_feed, ImportFeedArgs} from '/src/ops/import-feed/import-feed.js';
+import {ReaderNotification} from '/src/ops/reader-notification.js';
 
 export function PollFeedsArgs() {
   this.ignore_recency_check = false;
@@ -69,10 +69,10 @@ export async function poll_feeds(args) {
   }
 
   if (args.notify && entry_add_count_total > 0) {
-    const note = {};
+    const note = new ReaderNotification();
     note.title = 'Added articles';
     note.message = 'Added ' + entry_add_count_total + ' articles';
-    desknote.show(note);
+    note.show();
   }
 
   console.debug(

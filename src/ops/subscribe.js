@@ -1,7 +1,7 @@
-import * as desknote from '/src/ops/desknote.js';
 import {INDEFINITE} from '/src/deadline.js';
 import {Feed} from '/src/model/feed.js';
 import {import_feed, ImportFeedArgs} from '/src/ops/import-feed/import-feed.js';
+import {ReaderNotification} from '/src/ops/reader-notification.js';
 
 // Subscribes to a feed. Imports the feed and its entries into the database.
 // Throws an error if already subscribed or if something goes wrong. This
@@ -28,12 +28,12 @@ export async function subscribe(
   // the same object.
 
   if (notify) {
-    const feed_title = feed.title || feed.getURLString();
-    const note = {};
+    const note = new ReaderNotification();
     note.title = 'RSS Reader';
+    const feed_title = feed.title || feed.getURLString();
     note.message = 'Subscribed to ' + feed_title;
-    note.url = feed.faviconURLString;
-    desknote.show(note);
+    note.icon_url = feed.faviconURLString;
+    note.show();
   }
 
   return feed;
