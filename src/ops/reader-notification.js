@@ -3,7 +3,7 @@ import * as extension from '/src/extension.js';
 
 const default_icon_url = resolve_extension_path('/images/rss_icon_trans.gif');
 
-export function ReaderNotification {
+export function ReaderNotification() {
   this.title = 'Untitled';
   this.message = undefined;
   this.icon_url = default_icon_url;
