@@ -1,10 +1,16 @@
 import {assert, AssertionError} from '/src/assert.js';
+import {Deadline} from '/src/deadline.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {ConstraintError, Model} from '/src/model/model.js';
 import {subscribe} from '/src/ops/subscribe.js';
 import {fade_element} from '/src/options-page/fade-element.js';
 
 export function SubscriptionForm() {
+  // Default to a reasonable amount of time. The user can optionally override
+  // this. Use Deadline(0) or undefined to not impose a time limit.
+  this.fetch_feed_timeout = new Deadline(8000);
+
+
   this.url_element = undefined;
   this.monitor_element = undefined;
   // Optional callback that is invoked with the subscribed feed, prior to all
@@ -88,7 +94,8 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
   const [_, iconn] = await Promise.all(promises);
 
   try {
-    await subscribe(model, iconn, url, undefined, true, this.onFeedStored);
+    await subscribe(
+        model, iconn, url, this.fetch_feed_timeout, true, this.onFeedStored);
   } catch (error) {
     if (error instanceof AssertionError) {
       throw error;
