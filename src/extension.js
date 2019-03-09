@@ -1,5 +1,4 @@
 import * as config from '/src/config/config.js';
-import {resolve_extension_path} from '/src/resolve-extension-path.js';
 
 // Open the slideshow view in a tab.
 export async function open_view() {
@@ -39,4 +38,8 @@ export function find_tab(url_string) {
       resolve((tabs && tabs.length) ? tabs[0] : undefined);
     });
   });
+}
+
+function resolve_extension_path(path) {
+  return chrome.extension.getURL(path);
 }

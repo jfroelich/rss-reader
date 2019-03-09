@@ -1,6 +1,5 @@
 import * as config from '/src/config/config.js';
 import * as extension from '/src/extension.js';
-import {resolve_extension_path} from '/src/resolve-extension-path.js';
 
 const default_icon_url = resolve_extension_path('/images/rss_icon_trans.gif');
 
@@ -37,3 +36,7 @@ ReaderNotification.prototype.handleClick = function(event) {
 
   extension.open_view().catch(console.warn);
 };
+
+function resolve_extension_path(path) {
+  return chrome.extension.getURL(path);
+}

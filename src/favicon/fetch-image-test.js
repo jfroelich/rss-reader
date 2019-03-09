@@ -2,7 +2,6 @@ import {assert} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {fetch_image} from '/src/favicon/fetch-image.js';
 import {FetchError} from '/src/net/net.js';
-import {resolve_extension_path} from '/src/resolve-extension-path.js';
 
 export async function fetch_image_test() {
   let path = '/src/favicon/fetch-image-test.png';
@@ -36,4 +35,8 @@ export async function fetch_image_test() {
   // and not unexpectedly one of the custom error types. The native error type
   // is TypeError.
   assert(error404 instanceof TypeError);
+}
+
+function resolve_extension_path(path) {
+  return chrome.extension.getURL(path);
 }
