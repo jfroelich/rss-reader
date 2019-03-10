@@ -1,8 +1,6 @@
 import {assert} from '/src/assert.js';
 import {Feed} from '/src/model/feed.js';
 import {Model} from '/src/model/model.js';
-import {activate_feed} from '/src/ops/activate-feed.js';
-import {deactivate_feed} from '/src/ops/deactivate-feed.js';
 import {unsubscribe} from '/src/ops/unsubscribe.js';
 
 export function FeedList() {
@@ -207,7 +205,7 @@ FeedList.prototype.activateOnclick = async function(event) {
 
   const model = new Model();
   await model.open();
-  await activate_feed(model, feed_id);
+  await model.activateFeed(feed_id);
   model.close();
 
   // Mark the corresponding feed element loaded in the view as active
@@ -230,7 +228,7 @@ FeedList.prototype.deactivateOnclick = async function(event) {
 
   const model = new Model();
   await model.open();
-  await deactivate_feed(model, feed_id, 'manual');
+  await model.deactivateFeed(feed_id, 'manual');
   model.close();
 
   // Deactivate the corresponding element in the view

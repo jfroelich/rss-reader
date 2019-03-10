@@ -116,6 +116,16 @@ Model.prototype.upgradeHandler = function(event) {
   }
 };
 
+Model.prototype.activateFeed = function(feed_id) {
+  const props = {
+    id: feed_id,
+    active: true,
+    deactivateDate: undefined,
+    deactivationReasonText: undefined
+  };
+  return this.updateFeed(props, /* overwrite */ false);
+};
+
 Model.prototype.archiveEntries = function(max_age) {
   return new Promise((resolve, reject) => {
     if (typeof max_age === 'undefined') {
@@ -306,6 +316,16 @@ Model.prototype.createFeeds = function(feeds) {
       request.onsuccess = request_onsuccess;
     }
   });
+};
+
+Model.prototype.deactivateFeed = function(feed_id, reason) {
+  const props = {
+    id: feed_id,
+    active: false,
+    deactivateDate: new Date(),
+    deactivationReasonText: reason
+  };
+  return this.updateFeed(props, /* overwrite */ false);
 };
 
 Model.prototype.deleteEntry = function(id) {
