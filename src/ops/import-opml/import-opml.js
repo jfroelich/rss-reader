@@ -1,5 +1,4 @@
 import {assert} from '/src/assert.js';
-import * as file_utils from '/src/ops/import-opml/file-utils.js';
 
 // Create and store feed objects in the database based on urls extracted from
 // zero or more opml files. |files| should be a FileList or an Array.
@@ -64,7 +63,7 @@ async function read_feeds_from_file(file) {
     return [];
   }
 
-  const file_text = await file_utils.read_text(file);
+  const file_text = await file_read_text(file);
   const document = parse_opml(file_text);
 
   const elements = document.querySelectorAll('opml > body > outline[type]');
@@ -85,6 +84,15 @@ async function read_feeds_from_file(file) {
   }
 
   return urls;
+}
+
+export function file_read_text(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsText(file);
+    reader.onload = _ => resolve(reader.result);
+    reader.onerror = _ => reject(reader.error);
+  });
 }
 
 export function parse_opml(xml_string) {
