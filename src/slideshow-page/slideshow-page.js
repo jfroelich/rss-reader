@@ -6,7 +6,7 @@ import * as favicon from '/src/favicon/favicon.js';
 import {is_entry} from '/src/model/entry.js';
 import {Model} from '/src/model/model.js';
 import {export_opml} from '/src/ops/export-opml.js';
-import {import_opml} from '/src/ops/import-opml/import-opml.js';
+import {import_opml} from '/src/ops/import-opml.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import {filter_publisher} from '/src/slideshow-page/filter-publisher.js';
 

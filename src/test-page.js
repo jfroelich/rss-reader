@@ -23,7 +23,7 @@ import * as net_tests from '/src/net/net-tests.js';
 import {fetch_html_test} from '/src/ops/import-entry/fetch-html-test.js';
 import {sniffer_test} from '/src/ops/import-entry/url-sniffer-test.js';
 import {parse_feed_test} from '/src/ops/import-feed/feed-parser-test.js';
-import {import_opml_test} from '/src/ops/import-opml/import-opml-test.js';
+import {import_opml_test} from '/src/ops/import-opml-test.js';
 import {susbcribe_test} from '/src/ops/subscribe-test.js';
 import {filter_publisher_test} from '/src/slideshow-page/filter-publisher-test.js';
 
