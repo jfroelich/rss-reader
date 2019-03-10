@@ -1,6 +1,5 @@
 import {assert} from '/src/assert.js';
 import * as file_utils from '/src/ops/import-opml/file-utils.js';
-import * as opml_utils from '/src/ops/opml-utils.js';
 
 // Create and store feed objects in the database based on urls extracted from
 // zero or more opml files. |files| should be a FileList or an Array.
@@ -66,7 +65,7 @@ async function read_feeds_from_file(file) {
   }
 
   const file_text = await file_utils.read_text(file);
-  const document = opml_utils.parse_opml(file_text);
+  const document = parse_opml(file_text);
 
   const elements = document.querySelectorAll('opml > body > outline[type]');
   const type_pattern = /^\s*(rss|rdf|feed)\s*$/i;
@@ -86,4 +85,31 @@ async function read_feeds_from_file(file) {
   }
 
   return urls;
+}
+
+export function parse_opml(xml_string) {
+  const parser = new DOMParser();
+  const document = parser.parseFromString(xml_string, 'application/xml');
+  const error = document.querySelector('parsererror');
+  if (error) {
+    const message = condense_whitespace(error.textContent);
+    throw new OPMLParseError(message);
+  }
+
+  // Need to normalize localName when document is xml-flagged
+  const name = document.documentElement.localName.toLowerCase();
+  if (name !== 'opml') {
+    throw new OPMLParseError('Document element is not opml: ' + name);
+  }
+  return document;
+}
+
+export class OPMLParseError extends Error {
+  constructor(message = 'OPML parse error') {
+    super(message);
+  }
+}
+
+function condense_whitespace(value) {
+  return value.replace(/\s\s+/g, ' ');
 }
