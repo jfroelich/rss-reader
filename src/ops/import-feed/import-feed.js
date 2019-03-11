@@ -1,12 +1,12 @@
 import {assert, AssertionError} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as favicon from '/src/favicon/favicon.js';
-import * as feed_parser from '/src/ops/import-feed/feed-parser.js';
-import {better_fetch} from '/src/net/net.js';
 import {Entry} from '/src/model/entry.js';
 import {Feed} from '/src/model/feed.js';
 import {ConstraintError, Model} from '/src/model/model.js';
+import {better_fetch} from '/src/net/net.js';
 import {import_entry, ImportEntryArgs} from '/src/ops/import-entry/import-entry.js';
+import * as feed_parser from '/src/ops/import-feed/feed-parser.js';
 import * as op_utils from '/src/ops/op-utils.js';
 
 export function ImportFeedArgs() {
@@ -85,6 +85,7 @@ export async function import_feed(args) {
   if (create && iconn) {
     const lookup_url = op_utils.get_feed_favicon_lookup_url(feed);
     const request = new favicon.LookupRequest();
+    request.conn = iconn;
     request.url = lookup_url;
     const icon_url = await favicon.lookup(request);
     if (icon_url) {
