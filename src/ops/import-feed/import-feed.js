@@ -1,13 +1,12 @@
 import {assert, AssertionError} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
-import * as favicon from '/src/favicon/favicon.js';
 import {Entry} from '/src/model/entry.js';
 import {Feed} from '/src/model/feed.js';
 import {ConstraintError, Model} from '/src/model/model.js';
 import {better_fetch} from '/src/net/net.js';
 import {import_entry, ImportEntryArgs} from '/src/ops/import-entry/import-entry.js';
 import * as feed_parser from '/src/ops/import-feed/feed-parser.js';
-import * as op_utils from '/src/ops/op-utils.js';
+import {lookup_feed_favicon} from '/src/ops/lookup-feed-favicon.js';
 
 export function ImportFeedArgs() {
   this.feed = undefined;
@@ -83,11 +82,7 @@ export async function import_feed(args) {
   // If creating, set the favicon. If updating, skip it because we leave that
   // to refresh-feed-icons that amortizes this cost.
   if (create && iconn) {
-    const lookup_url = op_utils.get_feed_favicon_lookup_url(feed);
-    const request = new favicon.LookupRequest();
-    request.conn = iconn;
-    request.url = lookup_url;
-    const icon_url = await favicon.lookup(request);
+    const icon_url = await lookup_feed_favicon(feed, iconn);
     if (icon_url) {
       feed.faviconURLString = icon_url.href;
     }

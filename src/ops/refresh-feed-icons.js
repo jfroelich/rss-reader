@@ -1,32 +1,21 @@
-import * as favicon from '/src/favicon/favicon.js';
 import {Feed} from '/src/model/feed.js';
-import * as op_utils from '/src/ops/op-utils.js';
+import {lookup_feed_favicon} from '/src/ops/lookup-feed-favicon.js';
 
-export async function refresh_feed_icons(session, iconn) {
-  const feeds = await session.getFeeds('active', false);
+export async function refresh_feed_icons(model, iconn) {
+  const feeds = await model.getFeeds('active', false);
   const promises = [];
   for (const feed of feeds) {
-    promises.push(refresh_feed_icon(session, iconn, feed));
+    promises.push(refresh_feed_icon(model, iconn, feed));
   }
   return Promise.all(promises);
 }
 
-// Update the favicon of a feed in the database
-async function refresh_feed_icon(session, iconn, feed) {
-  // TODO: use Feed.hasURL
-  if (!feed.urls || !feed.urls.length) {
+async function refresh_feed_icon(model, iconn, feed) {
+  if (!Feed.prototype.hasURL.call(feed)) {
     return;
   }
 
-  const lookup_url = op_utils.get_feed_favicon_lookup_url(feed);
-  if (!lookup_url) {
-    return;
-  }
-
-  const request = new favicon.LookupRequest();
-  request.conn = iconn;
-  request.url = lookup_url;
-  const icon_url = await favicon.lookup(request);
+  const icon_url = await lookup_feed_favicon(feed, iconn);
   const icon_url_string = icon_url ? icon_url.href : undefined;
 
   if (feed.faviconURLString !== icon_url_string) {
@@ -36,6 +25,6 @@ async function refresh_feed_icon(session, iconn, feed) {
       delete feed.faviconURLString;
     }
 
-    await session.updateFeed(feed, true);
+    await model.updateFeed(feed, true);
   }
 }
