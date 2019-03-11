@@ -1,4 +1,4 @@
-import {assert, AssertionError} from '/src/assert.js';
+import {assert} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as boilerplate from '/src/dom-filters/boilerplate.js';
 import {coerce_element} from '/src/dom-filters/coerce-element.js';
