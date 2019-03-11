@@ -1,6 +1,6 @@
 import {assert} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
-import {FetchError, OfflineError, sleep, TimeoutError} from '/src/net/net.js';
+import {FetchError, NetworkError, sleep, TimeoutError} from '/src/net/net.js';
 
 // TODO: i do not need the element in any use case, just its dimensions, so the
 // vision for this module should be changed to something like
@@ -18,9 +18,11 @@ export async function fetch_image_element(url, timeout = INDEFINITE) {
   assert(url instanceof URL);
   assert(timeout instanceof Deadline);
 
+  // Try to behave in a manner similar to better_fetch, which throws a network
+  // error when unable to fetch (e.g. no network (offline)). This is different
+  // than being online and pinging a url that does not exist.
   if (!navigator.onLine) {
-    const message = 'Failed to fetch image element while offline ' + url.href;
-    throw new OfflineError(message);
+    throw new NetworkError('Failed to fetch ' + url.href);
   }
 
   const fetch_promise = new Promise((resolve, reject) => {
@@ -32,8 +34,7 @@ export async function fetch_image_element(url, timeout = INDEFINITE) {
     }
 
     proxy.onload = _ => resolve(proxy);
-    proxy.onerror = _ =>
-        reject(new FetchError('Fetch image error ' + url.href));
+    proxy.onerror = _ => reject(new FetchError('Failed to fetch ' + url.href));
   });
 
   let image;
@@ -46,5 +47,6 @@ export async function fetch_image_element(url, timeout = INDEFINITE) {
   if (!image) {
     throw new TimeoutError('Timed out fetching ' + url.href);
   }
+
   return image;
 }

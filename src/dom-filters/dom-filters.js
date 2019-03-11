@@ -526,7 +526,7 @@ export function image_reachable_filter(doc, timeout = INDEFINITE) {
       // during the run. If we did not check for connectivity state, we would
       // incorrectly conclude that all images are unreachable and this would
       // result in removing all images from all articles, which would be bad.
-      if (error instanceof net.OfflineError) {
+      if (error instanceof net.NetworkError) {
         return;
       }
 

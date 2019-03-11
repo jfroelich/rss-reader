@@ -2,18 +2,12 @@ import {assert} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as mime from '/src/mime/mime.js';
 
-// Extends native fetch with a few features:
-// * specify options.timeout as a Deadline to enable timed fetching
-// * specify options.types array of mime types to enforce response mime type
-// check
-// * checks connectivity to differentiate between a 404 error and offline
+// Extends native fetch with a timeout and the ability to enforce response type
+// checking, and  translates the TypeError that native fetch throws when network
+// unavailable into a custom NetworkError error type.
 export async function better_fetch(url, options = {}) {
   assert(url instanceof URL);
   assert(options && typeof options === 'object');
-
-  if (!navigator.onLine) {
-    throw new OfflineError('Failed to fetch url while offline ' + url.href);
-  }
 
   const default_options = {
     credentials: 'omit',
@@ -34,10 +28,7 @@ export async function better_fetch(url, options = {}) {
     delete merged_options.timeout;
   }
 
-  // Even though types is only used after fetch and therefore would preferably
-  // be accessed later in this function's body, we must extract it out of the
-  // options variable prior to fetch so as to avoid passing a non-standard
-  // option to fetch
+  // Avoid passing a non-standard option to fetch
   let types;
   if (Array.isArray(merged_options.types)) {
     types = merged_options.types;
@@ -47,12 +38,25 @@ export async function better_fetch(url, options = {}) {
   const fetch_promise = fetch(url.href, merged_options);
 
   let response;
-  if (timeout.isDefinite()) {
-    response = await Promise.race([fetch_promise, sleep(timeout)]);
-  } else {
-    response = await fetch_promise;
+  try {
+    if (timeout.isDefinite()) {
+      response = await Promise.race([fetch_promise, sleep(timeout)]);
+    } else {
+      response = await fetch_promise;
+    }
+  } catch (error) {
+    if (error instanceof AssertionError) {
+      throw error;
+    } else {
+      // fetch throws a TypeError when offline (network unreachable), which
+      // we translate into a network error. This should not be confused with
+      // a 404 error, where the network works but the server returns 404
+      throw new NetworkError(error.message);
+    }
   }
 
+  // response is defined when fetch wins the race, and undefined when sleep wins
+  // the race.
   if (!response) {
     throw new TimeoutError('Timed out trying to fetch ' + url.href);
   }
@@ -77,24 +81,20 @@ export async function better_fetch(url, options = {}) {
 
 // Returns a promise that resolves to undefined after a given delay.
 export function sleep(delay = INDEFINITE) {
-  assert(delay instanceof Deadline);
-
-  if (!delay.isDefinite()) {
-    console.warn('sleeping indefinitely?');
-    return Promise.resolve();
-  }
-
-  const time = delay.toInt();
-  assert(Number.isInteger(time));
   return new Promise(resolve => {
-    const timer_id = setTimeout(function() {
-      resolve();
-    }, time);
+    assert(delay instanceof Deadline);
+    setTimeout(resolve, delay.toInt());
   });
 }
 
-// This error indicates a fetch operation failed for some reason like network
-// unavailable, url could not be reached, etc
+export class NetworkError extends Error {
+  constructor(message = 'Unknown network error') {
+    super(message);
+  }
+}
+
+// This error indicates the response was not successful (returned something not
+// in the [200-299] status range).
 export class FetchError extends Error {
   constructor(message = 'Error fetching url') {
     super(message);
@@ -104,13 +104,6 @@ export class FetchError extends Error {
 // When the response is not acceptable
 export class AcceptError extends Error {
   constructor(message = 'Unacceptable response type') {
-    super(message);
-  }
-}
-
-// When offline at time of sending request
-export class OfflineError extends Error {
-  constructor(message = 'Offline') {
     super(message);
   }
 }
