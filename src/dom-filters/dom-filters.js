@@ -5,13 +5,12 @@ import {coerce_element} from '/src/dom-filters/coerce-element.js';
 import {color_contrast_filter} from '/src/dom-filters/color-contrast-filter.js';
 import {node_is_leaf} from '/src/dom-filters/dom-hierarchy.js';
 import * as dom_visibility from '/src/dom-filters/dom-visibility.js';
-import {fetch_image_element} from '/src/dom-filters/fetch-image-element.js';
 import {image_dimensions_filter} from '/src/dom-filters/image-dimensions-filter.js';
+import {image_reachable_filter} from '/src/dom-filters/image-reachable-filter.js';
 import * as image_utils from '/src/dom-filters/image-utils.js';
 import {lonestar_filter} from '/src/dom-filters/lonestar-filter.js';
 import * as srcset_utils from '/src/dom-filters/srcset-utils.js';
 import {unwrap_element} from '/src/dom-filters/unwrap-element.js';
-import * as net from '/src/net/net.js';
 
 // Applies several content filters to a document. The filters are applied in a
 // logical order that tries to minimize the amount of work done, and to preserve
@@ -489,69 +488,6 @@ export function image_responsive_filter(doc) {
   }
 }
 
-export function image_reachable_filter(doc, timeout = INDEFINITE) {
-  assert(doc.baseURI);
-  assert(timeout instanceof Deadline);
-
-  // Given an image element, inspect its src value and try to fetch the
-  // corresponding resource. If successful, stash the width and height in the
-  // element for later. If unsuccessful, remove the image.
-  async function internal_process_image_helper(image) {
-    let url;
-    try {
-      url = new URL(image.src);
-    } catch (error) {
-      // TODO: decide what to do about this kind of error. In a sense it also
-      // represents an unreachable image and possibly the image should be
-      // removed. Keep in mind this may also be redundant with the dead filter,
-      // but maybe that has to be that way because filters should error on the
-      // side of being naive with respect to what other filters are running.
-      console.debug('Ignoring invalid image url', image.src);
-      return;
-    }
-
-    let result;
-    try {
-      result = await fetch_image_element(url, timeout);
-    } catch (error) {
-      if (error instanceof AssertionError) {
-        throw error;
-      }
-
-      // We want to try to carefully not conflate an image being unreachable
-      // because we have no network connection, and an image being unreachable
-      // because it really is a 404. If we are offline, we cannot determine
-      // reachability, so bail. While we could check connectivity at the start
-      // of the filter, that would ignore the possible loss of connectivity
-      // during the run. If we did not check for connectivity state, we would
-      // incorrectly conclude that all images are unreachable and this would
-      // result in removing all images from all articles, which would be bad.
-      if (error instanceof net.NetworkError) {
-        return;
-      }
-
-      // We encountered some other kind of error, such as a timeout error, or
-      // a 404, so conclude the image is unreachable.
-      image.remove();
-      return;
-    }
-
-    // If there was no error, then the response was ok, and the image seems
-    // reachable (at this time). Stash information in the element so that other
-    // filters potentially avoid making network requests. I assume there is only
-    // an extremely small risk of collision with real attribute values so this
-    // stash technique is probably fine.
-    image.setAttribute('data-reachable-width', result.width);
-    image.setAttribute('data-reachable-height', result.height);
-  }
-
-  const promises = [];
-  const images = doc.querySelectorAll('img');
-  for (const image of images) {
-    promises.push(internal_process_image_helper(image));
-  }
-  return Promise.all(promises);
-}
 
 
 // Remove or modify images based on size. Assumes images have dimensions.
