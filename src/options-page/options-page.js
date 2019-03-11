@@ -1,7 +1,10 @@
 import * as badge from '/src/badge.js';
 import * as config from '/src/config/config.js';
+import {DisplaySettingsForm} from '/src/options-page/display-settings-form.js';
 import {FeedList} from '/src/options-page/feed-list.js';
 import {SubscriptionForm} from '/src/options-page/subscription-form.js';
+
+// TODO: css for options-page should be broken up into per-component css files
 
 const feed_list = new FeedList();
 feed_list.init(document.getElementById('section-subscriptions'));
@@ -11,6 +14,9 @@ feed_list.onappend_callback = function(feed) {
 
 feed_list.onclick_callback = function(event) {
   section_show_by_id('mi-feed-details');
+
+  // For longer feed lists, details will be out of view, so we need to scroll
+  // back to the top
   scrollTo(0, 0);
 };
 
@@ -36,6 +42,10 @@ subscription_form.onsubscribe = function(feed) {
   feed_list.appendFeed(feed);
   section_show_by_id('subs-list-section');
 };
+
+const display_settings_form = new DisplaySettingsForm();
+display_settings_form.init(document.getElementById('section-display-settings'));
+
 
 function has_permission(name) {
   return new Promise(
@@ -161,75 +171,6 @@ async function enable_bg_processing_checkbox_init() {
   checkbox.checked = await has_permission('background');
 }
 
-function bg_image_menu_onchange(event) {
-  const path = event.target.value;
-  if (path) {
-    config.write_string('bg_image', path);
-  } else {
-    config.remove('bg_image');
-  }
-}
-
-function column_count_menu_onchange(event) {
-  const count = event.target.value;
-  if (count) {
-    config.write_string('column_count', count);
-  } else {
-    config.remove('column_count');
-  }
-}
-
-function entry_bg_color_input_oninput(event) {
-  const color = event.target.value;
-  if (color) {
-    config.write_string('bg_color', color);
-  } else {
-    config.remove('bg_color');
-  }
-}
-
-function entry_margin_slider_onchange(event) {
-  const margin = event.target.value;
-  if (margin) {
-    config.write_string('padding', margin);
-  } else {
-    config.remove('padding');
-  }
-}
-
-function header_font_size_slider_onchange(event) {
-  const size = event.target.value;
-  if (size) {
-    config.write_string('header_font_size', size);
-  } else {
-    config.remove('header_font_size');
-  }
-}
-
-function body_font_size_slider_onchange(event) {
-  const size = event.target.value;
-  if (size) {
-    config.write_string('body_font_size', size);
-  } else {
-    config.remove('body_font_size');
-  }
-}
-
-function justify_text_checkbox_onchange(event) {
-  config.write_boolean('justify_text', event.target.checked);
-}
-
-function body_line_height_input_oninput(event) {
-  const height = event.target.value;
-  if (height) {
-    config.write_string('body_line_height', height);
-  } else {
-    config.remove('body_line_height');
-  }
-}
-
-
-
 {  // Start on module load init
   // TODO: use single event listener on list itself instead
   const menu_items = document.querySelectorAll('#navigation-menu li');
@@ -247,80 +188,6 @@ function body_line_height_input_oninput(event) {
   idle_poll_checkbox.checked = config.read_boolean('only_poll_if_idle');
   idle_poll_checkbox.onclick = event =>
       config.write_boolean('only_poll_if_idle', event.target.checked);
-
-  // Init background image menu
-  {
-    const bg_image_menu = document.getElementById('entry-background-image');
-    bg_image_menu.onchange = bg_image_menu_onchange;
-    let option = document.createElement('option');
-    option.value = '';
-    option.textContent = 'Use background color';
-    bg_image_menu.appendChild(option);
-
-    let current_path = config.read_string('bg_image');
-    const background_images = config.read_array('background_images');
-    for (const path of background_images) {
-      let option = document.createElement('option');
-      option.value = path;
-      option.textContent = path;
-      option.selected = current_path === path;
-      bg_image_menu.appendChild(option);
-    }
-  }
-
-  {
-    const column_count_menu = document.getElementById('column-count');
-    column_count_menu.onchange = column_count_menu_onchange;
-    const column_count_options = [1, 2, 3];
-    const current_column_count = config.read_int('column_count');
-    for (const column_count of column_count_options) {
-      const option = document.createElement('option');
-      option.value = column_count;
-      option.selected = column_count === current_column_count;
-      option.textContent = column_count;
-      column_count_menu.appendChild(option);
-    }
-  }
-
-  const bg_color_input = document.getElementById('entry-background-color');
-  bg_color_input.oninput = entry_bg_color_input_oninput;
-  const bg_color = config.read_string('bg_color');
-  if (bg_color) {
-    bg_color_input.value = bg_color;
-  }
-
-  const entry_margin_input = document.getElementById('entry-margin');
-  entry_margin_input.onchange = entry_margin_slider_onchange;
-  const margin = config.read_int('padding', 0);
-  if (!isNaN(margin)) {
-    entry_margin_input.value = margin;
-  }
-
-  const justify_checkbox = document.getElementById('justify-text');
-  justify_checkbox.checked = config.read_boolean('justify_text');
-  justify_checkbox.onchange = event =>
-      config.write_boolean('justify_text', event.target.checked);
-
-  const header_size_range = document.getElementById('header-font-size');
-  header_size_range.onchange = header_font_size_slider_onchange;
-  const header_font_size = config.read_int('header_font_size');
-  if (!isNaN(header_font_size)) {
-    header_size_range.value = header_font_size;
-  }
-
-  const body_size_range = document.getElementById('body-font-size');
-  body_size_range.onchange = body_font_size_slider_onchange;
-  const body_font_size = config.read_int('body_font_size');
-  if (!isNaN(body_font_size)) {
-    body_size_range.value = body_font_size;
-  }
-
-  const body_line_height_input = document.getElementById('body-line-height');
-  body_line_height_input.oninput = body_line_height_input_oninput;
-  const body_line_height = config.read_int('body_line_height');
-  if (!isNaN(body_line_height)) {
-    body_line_height_input.value = body_line_height;
-  }
 
   const manifest = get_extension_manifest();
   const ext_name_element = document.getElementById('extension-name');

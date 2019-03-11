@@ -133,7 +133,7 @@ FeedList.prototype.itemOnclick = async function(event) {
     details_favicon_element.setAttribute('src', feed.faviconURLString);
   } else {
     // TODO: set to default icon
-    favicon_element.removeAttribute('src');
+    details_favicon_element.removeAttribute('src');
   }
 
   const details_desc_element =
