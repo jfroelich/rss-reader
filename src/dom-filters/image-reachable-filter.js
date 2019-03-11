@@ -1,19 +1,16 @@
 import {assert, AssertionError} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {fetch_image_element} from '/src/dom-filters/fetch-image-element.js';
+import * as srcset_utils from '/src/dom-filters/srcset-utils.js';
 import {NetworkError} from '/src/net/net.js';
-
-// TODO: explicit support for picture/source and srcset, because this filter
-// should be naive with respect to what other filters have fun, and because it
-// should be associative, meaning that it does not matter whether the other
-// filters have run or will run.
 
 // Asynchronously filters unreachable images from the document. An image is
 // unreachable if attempting to fetch the image's url fails with an error like a
 // 404. If an image is unreachable its element is removed from the document.
 //
 // This should generally be run after any kind of telemetry filter, because it
-// does involve network requests.
+// naively sends network requests that would defeat the purpose of filtering
+// telemetry.
 //
 // This should generally be run before the filter that sets image dimensions,
 // because those requests will be redundant with the network requests made by
@@ -21,8 +18,7 @@ import {NetworkError} from '/src/net/net.js';
 // to rely on that. Therefore this caches the image dimensions in the image
 // element as attributes so that later filters can avoid the network.
 //
-// This makes use of the image element's src property, which relies on the
-// document having a valid baseURI.
+// This filter assumes the document has a valid baseURI.
 export function image_reachable_filter(doc, timeout = INDEFINITE) {
   assert(doc instanceof Document);
   assert(timeout instanceof Deadline);
@@ -42,7 +38,7 @@ export function image_reachable_filter(doc, timeout = INDEFINITE) {
 async function process_image(image, timeout) {
   let url;
   try {
-    url = new URL(image.src);
+    url = find_image_source(image);
   } catch (error) {
     // If an image has an invalid url, then it is unreachable. However, this
     // filter only concerns itself with network errors, not html issues. Some
@@ -51,6 +47,14 @@ async function process_image(image, timeout) {
     // TEMP: this is newer functionality, and I am witnessing a substantial
     // amount of missing images, so for now I am logging this situation.
     console.debug('Ignoring image', image.outerHTML);
+
+    return;
+  }
+
+  // If we failed to find a source url for the image, just skip the image.
+  if (!url) {
+    // TEMP: just monitoring new functionality for a bit
+    console.debug('Ignoring image missing src', image.outerHTML);
 
     return;
   }
@@ -66,8 +70,7 @@ async function process_image(image, timeout) {
     }
 
     // Distinguish between failure due to lack of internet, and a failure due
-    // to a resource not being found. When disconnected, everything is
-    // unreachable, and we would incorrectly determine all images are bad.
+    // to a resource not being found.
     if (error instanceof NetworkError) {
       return;
     }
@@ -92,5 +95,38 @@ async function process_image(image, timeout) {
 // or one of the srcset descriptors (selected by first, not best). Throws an
 // error if the url is malformed. Returns undefined if nothing was found.
 function find_image_source(image) {
-  // TODO: implement
+  if (image.hasAttribute('src')) {
+    return new URL(image.src);
+  }
+
+  const picture = image.parentNode.closest('picture');
+  if (picture) {
+    const sources = picture.querySelectorAll('source');
+    for (const source of sources) {
+      if (source.hasAttribute('src')) {
+        return new URL(source.src);
+      }
+
+      if (source.hasAttribute('srcset')) {
+        return select_srcset_source(source);
+      }
+    }
+  }
+
+  return select_srcset_source(image);
+}
+
+function select_srcset_source(element) {
+  const value = element.getAttribute('srcset');
+  if (!value) {
+    return;
+  }
+
+  const base_url_string = element.ownerDocument.baseURI;
+  const descriptors = srcset_utils.parse(value);
+  for (const descriptor of descriptors) {
+    if (descriptor.url) {
+      return new URL(descriptor.url, base_url_string);
+    }
+  }
 }
