@@ -1,4 +1,4 @@
-import {better_fetch} from '/src/net/net.js';
+import {better_fetch} from '/src/better-fetch/better-fetch.js';
 
 export function fetch_html(url, options = {}) {
   // We may be modifying options, so clone to avoid side effects

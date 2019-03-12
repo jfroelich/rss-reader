@@ -2,9 +2,9 @@ import {assert} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as mime from '/src/mime/mime.js';
 
-// Extends native fetch with a timeout and the ability to enforce response type
-// checking, and  translates the TypeError that native fetch throws when network
-// unavailable into a custom NetworkError error type.
+// Extends native fetch with a timeout, response type checking, explicit options
+// set for privacy, and translates the TypeError that native fetch throws when
+// the network is unavailable into a custom NetworkError error type.
 export async function better_fetch(url, options = {}) {
   assert(url instanceof URL);
   assert(options && typeof options === 'object');
@@ -79,10 +79,8 @@ export async function better_fetch(url, options = {}) {
   return response;
 }
 
-// Returns a promise that resolves to undefined after a given delay.
-export function sleep(delay = INDEFINITE) {
+function sleep(delay = INDEFINITE) {
   return new Promise(resolve => {
-    assert(delay instanceof Deadline);
     setTimeout(resolve, delay.toInt());
   });
 }

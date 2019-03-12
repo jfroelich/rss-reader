@@ -3,7 +3,7 @@ import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {Entry} from '/src/model/entry.js';
 import {Feed} from '/src/model/feed.js';
 import {ConstraintError, Model} from '/src/model/model.js';
-import {better_fetch} from '/src/net/net.js';
+import {better_fetch} from '/src/better-fetch/better-fetch.js';
 import {import_entry, ImportEntryArgs} from '/src/ops/import-entry/import-entry.js';
 import * as feed_parser from '/src/ops/import-feed/feed-parser.js';
 import {lookup_feed_favicon} from '/src/ops/lookup-feed-favicon.js';

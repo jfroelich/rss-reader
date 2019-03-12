@@ -2,7 +2,7 @@ import {assert, AssertionError} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {fetch_image_element} from '/src/dom-filters/fetch-image-element.js';
 import * as srcset_utils from '/src/dom-filters/srcset-utils.js';
-import {NetworkError} from '/src/net/net.js';
+import {NetworkError} from '/src/better-fetch/better-fetch.js';
 
 // Asynchronously filters unreachable images from the document. An image is
 // unreachable if attempting to fetch the image's url fails with an error like a

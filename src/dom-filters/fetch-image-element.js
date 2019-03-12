@@ -1,6 +1,6 @@
 import {assert} from '/src/assert.js';
+import {FetchError, NetworkError, TimeoutError} from '/src/better-fetch/better-fetch.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
-import {FetchError, NetworkError, sleep, TimeoutError} from '/src/net/net.js';
 
 // TODO: i do not need the element in any use case, just its dimensions, so the
 // vision for this module should be changed to something like
@@ -49,4 +49,8 @@ export async function fetch_image_element(url, timeout = INDEFINITE) {
   }
 
   return image;
+}
+
+function sleep(delay) {
+  return new Promise(resolve => setTimeout(resolve, delay.toInt()));
 }
