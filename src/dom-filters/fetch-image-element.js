@@ -2,25 +2,22 @@ import {assert} from '/src/assert.js';
 import {FetchError, NetworkError, TimeoutError} from '/src/better-fetch/better-fetch.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 
-// TODO: i do not need the element in any use case, just its dimensions, so the
-// vision for this module should be changed to something like
-// fetch-image-dimensions that returns {x:0, y:0}.
-
-// TODO: avoid sending cookies, probably need to use fetch api and give up on
-// using the simple element.src trick, it looks like HTMLImageElement does not
-// allow me to control the request parameters and does send cookies, but I need
-// to review this more, I am still unsure.
-
 // Return a promise that resolves to an image element.
-// @param url {URL}
-// @param timeout {Number}
+//
+// @param url {URL} the url of the image to fetch
+// @param timeout {Deadline} the maximum time, in milliseconds, to wait before
+// considering the fetch to take too long. optional. if not specified or
+// indefinite (0) then no timeout is imposed.
+//
+// Throws various errors such as bad inputs, unable to fetch, able to fetch but
+// no image found, operation took too long
 export async function fetch_image_element(url, timeout = INDEFINITE) {
   assert(url instanceof URL);
   assert(timeout instanceof Deadline);
 
-  // Try to behave in a manner similar to better_fetch, which throws a network
+  // Try to behave in a manner similar to better-fetch, which throws a network
   // error when unable to fetch (e.g. no network (offline)). This is different
-  // than being online and pinging a url that does not exist.
+  // than being online and pinging a url that does not exist (a 404 error).
   if (!navigator.onLine) {
     throw new NetworkError('Failed to fetch ' + url.href);
   }
@@ -28,12 +25,20 @@ export async function fetch_image_element(url, timeout = INDEFINITE) {
   const fetch_promise = new Promise((resolve, reject) => {
     const proxy = new Image();
     proxy.src = url.href;
+
+    // If the image is in the browser's cache, then its dimensions are already
+    // known, and its width and height properties will already be initialized.
+    // complete is true at least in certain browsers in this case, so there
+    // is no need to wait until the image is loaded.
     if (proxy.complete) {
       resolve(proxy);
       return;
     }
 
     proxy.onload = _ => resolve(proxy);
+
+    // The error produced by the browser is opaque, uninformative, and all
+    // around useless, so we substitute in an error that is informative.
     proxy.onerror = _ => reject(new FetchError('Failed to fetch ' + url.href));
   });
 
@@ -51,6 +56,11 @@ export async function fetch_image_element(url, timeout = INDEFINITE) {
   return image;
 }
 
+// Caution: using 0 means indefinite under the Deadline scheme, which suggests
+// a promise that never resolves, but this will merrily trigger a near immediate
+// timer using 0 (depending on the implicit per-browser minimum delay) that
+// resolves very quickly. The caller should be careful of this counter intuitive
+// design.
 function sleep(delay) {
   return new Promise(resolve => setTimeout(resolve, delay.toInt()));
 }
