@@ -16,14 +16,11 @@ import {get_url_filename_extension} from '/src/get-url-filename-extension/get-ur
 //
 // If concerned about telemetry, this should be run after any telemetry filter
 // because this does network requests which expose presence.
+//
+// Assumes the document has a valid base uri.
 export function image_dimensions_filter(doc, timeout = INDEFINITE) {
   assert(doc instanceof Document);
   assert(timeout instanceof Deadline);
-
-  // This accesses an image's full url via its src property, so this relies on
-  // the document having a valid baseURI property. Note that for testing
-  // purposes this cannot assert that the url protocol is not chrome-extension
-  assert(doc.baseURI);
 
   // Concurrently traverse and possibly update each image.
   const images = doc.querySelectorAll('img');

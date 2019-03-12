@@ -33,8 +33,8 @@ const host_patterns = [
   /\/\/www\.facebook\.com\/tr/i
 ];
 
+// Assume the document has a valid base uri
 export function lonestar_filter(doc) {
-  assert(doc.baseURI);
   const doc_url = new URL(doc.baseURI);
 
   // Remove images that look like telemetry beacons

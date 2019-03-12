@@ -34,7 +34,6 @@ export function set_base_uri(doc, url, overwrite) {
       doc.documentElement.insertBefore(head, body);
     }
 
-    assert(doc.baseURI);
     return;
   }
 
@@ -50,7 +49,6 @@ export function set_base_uri(doc, url, overwrite) {
       doc.documentElement.insertBefore(head, body);
     }
 
-    assert(doc.baseURI);
     return;
   }
 
@@ -87,6 +85,4 @@ export function set_base_uri(doc, url, overwrite) {
       other_base.remove();
     }
   }
-
-  assert(doc.baseURI);
 }
