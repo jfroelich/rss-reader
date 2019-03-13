@@ -1,17 +1,11 @@
-import {assert} from '/src/assert.js';
-
 // Create and store feed objects in the database based on urls extracted from
 // zero or more opml files. |files| should be a FileList or an Array.
-export async function import_opml(session, files) {
-  // TODO: stricter guard
-  assert(files);
+export async function import_opml(model, files) {
   console.log('Importing %d OPML files', files.length);
 
   // Grab urls from each of the files. Per-file errors are logged not thrown.
-  const promises = Array.prototype.map.call(files, file => {
-    const promise = read_feeds_from_file(file);
-    return promise.catch(console.warn);
-  });
+  const promises = Array.prototype.map.call(
+      files, file => file_find_urls(file).catch(console.warn));
   const results = await Promise.all(promises);
 
   // Flatten results into a simple array of urls
@@ -25,7 +19,6 @@ export async function import_opml(session, files) {
   }
 
   // Filter dups
-  // TODO: use array-utils.unique_compute
   const url_set = [], seen_hrefs = [];
   for (const url of urls) {
     if (!seen_hrefs.includes(url.href)) {
@@ -34,51 +27,45 @@ export async function import_opml(session, files) {
     }
   }
 
-  // Convert urls into feeds
   const feeds = url_set.map(url => {
     const feed = new Feed();
     feed.appendURL(url);
     return feed;
   });
 
-  return session.createFeeds(feeds);
+  return model.createFeeds(feeds);
 }
 
-async function read_feeds_from_file(file) {
-  // TODO: this is user input, not programmer input, because we do not want to
-  // place the burden on the caller to provide the correct file type. Therefore
-  // this should just log a warning and return an empty array?
-  // TODO: maybe we should not be trying to consider the mime type at all, and
-  // just allow the parsing to fail later.
-  const opml_mime_types = [
-    'application/xml', 'application/xhtml+xml', 'text/xml', 'text/x-opml',
-    'application/opml+xml'
-  ];
-  if (!opml_mime_types.includes(file.type)) {
-    const msg = 'Unacceptable type ' + file.type + ' for file ' + file.name;
-    throw new TypeError(msg);
-  }
+// Return an array of outline urls (as URL objects) from OPML outline elements
+// found in the plaintext representation of the given file
+async function file_find_urls(file) {
+  return find_outline_urls(parse_opml(await file_read_text(file)));
+}
 
-  if (!file.size) {
-    return [];
-  }
+// Return an array of outline urls (as URL objects) from outlines found in an
+// OPML document
+export function find_outline_urls(doc) {
+  // Assume the document is semi-well-formed. As a compromise between a deep
+  // strict validation and no validation at all, use the CSS restricted-parent
+  // selector syntax. We also do some filtering of outlines here up front to
+  // only those with a type attribute because it is slightly better performance
+  // and less code.
+  const outlines = doc.querySelectorAll('opml > body > outline[type]');
 
-  const file_text = await file_read_text(file);
-  const document = parse_opml(file_text);
-
-  const elements = document.querySelectorAll('opml > body > outline[type]');
+  // Although I've never seen it in the wild, apparently OPML outline elements
+  // can represent non-feed data. Use this pattern to restrict the outlines
+  // considered to those properly configured.
   const type_pattern = /^\s*(rss|rdf|feed)\s*$/i;
+
   const urls = [];
-  for (const element of elements) {
-    const type = element.getAttribute('type');
+  for (const outline of outlines) {
+    const type = outline.getAttribute('type');
     if (type_pattern.test(type)) {
-      const url_string = element.getAttribute('xmlUrl');
+      const xml_url_value = outline.getAttribute('xmlUrl');
       try {
-        const url = new URL(url_string);
-        urls.push(url);
+        urls.push(new URL(xml_url_value));
       } catch (error) {
         // Ignore the error, skip the url
-        console.debug('Invalid opml outline url', url_string, error);
       }
     }
   }
