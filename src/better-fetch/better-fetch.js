@@ -70,7 +70,7 @@ export async function better_fetch(url, options = {}) {
   if (types && types.length) {
     const content_type = response.headers.get('Content-Type');
     const mime_type = mime.parse_content_type(content_type);
-    if (!types.includes(mime_type)) {
+    if (mime_type && !types.includes(mime_type)) {
       const message = 'Unacceptable type ' + mime_type + ' for url ' + url.href;
       throw new AcceptError(message);
     }
