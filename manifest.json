@@ -19,7 +19,6 @@
   "options_page": "options.html",
   "permissions": [
     "alarms",
-    "background",
     "http://*/*",
     "https://*/*",
     "downloads",
@@ -27,6 +26,9 @@
     "notifications",
     "tabs",
     "unlimitedStorage"
+  ],
+  "optional_permissions": [
+    "background"
   ],
   "content_security_policy":
     "script-src 'self'; object-src 'self' https://www.youtube.com; frame-src http: https:"

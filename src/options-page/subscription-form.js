@@ -19,6 +19,10 @@ export function SubscriptionForm() {
 }
 
 SubscriptionForm.prototype.init = function(parent) {
+  const heading = document.createElement('h1');
+  heading.textContent = 'Add a subscription';
+  parent.appendChild(heading);
+
   const form_element = document.createElement('form');
   form_element.id = 'subscription-form';
 
