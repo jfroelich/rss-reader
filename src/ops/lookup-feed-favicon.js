@@ -9,18 +9,14 @@ import {Feed} from '/src/model/feed.js';
 // from generic data object to a specialized type), which may reduce performance
 // in some use cases. However, it is unclear whether performance is an issue.
 
-// Internal implementation note: this module is independent of the model,
-// because the favicon module is not a part of the module, so this module mixes
-// together to unrelated concerns. it is similarly independent of the favicon
-// module which has no idea whatsoever how it will be used.
-
+// Internal implementation note: the model module and the favicon module are two
+// independent modules that this mixes together.
 // TODO: revisit the conclusion that finding the lookup url is independent of
 // the model. If a feed already has a faviconURLString property, then what is
 // wrong with providing a utility function within the domain object itself? All
 // we are doing at that point then is adding a convenience function that cuts
 // out some common boilerplate, and provides consistent behavior. We are just
 // exposing a transformed property with minimal business logic introduced.
-
 
 // Return the {URL} url of the favicon associated with the given feed. Throws an
 // error if the feed has an invalid link property url, an invalid location
@@ -34,7 +30,7 @@ import {Feed} from '/src/model/feed.js';
 // check if it contains favicon information, defaults to indefinite (untimed)
 // @return {URL} the url of the favicon
 export function lookup_feed_favicon(feed, iconn, timeout = INDEFINITE) {
-  assert(feed);
+  assert(typeof feed === 'object');
   assert(iconn === undefined || iconn instanceof IDBDatabase);
   assert(timeout instanceof Deadline);
 
