@@ -80,9 +80,7 @@ export async function better_fetch(url, options = {}) {
 }
 
 function sleep(delay = INDEFINITE) {
-  return new Promise(resolve => {
-    setTimeout(resolve, delay.toInt());
-  });
+  return new Promise(resolve => setTimeout(resolve, delay.toInt()));
 }
 
 export class NetworkError extends Error {
