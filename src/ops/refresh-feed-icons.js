@@ -1,4 +1,4 @@
-import {Feed} from '/src/model/feed.js';
+import {Feed} from '/src/model/types/feed.js';
 import {lookup_feed_favicon} from '/src/ops/lookup-feed-favicon.js';
 
 export async function refresh_feed_icons(model, iconn) {

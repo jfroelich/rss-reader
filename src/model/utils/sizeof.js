@@ -4,7 +4,7 @@
 // work with built-ins, which are objects that are a part of the basic
 // Javascript library, like Document, or Element. There are a few built-ins that
 // are supported, such as URL.
-export function sizeof(input_value) {
+export default function sizeof(input_value) {
   const visited_objects = [];
   const stack = [input_value];
   const has_own_prop = Object.prototype.hasOwnProperty;

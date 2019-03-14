@@ -3,8 +3,9 @@ import * as badge from '/src/badge.js';
 import * as config from '/src/config/config.js';
 import {create_tab} from '/src/extension.js';
 import * as favicon from '/src/favicon/favicon.js';
-import {is_entry} from '/src/model/entry.js';
 import {Model} from '/src/model/model.js';
+import get_entries from '/src/model/ops/get-entries.js';
+import {is_entry} from '/src/model/types/entry.js';
 import {export_opml} from '/src/ops/export-opml.js';
 import {import_opml} from '/src/ops/import-opml.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
@@ -58,7 +59,7 @@ async function show_next_slide() {
     }
 
     const mode = 'viewable';
-    entries = await session.getEntries(mode, slide_unread_count, limit);
+    entries = await get_entries(session, mode, slide_unread_count, limit);
   }
   session.close();
 
@@ -703,7 +704,7 @@ async function onmessage(event) {
     const session = new Model();
     await session.open();
     const entries =
-        await session.getEntries('viewable', unread_count, undefined);
+        await get_entries(session, 'viewable', unread_count, undefined);
     session.close();
 
     for (const entry of entries) {
@@ -1138,7 +1139,7 @@ async function load_view() {
   const session = new Model();
   await session.open();
 
-  const get_entries_promise = session.getEntries('viewable', 0, 6);
+  const get_entries_promise = get_entries(session, 'viewable', 0, 6);
   const get_feeds_promise = session.getFeeds('all', true);
   session.close();
 

@@ -1,9 +1,11 @@
 import {assert, AssertionError} from '/src/assert.js';
-import {Deadline, INDEFINITE} from '/src/deadline.js';
-import {Entry} from '/src/model/entry.js';
-import {Feed} from '/src/model/feed.js';
-import {ConstraintError, Model} from '/src/model/model.js';
 import {better_fetch} from '/src/better-fetch/better-fetch.js';
+import {Deadline, INDEFINITE} from '/src/deadline.js';
+import {ConstraintError, Model} from '/src/model/model.js';
+import create_feed from '/src/model/ops/create-feed.js';
+import get_feed from '/src/model/ops/get-feed.js';
+import {Entry} from '/src/model/types/entry.js';
+import {Feed} from '/src/model/types/feed.js';
 import {import_entry, ImportEntryArgs} from '/src/ops/import-entry/import-entry.js';
 import * as feed_parser from '/src/ops/import-feed/feed-parser.js';
 import {lookup_feed_favicon} from '/src/ops/lookup-feed-favicon.js';
@@ -44,7 +46,8 @@ export async function import_feed(args) {
   // If we are subscribing then check if already subscribed
   if (create) {
     const url = new URL(feed.getURLString());
-    const existing_feed = await model.getFeed('url', url, /* key_only */ true);
+    const existing_feed =
+        await get_feed(model, 'url', url, /* key_only */ true);
     if (existing_feed) {
       const message = 'Already subscribed to feed with url ' + url.href;
       throw new ConstraintError(message);
@@ -61,7 +64,7 @@ export async function import_feed(args) {
 
   // Check if redirected
   if (create && fetch_url.href !== response_url.href) {
-    const existing_feed = await model.getFeed('url', response_url, true);
+    const existing_feed = await get_feed(model, 'url', response_url, true);
     if (existing_feed) {
       const message =
           'Already subscribed to redirected feed url ' + response_url.href;
@@ -92,7 +95,7 @@ export async function import_feed(args) {
   Feed.validate(feed);
 
   if (create) {
-    feed.id = await model.createFeed(feed);
+    feed.id = await create_feed(model, feed);
   } else {
     await model.updateFeed(feed, /* overwrite */ true);
   }

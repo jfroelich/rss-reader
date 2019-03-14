@@ -1,5 +1,5 @@
 import {INDEFINITE} from '/src/deadline.js';
-import {Feed} from '/src/model/feed.js';
+import {Feed} from '/src/model/types/feed.js';
 import {import_feed, ImportFeedArgs} from '/src/ops/import-feed/import-feed.js';
 import {ReaderNotification} from '/src/ops/reader-notification.js';
 

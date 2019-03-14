@@ -3,8 +3,10 @@ import * as config from '/src/config/config.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {composite_document_filter} from '/src/dom-filters/dom-filters.js';
 import * as favicon from '/src/favicon/favicon.js';
-import {Entry} from '/src/model/entry.js';
 import {ConstraintError} from '/src/model/model.js';
+import create_entry from '/src/model/ops/create-entry.js';
+import get_entry from '/src/model/ops/get-entry.js';
+import {Entry} from '/src/model/types/entry.js';
 import {fetch_html} from '/src/ops/import-entry/fetch-html.js';
 import {set_base_uri} from '/src/ops/import-entry/set-base-uri.js';
 import * as sniffer from '/src/ops/import-entry/url-sniffer.js';
@@ -38,7 +40,7 @@ export async function import_entry(args) {
   // Check if the entry with the possibly rewritten url already exists
   const after_rewrite_url = new URL(entry.getURLString());
   const existing_entry =
-      await args.model.getEntry('url', after_rewrite_url, true);
+      await get_entry(args.model, 'url', after_rewrite_url, true);
   if (existing_entry) {
     const message =
         'The entry with url ' + after_rewrite_url.href + ' already exists.';
@@ -57,7 +59,7 @@ export async function import_entry(args) {
       entry.appendURL(response_url);
       const rewritten_url = rewrite_url(response_url, args.rewrite_rules);
       entry.appendURL(rewritten_url);
-      const existing_entry = args.model.getEntry('url', rewritten_url, true);
+      const existing_entry = get_entry(args.model, 'url', rewritten_url, true);
       if (existing_entry) {
         const message =
             'The entry with url ' + rewritten_url.href + ' already exists.';
@@ -102,7 +104,7 @@ export async function import_entry(args) {
 
   Entry.sanitize(entry);
   Entry.validate(entry);
-  const new_entry_id = await args.model.createEntry(entry);
+  const new_entry_id = await create_entry(args.model, entry);
   return new_entry_id;
 }
 

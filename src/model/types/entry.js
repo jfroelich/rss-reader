@@ -1,11 +1,11 @@
 import {assert} from '/src/assert.js';
-import {Feed} from '/src/model/feed.js';
-import {filter_controls} from '/src/model/filter-controls.js';
-import {filter_unprintables} from '/src/model/filter-unprintables.js';
-import * as magic from '/src/model/magic.js';
-import {replace_tags} from '/src/model/replace-tags.js';
-import {truncate_html} from '/src/model/truncate-html.js';
-import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/model/utils.js';
+import {Feed} from '/src/model/types/feed.js';
+import * as magic from '/src/model/types/magic.js';
+import filter_controls from '/src/model/utils/filter-controls.js';
+import filter_unprintables from '/src/model/utils/filter-unprintables.js';
+import replace_tags from '/src/model/utils/replace-tags.js';
+import truncate_html from '/src/model/utils/truncate-html.js';
+import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/model/utils/utils.js';
 
 // TODO: consider a getter/setter on virtual property url instead of the append
 // and getURLString methods. But how does that work with idb serialization?

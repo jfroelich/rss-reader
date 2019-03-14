@@ -3,6 +3,7 @@ import * as cron_control from '/src/cron/cron.js';
 import {Deadline} from '/src/deadline.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {Model} from '/src/model/model.js';
+import get_feed from '/src/model/ops/get-feed.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
 import {subscribe} from '/src/ops/subscribe.js';
@@ -45,7 +46,7 @@ async function cli_unsubscribe(url_string) {
   const model = new Model();
   await model.open();
 
-  const feed = await model.getFeed('url', url, true);
+  const feed = await get_feed(model, 'url', url, true);
   if (feed) {
     await unsubscribe(model, feed.id);
     console.log(

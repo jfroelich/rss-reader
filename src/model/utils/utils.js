@@ -1,5 +1,5 @@
 import {assert} from '/src/assert.js';
-import * as magic from '/src/model/magic.js';
+import * as magic from '/src/model/types/magic.js';
 
 export function append_url_common(object, url) {
   assert(typeof object === 'object');

@@ -1,4 +1,4 @@
-export function filter_unprintables(value) {
+export default function filter_unprintables(value) {
   if (typeof value !== 'string') {
     return value;
   }

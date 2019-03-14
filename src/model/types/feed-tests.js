@@ -1,5 +1,5 @@
-import {is_entry} from '/src/model/entry.js';
-import {Feed, is_feed} from '/src/model/feed.js';
+import {is_entry} from '/src/model/types/entry.js';
+import {Feed, is_feed} from '/src/model/types/feed.js';
 
 export async function is_feed_test() {
   const fcorrect = new Feed();

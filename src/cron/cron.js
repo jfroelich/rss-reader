@@ -1,6 +1,7 @@
 import * as config from '/src/config/config.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {Model} from '/src/model/model.js';
+import archive_entries from '/src/model/ops/archive-entries.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
 
@@ -57,10 +58,10 @@ export async function alarm_listener(alarm) {
   config.write_string('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
-    const session = new Model();
-    await session.open();
-    await session.archiveEntries();
-    session.close();
+    const model = new Model();
+    await model.open();
+    await archive_entries(model);
+    model.close();
   } else if (alarm.name === 'poll') {
     await handle_alarm_poll();
   } else if (alarm.name === 'refresh-feed-icons') {

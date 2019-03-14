@@ -1,9 +1,9 @@
 import {assert} from '/src/assert.js';
-import {filter_controls} from '/src/model/filter-controls.js';
-import * as magic from '/src/model/magic.js';
-import {replace_tags} from '/src/model/replace-tags.js';
-import {truncate_html} from '/src/model/truncate-html.js';
-import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/model/utils.js';
+import * as magic from '/src/model/types/magic.js';
+import filter_controls from '/src/model/utils/filter-controls.js';
+import replace_tags from '/src/model/utils/replace-tags.js';
+import truncate_html from '/src/model/utils/truncate-html.js';
+import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/model/utils/utils.js';
 
 export function Feed() {
   this.magic = magic.FEED_MAGIC;

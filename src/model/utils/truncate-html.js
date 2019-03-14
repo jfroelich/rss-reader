@@ -1,4 +1,4 @@
-export function truncate_html(html_string, position, suffix) {
+export default function truncate_html(html_string, position, suffix) {
   if (typeof html_string !== 'string') {
     return '';
   }

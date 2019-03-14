@@ -8,7 +8,7 @@ import {parse_html} from '/src/parse-html.js';
 
 // Replaces tags in the input string with the replacement. If a replacement is
 // not specified, then tags are removed.
-export function replace_tags(html, replacement) {
+export default function replace_tags(html, replacement) {
   assert(typeof html === 'string');
   assert(replacement === undefined || typeof replacement === 'string');
 

@@ -1,6 +1,6 @@
 import {assert} from '/src/assert.js';
 import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
-import {Feed, is_feed} from '/src/model/feed.js';
+import {Feed, is_feed} from '/src/model/types/feed.js';
 import {Model} from '/src/model/model.js';
 import {import_opml} from '/src/ops/import-opml.js';
 

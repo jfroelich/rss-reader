@@ -1,3 +1,5 @@
+import create_feeds from '/src/model/ops/create-feeds.js';
+
 // Create and store feed objects in the database based on urls extracted from
 // zero or more opml files. |files| should be a FileList or an Array.
 export async function import_opml(model, files) {
@@ -33,7 +35,7 @@ export async function import_opml(model, files) {
     return feed;
   });
 
-  return model.createFeeds(feeds);
+  return create_feeds(model, feeds);
 }
 
 // Return an array of outline urls (as URL objects) from OPML outline elements
