@@ -1,9 +1,10 @@
 import {assert, AssertionError} from '/src/assert.js';
 import * as config from '/src/config/config.js';
+import get_feeds from '/src/db/ops/get-feeds.js';
+import {Feed} from '/src/db/types/feed.js';
 import {Deadline} from '/src/deadline.js';
-import {Feed} from '/src/model/types/feed.js';
 import {import_feed, ImportFeedArgs} from '/src/ops/import-feed/import-feed.js';
-import {ReaderNotification} from '/src/ops/reader-notification.js';
+import {CheckedNotification} from '/src/ops/checked-notification.js';
 
 export function PollFeedsArgs() {
   this.ignore_recency_check = false;
@@ -13,7 +14,8 @@ export function PollFeedsArgs() {
   this.fetch_image_timeout = new Deadline(3000);
   this.deactivation_threshold = 10;
   this.notify = true;
-  this.model = undefined;
+  this.conn = undefined;
+  this.channel = undefined;
   this.iconn = undefined;
   this.rewrite_rules = config.get_rewrite_rules();
   this.inaccessible_content_descriptors =
@@ -39,7 +41,7 @@ export async function poll_feeds(args) {
 
   localStorage.last_poll_date = '' + Date.now();
 
-  const feeds = await args.model.getFeeds('active', /*sort*/ false);
+  const feeds = await get_feeds(args.conn, 'active', /*sort*/ false);
   console.debug('Loaded %d active feeds for polling', feeds.length);
 
   // Concurrently process the feed data
@@ -49,7 +51,8 @@ export async function poll_feeds(args) {
 
     const import_feed_args = new ImportFeedArgs();
     import_feed_args.feed = model_feed;
-    import_feed_args.model = args.model;
+    import_feed_args.conn = args.conn;
+    import_feed_args.channel = args.channel;
     import_feed_args.iconn = args.iconn;
     import_feed_args.rewrite_rules = args.rewrite_rules;
     import_feed_args.inaccessible_descriptors =
@@ -69,7 +72,7 @@ export async function poll_feeds(args) {
   }
 
   if (args.notify && entry_add_count_total > 0) {
-    const note = new ReaderNotification();
+    const note = new CheckedNotification();
     note.title = 'Added articles';
     note.message = 'Added ' + entry_add_count_total + ' articles';
     note.show();

@@ -2,7 +2,7 @@ import * as badge from '/src/badge.js';
 import * as config from '/src/config/config.js';
 import * as cron_control from '/src/cron/cron.js';
 import * as extension from '/src/extension.js';
-import {Model} from '/src/model/model.js';
+import db_open from '/src/db/ops/db-open.js';
 
 function add_install_listener(listener) {
   return chrome.runtime.onInstalled.addListener(listener);
@@ -48,9 +48,8 @@ add_install_listener(function(event) {
 
 add_install_listener(async function(event) {
   if (event.reason === 'install') {
-    const session = new Model();
-    await session.open();
-    session.close();
+    const conn = await db_open();
+    conn.close();
   }
 });
 

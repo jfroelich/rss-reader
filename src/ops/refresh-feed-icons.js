@@ -1,16 +1,18 @@
-import {Feed} from '/src/model/types/feed.js';
+import get_feeds from '/src/db/ops/get-feeds.js';
+import update_feed from '/src/db/ops/update-feed.js';
+import {Feed} from '/src/db/types/feed.js';
 import {lookup_feed_favicon} from '/src/ops/lookup-feed-favicon.js';
 
-export async function refresh_feed_icons(model, iconn) {
-  const feeds = await model.getFeeds('active', false);
+export default async function refresh_feed_icons(conn, channel, iconn) {
+  const feeds = await get_feeds(conn, 'active', false);
   const promises = [];
   for (const feed of feeds) {
-    promises.push(refresh_feed_icon(model, iconn, feed));
+    promises.push(refresh_feed_icon(conn, channel, iconn, feed));
   }
   return Promise.all(promises);
 }
 
-async function refresh_feed_icon(model, iconn, feed) {
+async function refresh_feed_icon(conn, channel, iconn, feed) {
   if (!Feed.prototype.hasURL.call(feed)) {
     return;
   }
@@ -25,6 +27,7 @@ async function refresh_feed_icon(model, iconn, feed) {
       delete feed.faviconURLString;
     }
 
-    await model.updateFeed(feed, true);
+    const overwrite_flag = true;
+    await update_feed(conn, channel, feed, overwrite_flag);
   }
 }

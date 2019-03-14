@@ -1,25 +1,20 @@
 import {assert} from '/src/assert.js';
+import db_open from '/src/db/ops/db-open.js';
+import {Feed, is_feed} from '/src/db/types/feed.js';
 import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
-import {Feed, is_feed} from '/src/model/types/feed.js';
-import {Model} from '/src/model/model.js';
 import {import_opml} from '/src/ops/import-opml.js';
 
 export async function import_opml_test() {
   const db_name = 'ops-import-opml-test';
   await indexeddb_utils.remove(db_name);
 
-  const session = new Model();
-  session.name = db_name;
-  await session.open();
+  const conn = await db_open(db_name);
 
   let iconn = undefined;  // test without favicon caching support
   const messages = [];
 
-  // Close the channel automatically opened in session.open
-  session.channel.close();
-
   // Provide a new mocked channel
-  session.channel = {
+  const channel = {
     name: 'import-opml-test',
     postMessage: message => messages.push(message),
     close: function() {}
@@ -30,7 +25,7 @@ export async function import_opml_test() {
   const file = create_opml_file('file.xml', opml_string);
 
   const files = [file];
-  const results = await import_opml(session, files);
+  const results = await import_opml(conn, channel, files);
   assert(results);
   assert(results.length === 1);
   assert(Feed.isValidId(results[0]));
@@ -39,7 +34,7 @@ export async function import_opml_test() {
   assert(messages[0].type === 'feed-created');
   assert(messages[0].id === 1);
 
-  session.close();
+  conn.close();
   await indexeddb_utils.remove(db_name);
 }
 

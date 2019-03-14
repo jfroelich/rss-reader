@@ -1,11 +1,11 @@
 import * as config from '/src/config/config.js';
 import * as cron_control from '/src/cron/cron.js';
+import db_open from '/src/db/ops/db-open.js';
+import get_feed from '/src/db/ops/get-feed.js';
 import {Deadline} from '/src/deadline.js';
 import * as favicon from '/src/favicon/favicon.js';
-import {Model} from '/src/model/model.js';
-import get_feed from '/src/model/ops/get-feed.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
-import {refresh_feed_icons} from '/src/ops/refresh-feed-icons.js';
+import refresh_feed_icons from '/src/ops/refresh-feed-icons.js';
 import {subscribe} from '/src/ops/subscribe.js';
 import {unsubscribe} from '/src/ops/unsubscribe.js';
 
@@ -21,10 +21,10 @@ function get_all_alarms() {
 
 async function cli_subscribe(url_string) {
   const url = new URL(url_string);
-  const session = new Model();
 
-  const proms = [session.open(), favicon.open()];
-  const [_, iconn] = await Promise.all(proms);
+  const proms = [db_open(), favicon.open()];
+  const [conn, iconn] = await Promise.all(proms);
+  const channel = new BroadcastChannel('reader');
 
   const callback = feed => {
     console.debug('Stored new feed, now storing entries...');
@@ -32,9 +32,11 @@ async function cli_subscribe(url_string) {
 
   const timeout = new Deadline(3000);
   const notify = true;
-  const feed = await subscribe(session, iconn, url, timeout, notify, callback);
+  const feed =
+      await subscribe(conn, iconn, channel, url, timeout, notify, callback);
 
-  session.close();
+  channel.close();
+  conn.close();
   iconn.close();
 
   console.log('Successfully subscribed to feed', feed.getURLString());
@@ -43,12 +45,13 @@ async function cli_subscribe(url_string) {
 async function cli_unsubscribe(url_string) {
   console.log('Unsubscribing from', url_string);
   const url = new URL(url_string);
-  const model = new Model();
-  await model.open();
 
-  const feed = await get_feed(model, 'url', url, true);
+  const conn = await db_open();
+  const channel = new BroadcastChannel('reader');
+
+  const feed = await get_feed(conn, 'url', url, true);
   if (feed) {
-    await unsubscribe(model, feed.id);
+    await unsubscribe(conn, channel, feed.id);
     console.log(
         'Unsubscribed from feed %s {id: %d, title: %s}', url.href, feed.id,
         feed.title);
@@ -57,30 +60,34 @@ async function cli_unsubscribe(url_string) {
         'Unsubscribe failed. You are not subscribed to the feed', url.href);
   }
 
-  model.close();
+  conn.close();
+  channel.close();
 }
 
 async function cli_refresh_icons() {
-  const session = new Model();
-  const proms = [session.open(), favicon.open()];
-  const [_, iconn] = await Promise.all(proms);
-  await refresh_feed_icons(session, iconn);
-  session.close();
+  const proms = [db_open(), favicon.open()];
+  const [conn, iconn] = await Promise.all(proms);
+  const channel = new BroadcastChannel('reader');
+  await refresh_feed_icons(conn, iconn, channel);
+  conn.close();
   iconn.close();
+  channel.close();
 }
 
 async function cli_poll_feeds() {
-  const session = new Model();
-  const proms = [session.open(), favicon.open()];
-  const [_, iconn] = await Promise.all(proms);
+  const proms = [db_open(), favicon.open()];
+  const [conn, iconn] = await Promise.all(proms);
+  const channel = new BroadcastChannel('reader');
 
   const args = new PollFeedsArgs();
-  args.model = session;
+  args.conn = conn;
   args.iconn = iconn;
+  args.channel = channel;
   args.ignore_recency_check = true;
   await poll_feeds(args);
-  session.close();
+  conn.close();
   iconn.close();
+  channel.close();
 }
 
 async function cli_lookup_favicon(url_string, cached) {

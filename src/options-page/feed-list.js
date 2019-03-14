@@ -1,9 +1,10 @@
 import {assert} from '/src/assert.js';
-import {Model} from '/src/model/model.js';
-import activate_feed from '/src/model/ops/activate-feed.js';
-import deactivate_feed from '/src/model/ops/deactivate-feed.js';
-import get_feed from '/src/model/ops/get-feed.js';
-import {Feed} from '/src/model/types/feed.js';
+import activate_feed from '/src/db/ops/activate-feed.js';
+import db_open from '/src/db/ops/db-open.js';
+import deactivate_feed from '/src/db/ops/deactivate-feed.js';
+import get_feed from '/src/db/ops/get-feed.js';
+import get_feeds from '/src/db/ops/get-feeds.js';
+import {Feed} from '/src/db/types/feed.js';
 import {unsubscribe} from '/src/ops/unsubscribe.js';
 
 export function FeedList() {
@@ -20,11 +21,9 @@ export function FeedList() {
 }
 
 FeedList.prototype.init = async function(parent) {
-  const model = new Model();
-  await model.open();
-  const feeds = await model.getFeeds('all', true);
-  model.close();
-
+  const conn = await db_open();
+  const feeds = await get_feeds(conn, 'all', true);
+  conn.close();
 
   const list_element = document.createElement('ul');
   this.list_element = list_element;
@@ -38,14 +37,12 @@ FeedList.prototype.init = async function(parent) {
     this.appendFeed(feed);
   }
 
-
   const no_feeds_element = document.createElement('p');
   this.no_feeds_element = no_feeds_element;
   no_feeds_element.setAttribute('id', 'nosubs');
   no_feeds_element.setAttribute('class', 'option-text');
   no_feeds_element.textContent = 'No subscriptions';
   no_feeds_element.style.display = 'none';
-
 
   if (!feeds.length) {
     no_feeds_element.style.display = 'block';
@@ -90,7 +87,7 @@ FeedList.prototype.appendFeed = function(feed) {
   item_element.appendChild(title_element);
 
   // Append the feed into the proper position in the feed list, using the same
-  // sorting order as the database would use when loading data in getFeeds
+  // sorting order as the database would use when loading data in get_feeds
   const normal_title = feed_title.toLowerCase();
   let inserted = false;
   for (const child_node of (this.list_element.childNodes)) {
@@ -121,10 +118,9 @@ FeedList.prototype.itemOnclick = async function(event) {
   const item_element = event.currentTarget;
   const feed_id = parseInt(item_element.getAttribute('feed'), 10);
 
-  const model = new Model();
-  await model.open();
-  let feed = await get_feed(model, 'id', feed_id, false);
-  model.close();
+  const conn = await db_open();
+  let feed = await get_feed(conn, 'id', feed_id, false);
+  conn.close();
 
   feed = Object.assign(new Feed(), feed);
 
@@ -171,10 +167,11 @@ FeedList.prototype.itemOnclick = async function(event) {
 FeedList.prototype.unsubscribeButtonOnclick = async function(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const model = new Model();
-  await model.open();
-  await unsubscribe(model, feed_id);
-  model.close();
+  const conn = await db_open();
+  const channel = new BroadcastChannel('reader');
+  await unsubscribe(conn, channel, feed_id);
+  conn.close();
+  channel.close();
 
   this.removeFeedById(feed_id);
 
@@ -206,10 +203,11 @@ FeedList.prototype.removeFeedById = function(feed_id) {
 FeedList.prototype.activateOnclick = async function(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const model = new Model();
-  await model.open();
-  await activate_feed(model, feed_id);
-  model.close();
+  const conn = await db_open();
+  const channel = new BroadcastChannel('reader');
+  await activate_feed(conn, channel, feed_id);
+  conn.close();
+  channel.close();
 
   // Mark the corresponding feed element loaded in the view as active
   const item_element =
@@ -229,10 +227,11 @@ FeedList.prototype.activateOnclick = async function(event) {
 FeedList.prototype.deactivateOnclick = async function(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const model = new Model();
-  await model.open();
-  await deactivate_feed(model, feed_id, 'manual');
-  model.close();
+  const conn = await db_open();
+  const channel = new BroadcastChannel('reader');
+  await deactivate_feed(conn, channel, feed_id, 'manual');
+  conn.close();
+  channel.close();
 
   // Deactivate the corresponding element in the view
   const item_element =

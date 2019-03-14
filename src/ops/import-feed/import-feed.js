@@ -1,18 +1,20 @@
 import {assert, AssertionError} from '/src/assert.js';
 import {better_fetch} from '/src/better-fetch/better-fetch.js';
+import {ConstraintError} from '/src/db/errors.js';
+import create_feed from '/src/db/ops/create-feed.js';
+import get_feed from '/src/db/ops/get-feed.js';
+import update_feed from '/src/db/ops/update-feed.js';
+import {Entry} from '/src/db/types/entry.js';
+import {Feed} from '/src/db/types/feed.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
-import {ConstraintError, Model} from '/src/model/model.js';
-import create_feed from '/src/model/ops/create-feed.js';
-import get_feed from '/src/model/ops/get-feed.js';
-import {Entry} from '/src/model/types/entry.js';
-import {Feed} from '/src/model/types/feed.js';
 import {import_entry, ImportEntryArgs} from '/src/ops/import-entry/import-entry.js';
 import * as feed_parser from '/src/ops/import-feed/feed-parser.js';
 import {lookup_feed_favicon} from '/src/ops/lookup-feed-favicon.js';
 
 export function ImportFeedArgs() {
   this.feed = undefined;
-  this.model = undefined;
+  this.conn = undefined;
+  this.channel = undefined;
   this.iconn = undefined;
   this.rewrite_rules = [];
   this.inaccessible_descriptors = [];
@@ -26,8 +28,9 @@ export async function import_feed(args) {
   // TEMP: transitioning to args parameter, just shove back into variables
   // TODO: think of a more elegant way to do this
   const feed = args.feed;
-  const model = args.model;
+  const conn = args.conn;
   const iconn = args.iconn;
+  const channel = args.channel;
   const rewrite_rules = args.rewrite_rules;
   const inaccessible_descriptors = args.inaccessible_descriptors;
   const create = args.create;
@@ -36,7 +39,8 @@ export async function import_feed(args) {
   const feed_stored_callback = args.feed_stored_callback;
 
   assert(feed instanceof Feed);
-  assert(model instanceof Model);
+  assert(conn instanceof IDBDatabase);
+  assert(channel);
   assert(iconn === undefined || iconn instanceof IDBDatabase);
   assert(fetch_feed_timeout instanceof Deadline);
 
@@ -46,8 +50,7 @@ export async function import_feed(args) {
   // If we are subscribing then check if already subscribed
   if (create) {
     const url = new URL(feed.getURLString());
-    const existing_feed =
-        await get_feed(model, 'url', url, /* key_only */ true);
+    const existing_feed = await get_feed(conn, 'url', url, /* key_only */ true);
     if (existing_feed) {
       const message = 'Already subscribed to feed with url ' + url.href;
       throw new ConstraintError(message);
@@ -64,7 +67,8 @@ export async function import_feed(args) {
 
   // Check if redirected
   if (create && fetch_url.href !== response_url.href) {
-    const existing_feed = await get_feed(model, 'url', response_url, true);
+    const existing_feed =
+        await get_feed(conn, 'url', response_url, /* key_only */ true);
     if (existing_feed) {
       const message =
           'Already subscribed to redirected feed url ' + response_url.href;
@@ -95,9 +99,9 @@ export async function import_feed(args) {
   Feed.validate(feed);
 
   if (create) {
-    feed.id = await create_feed(model, feed);
+    feed.id = await create_feed(conn, channel, feed);
   } else {
-    await model.updateFeed(feed, /* overwrite */ true);
+    await update_feed(conn, channel, feed, /* overwrite */ true);
   }
 
   // Early notify observer-caller if they are listening
@@ -108,7 +112,7 @@ export async function import_feed(args) {
   // Process the entries for the feed
   const model_entries = parsed_feed.entries.map(parsed_entry_to_model_entry);
   const import_entries_results = await import_entries(
-      model_entries, feed, model, iconn, rewrite_rules,
+      model_entries, feed, conn, iconn, channel, rewrite_rules,
       inaccessible_descriptors, fetch_html_timeout);
 
   // Filter out the invalid ids. We know invalid ids will be 0 or undefined,
@@ -129,8 +133,8 @@ export async function import_feed(args) {
 // output id will be invalid.
 // TODO: do something more elegant with this mess of parameters
 function import_entries(
-    entries, feed, model, iconn, rewrite_rules, inaccessible_descriptors,
-    fetch_html_timeout) {
+    entries, feed, conn, iconn, channel, rewrite_rules,
+    inaccessible_descriptors, fetch_html_timeout) {
   // Map each entry into an import-entry promise
   const promises = entries.map(entry => {
     // Propagate feed information down to the entry
@@ -142,7 +146,8 @@ function import_entries(
     const args = new ImportEntryArgs();
     args.entry = entry;
     args.feed = feed;
-    args.model = model;
+    args.conn = conn;
+    args.channel = channel;
     args.iconn = iconn;
     args.rewrite_rules = rewrite_rules;
     args.inaccessible_descriptors = inaccessible_descriptors;

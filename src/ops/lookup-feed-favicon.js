@@ -1,7 +1,7 @@
 import {assert} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {lookup, LookupRequest} from '/src/favicon/favicon.js';
-import {Feed} from '/src/model/types/feed.js';
+import {Feed} from '/src/db/types/feed.js';
 
 // TODO: consider imposing the requirement that feed be exactly of type Feed.
 // The benefit is the strict type requirement. The cost is that this will force

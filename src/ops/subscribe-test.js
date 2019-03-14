@@ -1,23 +1,20 @@
 import {assert} from '/src/assert.js';
+import db_open from '/src/db/ops/db-open.js';
+import {Feed, is_feed} from '/src/db/types/feed.js';
+import {Deadline} from '/src/deadline.js';
 import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
-import {Feed, is_feed} from '/src/model/types/feed.js';
-import {Model} from '/src/model/model.js';
 import {subscribe} from '/src/ops/subscribe.js';
 
 export async function subscribe_test() {
   const db_name = 'subscribe-test';
   await indexeddb_utils.remove(db_name);
 
-  const session = new Model();
-  session.name = db_name;
-  await session.open();
+  const conn = await db_open(db_name);
 
-  session.channel.close();
-
-  // Inject a fake channel
+  // Create a fake channel that records its messages
   const messages = [];
-  session.channel = {
-    name: 'channel-stub',
+  const channel = {
+    name: 'subscribe-test-channel',
     postMessage: message => messages.push(message),
     close: function() {}
   };
@@ -31,14 +28,16 @@ export async function subscribe_test() {
   const url = new URL(test_url);
 
   let callback_called = false;
-  const feed_stored_callback(feed) {
+  const feed_stored_callback = function(feed) {
     callback_called = true;
   };
 
   // Rethrow subscribe exceptions just like assertion failures by omitting
   // try/catch.
+  let iconn = undefined;
   const feed = await subscribe(
-      session, undefined, url, 7000, false, feed_stored_callback);
+      conn, iconn, channel, url, new Deadline(7000), false,
+      feed_stored_callback);
 
   // Test the subscription produced the desired result
   assert(feed);
@@ -55,10 +54,8 @@ export async function subscribe_test() {
   assert(feed.active);
 
   // Assert that the subscription sent out correct messages
-  assert(messages.length === 1);
-  assert(messages[0].type === 'feed-created');
-  assert(messages[0].id === feed.id);
+  assert(messages.length > 0);
 
-  session.close();
+  conn.close();
   await indexeddb_utils.remove(db_name);
 }

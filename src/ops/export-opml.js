@@ -1,7 +1,12 @@
+import {assert} from '/src/assert.js';
+import get_feeds from '/src/db/ops/get-feeds.js';
+
 // Returns an in memory OPML document object filled with the feeds from the
 // database. document_title is optional.
-export async function export_opml(session, document_title) {
-  const feeds = await session.getFeeds('all', false);
+export async function export_opml(conn, document_title) {
+  assert(conn instanceof IDBDatabase);
+
+  const feeds = await get_feeds(conn, 'all', false);
   const outlines = feeds.map(feed_to_outline);
 
   const doc = create_opml_template(document_title);

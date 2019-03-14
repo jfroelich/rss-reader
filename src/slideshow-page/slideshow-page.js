@@ -1,11 +1,13 @@
 import {assert} from '/src/assert.js';
 import * as badge from '/src/badge.js';
 import * as config from '/src/config/config.js';
+import db_open from '/src/db/ops/db-open.js';
+import get_entries from '/src/db/ops/get-entries.js';
+import get_feeds from '/src/db/ops/get-feeds.js';
+import set_entry_read_state from '/src/db/ops/set-entry-read-state.js';
+import {is_entry} from '/src/db/types/entry.js';
 import {create_tab} from '/src/extension.js';
 import * as favicon from '/src/favicon/favicon.js';
-import {Model} from '/src/model/model.js';
-import get_entries from '/src/model/ops/get-entries.js';
-import {is_entry} from '/src/model/types/entry.js';
 import {export_opml} from '/src/ops/export-opml.js';
 import {import_opml} from '/src/ops/import-opml.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
@@ -45,23 +47,24 @@ async function show_next_slide() {
     return;
   }
 
-  const session = new Model();
-  await session.open();
-  await mark_slide_read_start(session, current_slide);
+  const conn = await db_open();
+  const channel = new BroadcastChannel('reader');
+  await mark_slide_read_start(conn, channel, current_slide);
+  channel.close();
 
   const slide_unread_count = count_unread_slides();
   let entries = [];
   if (slide_unread_count < 3) {
+    const mode = 'viewable';
+    const offset = slide_unread_count;
     let limit = undefined;
     const config_limit = config.read_int('initial_entry_load_limit');
     if (!isNaN(config_limit)) {
       limit = config_limit;
     }
-
-    const mode = 'viewable';
-    entries = await get_entries(session, mode, slide_unread_count, limit);
+    entries = await get_entries(conn, mode, offset, limit);
   }
-  session.close();
+  conn.close();
 
   for (const entry of entries) {
     if (!document.querySelector('slide[entry="' + entry.id + '"]')) {
@@ -215,10 +218,11 @@ async function slide_onclick(event) {
   // the checks within mark_slide_read_start, it avoids opening the connection.
   if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
       !slide.hasAttribute('read-pending')) {
-    const session = new Model();
-    await session.open();
-    await mark_slide_read_start(session, slide);
-    session.close();
+    const conn = await db_open();
+    const channel = new BroadcastChannel('reader');
+    await mark_slide_read_start(conn, channel, slide);
+    conn.close();
+    channel.close();
   }
 }
 
@@ -275,7 +279,7 @@ function hide_no_articles_message() {
 
 // Starts transitioning a slide into the read state. Updates both the view and
 // the database. This resolves before the view is fully updated.
-function mark_slide_read_start(session, slide) {
+function mark_slide_read_start(conn, channel, slide) {
   const entry_id_string = slide.getAttribute('entry');
   const entry_id = parseInt(entry_id_string, 10);
 
@@ -301,7 +305,7 @@ function mark_slide_read_start(session, slide) {
 
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
-  return session.setEntryReadState(entry_id, true);
+  return set_entry_read_state(conn, channel, entry_id, true);
 }
 
 function remove_slide(slide) {
@@ -329,21 +333,23 @@ async function refresh_button_onclick(event) {
   event.preventDefault();
 
   if (refresh_in_progress) {
+    console.debug('Ignoring click event because refresh in progress');
     return;
   }
 
   refresh_in_progress = true;
 
-  const session = new Model();
-  const promises = [session.open(), favicon.open()];
-  const [_, iconn] = await Promise.all(promises);
-
+  const promises = [db_open(), favicon.open()];
+  const [conn, iconn] = await Promise.all(promises);
+  const channel = new BroadcastChannel('reader');
   const args = new PollFeedsArgs();
-  args.model = session;
+  args.conn = conn;
+  args.channel = channel;
   args.iconn = iconn;
   args.ignore_recency_check = true;
   await poll_feeds(args);
-  session.close();
+  channel.close();
+  conn.close();
   iconn.close();
 
   refresh_in_progress = false;
@@ -390,8 +396,7 @@ function view_articles_button_onclick(event) {
   }
 }
 
-// TODO: clarify by renaming to something like view_feeds_button_onclick?
-function feeds_button_onclick(event) {
+function view_feeds_button_onclick(event) {
   const feeds_button = document.getElementById('feeds-button');
   feeds_button.disabled = true;
 
@@ -416,7 +421,7 @@ const refresh_button = document.getElementById('refresh');
 refresh_button.onclick = refresh_button_onclick;
 
 const feeds_button = document.getElementById('feeds-button');
-feeds_button.onclick = feeds_button_onclick;
+feeds_button.onclick = view_feeds_button_onclick;
 
 const reader_button = document.getElementById('reader-button');
 reader_button.onclick = view_articles_button_onclick;
@@ -443,13 +448,13 @@ function import_opml_prompt() {
   input.setAttribute('accept', 'application/xml');
   input.onchange = async function(event) {
     // For unknown reason we must grab this before the await, otherwise error.
-    // This behavior changed sometime around Chrome 72 without warning
+    // This behavior changed sometime around Chrome 72 without notice
     const files = event.target.files;
-    const session = new Model();
-    await session.open();
-    console.debug('Connected to model, importing %d files', files.length);
-    await import_opml(session, files);
-    session.close();
+    const conn = await db_open();
+    const channel = new BroadcastChannel('reader');
+    await import_opml(conn, channel, files);
+    conn.close();
+    channel.close();
   };
   input.click();
 }
@@ -471,11 +476,10 @@ async function options_menu_onclick(event) {
       import_opml_prompt();
       break;
     case 'menu-option-export':
-      const session = new Model();
-      await session.open();
+      const conn = await db_open();
       const document_title = 'Subscriptions';
-      const opml_document = await export_opml(session, document_title);
-      session.close();
+      const opml_document = await export_opml(conn, document_title);
+      conn.close();
 
       const file_name = 'subscriptions.xml';
       download_opml_document(opml_document, file_name);
@@ -621,7 +625,7 @@ function leftpanel_init() {
   header_font_menu_init(fonts);
   body_font_menu_init(fonts);
 
-  window.addEventListener('click', window_onclick);
+  addEventListener('click', window_onclick);
 }
 
 // Initialize things on module load
@@ -701,11 +705,10 @@ async function onmessage(event) {
     // just inventing an approach that doesn't run headfirst into this crappy
     // logic.
 
-    const session = new Model();
-    await session.open();
+    const conn = await db_open();
     const entries =
-        await get_entries(session, 'viewable', unread_count, undefined);
-    session.close();
+        await get_entries(conn, 'viewable', unread_count, undefined);
+    conn.close();
 
     for (const entry of entries) {
       append_slide(entry);
@@ -1136,12 +1139,10 @@ function hide_splash() {
 async function load_view() {
   show_splash();
 
-  const session = new Model();
-  await session.open();
-
-  const get_entries_promise = get_entries(session, 'viewable', 0, 6);
-  const get_feeds_promise = session.getFeeds('all', true);
-  session.close();
+  const conn = await db_open();
+  const get_entries_promise = get_entries(conn, 'viewable', 0, 6);
+  const get_feeds_promise = get_feeds(conn, 'all', true);
+  conn.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)
   const entries = await get_entries_promise;

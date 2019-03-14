@@ -1,7 +1,8 @@
 import {assert, AssertionError} from '/src/assert.js';
+import {ConstraintError} from '/src/db/errors.js';
+import db_open from '/src/db/ops/db-open.js';
 import {Deadline} from '/src/deadline.js';
 import * as favicon from '/src/favicon/favicon.js';
-import {ConstraintError, Model} from '/src/model/model.js';
 import {subscribe} from '/src/ops/subscribe.js';
 import {fade_element} from '/src/options-page/fade-element.js';
 
@@ -9,7 +10,6 @@ export function SubscriptionForm() {
   // Default to a reasonable amount of time. The user can optionally override
   // this. Use Deadline(0) or undefined to not impose a time limit.
   this.fetch_feed_timeout = new Deadline(8000);
-
 
   this.url_element = undefined;
   this.monitor_element = undefined;
@@ -73,6 +73,7 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
   assert(this.url_element);
 
   if (this.subscription_in_progress) {
+    console.debug('Subscription already in progress');
     return;
   }
 
@@ -93,13 +94,14 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
   this.showMonitor();
   this.appendMonitorMessage(`Subscribing to ${url.href}`);
 
-  const model = new Model();
-  const promises = [model.open(), favicon.open()];
-  const [_, iconn] = await Promise.all(promises);
+  const promises = [db_open(), favicon.open()];
+  const [conn, iconn] = await Promise.all(promises);
+  const channel = new BroadcastChannel('reader');
 
   try {
     await subscribe(
-        model, iconn, url, this.fetch_feed_timeout, true, this.onFeedStored);
+        conn, iconn, channel, url, this.fetch_feed_timeout, true,
+        this.onFeedStored);
   } catch (error) {
     if (error instanceof AssertionError) {
       throw error;
@@ -113,10 +115,11 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
       console.debug(error);
       this.appendMonitorMessage('An unknown error occurred while subscribing');
     }
+  } finally {
+    conn.close();
+    iconn.close();
+    channel.close();
   }
-
-  model.close();
-  iconn.close();
 };
 
 SubscriptionForm.prototype.onFeedStored = function(feed) {

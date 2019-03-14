@@ -1,5 +1,5 @@
 import {assert} from '/src/assert.js';
-import {rewrite_url} from '/src/ops/poll-feeds.js';
+import {rewrite_url} from '/src/ops/import-entry/import-entry.js';
 
 // TODO: I've temporarily copied over the rules here for testing, but ideally
 // this should import the rules from somewhere, or, define local rules and test

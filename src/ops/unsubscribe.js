@@ -1,5 +1,5 @@
-import delete_feed from '/src/model/ops/delete-feed.js';
+import delete_feed from '/src/db/ops/delete-feed.js';
 
-export function unsubscribe(model, feed_id) {
-  return delete_feed(model, feed_id, 'unsubscribe');
+export function unsubscribe(conn, channel, feed_id) {
+  return delete_feed(conn, channel, feed_id, 'unsubscribe');
 }
