@@ -1,5 +1,5 @@
 import * as config from '/src/config/config.js';
-import * as cron_control from '/src/cron/cron.js';
+import * as cron_control from '/src/cron.js';
 import db_open from '/src/db/ops/db-open.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import {Deadline} from '/src/deadline.js';

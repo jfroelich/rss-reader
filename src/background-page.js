@@ -1,6 +1,6 @@
 import * as badge from '/src/badge.js';
 import * as config from '/src/config/config.js';
-import * as cron_control from '/src/cron/cron.js';
+import * as cron_control from '/src/cron.js';
 import * as extension from '/src/extension.js';
 import db_open from '/src/db/ops/db-open.js';
 
