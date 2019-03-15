@@ -1,4 +1,4 @@
-import {assert, AssertionError} from '/src/assert.js';
+import {assert, is_assert_error_like} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {fetch_image_element} from '/src/dom-filters/fetch-image-element.js';
 import {get_url_filename_extension} from '/src/get-url-filename-extension/get-url-filename-extension.js';
@@ -107,7 +107,7 @@ async function process_image(image, timeout) {
     image.setAttribute('width', fetched_image.width);
     image.setAttribute('height', fetched_image.height);
   } catch (error) {
-    if (error instanceof AssertionError) {
+    if (is_assert_error_like(error)) {
       throw error;
     } else {
       // Ignore

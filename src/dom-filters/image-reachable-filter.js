@@ -1,8 +1,8 @@
-import {assert, AssertionError} from '/src/assert.js';
+import {assert, is_assert_error_like} from '/src/assert.js';
+import {NetworkError} from '/src/better-fetch/better-fetch.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {fetch_image_element} from '/src/dom-filters/fetch-image-element.js';
 import * as srcset_utils from '/src/dom-filters/srcset-utils.js';
-import {NetworkError} from '/src/better-fetch/better-fetch.js';
 
 // Asynchronously filters unreachable images from the document. An image is
 // unreachable if attempting to fetch the image's url fails with an error like a
@@ -65,7 +65,7 @@ async function process_image(image, timeout) {
   } catch (error) {
     // fetch_image_element can raise assertion errors that we want to be careful
     // not to surpress.
-    if (error instanceof AssertionError) {
+    if (is_assert_error_like(error)) {
       throw error;
     }
 

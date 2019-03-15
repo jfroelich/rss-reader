@@ -1,4 +1,4 @@
-import {assert, AssertionError} from '/src/assert.js';
+import {assert, is_assert_error_like} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as mime from '/src/mime/mime.js';
 
@@ -45,7 +45,7 @@ export async function better_fetch(url, options = {}) {
       response = await fetch_promise;
     }
   } catch (error) {
-    if (error instanceof AssertionError) {
+    if (is_assert_error_like(error)) {
       throw error;
     } else {
       // fetch throws a TypeError when offline (network unreachable), which

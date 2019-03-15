@@ -1,4 +1,4 @@
-import {assert, AssertionError} from '/src/assert.js';
+import {assert} from '/src/assert.js';
 import * as config from '/src/config/config.js';
 import {ConstraintError} from '/src/db/errors.js';
 import create_entry from '/src/db/ops/create-entry.js';

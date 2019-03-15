@@ -1,10 +1,10 @@
-import {assert, AssertionError} from '/src/assert.js';
+import {assert, is_assert_error_like} from '/src/assert.js';
 import * as config from '/src/config/config.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import {Feed} from '/src/db/types/feed.js';
 import {Deadline} from '/src/deadline.js';
-import {import_feed, ImportFeedArgs} from '/src/ops/import-feed/import-feed.js';
 import {CheckedNotification} from '/src/ops/checked-notification.js';
+import {import_feed, ImportFeedArgs} from '/src/ops/import-feed/import-feed.js';
 
 export function PollFeedsArgs() {
   this.ignore_recency_check = false;
@@ -88,7 +88,7 @@ async function poll_feed_noexcept(import_feed_args) {
   try {
     result = await import_feed(import_feed_args);
   } catch (error) {
-    if (error instanceof AssertionError) {
+    if (is_assert_error_like(error)) {
       throw error;
     } else {
       console.debug(error);

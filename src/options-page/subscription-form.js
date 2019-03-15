@@ -1,4 +1,4 @@
-import {assert, AssertionError} from '/src/assert.js';
+import {assert, is_assert_error_like} from '/src/assert.js';
 import {ConstraintError} from '/src/db/errors.js';
 import db_open from '/src/db/ops/db-open.js';
 import {Deadline} from '/src/deadline.js';
@@ -103,7 +103,7 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
         conn, iconn, channel, url, this.fetch_feed_timeout, true,
         this.onFeedStored);
   } catch (error) {
-    if (error instanceof AssertionError) {
+    if (is_assert_error_like(error)) {
       throw error;
     }
 

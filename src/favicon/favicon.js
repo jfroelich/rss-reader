@@ -1,4 +1,4 @@
-import {assert, AssertionError} from '/src/assert.js';
+import {assert, is_assert_error_like} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {fetch_image} from '/src/favicon/fetch-image.js';
 import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
@@ -54,7 +54,7 @@ export async function lookup(request) {
   try {
     response = await fetch_root_icon(request);
   } catch (error) {
-    if (error instanceof AssertionError) {
+    if (is_assert_error_like(error)) {
       throw error;
     } else {
       // Ignore

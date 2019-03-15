@@ -1,4 +1,4 @@
-import {assert, AssertionError} from '/src/assert.js';
+import {assert, is_assert_error_like} from '/src/assert.js';
 import {parse_html} from '/src/parse-html.js';
 
 // Return a new string consisting of the input string less any html tags. Note
@@ -12,7 +12,7 @@ export default function remove_html(html) {
   try {
     doc = parse_html(html);
   } catch (error) {
-    if (error instanceof AssertionError) {
+    if (is_assert_error_like(error)) {
       throw error;
     }
 

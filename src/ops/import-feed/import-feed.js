@@ -1,4 +1,4 @@
-import {assert, AssertionError} from '/src/assert.js';
+import {assert, is_assert_error_like} from '/src/assert.js';
 import {better_fetch} from '/src/better-fetch/better-fetch.js';
 import {ConstraintError} from '/src/db/errors.js';
 import create_feed from '/src/db/ops/create-feed.js';
@@ -168,7 +168,7 @@ async function import_entry_noexcept(args) {
   try {
     new_entry_id = await import_entry(args);
   } catch (error) {
-    if (error instanceof AssertionError) {
+    if (is_assert_error_like(error)) {
       throw error;
     } else if (error instanceof ConstraintError) {
       console.debug(
