@@ -1,7 +1,7 @@
 import {assert} from '/src/assert.js';
 import * as magic from '/src/db/types/magic.js';
 import filter_controls from '/src/db/utils/filter-controls.js';
-import replace_tags from '/src/db/utils/replace-tags.js';
+import remove_html from '/src/db/utils/remove-html.js';
 import truncate_html from '/src/db/utils/truncate-html.js';
 import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/db/utils/utils.js';
 
@@ -34,13 +34,12 @@ Feed.isValidId = function(value) {
 Feed.sanitize = function(feed, title_max_len = 1024, desc_max_len = 10240) {
   assert(is_feed(feed));
 
-  const html_tag_replacement = '';
   const repl_suffix = '';
 
   if (feed.title) {
     let title = feed.title;
     title = filter_controls(title);
-    title = replace_tags(title, html_tag_replacement);
+    title = remove_html(title);
     title = condense_whitespace(title);
     title = truncate_html(title, title_max_len, repl_suffix);
     feed.title = title;
@@ -49,7 +48,7 @@ Feed.sanitize = function(feed, title_max_len = 1024, desc_max_len = 10240) {
   if (feed.description) {
     let desc = feed.description;
     desc = filter_controls(desc);
-    desc = replace_tags(desc, html_tag_replacement);
+    desc = remove_html(desc);
     desc = condense_whitespace(desc);
     desc = truncate_html(desc, desc_max_len, repl_suffix);
     feed.description = desc;

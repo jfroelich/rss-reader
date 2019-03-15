@@ -3,7 +3,7 @@ import {Feed} from '/src/db/types/feed.js';
 import * as magic from '/src/db/types/magic.js';
 import filter_controls from '/src/db/utils/filter-controls.js';
 import filter_unprintables from '/src/db/utils/filter-unprintables.js';
-import replace_tags from '/src/db/utils/replace-tags.js';
+import remove_html from '/src/db/utils/remove-html.js';
 import truncate_html from '/src/db/utils/truncate-html.js';
 import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/db/utils/utils.js';
 
@@ -51,7 +51,7 @@ Entry.sanitize = function(
   if (entry.author) {
     let author = entry.author;
     author = filter_controls(author);
-    author = replace_tags(author, '');
+    author = remove_html(author);
     author = condense_whitespace(author);
     author = truncate_html(author, author_max_length);
     entry.author = author;
@@ -72,7 +72,7 @@ Entry.sanitize = function(
   if (entry.title) {
     let title = entry.title;
     title = filter_controls(title);
-    title = replace_tags(title, '');
+    title = remove_html(title);
     title = condense_whitespace(title);
     title = truncate_html(title, title_max_length);
     entry.title = title;
