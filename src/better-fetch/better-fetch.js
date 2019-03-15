@@ -1,4 +1,4 @@
-import {assert} from '/src/assert.js';
+import {assert, AssertionError} from '/src/assert.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import * as mime from '/src/mime/mime.js';
 
