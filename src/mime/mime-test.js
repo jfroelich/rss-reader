@@ -1,7 +1,7 @@
 import {assert} from '/src/assert.js';
 import * as mime from '/src/mime/mime.js';
 
-export async function mime_test() {
+export function mime_test() {
   const a = assert;
   const pct = mime.parse_content_type;
 

@@ -1,7 +1,7 @@
 import {is_entry} from '/src/db/types/entry.js';
 import {Feed, is_feed} from '/src/db/types/feed.js';
 
-export async function is_feed_test() {
+export function is_feed_test() {
   const fcorrect = new Feed();
   assert(is_feed(fcorrect));
   assert(!is_entry(fcorrect));
@@ -9,7 +9,7 @@ export async function is_feed_test() {
   assert(!is_feed(nomagic));
 }
 
-export async function append_feed_url_test() {
+export function append_feed_url_test() {
   const feed = new Feed();
   assert(!feed.hasURL());  // precondition
   feed.appendURL(new URL('a://b.c1'));

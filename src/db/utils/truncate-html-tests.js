@@ -1,7 +1,7 @@
 import {assert} from '/src/assert.js';
 import truncate_html from '/src/db/utils/truncate-html.js';
 
-export async function truncate_html_test() {
+export function truncate_html_test() {
   const e = '.';
   let input = 'a<p>b</p>c';
   let output = 'a<p>b.</p>';

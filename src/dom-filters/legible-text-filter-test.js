@@ -2,7 +2,7 @@ import {assert} from '/src/assert.js';
 import * as ltf from '/src/dom-filters/legible-text-filter.js';
 import {parse_html} from '/src/parse-html.js';
 
-export async function legible_text_filter_test() {
+export function legible_text_filter_test() {
   let input = '<p style="font-size:10px">some text</p>';
   let doc = parse_html(input);
   let font_size = ltf.get_element_font_size(doc.querySelector('p'));

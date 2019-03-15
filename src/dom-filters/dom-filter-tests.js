@@ -3,7 +3,7 @@ import {INDEFINITE} from '/src/deadline.js';
 import * as dom_filters from '/src/dom-filters/dom-filters.js';
 import {parse_html} from '/src/parse-html.js';
 
-export async function emphasis_filter_test() {
+export function emphasis_filter_test() {
   let input, doc;
 
   // TODO: implement a simple straightforward test that exercises the normal
@@ -29,7 +29,7 @@ export async function emphasis_filter_test() {
 
 // Check that the anchor-script-filter removes the anchors that should be
 // removed and retains the anchors that should be retained.
-export async function anchor_script_filter_test() {
+export function anchor_script_filter_test() {
   let input, doc;
 
   // A non-href non-javascript anchor should not be affected
@@ -75,7 +75,7 @@ export async function anchor_script_filter_test() {
   assert(doc.querySelector('a'));
 }
 
-export async function attribute_empty_filter_test() {
+export function attribute_empty_filter_test() {
   // Simple empty non-boolean attribute in body
   let input = '<html><head></head><body><a name="">test</a></body></html>';
   let doc = parse_html(input);
@@ -131,7 +131,7 @@ export async function attribute_empty_filter_test() {
   assert(doc.documentElement.outerHTML === output);
 }
 
-export async function image_lazy_filter_test() {
+export function image_lazy_filter_test() {
   // Exercise the ordinary case of a substitution
   let input = '<img id="test" data-src="test.gif">';
   let doc = parse_html(input);

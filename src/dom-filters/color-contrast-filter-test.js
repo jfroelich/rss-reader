@@ -2,11 +2,11 @@ import {assert} from '/src/assert.js';
 import {color_contrast_filter} from '/src/dom-filters/color-contrast-filter.js';
 import {parse_html} from '/src/parse-html.js';
 
-export async function color_contrast_filter_test() {
+export function color_contrast_filter_test() {
   // TODO: implement
 }
 
-export async function color_parse_typed_css_test() {
+export function color_parse_typed_css_test() {
   // TODO: expiriment with typed CSS OM
   // TODO: investigate element.computedStyleMap(), looks like it still does
   // not work with non-attached

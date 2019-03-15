@@ -1,7 +1,7 @@
 import {assert} from '/src/assert.js';
 import filter_unprintables from '/src/db/utils/filter-unprintables.js';
 
-export async function filter_unprintables_test() {
+export function filter_unprintables_test() {
   const f = filter_unprintables;
 
   for (let i = 0; i < 9; i++) {

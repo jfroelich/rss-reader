@@ -1,7 +1,7 @@
 import {assert} from '/src/assert.js';
 import {set_base_uri} from '/src/ops/import-entry/set-base-uri.js';
 
-export async function set_base_uri_test() {
+export function set_base_uri_test() {
   // If a document has no base elements, and overwrite is true, then this should
   // add a base element and that should become the baseURI value, and there
   // should only be one base element

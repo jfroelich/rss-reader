@@ -36,21 +36,21 @@ export async function rewrite_url_norewrite_test() {
   assert(b.href === a.href, 'no rewrite');
 }
 
-export async function rewrite_url_google_news_test() {
+export function rewrite_url_google_news_test() {
   let a = new URL('https://news.google.com/news/url');
   a.searchParams.set('url', 'https://www.google.com');
   let b = rewrite_url(a, rules);
   assert(b.href === 'https://www.google.com/', 'google news');
 }
 
-export async function rewrite_url_techcrunch_test() {
+export function rewrite_url_techcrunch_test() {
   let a = new URL('https://techcrunch.com');
   a.searchParams.set('ncid', '1234');
   let b = rewrite_url(a, rules);
   assert(b.href === 'https://techcrunch.com/', 'techcrunch');
 }
 
-export async function rewrite_url_cyclical_test() {
+export function rewrite_url_cyclical_test() {
   let a = new URL('https://news.google.com/news/url');
   a.searchParams.set('url', 'https://techcrunch.com/foo?ncid=2');
   let b = rewrite_url(a, rules);

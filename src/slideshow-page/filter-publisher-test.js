@@ -6,7 +6,7 @@ import {filter_publisher} from '/src/slideshow-page/filter-publisher.js';
 // local json file data and run against that, instead of hardcoding?
 // TODO: test various failure cases, e.g. bad inputs
 // TODO: more tests, e.g. short title
-export async function filter_publisher_test() {
+export function filter_publisher_test() {
   // no delimiters found
   assert(filter_publisher('Hello World') === 'Hello World');
   // starts with delim

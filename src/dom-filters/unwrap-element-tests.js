@@ -2,7 +2,7 @@ import {assert} from '/src/assert.js';
 import {unwrap_element} from '/src/dom-filters/unwrap-element.js';
 import {parse_html} from '/src/parse-html.js';
 
-export async function unwrap_element_test() {
+export function unwrap_element_test() {
   // Assert the typical case of a simple straightforward unwrap call completes
   // as expected
   let doc =
@@ -99,7 +99,7 @@ export async function unwrap_element_test() {
   assert(after_state === expected_state);
 }
 
-export async function unwrap_element_list_test() {
+export function unwrap_element_list_test() {
   let doc =
       parse_html('<html><body>1<ul><li>2</li><li>3</li></ul>4<body></html>');
   let element = doc.querySelector('ul');
