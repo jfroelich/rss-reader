@@ -1,12 +1,6 @@
 import {assert} from '/src/assert.js';
 import {rewrite_url} from '/src/ops/import-entry/import-entry.js';
 
-// TODO: I've temporarily copied over the rules here for testing, but ideally
-// this should import the rules from somewhere, or, define local rules and test
-// against those exclusively. I should not even be testing the real rules, I
-// should only be exercising the function behavior and asserting against its
-// expected vs actual behavior
-
 const rules = [];
 function google_news_rule(url) {
   if (url.hostname === 'news.google.com' && url.pathname === '/news/url') {

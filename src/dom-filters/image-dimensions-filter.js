@@ -63,12 +63,6 @@ async function process_image(image, timeout) {
     return;
   }
 
-  // TODO: this should not rely on whether the responsive image filter has run.
-  // Therefore this actually needs to be aware of the picture/source tactic for
-  // getting an images source. but i need to check if src prop initialized in
-  // case of picture/source without src attribute, maybe it is so there is no
-  // real concern
-
   // The remaining checks rely on the image having a source. While there are
   // other filters that may have already removed such images, leaving this as
   // wasted code, the design approach should be naive and ignore whether some

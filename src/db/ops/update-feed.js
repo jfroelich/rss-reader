@@ -38,13 +38,6 @@ export default function update_feed(conn, channel, feed, overwrite) {
     const txn = conn.transaction('feed', 'readwrite');
     txn.onerror = event => reject(event.target.error);
     txn.oncomplete = event => {
-      // TODO: do not pass the entire giant feed object through the channel.
-      // Expose only those properties needed by event consumers. Also, pass
-      // those properties as properties of the event itself, not a nested feed
-      // object, because callers should only expect a basic event, not a full
-      // fledged feed object. Also, review why it is even needed. If the only
-      // things needed are things like the cleaned feed title, then maybe just
-      // expose title.
       if (channel) {
         channel.postMessage({
           type: 'feed-updated',

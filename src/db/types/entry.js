@@ -7,10 +7,6 @@ import remove_html from '/src/db/utils/remove-html.js';
 import truncate_html from '/src/db/utils/truncate-html.js';
 import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/db/utils/utils.js';
 
-// TODO: consider a getter/setter on virtual property url instead of the append
-// and getURLString methods. But how does that work with idb serialization?
-// TODO: explicitly enumerate field definitions in constructor
-
 export function Entry() {
   this.magic = magic.ENTRY_MAGIC;
 }

@@ -712,11 +712,6 @@ export function style_filter(doc) {
 // Resolves all element attribute values that contain urls in |document|.
 // Assumes the document has a valid base uri.
 export function url_resolve_filter(doc) {
-  // TODO: some elements have multiple attributes with urls. For example,
-  // the new model-viewer attribute also has a poster attribute. There may be
-  // some other elements I have ignored too, like some of the attributes for
-  // <object> or <embed>.
-
   const base_url = new URL(doc.baseURI);
   const map = {
     a: 'href',

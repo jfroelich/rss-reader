@@ -1,10 +1,6 @@
 import {assert} from '/src/assert.js';
 import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
 
-// TODO: test upgrade handler specified vs not specified and assert that
-// upgrade occurs
-// TODO: test error paths like bad database name, bad version, etc
-
 // Exercise the basic open, close, delete process
 export async function indexeddb_test() {
   const conn = await indexeddb_utils.open('indexeddb_utils-test');

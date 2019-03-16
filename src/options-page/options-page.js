@@ -6,8 +6,6 @@ import {GeneralSettingsForm} from '/src/options-page/general-settings-form.js';
 import {NavMenu} from '/src/options-page/nav-menu.js';
 import {SubscriptionForm} from '/src/options-page/subscription-form.js';
 
-// TODO: css for options-page should be broken up into per-component css files
-
 let current_section;
 
 const nav_menu = new NavMenu();

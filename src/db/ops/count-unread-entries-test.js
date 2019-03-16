@@ -1,7 +1,7 @@
 import {assert} from '/src/assert.js';
-import db_open from '/src/db/ops/db-open.js';
 import count_unread_entries from '/src/db/ops/count-unread-entries.js';
 import create_entry from '/src/db/ops/create-entry.js';
+import db_open from '/src/db/ops/db-open.js';
 import {Entry} from '/src/db/types/entry.js';
 import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
 
@@ -14,7 +14,6 @@ export async function count_unread_entries_test() {
   let count = await count_unread_entries(conn);
   assert(0 === count);
 
-  // Generate some unread entries
   const insert_unread_count = 3;
   const entries_to_insert = [];
   for (let i = 0; i < insert_unread_count; i++) {
@@ -24,7 +23,6 @@ export async function count_unread_entries_test() {
     entries_to_insert.push(entry);
   }
 
-  // Generate some read entries
   const insert_read_count = 5;
   for (let i = 0; i < insert_read_count; i++) {
     const entry = new Entry();
@@ -33,7 +31,6 @@ export async function count_unread_entries_test() {
     entries_to_insert.push(entry);
   }
 
-  // Store both the read and unread entries
   const insert_promises = [];
   for (const entry of entries_to_insert) {
     insert_promises.push(create_entry(conn, undefined, entry));

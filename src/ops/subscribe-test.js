@@ -19,11 +19,6 @@ export async function subscribe_test() {
     close: function() {}
   };
 
-  // TODO: use a local url. First, this url no longer is valid because Google
-  // discontinued this service. Second, it is bad practice to ping live
-  // third-party services and may be a TOS violation of those services. Third,
-  // there is little benefit to exercising the network failure case.
-
   const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
   const url = new URL(test_url);
 

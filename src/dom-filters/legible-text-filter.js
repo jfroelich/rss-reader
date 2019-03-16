@@ -13,20 +13,6 @@ import {assert} from '/src/assert.js';
 // filters, such as a by a filter that removes link/style elements, or a filter
 // that removes style attributes.
 
-// TODO: consider mark-sweep approach, where I break up the classification step
-// and the prune step. Similar to what I started doing in the boilerplate lib.
-// Define a classify function that marks nodes. Provide an annotate function
-// that produces an annotated document. Provide a prune function that
-// appropriately removes the correct nodes.
-
-// TODO: consider skipping whitespace nodes, if the cost of calculating whether
-// a node is whitespace is less than the cost of processing the node like any
-// other node. Also, if the author is doing something funky with custom font
-// sizes for whitespace only text, it would probably be better to leave that
-// text untouched.
-
-
-
 // TODO: maybe I also want to enforce a minimum content length ratio similar to
 // what was done in the boilerplate filter, so that the filter never removes too
 // much text.

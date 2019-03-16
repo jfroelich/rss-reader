@@ -41,13 +41,7 @@ async function process_image(image, timeout) {
     url = find_image_source(image);
   } catch (error) {
     // If an image has an invalid url, then it is unreachable. However, this
-    // filter only concerns itself with network errors, not html issues. Some
-    // other filter can deal with this situation better.
-
-    // TEMP: this is newer functionality, and I am witnessing a substantial
-    // amount of missing images, so for now I am logging this situation.
-    console.debug('Ignoring image', image.outerHTML);
-
+    // filter only concerns itself with network errors, not html issues.
     return;
   }
 
