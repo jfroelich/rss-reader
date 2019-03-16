@@ -134,7 +134,7 @@ const fonts = [
 export function handle_update(event) {
   const deprecated_keys = [
     'channel_name', 'db_name', 'db_open_timeout', 'db_version', 'debug',
-    'entry_title_max_length', 'refresh_badge_delay'
+    'entry_title_max_length', 'refresh_badge_delay', 'last_poll_date'
   ];
   for (const key of deprecated_keys) {
     tls.remove(key);

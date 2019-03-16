@@ -24,6 +24,19 @@ export function ImportFeedArgs() {
   this.feed_stored_callback = undefined;
 }
 
+// Throw a constraint error if the feed exists in the database. Note that this
+// only checks against the tail url of the feed, so this result is unreliable
+// when there are multiple urls.
+async function validate_feed_is_unique(feed, conn) {
+  const url = new URL(feed.getURLString());
+  const key_only = true;
+  const existing_feed = await get_feed(conn, 'url', url, key_only);
+  if (existing_feed) {
+    const message = 'Already subscribed to feed with url ' + url.href;
+    throw new ConstraintError(message);
+  }
+}
+
 export async function import_feed(args) {
   assert(args instanceof ImportFeedArgs);
   assert(args.feed instanceof Feed);
@@ -32,15 +45,12 @@ export async function import_feed(args) {
   assert(args.iconn === undefined || args.iconn instanceof IDBDatabase);
   assert(args.fetch_feed_timeout instanceof Deadline);
 
-  // If we are subscribing then check if already subscribed
   if (args.create) {
-    const url = new URL(args.feed.getURLString());
-    const existing_feed =
-        await get_feed(args.conn, 'url', url, /* key_only */ true);
-    if (existing_feed) {
-      const message = 'Already subscribed to feed with url ' + url.href;
-      throw new ConstraintError(message);
-    }
+    // If we are creating a new feed, then verify that a similar feed does not
+    // already exist. While this is eventually guaranteed by the unique
+    // constraint in the database layer, it is better to redundantly check here
+    // to avoid network overhead, which is the bottleneck.
+    await validate_feed_is_unique(args.feed, args.conn);
   } else {
     assert(Feed.isValidId(args.feed.id));
   }
@@ -87,20 +97,21 @@ export async function import_feed(args) {
   if (args.create) {
     args.feed.id = await create_feed(args.conn, args.channel, args.feed);
   } else {
-    await update_feed(args.conn, args.channel, args.feed, /* overwrite */ true);
+    const overwrite = true;
+    await update_feed(args.conn, args.channel, args.feed, overwrite);
   }
 
-  // Early notify observer-caller if they are listening
+  // Early notify observer-caller if they are listening that we created the
+  // feed. This is useful, for example, to allow the subscription process to
+  // consider the user subscribed prior to waiting for all entries to be
+  // processed.
   if (args.feed_stored_callback) {
     args.feed_stored_callback(args.feed);
   }
 
   // Process the entries for the feed
   const model_entries = parsed_feed.entries.map(parsed_entry_to_model_entry);
-  const import_entries_results = await import_entries(
-      model_entries, args.feed, args.conn, args.iconn, args.channel,
-      args.rewrite_rules, args.inaccessible_descriptors,
-      args.fetch_html_timeout);
+  const import_entries_results = await import_entries(model_entries, args);
 
   // Filter out the invalid ids. We know invalid ids will be 0 or undefined,
   // and that valid ids will be some positive integer.
@@ -119,37 +130,31 @@ export async function import_feed(args) {
 // suppressed and only logged. If there is an error importing an entry its
 // output id will be invalid.
 // TODO: do something more elegant with this mess of parameters
-function import_entries(
-    entries, feed, conn, iconn, channel, rewrite_rules,
-    inaccessible_descriptors, fetch_html_timeout) {
+function import_entries(entries, args) {
   // Map each entry into an import-entry promise
   const promises = entries.map(entry => {
     // Propagate feed information down to the entry
-    entry.feed = feed.id;
-    entry.feedTitle = feed.title;
-    entry.faviconURLString = feed.faviconURLString;
-    entry.datePublished = entry.datePublished || feed.datePublished;
+    entry.feed = args.feed.id;
+    entry.feedTitle = args.feed.title;
+    entry.faviconURLString = args.feed.faviconURLString;
+    entry.datePublished = entry.datePublished || args.feed.datePublished;
 
     const args = new ImportEntryArgs();
     args.entry = entry;
-    args.feed = feed;
-    args.conn = conn;
-    args.channel = channel;
-    args.iconn = iconn;
-    args.rewrite_rules = rewrite_rules;
-    args.inaccessible_descriptors = inaccessible_descriptors;
-    args.fetch_html_timeout = fetch_html_timeout;
+    args.feed = args.feed;
+    args.conn = args.conn;
+    args.channel = args.channel;
+    args.iconn = args.iconn;
+    args.rewrite_rules = args.rewrite_rules;
+    args.inaccessible_descriptors = args.inaccessible_descriptors;
+    args.fetch_html_timeout = args.fetch_html_timeout;
 
-    const import_promise = import_entry_noexcept(args);
-    return import_promise;
+    return import_entry_noexcept(args);
   });
   return Promise.all(promises);
 }
 
-// Calls import_entry and traps all errors except for assertion errors
-// TODO: this is a good opportunity to review my understanding of promise.catch
-// semantics as an alternative to awaited promise try/catch. I am not sure which
-// is simpler. I kind of prefer to minimize the use of the async qualifier.
+// Calls import_entry and traps all errors except for assertion errors.
 async function import_entry_noexcept(args) {
   let new_entry_id = 0;
   try {
@@ -160,8 +165,7 @@ async function import_entry_noexcept(args) {
     } else if (error instanceof ConstraintError) {
       // Ignore
     } else {
-      // Prevent the error from affecting logic, but log it for now to assist
-      // in debugging.
+      // For debugging
       console.warn(error);
     }
   }
@@ -170,8 +174,7 @@ async function import_entry_noexcept(args) {
 
 // Copy over properties from the parsed feed and appropriately update the local
 // feed object with new data. Note that response url has already been appended,
-// and that the local feed may already have one or more urls. Note that this
-// updates by reference so it produces side effects on the input.
+// and that the local feed may already have one or more urls.
 function update_model_feed_from_parsed_feed(feed, parsed_feed) {
   feed.type = parsed_feed.type;
   feed.title = parsed_feed.title;
@@ -179,19 +182,18 @@ function update_model_feed_from_parsed_feed(feed, parsed_feed) {
   feed.datePublished = parsed_feed.date_published;
 
   // Try to normalize the new link value and overwrite. The link value comes
-  // from the raw data and we are not sure if it is valid or if it is in the
-  // normalized form that is used for comparison to other urls.
+  // from the raw data and we are not sure if it is valid.
   if (parsed_feed.link) {
     try {
       const link_url = new URL(parsed_feed.link);
       feed.link = link_url.href;
     } catch (error) {
-      // Ignore
+      // Ignore, retain the prior link if it exists
     }
   }
 }
 
-// Convert feed-parser/Entry into model/Entry
+// Convert a parsed entry into a storable entry
 function parsed_entry_to_model_entry(parsed_entry) {
   const entry = new Entry();
   entry.title = parsed_entry.title;

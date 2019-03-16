@@ -25,8 +25,7 @@ export function PollFeedsArgs() {
 export async function poll_feeds(args) {
   // Cancel the run if the last run was too recent
   if (args.recency_period && !args.ignore_recency_check) {
-    // TODO: load from config
-    const stamp = parseInt(localStorage.last_poll_date, 10);
+    const stamp = config.read_int('last_poll_timestamp');
     if (!isNaN(stamp)) {
       const now = new Date();
       const stamp_date = new Date(stamp);
@@ -34,12 +33,12 @@ export async function poll_feeds(args) {
       assert(millis_elapsed >= 0);
       if (millis_elapsed < args.recency_period) {
         console.debug('Polled too recently', millis_elapsed);
-        return;
+        return 0;
       }
     }
   }
 
-  localStorage.last_poll_date = '' + Date.now();
+  localStorage.last_poll_timestamp = '' + Date.now();
 
   const feeds = await get_feeds(args.conn, 'active', /*sort*/ false);
   console.debug('Loaded %d active feeds for polling', feeds.length);
@@ -60,7 +59,7 @@ export async function poll_feeds(args) {
     import_feed_args.create = false;
     import_feed_args.fetch_feed_timeout = args.fetch_feed_timeout;
     import_feed_args.fetch_html_timeout = args.fetch_html_timeout;
-    import_feed_args.feed_stored_callback = function() {};
+    import_feed_args.feed_stored_callback = undefined;
     return poll_feed_noexcept(import_feed_args);
   });
   const import_feed_results = await Promise.all(promises);
@@ -73,13 +72,12 @@ export async function poll_feeds(args) {
 
   if (args.notify && entry_add_count_total > 0) {
     const note = new CheckedNotification();
-    note.title = 'Added articles';
+    note.title = 'RSS Reader';
     note.message = 'Added ' + entry_add_count_total + ' articles';
     note.show();
   }
 
-  console.debug(
-      'Poll feeds completed, added %d entries', entry_add_count_total);
+  return entry_add_count_total;
 }
 
 // Wrap the call to import-feed, trap all errors except assertion errors.
