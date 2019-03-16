@@ -1,10 +1,6 @@
 import {assert} from '/src/assert.js';
 import {Feed} from '/src/db/types/feed.js';
 import * as magic from '/src/db/types/magic.js';
-import filter_controls from '/src/db/utils/filter-controls.js';
-import filter_unprintables from '/src/db/utils/filter-unprintables.js';
-import remove_html from '/src/db/utils/remove-html.js';
-import truncate_html from '/src/db/utils/truncate-html.js';
 import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/db/utils/utils.js';
 
 export function Entry() {
@@ -39,37 +35,6 @@ Entry.isValidId = function(value) {
   return Number.isInteger(value) && value > 0;
 };
 
-Entry.sanitize = function(
-    entry, author_max_length = 200, title_max_length = 1000,
-    content_max_length = 50000) {
-  assert(is_entry(entry));
-
-  if (entry.author) {
-    let author = entry.author;
-    author = filter_controls(author);
-    author = remove_html(author);
-    author = condense_whitespace(author);
-    author = truncate_html(author, author_max_length);
-    entry.author = author;
-  }
-
-  if (entry.content) {
-    let content = entry.content;
-    // Filter unprintables rather than controls as controls includes line breaks
-    // which should be retained
-    content = filter_unprintables(content);
-    entry.content = content;
-  }
-
-  if (entry.title) {
-    let title = entry.title;
-    title = filter_controls(title);
-    title = remove_html(title);
-    title = condense_whitespace(title);
-    title = truncate_html(title, title_max_length);
-    entry.title = title;
-  }
-};
 
 Entry.validate = function(entry) {
   assert(is_entry(entry));
@@ -118,8 +83,4 @@ function validate_enclosure(enc) {
   vassert(
       enc.type === undefined || enc.type === null ||
       typeof enc.type === 'string');
-}
-
-function condense_whitespace(value) {
-  return value.replace(/\s\s+/g, ' ');
 }

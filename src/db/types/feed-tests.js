@@ -1,3 +1,4 @@
+import {assert} from '/src/assert.js';
 import {is_entry} from '/src/db/types/entry.js';
 import {Feed, is_feed} from '/src/db/types/feed.js';
 
