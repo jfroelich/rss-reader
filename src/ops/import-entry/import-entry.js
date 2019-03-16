@@ -4,6 +4,7 @@ import {ConstraintError} from '/src/db/errors.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import get_entry from '/src/db/ops/get-entry.js';
 import sanitize_entry from '/src/db/ops/sanitize-entry.js';
+import validate_entry from '/src/db/ops/validate-entry.js';
 import {Entry} from '/src/db/types/entry.js';
 import {Deadline, INDEFINITE} from '/src/deadline.js';
 import {composite_document_filter} from '/src/dom-filters/dom-filters.js';
@@ -102,7 +103,7 @@ export async function import_entry(args) {
   await filter_entry_content(entry, doc);
 
   sanitize_entry(entry);
-  Entry.validate(entry);
+  validate_entry(entry);
   const new_entry_id = await create_entry(args.conn, args.channel, entry);
   return new_entry_id;
 }
