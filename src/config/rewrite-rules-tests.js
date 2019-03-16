@@ -1,36 +1,21 @@
 import {assert} from '/src/assert.js';
+import {google_news_rule} from '/src/config/rewrite-rules.js';
+import {techcrunch_rule} from '/src/config/rewrite-rules.js';
 import {rewrite_url} from '/src/ops/import-entry/import-entry.js';
 
-const rules = [];
-function google_news_rule(url) {
-  if (url.hostname === 'news.google.com' && url.pathname === '/news/url') {
-    const param = url.searchParams.get('url');
-    try {
-      return new URL(param);
-    } catch (error) {
-    }
-  }
-}
-
-rules.push(google_news_rule);
-
-function techcrunch_rule(url) {
-  if (url.hostname === 'techcrunch.com' && url.searchParams.has('ncid')) {
-    const output = new URL(url.href);
-    output.searchParams.delete('ncid');
-    return output;
-  }
-}
-
-rules.push(techcrunch_rule);
-
 export async function rewrite_url_norewrite_test() {
+  const rules = [];
+  rules.push(google_news_rule);
+  rules.push(techcrunch_rule);
   let a = new URL('https://www.google.com');
   let b = rewrite_url(a, rules);
   assert(b.href === a.href, 'no rewrite');
 }
 
 export function rewrite_url_google_news_test() {
+  const rules = [];
+  rules.push(google_news_rule);
+  rules.push(techcrunch_rule);
   let a = new URL('https://news.google.com/news/url');
   a.searchParams.set('url', 'https://www.google.com');
   let b = rewrite_url(a, rules);
@@ -38,6 +23,9 @@ export function rewrite_url_google_news_test() {
 }
 
 export function rewrite_url_techcrunch_test() {
+  const rules = [];
+  rules.push(google_news_rule);
+  rules.push(techcrunch_rule);
   let a = new URL('https://techcrunch.com');
   a.searchParams.set('ncid', '1234');
   let b = rewrite_url(a, rules);
@@ -45,6 +33,9 @@ export function rewrite_url_techcrunch_test() {
 }
 
 export function rewrite_url_cyclical_test() {
+  const rules = [];
+  rules.push(google_news_rule);
+  rules.push(techcrunch_rule);
   let a = new URL('https://news.google.com/news/url');
   a.searchParams.set('url', 'https://techcrunch.com/foo?ncid=2');
   let b = rewrite_url(a, rules);
