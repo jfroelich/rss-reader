@@ -3,7 +3,7 @@ import update_feed from '/src/db/ops/update-feed.js';
 import {Feed} from '/src/db/types/feed.js';
 import {lookup_feed_favicon} from '/src/ops/lookup-feed-favicon.js';
 
-export default async function refresh_feed_icons(conn, channel, iconn) {
+export default async function refresh_feed_icons(conn, iconn, channel) {
   const feeds = await get_feeds(conn, 'active', false);
   const promises = [];
   for (const feed of feeds) {
