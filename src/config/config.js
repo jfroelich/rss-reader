@@ -106,9 +106,9 @@ const background_images = [
 ];
 // clang-format on
 
-// Available font names. These must correspond to the names used in CSS.
+// Default font names. These must correspond to the names used in CSS.
 // clang-format off
-const fonts = [
+const default_fonts = [
   'ArchivoNarrow-Regular',
   'Arial',
   'Calibri',
@@ -191,11 +191,11 @@ export function init(event) {
   tls.write_int('column_count', 1);
   tls.write_boolean('justify_text', false);
   tls.write_array('background_images', background_images);
-  install_fonts();
-}
 
-export function install_fonts() {
-  tls.write_array('fonts', fonts);
+  // NOTE: this is within an init context, so we disregard any existing value
+  // and overwrite the value with the defaults. this will cause any custom
+  // registered fonts to no longer exist
+  tls.write_array('fonts', default_fonts);
 }
 
 // React to a localStorage property change. Note that this is only fired by the
