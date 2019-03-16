@@ -25,50 +25,36 @@ export function ImportFeedArgs() {
 }
 
 export async function import_feed(args) {
-  // TEMP: transitioning to args parameter, just shove back into variables
-  // TODO: think of a more elegant way to do this
-  const feed = args.feed;
-  const conn = args.conn;
-  const iconn = args.iconn;
-  const channel = args.channel;
-  const rewrite_rules = args.rewrite_rules;
-  const inaccessible_descriptors = args.inaccessible_descriptors;
-  const create = args.create;
-  const fetch_feed_timeout = args.fetch_feed_timeout;
-  const fetch_html_timeout = args.fetch_html_timeout;
-  const feed_stored_callback = args.feed_stored_callback;
-
-  assert(feed instanceof Feed);
-  assert(conn instanceof IDBDatabase);
-  assert(channel);
-  assert(iconn === undefined || iconn instanceof IDBDatabase);
-  assert(fetch_feed_timeout instanceof Deadline);
-
-  // TEMP: monitoring new functionality
-  console.debug('Importing feed', feed.getURLString());
+  assert(args instanceof ImportFeedArgs);
+  assert(args.feed instanceof Feed);
+  assert(args.conn instanceof IDBDatabase);
+  assert(args.channel);
+  assert(args.iconn === undefined || args.iconn instanceof IDBDatabase);
+  assert(args.fetch_feed_timeout instanceof Deadline);
 
   // If we are subscribing then check if already subscribed
-  if (create) {
-    const url = new URL(feed.getURLString());
-    const existing_feed = await get_feed(conn, 'url', url, /* key_only */ true);
+  if (args.create) {
+    const url = new URL(args.feed.getURLString());
+    const existing_feed =
+        await get_feed(args.conn, 'url', url, /* key_only */ true);
     if (existing_feed) {
       const message = 'Already subscribed to feed with url ' + url.href;
       throw new ConstraintError(message);
     }
   } else {
-    assert(Feed.isValidId(feed.id));
+    assert(Feed.isValidId(args.feed.id));
   }
 
   // Fetch the feed
-  const fetch_url = new URL(feed.getURLString());
-  const fetch_options = {timeout: fetch_feed_timeout};
+  const fetch_url = new URL(args.feed.getURLString());
+  const fetch_options = {timeout: args.fetch_feed_timeout};
   const response = await better_fetch(fetch_url, fetch_options);
   const response_url = new URL(response.url);
 
   // Check if redirected
-  if (create && fetch_url.href !== response_url.href) {
+  if (args.create && fetch_url.href !== response_url.href) {
     const existing_feed =
-        await get_feed(conn, 'url', response_url, /* key_only */ true);
+        await get_feed(args.conn, 'url', response_url, /* key_only */ true);
     if (existing_feed) {
       const message =
           'Already subscribed to redirected feed url ' + response_url.href;
@@ -77,50 +63,51 @@ export async function import_feed(args) {
   }
 
   // Possibly append the redirect url
-  feed.appendURL(response_url);
+  args.feed.appendURL(response_url);
 
   const response_text = await response.text();
   const parsed_feed = feed_parser.parse_from_string(response_text);
-  update_model_feed_from_parsed_feed(feed, parsed_feed);
+  update_model_feed_from_parsed_feed(args.feed, parsed_feed);
 
   // Reset the error count when fetching and parsing were successful
-  delete feed.errorCount;
+  delete args.feed.errorCount;
 
   // If creating, set the favicon. If updating, skip it because we leave that
   // to refresh-feed-icons that amortizes this cost.
-  if (create && iconn) {
-    const icon_url = await lookup_feed_favicon(feed, iconn);
+  if (args.create && args.iconn) {
+    const icon_url = await lookup_feed_favicon(args.feed, args.iconn);
     if (icon_url) {
-      feed.faviconURLString = icon_url.href;
+      args.feed.faviconURLString = icon_url.href;
     }
   }
 
-  Feed.sanitize(feed);
-  Feed.validate(feed);
+  Feed.sanitize(args.feed);
+  Feed.validate(args.feed);
 
-  if (create) {
-    feed.id = await create_feed(conn, channel, feed);
+  if (args.create) {
+    args.feed.id = await create_feed(args.conn, args.channel, args.feed);
   } else {
-    await update_feed(conn, channel, feed, /* overwrite */ true);
+    await update_feed(args.conn, args.channel, args.feed, /* overwrite */ true);
   }
 
   // Early notify observer-caller if they are listening
-  if (feed_stored_callback) {
-    feed_stored_callback(feed);
+  if (args.feed_stored_callback) {
+    args.feed_stored_callback(args.feed);
   }
 
   // Process the entries for the feed
   const model_entries = parsed_feed.entries.map(parsed_entry_to_model_entry);
   const import_entries_results = await import_entries(
-      model_entries, feed, conn, iconn, channel, rewrite_rules,
-      inaccessible_descriptors, fetch_html_timeout);
+      model_entries, args.feed, args.conn, args.iconn, args.channel,
+      args.rewrite_rules, args.inaccessible_descriptors,
+      args.fetch_html_timeout);
 
   // Filter out the invalid ids. We know invalid ids will be 0 or undefined,
   // and that valid ids will be some positive integer.
   const valid_new_entry_ids = import_entries_results.filter(id => id);
 
   const output = {};
-  output.feed = feed;
+  output.feed = args.feed;
   output.entry_add_count = valid_new_entry_ids.length;
   return output;
 }
@@ -171,13 +158,11 @@ async function import_entry_noexcept(args) {
     if (is_assert_error_like(error)) {
       throw error;
     } else if (error instanceof ConstraintError) {
-      console.debug(
-          'Skipping entry that already exists', args.entry.getURLString());
+      // Ignore
     } else {
       // Prevent the error from affecting logic, but log it for now to assist
-      // in debugging. There are a plethora of unanticipated errors that could
-      // be raised (e.g. ReferenceError).
-      console.debug(error);
+      // in debugging.
+      console.warn(error);
     }
   }
   return new_entry_id;

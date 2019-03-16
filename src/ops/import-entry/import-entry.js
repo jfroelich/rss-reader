@@ -29,9 +29,6 @@ export function ImportEntryArgs() {
 export async function import_entry(args) {
   const entry = args.entry;
 
-  // TEMP: tracing new functionality
-  console.debug('Importing entry', entry.getURLString());
-
   // Rewrite the entry's url. This is always done before processing, so there
   // no need to check whether the original url exists in the database.
   const original_url = new URL(entry.getURLString());
