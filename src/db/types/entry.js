@@ -55,13 +55,9 @@ Entry.sanitize = function(
 
   if (entry.content) {
     let content = entry.content;
-    // We cannot use filter_controls because that matches \r\n. This was
-    // previously the source of a bug
+    // Filter unprintables rather than controls as controls includes line breaks
+    // which should be retained
     content = filter_unprintables(content);
-
-    // Temporarily disabled while debugging poll-feeds issue
-    // TODO: re-enable
-    // content = truncate_html(content, content_max_length);
     entry.content = content;
   }
 
