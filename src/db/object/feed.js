@@ -1,9 +1,6 @@
 import * as magic from '/src/db/magic.js';
 import {append_url_common, is_date_lte, is_valid_date, vassert} from '/src/db/utils.js';
 import assert from '/src/lib/assert.js';
-import filter_controls from '/src/lib/filter-controls.js';
-import remove_html from '/src/lib/remove-html.js';
-import truncate_html from '/src/lib/truncate-html.js';
 
 export function Feed() {
   this.magic = magic.FEED_MAGIC;
@@ -29,30 +26,6 @@ Feed.prototype.hasURL = function() {
 
 Feed.isValidId = function(value) {
   return Number.isInteger(value) && value > 0;
-};
-
-Feed.sanitize = function(feed, title_max_len = 1024, desc_max_len = 10240) {
-  assert(is_feed(feed));
-
-  const repl_suffix = '';
-
-  if (feed.title) {
-    let title = feed.title;
-    title = filter_controls(title);
-    title = remove_html(title);
-    title = condense_whitespace(title);
-    title = truncate_html(title, title_max_len, repl_suffix);
-    feed.title = title;
-  }
-
-  if (feed.description) {
-    let desc = feed.description;
-    desc = filter_controls(desc);
-    desc = remove_html(desc);
-    desc = condense_whitespace(desc);
-    desc = truncate_html(desc, desc_max_len, repl_suffix);
-    feed.description = desc;
-  }
 };
 
 Feed.validate = function(feed) {
@@ -89,8 +62,4 @@ Feed.validate = function(feed) {
 
 export function is_feed(value) {
   return value && typeof value === 'object' && value.magic === magic.FEED_MAGIC;
-}
-
-function condense_whitespace(value) {
-  return value.replace(/\s\s+/g, ' ');
 }
