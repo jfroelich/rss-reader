@@ -8,7 +8,6 @@ import refresh_badge from '/src/extension/refresh-badge.js';
 import assert from '/src/lib/assert.js';
 import * as favicon from '/src/lib/favicon/favicon.js';
 import filter_publisher from '/src/lib/filter-publisher.js';
-import open_tab from '/src/lib/open-tab.js';
 import {export_opml} from '/src/ops/export-opml.js';
 import {import_opml} from '/src/ops/import-opml.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
@@ -182,7 +181,8 @@ async function slide_onclick(event) {
   // Begin intercept. Cancel the normal click reaction
   event.preventDefault();
 
-  open_tab(url_string, true);
+  // Open the link in a new window
+  open(url_string, '_blank');
 
   // Find the clicked slide. Start from parent because we know that the anchor
   // itself is not a slide. We know that a slide will always be found

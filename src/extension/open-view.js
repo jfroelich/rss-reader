@@ -1,5 +1,4 @@
 import * as config from '/src/config/config.js';
-import open_tab from '/src/lib/open-tab.js';
 
 // Open the slideshow view in a tab.
 export default async function open_view() {
@@ -21,8 +20,9 @@ export default async function open_view() {
     }
   }
 
-  // Otherwise, open the view in a new tab
-  open_tab(url_string, true);
+  // Otherwise, open the view in a new tab. Note that not using tab create is
+  // to try and make less platform specific.
+  open(url_string, '_blank');
 }
 
 function find_tab(url_string) {
