@@ -1,9 +1,9 @@
-import {assert} from '/src/assert.js';
-import {is_entry} from '/src/db/types/entry.js';
-import filter_controls from '/src/db/utils/filter-controls.js';
-import filter_unprintables from '/src/db/utils/filter-unprintables.js';
-import remove_html from '/src/db/utils/remove-html.js';
-import truncate_html from '/src/db/utils/truncate-html.js';
+import {is_entry} from '/src/db/object/entry.js';
+import assert from '/src/lib/assert.js';
+import filter_controls from '/src/lib/filter-controls.js';
+import filter_unprintables from '/src/lib/filter-unprintables.js';
+import remove_html from '/src/lib/remove-html.js';
+import truncate_html from '/src/lib/truncate-html.js';
 
 // TODO: constraints should come from config? or at least as a grouped parameter
 // object named constraints?

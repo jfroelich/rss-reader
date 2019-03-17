@@ -1,4 +1,4 @@
-import * as favicon from '/src/favicon/favicon.js';
+import * as favicon from '/src/lib/favicon/favicon.js';
 
 export default async function lookup_favicon_command(url_string, cached) {
   const request = new favicon.LookupRequest();

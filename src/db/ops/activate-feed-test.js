@@ -1,10 +1,10 @@
-import {assert} from '/src/assert.js';
-import db_open from '/src/db/ops/db-open.js';
+import {Feed, is_feed} from '/src/db/object/feed.js';
 import activate_feed from '/src/db/ops/activate-feed.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
-import {Feed, is_feed} from '/src/db/types/feed.js';
-import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
+import db_open from '/src/db/ops/open.js';
+import assert from '/src/lib/assert.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 export async function activate_feed_test() {
   const db_name = 'db-activate-feed-test';

@@ -1,6 +1,6 @@
-import {assert} from '/src/assert.js';
-import {Feed, is_feed} from '/src/db/types/feed.js';
-import filter_empty_properties from '/src/db/utils/filter-empty-properties.js';
+import {Feed, is_feed} from '/src/db/object/feed.js';
+import assert from '/src/lib/assert.js';
+import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
 export default function create_feed(conn, channel, feed) {
   return new Promise((resolve, reject) => {

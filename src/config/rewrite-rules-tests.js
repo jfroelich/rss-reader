@@ -1,7 +1,7 @@
-import {assert} from '/src/assert.js';
 import {google_news_rule} from '/src/config/rewrite-rules.js';
 import {techcrunch_rule} from '/src/config/rewrite-rules.js';
-import {rewrite_url} from '/src/ops/import-entry/import-entry.js';
+import assert from '/src/lib/assert.js';
+import {rewrite_url} from '/src/ops/import-entry.js';
 
 export async function rewrite_url_norewrite_test() {
   const rules = [];

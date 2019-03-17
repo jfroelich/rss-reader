@@ -1,6 +1,6 @@
-import {assert} from '/src/assert.js';
-import {Entry, is_entry} from '/src/db/types/entry.js';
-import filter_empty_properties from '/src/db/utils/filter-empty-properties.js';
+import {Entry, is_entry} from '/src/db/object/entry.js';
+import assert from '/src/lib/assert.js';
+import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
 export default function create_entry(conn, channel, entry) {
   return new Promise((resolve, reject) => {

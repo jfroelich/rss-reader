@@ -1,6 +1,6 @@
-import db_open from '/src/db/ops/db-open.js';
-import {Deadline} from '/src/deadline.js';
-import * as favicon from '/src/favicon/favicon.js';
+import db_open from '/src/db/ops/open.js';
+import {Deadline} from '/src/lib/deadline.js';
+import * as favicon from '/src/lib/favicon/favicon.js';
 import {subscribe} from '/src/ops/subscribe.js';
 
 export default async function subscribe_command(url_string) {

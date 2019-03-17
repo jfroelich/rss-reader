@@ -1,8 +1,8 @@
-import {assert} from '/src/assert.js';
-import db_open from '/src/db/ops/db-open.js';
-import {Feed, is_feed} from '/src/db/types/feed.js';
-import {Deadline} from '/src/deadline.js';
-import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
+import {Feed, is_feed} from '/src/db/object/feed.js';
+import db_open from '/src/db/ops/open.js';
+import assert from '/src/lib/assert.js';
+import {Deadline} from '/src/lib/deadline.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 import {subscribe} from '/src/ops/subscribe.js';
 
 export async function subscribe_test() {

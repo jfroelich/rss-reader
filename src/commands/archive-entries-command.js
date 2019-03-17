@@ -1,5 +1,5 @@
 import archive_entries from '/src/db/ops/archive-entries.js';
-import db_open from '/src/db/ops/db-open.js';
+import db_open from '/src/db/ops/open.js';
 
 export default async function archive_entries_command() {
   console.log('Archiving entries...');

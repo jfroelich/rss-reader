@@ -1,9 +1,9 @@
-import {assert} from '/src/assert.js';
+import {Entry} from '/src/db/object/entry.js';
 import count_unread_entries from '/src/db/ops/count-unread-entries.js';
 import create_entry from '/src/db/ops/create-entry.js';
-import db_open from '/src/db/ops/db-open.js';
-import {Entry} from '/src/db/types/entry.js';
-import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
+import db_open from '/src/db/ops/open.js';
+import assert from '/src/lib/assert.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 export async function count_unread_entries_test() {
   const db_name = 'count-unread-entries-test';

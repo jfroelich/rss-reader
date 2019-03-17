@@ -1,7 +1,7 @@
-import {Feed} from '/src/db/types/feed.js';
-import {INDEFINITE} from '/src/deadline.js';
-import {import_feed, ImportFeedArgs} from '/src/ops/import-feed/import-feed.js';
-import {CheckedNotification} from '/src/ops/checked-notification.js';
+import {Feed} from '/src/db/object/feed.js';
+import show_notification from '/src/extension/show-notification.js';
+import {INDEFINITE} from '/src/lib/deadline.js';
+import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';
 
 // Subscribes to a feed. Imports the feed and its entries into the database.
 // Throws an error if already subscribed or if something goes wrong. This
@@ -30,12 +30,8 @@ export async function subscribe(
   // the same object.
 
   if (notify) {
-    const note = new CheckedNotification();
-    note.title = 'RSS Reader';
     const feed_title = feed.title || feed.getURLString();
-    note.message = 'Subscribed to ' + feed_title;
-    note.icon_url = feed.faviconURLString;
-    note.show();
+    show_notification('Subscribed to ' + feed_title, feed.faviconURLString);
   }
 
   return feed;

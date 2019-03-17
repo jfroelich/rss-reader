@@ -1,0 +1,27 @@
+import {Entry, is_entry} from '/src/db/object/entry.js';
+import {is_feed} from '/src/db/object/feed.js';
+import assert from '/src/lib/assert.js';
+
+export function is_entry_test() {
+  const entry = new Entry();
+  assert(is_entry(entry));
+  assert(!is_feed(entry));
+  assert(!is_entry({}));
+}
+
+export function append_entry_url_test() {
+  const entry = new Entry();
+  assert(entry.urls === undefined || entry.urls.length === 0);
+  entry.appendURL(new URL('a://b.c1'));
+  assert(entry.urls);
+  assert(entry.urls.length === 1);
+  const url2 = new URL('a://b.c2');
+  let appended = entry.appendURL(url2);
+  assert(entry.urls.length === 2);
+  assert(appended === true);
+  appended = false;
+  appended = entry.appendURL(url2);
+  assert(entry.urls.length === 2);
+  assert(appended === false);
+  assert(is_entry(entry));
+}

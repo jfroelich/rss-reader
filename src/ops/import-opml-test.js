@@ -1,7 +1,7 @@
-import {assert} from '/src/assert.js';
-import db_open from '/src/db/ops/db-open.js';
-import {Feed, is_feed} from '/src/db/types/feed.js';
-import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
+import {Feed, is_feed} from '/src/db/object/feed.js';
+import db_open from '/src/db/ops/open.js';
+import assert from '/src/lib/assert.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 import {import_opml} from '/src/ops/import-opml.js';
 
 export async function import_opml_test() {
@@ -22,7 +22,9 @@ export async function import_opml_test() {
 
   const opml_string = '<opml version="2.0"><body><outline type="feed" ' +
       'xmlUrl="a://b/c"/></body></opml>';
-  const file = create_opml_file('file.xml', opml_string);
+
+  const file = new Blob([opml_string], {type: 'application/xml'});
+  file.name = 'file.xml';
 
   const files = [file];
   const results = await import_opml(conn, channel, files);
@@ -36,11 +38,4 @@ export async function import_opml_test() {
 
   conn.close();
   await indexeddb_utils.remove(db_name);
-}
-
-// TODO: inline
-function create_opml_file(name, text) {
-  const file = new Blob([text], {type: 'application/xml'});
-  file.name = name;
-  return file;
 }

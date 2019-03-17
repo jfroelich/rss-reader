@@ -1,7 +1,7 @@
-import {assert} from '/src/assert.js';
-import {Entry, is_entry} from '/src/db/types/entry.js';
-import {Feed} from '/src/db/types/feed.js';
-import {is_date_lte, is_valid_date, vassert} from '/src/db/utils/utils.js';
+import {Entry, is_entry} from '/src/db/object/entry.js';
+import {Feed} from '/src/db/object/feed.js';
+import {is_date_lte, is_valid_date, vassert} from '/src/db/utils.js';
+import assert from '/src/lib/assert.js';
 
 export default function validate_entry(entry) {
   assert(is_entry(entry));

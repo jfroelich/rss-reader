@@ -1,6 +1,6 @@
-import {assert} from '/src/assert.js';
+import {Entry} from '/src/db/object/entry.js';
 import sanitize_entry from '/src/db/ops/sanitize-entry.js';
-import {Entry} from '/src/db/types/entry.js';
+import assert from '/src/lib/assert.js';
 
 export default function sanitize_entry_test() {
   const entry = new Entry();

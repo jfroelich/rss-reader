@@ -1,5 +1,5 @@
-import {assert} from '/src/assert.js';
-import {Feed} from '/src/db/types/feed.js';
+import {Feed} from '/src/db/object/feed.js';
+import assert from '/src/lib/assert.js';
 
 export default function delete_feed(conn, channel, feed_id, reason) {
   return new Promise((resolve, reject) => {

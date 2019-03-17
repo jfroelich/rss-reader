@@ -1,5 +1,5 @@
+import {Feed} from '/src/db/object/feed.js';
 import create_feeds from '/src/db/ops/create-feeds.js';
-import {Feed} from '/src/db/types/feed.js';
 
 // Create and store feed objects in the database based on urls extracted from
 // zero or more opml files. |files| should be a FileList or an Array.

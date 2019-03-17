@@ -1,6 +1,6 @@
-import {assert} from '/src/assert.js';
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
-import {Entry, is_entry} from '/src/db/types/entry.js';
+import {Entry, is_entry} from '/src/db/object/entry.js';
+import assert from '/src/lib/assert.js';
 
 // Modify the read state property of an entry in the database. |id| is id of
 // entry in database to modify. |read| is boolean, true if marking as read,

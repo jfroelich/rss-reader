@@ -1,9 +1,9 @@
-import {assert} from '/src/assert.js';
-import db_open from '/src/db/ops/db-open.js';
+import {Feed} from '/src/db/object/feed.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed_ids from '/src/db/ops/get-feed-ids.js';
-import {Feed} from '/src/db/types/feed.js';
-import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
+import db_open from '/src/db/ops/open.js';
+import assert from '/src/lib/assert.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 export async function get_feed_ids_test() {
   const db_name = 'get-feed-ids-test';

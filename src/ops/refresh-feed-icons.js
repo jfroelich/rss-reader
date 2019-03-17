@@ -1,6 +1,6 @@
+import {Feed} from '/src/db/object/feed.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import update_feed from '/src/db/ops/update-feed.js';
-import {Feed} from '/src/db/types/feed.js';
 import {lookup_feed_favicon} from '/src/ops/lookup-feed-favicon.js';
 
 export default async function refresh_feed_icons(conn, iconn, channel) {

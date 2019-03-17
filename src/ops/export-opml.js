@@ -1,5 +1,8 @@
-import {assert} from '/src/assert.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
+import assert from '/src/lib/assert.js';
+
+// TODO: implement a test that creates a test database, inserts a fake feed,
+// calls export-opml, and asserts the feed is present in the returned document
 
 // Returns an in memory OPML document object filled with the feeds from the
 // database. document_title is optional.

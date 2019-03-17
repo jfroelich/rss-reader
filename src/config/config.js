@@ -1,6 +1,6 @@
-import * as color from '/src/color/color.js';
 import * as rewrite_rules from '/src/config/rewrite-rules.js';
 import * as tls from '/src/config/typed-localstorage.js';
+import * as color from '/src/lib/color.js';
 
 // TODO: rather than module methods, consider exporting a Config class. This
 // way config is injectable, and thereby more easily mocked in tests.

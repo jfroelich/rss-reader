@@ -1,6 +1,6 @@
-import {assert} from '/src/assert.js';
-import {Entry} from '/src/db/types/entry.js';
-import {Feed} from '/src/db/types/feed.js';
+import {Entry} from '/src/db/object/entry.js';
+import {Feed} from '/src/db/object/feed.js';
+import assert from '/src/lib/assert.js';
 
 export default function query_entries(conn, query = {}) {
   return new Promise((resolve, reject) => {

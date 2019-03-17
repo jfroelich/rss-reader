@@ -1,10 +1,11 @@
-import {assert, is_assert_error_like} from '/src/assert.js';
 import * as config from '/src/config/config.js';
+import {Feed} from '/src/db/object/feed.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
-import {Feed} from '/src/db/types/feed.js';
-import {Deadline} from '/src/deadline.js';
-import {CheckedNotification} from '/src/ops/checked-notification.js';
-import {import_feed, ImportFeedArgs} from '/src/ops/import-feed/import-feed.js';
+import show_notification from '/src/extension/show-notification.js';
+import assert from '/src/lib/assert.js';
+import {is_assert_error_like} from '/src/lib/assert.js';
+import {Deadline} from '/src/lib/deadline.js';
+import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';
 
 export function PollFeedsArgs() {
   this.ignore_recency_check = false;
@@ -71,10 +72,7 @@ export async function poll_feeds(args) {
   }
 
   if (args.notify && entry_add_count_total > 0) {
-    const note = new CheckedNotification();
-    note.title = 'RSS Reader';
-    note.message = 'Added ' + entry_add_count_total + ' articles';
-    note.show();
+    show_notification('Added ' + entry_add_count_total + ' articles');
   }
 
   return entry_add_count_total;

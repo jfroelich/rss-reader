@@ -1,10 +1,10 @@
-import {assert} from '/src/assert.js';
-import db_open from '/src/db/ops/db-open.js';
+import {Entry} from '/src/db/object/entry.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import get_entry from '/src/db/ops/get-entry.js';
+import db_open from '/src/db/ops/open.js';
 import set_entry_read_state from '/src/db/ops/set-entry-read-state.js';
-import {Entry} from '/src/db/types/entry.js';
-import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
+import assert from '/src/lib/assert.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 export async function set_entry_read_state_test() {
   const db_name = set_entry_read_state_test.name;

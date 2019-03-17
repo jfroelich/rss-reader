@@ -1,5 +1,5 @@
-import {assert} from '/src/assert.js';
-import {Entry} from '/src/db/types/entry.js';
+import {Entry} from '/src/db/object/entry.js';
+import assert from '/src/lib/assert.js';
 
 export default function get_entry(conn, mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {

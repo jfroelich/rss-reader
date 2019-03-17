@@ -1,9 +1,9 @@
-import {assert} from '/src/assert.js';
-import db_open from '/src/db/ops/db-open.js';
+import {Entry} from '/src/db/object/entry.js';
 import create_entry from '/src/db/ops/create-entry.js';
+import db_open from '/src/db/ops/open.js';
 import query_entries from '/src/db/ops/query-entries.js';
-import {Entry} from '/src/db/types/entry.js';
-import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
+import assert from '/src/lib/assert.js';
+import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 export async function query_entries_test() {
   const db_name = 'query-entries-test';

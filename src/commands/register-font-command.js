@@ -1,6 +1,6 @@
 import * as config from '/src/config/config.js';
 
-// Persist the current in memory fonts array to configuration
+// Add a new font to the registered font list
 export default function register_font_command(new_font_name) {
   const fonts = config.read_array('fonts');
 

@@ -1,4 +1,4 @@
-import {assert} from '/src/assert.js';
+import assert from '/src/lib/assert.js';
 
 export default function iterate_entries(conn, handle_entry) {
   return new Promise((resolve, reject) => {
