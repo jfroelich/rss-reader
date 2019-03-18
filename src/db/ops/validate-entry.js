@@ -7,6 +7,8 @@ export default function validate_entry(entry) {
   assert(is_entry(entry));
   const now = new Date();
 
+  // TODO: validate faviconURLString?
+
   vassert(entry.id === undefined || Entry.isValidId(entry.id));
   vassert(entry.feed === undefined || Feed.isValidId(entry.feed));
   vassert(entry.urls === undefined || Array.isArray(entry.urls));
@@ -18,6 +20,7 @@ export default function validate_entry(entry) {
       entry.archiveState === Entry.ARCHIVED ||
       entry.archiveState === Entry.UNARCHIVED);
   vassert(entry.author === undefined || typeof entry.author === 'string');
+  vassert(entry.title === undefined || typeof entry.title === 'string');
   vassert(entry.content === undefined || typeof entry.content === 'string');
 
   vassert(is_valid_date(entry.dateCreated));

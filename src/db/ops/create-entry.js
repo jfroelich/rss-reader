@@ -1,4 +1,5 @@
 import {Entry, is_entry} from '/src/db/object/entry.js';
+import normalize_entry from '/src/db/ops/normalize-entry.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -25,6 +26,7 @@ export default function create_entry(conn, channel, entry) {
     }
 
     delete entry.dateUpdated;
+    normalize_entry(entry);
     filter_empty_properties(entry);
 
     let id;

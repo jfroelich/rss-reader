@@ -2,8 +2,28 @@ import * as magic from '/src/db/magic.js';
 import {append_url_common} from '/src/db/utils.js';
 import assert from '/src/lib/assert.js';
 
+// TODO: explicitly enumerate fields in constructor. this was started, but
+// review the fields. i found a few that were missing.
+
 export function Entry() {
   this.magic = magic.ENTRY_MAGIC;
+
+  // TODO: review behavior with IDBObjectStore.prototype.put and
+  // properties that are keyed but undefined
+  // this.id = undefined;
+
+  this.author = undefined;
+  this.title = undefined;
+  this.content = undefined;
+  this.readState = undefined;
+  this.urls = undefined;
+  this.feed = undefined;
+  this.archiveState = undefined;
+  this.dateCreated = undefined;
+  this.dateUpdated = undefined;
+  this.datePublished = undefined;
+  this.enclosure = undefined;
+  this.faviconURLString = undefined;
 }
 
 Entry.INVALID_ID = 0;

@@ -10,17 +10,17 @@ export function normalize_string_properties_test() {
   let input = {value: '\u1E9B\u0323'};
   normalize_string_properties(input);
   assert(input.value === '\u1E9B\u0323');
-  console.debug(unicode_encode('\u1E9B\u0323'), unicode_encode(input.value));
+  console.debug(escape_unicode('\u1E9B\u0323'), escape_unicode(input.value));
 
   // Test using a non-default variant
   input = {value: '\u1E9B\u0323'};
   normalize_string_properties(input, 'NFKC');
   assert(input.value === '\u1E69');
-  console.debug(unicode_encode('\u1E9B\u0323'), unicode_encode(input.value));
+  console.debug(escape_unicode('\u1E9B\u0323'), escape_unicode(input.value));
 }
 
 // ripped from https://stackoverflow.com/questions/21014476
-function unicode_encode(string) {
+function escape_unicode(string) {
   return string.replace(/[^\0-~]/g, function(ch) {
     return '\\u' + ('000' + ch.charCodeAt().toString(16)).slice(-4);
   });
