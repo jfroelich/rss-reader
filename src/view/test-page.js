@@ -37,6 +37,7 @@ import * as filter_unprintables_tests from '/src/lib/filter-unprintables-tests.j
 import * as get_url_filename_extension_tests from '/src/lib/get-url-filename-extension-tests.js';
 import * as indexeddb_utils_tests from '/src/lib/indexeddb-utils-test.js';
 import {mime_test} from '/src/lib/mime-test.js';
+import {normalize_string_properties_test} from '/src/lib/normalize-string-properties-test.js';
 import {remove_html_test} from '/src/lib/remove-html-test.js';
 import * as set_base_uri_tests from '/src/lib/set-base-uri-tests.js';
 import * as truncate_html_tests from '/src/lib/truncate-html-tests.js';
@@ -77,6 +78,7 @@ register_test(import_opml_test);
 register_test(iterate_entries_test);
 register_test(legible_text_filter_test);
 register_test(mime_test);
+register_test(normalize_string_properties_test);
 register_module_tests(better_fetch_tests);
 register_test(parse_feed_test);
 register_test(query_entries_test);
