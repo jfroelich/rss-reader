@@ -5,7 +5,7 @@ import {is_assert_error_like} from '/src/lib/assert.js';
 import {Deadline} from '/src/lib/deadline.js';
 import fade_element from '/src/lib/fade-element.js';
 import * as favicon from '/src/lib/favicon/favicon.js';
-import {subscribe} from '/src/ops/subscribe.js';
+import {subscribe} from '/src/ops/subscribe/subscribe.js';
 
 export function SubscriptionForm() {
   // Default to a reasonable amount of time. The user can optionally override
@@ -50,7 +50,6 @@ SubscriptionForm.prototype.showMonitor = function() {
   const monitor_element = document.createElement('div');
   this.monitor_element = monitor_element;
 
-  monitor_element = document.createElement('div');
   monitor_element.setAttribute('id', 'submon');
   monitor_element.style.opacity = '1';
 
@@ -102,7 +101,7 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
   try {
     await subscribe(
         conn, iconn, channel, url, this.fetch_feed_timeout, true,
-        this.onFeedStored);
+        this.onFeedStored.bind(this));
   } catch (error) {
     if (is_assert_error_like(error)) {
       throw error;

@@ -1,9 +1,9 @@
 import {Feed, is_feed} from '/src/db/object/feed.js';
 import db_open from '/src/db/ops/open.js';
 import assert from '/src/lib/assert.js';
-import {Deadline} from '/src/lib/deadline.js';
+import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
-import {subscribe} from '/src/ops/subscribe.js';
+import {subscribe} from '/src/ops/subscribe/subscribe.js';
 
 export async function subscribe_test() {
   const db_name = 'subscribe-test';
@@ -19,19 +19,24 @@ export async function subscribe_test() {
     close: function() {}
   };
 
-  const test_url = 'https://news.google.com/news/rss/?ned=us&gl=US&hl=en';
-  const url = new URL(test_url);
+  const path = '/src/ops/subscribe/subscribe-test-feed.xml';
+  const local_url_string = chrome.extension.getURL(path);
+  const url = new URL(local_url_string);
 
   let callback_called = false;
   const feed_stored_callback = function(feed) {
     callback_called = true;
   };
 
+  // Setup subscribe parameters
+  let iconn = undefined;
+  const fetch_feed_timeout = INDEFINITE;
+  const notify = false;
+
   // Rethrow subscribe exceptions just like assertion failures by omitting
   // try/catch.
-  let iconn = undefined;
   const feed = await subscribe(
-      conn, iconn, channel, url, new Deadline(7000), false,
+      conn, iconn, channel, url, fetch_feed_timeout, notify,
       feed_stored_callback);
 
   // Test the subscription produced the desired result

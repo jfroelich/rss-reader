@@ -43,7 +43,7 @@ import * as truncate_html_tests from '/src/lib/truncate-html-tests.js';
 import * as unwrap_element_tests from '/src/lib/unwrap-element-tests.js';
 import {sniffer_test} from '/src/lib/url-sniffer-test.js';
 import {import_opml_test} from '/src/ops/import-opml-test.js';
-import {subscribe_test} from '/src/ops/subscribe-test.js';
+import {subscribe_test} from '/src/ops/subscribe/subscribe-test.js';
 
 const registry = [];
 register_test(activate_feed_test);
