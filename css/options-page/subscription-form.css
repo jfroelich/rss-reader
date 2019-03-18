@@ -1,0 +1,21 @@
+#section-add-subscription {
+  display: none;
+}
+
+#subscribe-url {
+  width: 500px;
+}
+
+#submon {
+  display: block;
+  background-color: #ffffff;
+  color: #000000;
+  font-size: 14pt;
+  position: fixed;
+  float: left;
+  top: 100px;
+  left: 20%;
+  right: 20%;
+  padding: 30px;
+  border: 1px solid #444444;
+}

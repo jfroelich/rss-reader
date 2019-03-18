@@ -1,0 +1,53 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  font-size: 100%;
+}
+
+#f-it {
+  position: absolute;
+  width: 100%;
+  border-spacing: 0;
+  height: 100%;
+}
+
+#section-layout-container {
+  vertical-align: top;
+  padding-left: 6px;
+  border-left: 2px solid #efefef;
+  padding-right: 10px;
+}
+
+.options-section {
+  margin-top: 0;
+  margin-left: 1px;
+  padding-top: 10px;
+  padding-left: 0;
+}
+
+form {
+  padding: 0;
+  margin: 0;
+}
+
+.option-text {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+h1 {
+  color: rgb(48, 57, 66);
+  margin-top: 0;
+  font-weight: 400;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #cccccc;
+}
+
+h2 {
+  color: rgb(48, 57, 66);
+  margin-top: 0;
+  font-weight: 400;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #cccccc;
+}

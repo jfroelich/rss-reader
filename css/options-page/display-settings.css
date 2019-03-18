@@ -1,0 +1,24 @@
+
+#section-display-settings {
+  display: none;
+}
+
+#options-table tr td {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#options-table td {
+  padding-left: 0;
+  padding-right:30px;
+  padding-top: 0;
+  padding-bottom: 10px;
+}
+
+#options-table input {
+  width: 225px;
+}
+
+#options-table select {
+  margin-left: 0;
+}
