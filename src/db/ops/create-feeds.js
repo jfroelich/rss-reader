@@ -1,4 +1,5 @@
 import {Feed, is_feed} from '/src/db/object/feed.js';
+import normalize_feed from '/src/db/ops/normalize-feed.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -6,12 +7,14 @@ export default function create_feeds(conn, channel, feeds) {
   return new Promise((resolve, reject) => {
     // TODO: assert is iterable
     assert(feeds);
+
     for (const feed of feeds) {
       assert(is_feed(feed));
       assert(Feed.prototype.hasURL.call(feed));
     }
 
     for (const feed of feeds) {
+      normalize_feed(feed);
       filter_empty_properties(feed);
       // Allow explicit false
       if (feed.active === undefined) {

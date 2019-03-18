@@ -1,5 +1,6 @@
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
 import {Feed, is_feed} from '/src/db/object/feed.js';
+import normalize_feed from '/src/db/ops/normalize-feed.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -20,6 +21,19 @@ export default function update_feed(conn, channel, feed, overwrite) {
     // bag of properties.
     if (overwrite) {
       assert(Feed.prototype.hasURL.call(feed));
+    }
+
+    // If overwriting, full overwrite. If partial, manually normalize
+    // TODO: this violates abstraction
+    if (overwrite) {
+      normalize_feed(feed);
+    } else {
+      if (feed.title) {
+        feed.title = feed.title.normalize();
+      }
+      if (feed.description) {
+        feed.description = feed.description.normalize();
+      }
     }
 
     // If overwriting, remove unused properties. If partial, feed is just a

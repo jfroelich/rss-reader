@@ -1,4 +1,5 @@
 import {Feed, is_feed} from '/src/db/object/feed.js';
+import normalize_feed from '/src/db/ops/normalize-feed.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -18,6 +19,8 @@ export default function create_feed(conn, channel, feed) {
 
     feed.dateCreated = new Date();
     delete feed.dateUpdated;
+
+    normalize_feed(feed);
     filter_empty_properties(feed);
 
     let id = 0;
