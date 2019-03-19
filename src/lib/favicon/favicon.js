@@ -134,8 +134,9 @@ function search_document(document) {
   if (links.length > 1) {
     // TODO: review whether it is possible to access link.href which implicitly
     // is the absolute url that uses baseURI
-    // TODO: remove the debugging code from slideshow-page and poll-feeds if
-    // this was indeed the culprit of encountering unresolved urls
+
+    console.debug('link href property is absolute?', links[0].href);
+
     return new URL(links[0].getAttribute('href'), document.baseURI);
   }
 }
