@@ -1,5 +1,5 @@
 import * as identifiable from '/src/db/identifiable.js';
-import Feed from '/src/db/object/feed.js';
+import Feed from '/src/db/feed.js';
 import db_open from '/src/db/ops/open.js';
 import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';

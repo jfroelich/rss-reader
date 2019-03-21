@@ -1,5 +1,5 @@
 import * as identifiable from '/src/db/identifiable.js';
-import Feed from '/src/db/object/feed.js';
+import Feed from '/src/db/feed.js';
 import {is_feed} from '/src/db/types.js';
 import {is_date_lte, is_valid_date, vassert} from '/src/db/validation-utils.js';
 import assert from '/src/lib/assert.js';

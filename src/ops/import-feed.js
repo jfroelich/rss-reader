@@ -1,8 +1,8 @@
 import {ConstraintError} from '/src/db/errors.js';
 import * as identifiable from '/src/db/identifiable.js';
 import * as locatable from '/src/db/locatable.js';
-import Entry from '/src/db/object/entry.js';
-import Feed from '/src/db/object/feed.js';
+import Entry from '/src/db/entry.js';
+import Feed from '/src/db/feed.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import sanitize_feed from '/src/db/ops/sanitize-feed.js';

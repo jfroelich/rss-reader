@@ -1,6 +1,6 @@
 import * as identifiable from '/src/db/identifiable.js';
-import Entry from '/src/db/object/entry.js';
-import Feed from '/src/db/object/feed.js';
+import Entry from '/src/db/entry.js';
+import Feed from '/src/db/feed.js';
 import assert from '/src/lib/assert.js';
 
 export default function query_entries(conn, query = {}) {

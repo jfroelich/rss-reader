@@ -1,7 +1,7 @@
 import * as config from '/src/config/config.js';
 import {ConstraintError} from '/src/db/errors.js';
 import * as locatable from '/src/db/locatable.js';
-import Entry from '/src/db/object/entry.js';
+import Entry from '/src/db/entry.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import get_entry from '/src/db/ops/get-entry.js';
 import sanitize_entry from '/src/db/ops/sanitize-entry.js';

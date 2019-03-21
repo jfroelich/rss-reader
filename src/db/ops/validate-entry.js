@@ -1,6 +1,6 @@
 import * as identifiable from '/src/db/identifiable.js';
-import Entry from '/src/db/object/entry.js';
-import Feed from '/src/db/object/feed.js';
+import Entry from '/src/db/entry.js';
+import Feed from '/src/db/feed.js';
 import {is_entry} from '/src/db/types.js';
 import {is_date_lte, is_valid_date, vassert} from '/src/db/validation-utils.js';
 import assert from '/src/lib/assert.js';

@@ -1,7 +1,5 @@
 import * as types from '/src/db/types.js';
 
-// Represents an entry, which is basically a web page that typically contains an
-// article. Entry property names correspond to indexedDB names.
 export default function Entry() {
   this.magic = types.ENTRY_MAGIC;
   this.id = undefined;

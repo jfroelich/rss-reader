@@ -1,5 +1,5 @@
 import * as locatable from '/src/db/locatable.js';
-import Feed from '/src/db/object/feed.js';
+import Feed from '/src/db/feed.js';
 import activate_feed from '/src/db/ops/activate-feed.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';

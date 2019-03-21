@@ -1,6 +1,6 @@
 import * as identifiable from '/src/db/identifiable.js';
 import * as locatable from '/src/db/locatable.js';
-import Feed from '/src/db/object/feed.js';
+import Feed from '/src/db/feed.js';
 import create_feeds from '/src/db/ops/create-feeds.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import get_feeds from '/src/db/ops/get-feeds.js';

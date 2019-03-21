@@ -1,5 +1,5 @@
 import * as locatable from '/src/db/locatable.js';
-import Feed from '/src/db/object/feed.js';
+import Feed from '/src/db/feed.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {lookup, LookupRequest} from '/src/lib/favicon/favicon.js';

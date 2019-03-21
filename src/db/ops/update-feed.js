@@ -1,7 +1,7 @@
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
 import * as identifiable from '/src/db/identifiable.js';
 import * as locatable from '/src/db/locatable.js';
-import Feed from '/src/db/object/feed.js';
+import Feed from '/src/db/feed.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
 import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';

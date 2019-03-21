@@ -1,4 +1,4 @@
-import Entry from '/src/db/object/entry.js';
+import Entry from '/src/db/entry.js';
 import assert from '/src/lib/assert.js';
 import sizeof from '/src/lib/sizeof.js';
 import {is_entry} from '/src/db/types.js';

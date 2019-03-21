@@ -1,6 +1,6 @@
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
 import * as identifiable from '/src/db/identifiable.js';
-import Entry from '/src/db/object/entry.js';
+import Entry from '/src/db/entry.js';
 import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 

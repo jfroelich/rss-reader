@@ -1,4 +1,4 @@
-import Entry from '/src/db/object/entry.js';
+import Entry from '/src/db/entry.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import get_entries from '/src/db/ops/get-entries.js';
 import db_open from '/src/db/ops/open.js';

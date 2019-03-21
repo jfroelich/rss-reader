@@ -1,4 +1,4 @@
-import Entry from '/src/db/object/entry.js';
+import Entry from '/src/db/entry.js';
 
 export default function count_unread_entries(conn) {
   return new Promise((resolve, reject) => {

@@ -1,5 +1,5 @@
 import * as locatable from '/src/db/locatable.js';
-import Entry from '/src/db/object/entry.js';
+import Entry from '/src/db/entry.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import delete_entry from '/src/db/ops/delete-entry.js';
 import get_entry from '/src/db/ops/get-entry.js';

@@ -1,5 +1,5 @@
 import * as locatable from '/src/db/locatable.js';
-import Feed from '/src/db/object/feed.js';
+import Feed from '/src/db/feed.js';
 import show_notification from '/src/extension/show-notification.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';

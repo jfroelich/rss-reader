@@ -1,6 +1,6 @@
 import * as locatable from '/src/db/locatable.js';
-import Entry from '/src/db/object/entry.js';
-import Feed from '/src/db/object/feed.js';
+import Entry from '/src/db/entry.js';
+import Feed from '/src/db/feed.js';
 import count_unread_entries_by_feed from '/src/db/ops/count-unread-entries-by-feed.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import create_feed from '/src/db/ops/create-feed.js';

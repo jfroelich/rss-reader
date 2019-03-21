@@ -1,5 +1,5 @@
 import * as locatable from '/src/db/locatable.js';
-import Feed from '/src/db/object/feed.js';
+import Feed from '/src/db/feed.js';
 import create_feeds from '/src/db/ops/create-feeds.js';
 
 // Create and store feed objects in the database based on urls extracted from
