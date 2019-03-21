@@ -4,13 +4,14 @@ import {unsubscribe} from '/src/ops/unsubscribe.js';
 
 export default async function unsubscribe_command(url_string) {
   console.log('Unsubscribing from', url_string);
+
   const url = new URL(url_string);
 
   const conn = await db_open();
   const channel = new BroadcastChannel('reader');
 
-  // unsubscribe does not check whether the feed actually exists, so look it up
-  // first in order to be more informative.
+  // unsubscribe does not check whether the feed actually exists, but we want
+  // to know if that is the case in order to provide more information.
 
   const feed = await get_feed(conn, 'url', url, true);
   if (feed) {

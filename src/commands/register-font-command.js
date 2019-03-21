@@ -2,6 +2,8 @@ import * as config from '/src/config/config.js';
 
 // Add a new font to the registered font list
 export default function register_font_command(new_font_name) {
+  console.log('Registering font', new_font_name);
+
   const fonts = config.read_array('fonts');
 
   const normal_new_name = new_font_name.toLowerCase();
