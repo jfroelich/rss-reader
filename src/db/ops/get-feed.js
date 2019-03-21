@@ -1,10 +1,11 @@
-import {Feed} from '/src/db/object/feed.js';
+import * as identifiable from '/src/db/identifiable.js';
+import Feed from '/src/db/object/feed.js';
 import assert from '/src/lib/assert.js';
 
 export default function get_feed(conn, mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
     assert(mode !== 'url' || value instanceof URL);
-    assert(mode !== 'id' || Feed.isValidId(value));
+    assert(mode !== 'id' || identifiable.is_valid_id(value));
     assert(mode !== 'id' || !key_only);
 
     const txn = conn.transaction('feed');
@@ -27,7 +28,7 @@ export default function get_feed(conn, mode = 'id', value, key_only) {
       let feed;
       if (key_only) {
         const feed_id = request.result;
-        if (Feed.isValidId(feed_id)) {
+        if (identifiable.is_valid_id(feed_id)) {
           feed = new Feed();
           feed.id = feed_id;
         }

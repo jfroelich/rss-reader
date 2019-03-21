@@ -1,7 +1,8 @@
-import {Entry, is_entry} from '/src/db/object/entry.js';
+import Entry from '/src/db/object/entry.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import get_entry from '/src/db/ops/get-entry.js';
 import db_open from '/src/db/ops/open.js';
+import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 

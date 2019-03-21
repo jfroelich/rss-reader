@@ -1,4 +1,5 @@
-import {Feed} from '/src/db/object/feed.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import delete_feed from '/src/db/ops/delete-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
@@ -14,7 +15,7 @@ export async function delete_feed_test() {
 
   const feed1 = new Feed();
   const url1 = new URL('http://www.example.com/foo.xml');
-  feed1.appendURL(url1);
+  locatable.append_url(feed1, url1);
   const feed_id1 = await create_feed(conn, undefined, feed1);
 
   const messages = [];
@@ -48,12 +49,12 @@ export async function delete_feed_test2() {
 
   const feed1 = new Feed();
   const url1 = new URL('http://www.example.com/foo.xml');
-  feed1.appendURL(url1);
+  locatable.append_url(feed1, url1);
   const feed_id1 = await create_feed(conn, undefined, feed1);
 
   const feed2 = new Feed();
   const url2 = new URL('http://www.example.com/bar.xml');
-  feed2.appendURL(url2);
+  locatable.append_url(feed2, url2);
   const feed_id2 = await create_feed(conn, undefined, feed2);
 
   await delete_feed(conn, undefined, feed_id1);

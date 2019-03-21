@@ -1,11 +1,13 @@
-import {Entry} from '/src/db/object/entry.js';
-import {Feed} from '/src/db/object/feed.js';
+import * as identifiable from '/src/db/identifiable.js';
+import Entry from '/src/db/object/entry.js';
+import Feed from '/src/db/object/feed.js';
 import assert from '/src/lib/assert.js';
 
 export default function query_entries(conn, query = {}) {
   return new Promise((resolve, reject) => {
     assert(typeof query === 'object');
-    assert(query.feed_id === undefined || Feed.isValidId(query.feed_id));
+    assert(
+        query.feed_id === undefined || identifiable.is_valid_id(query.feed_id));
     assert(is_valid_read_state(query.read_state));
     assert(is_valid_offset(query.offset));
     assert(is_valid_direction(query.direction));

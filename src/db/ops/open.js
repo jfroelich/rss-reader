@@ -1,4 +1,4 @@
-import * as magic from '/src/db/magic.js';
+import * as types from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
@@ -126,7 +126,7 @@ function add_magic_to_entries(txn) {
     if (cursor) {
       const entry = cursor.value;
       if (!('magic' in entry)) {
-        entry.magic = magic.ENTRY_MAGIC;
+        entry.magic = types.ENTRY_MAGIC;
         entry.dateUpdated = new Date();
         cursor.update(entry);
       }
@@ -142,7 +142,7 @@ function add_magic_to_feeds(txn) {
   request.onsuccess = function(event) {
     const feeds = event.target.result;
     for (const feed of feeds) {
-      feed.magic = magic.FEED_MAGIC;
+      feed.magic = types.FEED_MAGIC;
       feed.dateUpdated = new Date();
       store.put(feed);
     }

@@ -1,6 +1,9 @@
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
-import {Feed, is_feed} from '/src/db/object/feed.js';
+import * as identifiable from '/src/db/identifiable.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
+import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -15,12 +18,12 @@ export default function update_feed(conn, channel, feed, overwrite) {
     }
 
     // In both overwriting and partial situation, feed.id must be valid
-    assert(Feed.isValidId(feed.id));
+    assert(identifiable.is_valid_id(feed.id));
 
     // If overwriting, the feed must have a url. If partial, feed is just a
     // bag of properties.
     if (overwrite) {
-      assert(Feed.prototype.hasURL.call(feed));
+      assert(locatable.has_url(feed));
     }
 
     // If overwriting, full overwrite. If partial, manually normalize

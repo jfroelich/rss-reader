@@ -1,4 +1,5 @@
-import {Feed} from '/src/db/object/feed.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {lookup, LookupRequest} from '/src/lib/favicon/favicon.js';
@@ -40,9 +41,8 @@ export function lookup_feed_favicon(feed, iconn, timeout = INDEFINITE) {
   let lookup_url;
   if (feed.link) {
     lookup_url = new URL(feed.link);
-  } else if (Feed.prototype.hasURL.call(feed)) {
-    const url_string = Feed.prototype.getURLString.call(feed);
-    lookup_url = (new URL(url_string)).origin;
+  } else if (locatable.has_url(feed)) {
+    lookup_url = new URL(locatable.get_url(feed).origin);
   }
 
   const request = new LookupRequest();

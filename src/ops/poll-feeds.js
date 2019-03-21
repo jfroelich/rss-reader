@@ -1,5 +1,5 @@
 import * as config from '/src/config/config.js';
-import {Feed} from '/src/db/object/feed.js';
+import Feed from '/src/db/object/feed.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import show_notification from '/src/extension/show-notification.js';
 import assert from '/src/lib/assert.js';

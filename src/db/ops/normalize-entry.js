@@ -1,4 +1,4 @@
-import {is_entry} from '/src/db/object/entry.js';
+import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 
 // Normalize the property values of the entry. Currently this only touches

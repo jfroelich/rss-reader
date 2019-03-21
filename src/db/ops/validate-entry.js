@@ -1,6 +1,8 @@
-import {Entry, is_entry} from '/src/db/object/entry.js';
-import {Feed} from '/src/db/object/feed.js';
-import {is_date_lte, is_valid_date, vassert} from '/src/db/utils.js';
+import * as identifiable from '/src/db/identifiable.js';
+import Entry from '/src/db/object/entry.js';
+import Feed from '/src/db/object/feed.js';
+import {is_entry} from '/src/db/types.js';
+import {is_date_lte, is_valid_date, vassert} from '/src/db/validation-utils.js';
 import assert from '/src/lib/assert.js';
 
 export default function validate_entry(entry) {
@@ -9,8 +11,8 @@ export default function validate_entry(entry) {
 
   // TODO: validate faviconURLString?
 
-  vassert(entry.id === undefined || Entry.isValidId(entry.id));
-  vassert(entry.feed === undefined || Feed.isValidId(entry.feed));
+  vassert(entry.id === undefined || identifiable.is_valid_id(entry.id));
+  vassert(entry.feed === undefined || identifiable.is_valid_id(entry.feed));
   vassert(entry.urls === undefined || Array.isArray(entry.urls));
   vassert(
       entry.readState === undefined || entry.readState === Entry.READ ||

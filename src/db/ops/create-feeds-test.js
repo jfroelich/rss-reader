@@ -1,8 +1,11 @@
-import {Feed, is_feed} from '/src/db/object/feed.js';
+import * as identifiable from '/src/db/identifiable.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import create_feeds from '/src/db/ops/create-feeds.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import db_open from '/src/db/ops/open.js';
+import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
@@ -15,7 +18,7 @@ export async function create_feeds_test() {
   const num_feeds = 3, feeds = [];
   for (let i = 0; i < num_feeds; i++) {
     const feed = new Feed();
-    feed.appendURL(new URL('a://b.c' + i));
+    locatable.append_url(feed, new URL('a://b.c' + i));
     feeds.push(feed);
   }
   const ids = await create_feeds(conn, undefined, feeds);
@@ -28,7 +31,7 @@ export async function create_feeds_test() {
   const feeds_by_id = await Promise.all(get_proms);
   for (const feed of feeds_by_id) {
     assert(is_feed(feed));
-    assert(Feed.isValidId(feed.id));
+    assert(identifiable.is_valid_id(feed.id));
   }
 
   conn.close();

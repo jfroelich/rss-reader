@@ -1,4 +1,4 @@
-import {is_feed} from '/src/db/object/feed.js';
+import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_controls from '/src/lib/filter-controls.js';
 import remove_html from '/src/lib/remove-html.js';

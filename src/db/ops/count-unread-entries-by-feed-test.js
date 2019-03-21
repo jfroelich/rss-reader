@@ -1,5 +1,6 @@
-import {Entry} from '/src/db/object/entry.js';
-import {Feed} from '/src/db/object/feed.js';
+import * as locatable from '/src/db/locatable.js';
+import Entry from '/src/db/object/entry.js';
+import Feed from '/src/db/object/feed.js';
 import count_unread_entries_by_feed from '/src/db/ops/count-unread-entries-by-feed.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import create_feed from '/src/db/ops/create-feed.js';
@@ -15,7 +16,7 @@ export async function count_unread_entries_by_feed_test() {
 
   const feed = new Feed();
   const url = new URL('http://www.example.com/feed.xml');
-  feed.appendURL(url);
+  locatable.append_url(feed, url);
   const feed_id = await create_feed(conn, undefined, feed);
 
   const num_entries_created_per_type = 5;

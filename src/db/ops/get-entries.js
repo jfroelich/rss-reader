@@ -1,4 +1,4 @@
-import {Entry} from '/src/db/object/entry.js';
+import Entry from '/src/db/object/entry.js';
 import assert from '/src/lib/assert.js';
 
 export default function get_entries(conn, mode = 'all', offset, limit) {

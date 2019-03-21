@@ -1,4 +1,5 @@
-import {Feed} from '/src/db/object/feed.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import activate_feed from '/src/db/ops/activate-feed.js';
 import deactivate_feed from '/src/db/ops/deactivate-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
@@ -81,7 +82,7 @@ FeedList.prototype.appendFeed = function(feed) {
   }
 
   const title_element = document.createElement('span');
-  const feed_title = feed.title || feed.getURLString();
+  const feed_title = feed.title || locatable.get_url_string(feed);
   // Title is automatically truncated via CSS so just produce the full value
   title_element.textContent = feed_title;
   item_element.appendChild(title_element);
@@ -125,7 +126,8 @@ FeedList.prototype.itemOnclick = async function(event) {
   feed = Object.assign(new Feed(), feed);
 
   const details_title_element = document.getElementById('details-title');
-  details_title_element.textContent = feed.title || feed.getURLString();
+  details_title_element.textContent =
+      feed.title || locatable.get_url_string(feed);
 
   const details_favicon_element = document.getElementById('details-favicon');
   if (feed.faviconURLString) {
@@ -140,7 +142,7 @@ FeedList.prototype.itemOnclick = async function(event) {
   details_desc_element.textContent = feed.description || '';
 
   const feed_url_element = document.getElementById('details-feed-url');
-  feed_url_element.textContent = feed.getURLString();
+  feed_url_element.textContent = locatable.get_url_string(feed);
 
   const feed_link_element = document.getElementById('details-feed-link');
   feed_link_element.textContent = feed.link || '';

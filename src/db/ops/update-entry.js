@@ -1,5 +1,7 @@
-import {Entry, is_entry} from '/src/db/object/entry.js';
+import * as identifiable from '/src/db/identifiable.js';
+import Entry from '/src/db/object/entry.js';
 import normalize_entry from '/src/db/ops/normalize-entry.js';
+import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -7,7 +9,7 @@ import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 export default function update_entry(conn, channel, entry) {
   return new Promise((resolve, reject) => {
     assert(is_entry(entry));
-    assert(Entry.isValidId(entry.id));
+    assert(identifiable.is_valid_id(entry.id));
     // Entries are not required to have urls in the model layer, so there is no
     // assertion here on entry.urls
 

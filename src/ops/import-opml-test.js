@@ -1,5 +1,7 @@
-import {Feed, is_feed} from '/src/db/object/feed.js';
+import * as identifiable from '/src/db/identifiable.js';
+import Feed from '/src/db/object/feed.js';
 import db_open from '/src/db/ops/open.js';
+import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 import {import_opml} from '/src/ops/import-opml.js';
@@ -30,7 +32,7 @@ export async function import_opml_test() {
   const results = await import_opml(conn, channel, files);
   assert(results);
   assert(results.length === 1);
-  assert(Feed.isValidId(results[0]));
+  assert(identifiable.is_valid_id(results[0]));
 
   assert(messages.length === 1);
   assert(messages[0].type === 'feed-created');

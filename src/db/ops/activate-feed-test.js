@@ -1,8 +1,10 @@
-import {Feed, is_feed} from '/src/db/object/feed.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import activate_feed from '/src/db/ops/activate-feed.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import db_open from '/src/db/ops/open.js';
+import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
@@ -15,7 +17,7 @@ export async function activate_feed_test() {
   // Create an inactive feed and store it
   const feed = new Feed();
   feed.active = false;
-  feed.appendURL(new URL('a://b.c'));
+  locatable.append_url(feed, new URL('a://b.c'));
   const id = await create_feed(conn, undefined, feed);
 
   const messages = [];

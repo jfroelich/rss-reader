@@ -1,8 +1,10 @@
-import {Feed, is_feed} from '/src/db/object/feed.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import deactivate_feed from '/src/db/ops/deactivate-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import db_open from '/src/db/ops/open.js';
+import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
@@ -14,7 +16,7 @@ export async function deactivate_feed_test() {
 
   const feed = new Feed();
   const url = new URL('a://b.c');
-  feed.appendURL(url);
+  locatable.append_url(feed, url);
   feed.active = true;
   const feed_id = await create_feed(conn, undefined, feed);
 

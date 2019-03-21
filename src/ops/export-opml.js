@@ -1,3 +1,4 @@
+import * as locatable from '/src/db/locatable.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import assert from '/src/lib/assert.js';
 
@@ -33,11 +34,11 @@ export async function export_opml(conn, document_title) {
 function feed_to_outline(feed) {
   const outline = {};
   outline.type = feed.type;
-  // TODO: use Feed.hasURL
-  if (feed.urls && feed.urls.length) {
-    // TODO: use Feed.getURLString
-    outline.xml_url = feed.urls[feed.urls.length - 1];
+
+  if (locatable.has_url(feed)) {
+    outline.xml_url = locatable.get_url_string(feed);
   }
+
   outline.title = feed.title;
   outline.description = feed.description;
   outline.html_url = feed.link;

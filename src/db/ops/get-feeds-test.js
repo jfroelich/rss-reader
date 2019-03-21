@@ -1,4 +1,5 @@
-import {Feed} from '/src/db/object/feed.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import db_open from '/src/db/ops/open.js';
@@ -17,7 +18,7 @@ export async function get_feeds_test() {
   for (let i = 0; i < n; i++) {
     const feed = new Feed();
     const url = new URL('a://b.c' + i);
-    feed.appendURL(url);
+    locatable.append_url(feed, url);
     // make some inactive
     if (i % 2 === 0) {
       feed.active = false;

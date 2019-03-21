@@ -1,5 +1,6 @@
-import {Entry, is_entry} from '/src/db/object/entry.js';
+import Entry from '/src/db/object/entry.js';
 import normalize_entry from '/src/db/ops/normalize-entry.js';
+import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 

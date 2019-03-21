@@ -1,4 +1,4 @@
-import {Entry} from '/src/db/object/entry.js';
+import Entry from '/src/db/object/entry.js';
 import normalize_entry from '/src/db/ops/normalize-entry.js';
 import assert from '/src/lib/assert.js';
 

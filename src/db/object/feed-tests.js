@@ -1,5 +1,7 @@
-import {is_entry} from '/src/db/object/entry.js';
-import {Feed, is_feed} from '/src/db/object/feed.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
+import {is_entry} from '/src/db/types.js';
+import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 
 export function is_feed_test() {
@@ -10,15 +12,16 @@ export function is_feed_test() {
   assert(!is_feed(nomagic));
 }
 
+// TODO: move this an the corresponding entry test to a shared test called
+// locatable-test, because this is just exercising things redundantly
 export function append_feed_url_test() {
   const feed = new Feed();
-  assert(!feed.hasURL());  // precondition
-  feed.appendURL(new URL('a://b.c1'));
-  assert(feed.hasURL());  // expect change
-  const url2 = new URL('a://b.c2');
-  feed.appendURL(url2);
-  assert(feed.urls.length === 2);  // expect increment
-  feed.appendURL(url2);
-  assert(feed.urls.length === 2);  // expect no change
-  assert(is_feed(feed));           // modifications preserved type
+  let appended = false;
+  appended = locatable.append_url(feed, new URL('a://b.c1'));
+  assert(appended);
+  assert(locatable.has_url(feed));
+
+  appended = locatable.append_url(feed, new URL('a://b.c2'));
+  assert(appended);
+  assert(locatable.has_url(feed));
 }

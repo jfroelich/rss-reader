@@ -1,5 +1,7 @@
-import {Feed, is_feed} from '/src/db/object/feed.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
+import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -10,7 +12,7 @@ export default function create_feeds(conn, channel, feeds) {
 
     for (const feed of feeds) {
       assert(is_feed(feed));
-      assert(Feed.prototype.hasURL.call(feed));
+      assert(locatable.has_url(feed));
     }
 
     for (const feed of feeds) {

@@ -1,5 +1,7 @@
-import {Feed, is_feed} from '/src/db/object/feed.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
+import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -8,7 +10,7 @@ export default function create_feed(conn, channel, feed) {
     assert(is_feed(feed));
 
     // The model requires that a feed has a url
-    assert(Feed.prototype.hasURL.call(feed));
+    assert(locatable.has_url(feed));
 
     // If feed.active is true, then leave as true. If false, leave as false.
     // But if undefined, impute true. This allows the caller to create

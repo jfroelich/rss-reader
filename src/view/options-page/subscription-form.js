@@ -1,4 +1,5 @@
 import {ConstraintError} from '/src/db/errors.js';
+import * as locatable from '/src/db/locatable.js';
 import db_open from '/src/db/ops/open.js';
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
@@ -123,7 +124,7 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
 };
 
 SubscriptionForm.prototype.onFeedStored = function(feed) {
-  this.appendMonitorMessage('Subscribed to ' + feed.getURLString());
+  this.appendMonitorMessage('Subscribed to ' + locatable.get_url_string(feed));
   this.hideMonitor();
   if (this.onsubscribe) {
     this.onsubscribe(feed);

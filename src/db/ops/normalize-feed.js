@@ -1,4 +1,4 @@
-import {is_feed} from '/src/db/object/feed.js';
+import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 
 // NOTE: no accompanying test module because it is redundant with

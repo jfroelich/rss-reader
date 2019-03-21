@@ -1,4 +1,4 @@
-import {is_entry} from '/src/db/object/entry.js';
+import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_controls from '/src/lib/filter-controls.js';
 import filter_unprintables from '/src/lib/filter-unprintables.js';

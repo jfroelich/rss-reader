@@ -1,3 +1,4 @@
+import * as locatable from '/src/db/locatable.js';
 import db_open from '/src/db/ops/open.js';
 import {Deadline} from '/src/lib/deadline.js';
 import * as favicon from '/src/lib/favicon/favicon.js';
@@ -24,5 +25,6 @@ export default async function subscribe_command(url_string) {
   conn.close();
   iconn.close();
 
-  console.log('Successfully subscribed to feed', feed.getURLString());
+  console.log(
+      'Successfully subscribed to feed', locatable.get_url_string(feed));
 }

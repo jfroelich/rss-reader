@@ -1,4 +1,5 @@
-import {Feed} from '/src/db/object/feed.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed_ids from '/src/db/ops/get-feed-ids.js';
 import db_open from '/src/db/ops/open.js';
@@ -16,7 +17,7 @@ export async function get_feed_ids_test() {
   for (let i = 0; i < n; i++) {
     const feed = new Feed();
     const url = new URL('a://b.c/feed' + i + '.xml');
-    feed.appendURL(url);
+    locatable.append_url(feed, url);
     create_promises.push(create_feed(conn, undefined, feed));
   }
 

@@ -1,4 +1,5 @@
-import {Feed} from '/src/db/object/feed.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import db_open from '/src/db/ops/open.js';
@@ -15,7 +16,8 @@ export async function update_feed_test() {
   let feed = new Feed();
   feed.title = 'first';
   const url = new URL('a://b.c');
-  feed.appendURL(url);
+  locatable.append_url(feed, url);
+
   let new_id = await create_feed(conn, undefined, feed);
 
   feed.id = new_id;

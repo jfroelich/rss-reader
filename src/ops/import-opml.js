@@ -1,4 +1,5 @@
-import {Feed} from '/src/db/object/feed.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import create_feeds from '/src/db/ops/create-feeds.js';
 
 // Create and store feed objects in the database based on urls extracted from
@@ -32,7 +33,7 @@ export async function import_opml(conn, channel, files) {
 
   const feeds = url_set.map(url => {
     const feed = new Feed();
-    feed.appendURL(url);
+    locatable.append_url(feed, url);
     return feed;
   });
 

@@ -1,7 +1,10 @@
-import {Feed, is_feed} from '/src/db/object/feed.js';
+import * as identifiable from '/src/db/identifiable.js';
+import * as locatable from '/src/db/locatable.js';
+import Feed from '/src/db/object/feed.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import db_open from '/src/db/ops/open.js';
+import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
@@ -13,10 +16,10 @@ export async function create_feed_test() {
 
   const feed = new Feed();
   const feed_url = new URL('http://www.example.com/example.rss');
-  feed.appendURL(feed_url);
+  locatable.append_url(feed, feed_url);
 
   const stored_feed_id = await create_feed(conn, undefined, feed);
-  assert(Feed.isValidId(stored_feed_id));
+  assert(identifiable.is_valid_id(stored_feed_id));
   let stored_feed = await get_feed(conn, 'url', feed_url, true);
   assert(is_feed(stored_feed));
 
@@ -34,11 +37,12 @@ export async function create_feed_url_constraint_test() {
   const conn = await db_open(db_name);
 
   const feed1 = new Feed();
-  feed1.appendURL(new URL('http://www.example.com/example.rss'));
+  locatable.append_url(feed1, new URL('http://www.example.com/example.rss'));
   await create_feed(conn, undefined, feed1);
 
   const feed2 = new Feed();
-  feed2.appendURL(new URL('http://www.example.com/example.rss'));
+  locatable.append_url(feed2, new URL('http://www.example.com/example.rss'));
+
   let create_error;
   try {
     await create_feed(conn, undefined, feed2);

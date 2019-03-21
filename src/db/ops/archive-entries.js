@@ -1,6 +1,7 @@
-import {Entry, is_entry} from '/src/db/object/entry.js';
+import Entry from '/src/db/object/entry.js';
 import assert from '/src/lib/assert.js';
 import sizeof from '/src/lib/sizeof.js';
+import {is_entry} from '/src/db/types.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 

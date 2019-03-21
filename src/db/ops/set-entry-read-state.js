@@ -1,5 +1,7 @@
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
-import {Entry, is_entry} from '/src/db/object/entry.js';
+import * as identifiable from '/src/db/identifiable.js';
+import Entry from '/src/db/object/entry.js';
+import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 
 // Modify the read state property of an entry in the database. |id| is id of
@@ -7,7 +9,7 @@ import assert from '/src/lib/assert.js';
 // false if marking as unread, defaults to false.
 export default function set_entry_read_state(conn, channel, id, read = false) {
   return new Promise((resolve, reject) => {
-    assert(Entry.isValidId(id));
+    assert(identifiable.is_valid_id(id));
     assert(typeof read === 'boolean');
     const txn = conn.transaction('entry', 'readwrite');
     txn.onerror = event => reject(event.target.error);
