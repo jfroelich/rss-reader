@@ -6,9 +6,9 @@ import {color_contrast_filter} from '/src/lib/dom-filters/color-contrast-filter.
 import {image_dimensions_filter} from '/src/lib/dom-filters/image-dimensions-filter.js';
 import {image_reachable_filter} from '/src/lib/dom-filters/image-reachable-filter.js';
 import {lonestar_filter} from '/src/lib/dom-filters/lonestar-filter.js';
-import {node_is_leaf} from '/src/lib/dom-hierarchy.js';
 import * as dom_visibility from '/src/lib/dom-visibility.js';
 import * as image_utils from '/src/lib/image-utils.js';
+import node_is_leaf from '/src/lib/node-is-leaf.js';
 import * as srcset_utils from '/src/lib/srcset-utils.js';
 import unwrap_element from '/src/lib/unwrap-element.js';
 

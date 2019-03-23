@@ -1,7 +1,7 @@
 // Returns whether the input node is a leaf node. A leaf node is basically an
-// element without child nodes, or a whitespace text node, or a comment node.
-// This is a recursive function.
-export function node_is_leaf(node) {
+// element that has no child nodes, or whose child nodes are only leaves, or a
+// whitespace text node, or a comment node. This is a recursive function.
+export default function node_is_leaf(node) {
   const exception_names = [
     'area', 'audio',  'base', 'col',      'command', 'br',    'canvas', 'col',
     'hr',   'iframe', 'img',  'input',    'keygen',  'meta',  'nobr',   'param',
