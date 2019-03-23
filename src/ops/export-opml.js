@@ -2,12 +2,9 @@ import * as locatable from '/src/db/locatable.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import assert from '/src/lib/assert.js';
 
-// TODO: implement a test that creates a test database, inserts a fake feed,
-// calls export-opml, and asserts the feed is present in the returned document
-
 // Returns an in memory OPML document object filled with the feeds from the
-// database. document_title is optional.
-export async function export_opml(conn, document_title) {
+// database. |document_title| is optional dom string (set by textContent).
+export default async function export_opml(conn, document_title) {
   assert(conn instanceof IDBDatabase);
 
   const feeds = await get_feeds(conn, 'all', false);
@@ -51,7 +48,7 @@ function maybe_set(element, name, value) {
   }
 }
 
-export function create_opml_template(document_title) {
+function create_opml_template(document_title) {
   const doc = document.implementation.createDocument(null, 'opml', null);
   doc.documentElement.setAttribute('version', '2.0');
 

@@ -8,7 +8,7 @@ import refresh_badge from '/src/extension/refresh-badge.js';
 import assert from '/src/lib/assert.js';
 import * as favicon from '/src/lib/favicon.js';
 import filter_publisher from '/src/lib/filter-publisher.js';
-import {export_opml} from '/src/ops/export-opml.js';
+import export_opml from '/src/ops/export-opml.js';
 import {import_opml} from '/src/ops/import-opml.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 
