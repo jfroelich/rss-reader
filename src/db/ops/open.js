@@ -3,10 +3,6 @@ import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
-// TODO: rename feed object store to feeds
-// TODO: rename entry object store to entries
-// channel-name was 'reader'
-
 // Asynchronously connect to the indexedDB database
 // @param name {String}
 // @param version {Number}
