@@ -45,7 +45,7 @@ import * as unwrap_element_tests from '/src/lib/unwrap-element-tests.js';
 import {sniffer_test} from '/src/lib/url-sniffer-test.js';
 import * as import_entry_tests from '/src/ops/import-entry-tests.js';
 import {import_opml_test} from '/src/ops/import-opml-test.js';
-import {subscribe_test} from '/src/ops/subscribe/subscribe-test.js';
+import {subscribe_test} from '/src/ops/subscribe-test.js';
 
 const registry = [];
 register_test(activate_feed_test);

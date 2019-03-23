@@ -2,7 +2,7 @@ import * as locatable from '/src/db/locatable.js';
 import db_open from '/src/db/ops/open.js';
 import {Deadline} from '/src/lib/deadline.js';
 import * as favicon from '/src/lib/favicon.js';
-import {subscribe} from '/src/ops/subscribe/subscribe.js';
+import {subscribe} from '/src/ops/subscribe.js';
 
 export default async function subscribe_command(url_string) {
   console.log('Subscribing to url %s ...', url_string);

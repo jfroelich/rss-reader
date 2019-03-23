@@ -1,11 +1,11 @@
-import * as identifiable from '/src/db/identifiable.js';
 import Feed from '/src/db/feed.js';
+import * as identifiable from '/src/db/identifiable.js';
 import db_open from '/src/db/ops/open.js';
 import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
-import {subscribe} from '/src/ops/subscribe/subscribe.js';
+import {subscribe} from '/src/ops/subscribe.js';
 
 export async function subscribe_test() {
   const db_name = 'subscribe-test';
@@ -21,7 +21,7 @@ export async function subscribe_test() {
     close: function() {}
   };
 
-  const path = '/src/ops/subscribe/subscribe-test-feed.xml';
+  const path = '/src/ops/subscribe-test-feed.xml';
   const local_url_string = chrome.extension.getURL(path);
   const url = new URL(local_url_string);
 
