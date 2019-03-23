@@ -4,8 +4,7 @@ import assert from '/src/lib/assert.js';
 // NOTE: no accompanying test module because it is redundant with
 // normalize-entry
 // TODO: maybe it would work out better to have normalize-resource since both
-// entry and feed are subtypes (append-url-common would also fit in resource,
-// and resource would be an abstract type (throw error in constructor)).
+// entry and feed are subtypes
 
 export default function normalize_feed(feed) {
   assert(is_feed(feed));
