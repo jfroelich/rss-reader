@@ -1,9 +1,5 @@
-import * as rewrite_rules from '/src/config/rewrite-rules.js';
 import * as tls from '/src/config/typed-localstorage.js';
 import * as color from '/src/lib/color.js';
-
-// TODO: rather than module methods, consider exporting a Config class. This
-// way config is injectable, and thereby more easily mocked in tests.
 
 export function rename(old_name, new_name) {
   return tls.rename(old_name, new_name);
@@ -75,9 +71,35 @@ export function get_inaccessible_content_descriptors() {
 // TODO: eventually think of how to persist in localStorage
 export function get_rewrite_rules() {
   const rules = [];
-  rules.push(rewrite_rules.google_news_rule);
-  rules.push(rewrite_rules.techcrunch_rule);
-  rules.push(rewrite_rules.facebook_exit_rule);
+
+  rules.push(function google_news_rule(url) {
+    if (url.hostname === 'news.google.com' && url.pathname === '/news/url') {
+      const param = url.searchParams.get('url');
+      try {
+        return new URL(param);
+      } catch (error) {
+      }
+    }
+  });
+
+  rules.push(function techcrunch_rule(url) {
+    if (url.hostname === 'techcrunch.com' && url.searchParams.has('ncid')) {
+      const output = new URL(url.href);
+      output.searchParams.delete('ncid');
+      return output;
+    }
+  });
+
+  rules.push(function facebook_exit_rule(url) {
+    if (url.hostname === 'l.facebook.com' && url.pathname === '/l.php') {
+      const param = url.searchParams.get('u');
+      try {
+        return new URL(param);
+      } catch (error) {
+      }
+    }
+  });
+
   return rules;
 }
 
