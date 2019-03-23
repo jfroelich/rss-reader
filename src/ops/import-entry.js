@@ -1,7 +1,7 @@
 import * as config from '/src/config/config.js';
+import Entry from '/src/db/entry.js';
 import {ConstraintError} from '/src/db/errors.js';
 import * as locatable from '/src/db/locatable.js';
-import Entry from '/src/db/entry.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import get_entry from '/src/db/ops/get-entry.js';
 import sanitize_entry from '/src/db/ops/sanitize-entry.js';
@@ -165,7 +165,12 @@ function fetch_entry_html(url, timeout, inaccessible_descriptors) {
     }
   }
 
-  return fetch_html(url, {timeout: timeout});
+  const fetch_options = {};
+  fetch_options.timeout = timeout;
+  // allow for text/plain as web page mime type
+  fetch_options.allow_text = true;
+
+  return fetch_html(url, fetch_options);
 }
 
 export function rewrite_url(url, rules) {
