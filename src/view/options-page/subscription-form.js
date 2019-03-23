@@ -5,7 +5,7 @@ import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
 import {Deadline} from '/src/lib/deadline.js';
 import fade_element from '/src/lib/fade-element.js';
-import * as favicon from '/src/lib/favicon/favicon.js';
+import * as favicon from '/src/lib/favicon.js';
 import {subscribe} from '/src/ops/subscribe/subscribe.js';
 
 export function SubscriptionForm() {

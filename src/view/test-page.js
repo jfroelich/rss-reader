@@ -29,7 +29,7 @@ import * as color_contrast_filter_tests from '/src/lib/dom-filters/color-contras
 import * as dom_filter_tests from '/src/lib/dom-filters/dom-filter-tests.js';
 import * as image_size_filter_tests from '/src/lib/dom-filters/image-dimensions-filter-tests.js';
 import {legible_text_filter_test} from '/src/lib/dom-filters/legible-text-filter-test.js';
-import * as favicon_tests from '/src/lib/favicon/favicon-tests.js';
+import * as favicon_tests from '/src/lib/favicon-tests.js';
 import {parse_feed_test} from '/src/lib/feed-parser-test.js';
 import {fetch_html_test} from '/src/lib/fetch-html-test.js';
 import {fetch_image_element_test} from '/src/lib/fetch-image-element-test.js';

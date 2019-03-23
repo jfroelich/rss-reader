@@ -1,5 +1,5 @@
 import db_open from '/src/db/ops/open.js';
-import * as favicon from '/src/lib/favicon/favicon.js';
+import * as favicon from '/src/lib/favicon.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 
 export default async function poll_feeds_command() {

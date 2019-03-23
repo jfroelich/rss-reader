@@ -1,4 +1,4 @@
-import * as favicon from '/src/lib/favicon/favicon.js';
+import * as favicon from '/src/lib/favicon.js';
 
 export default async function lookup_favicon_command(url_string, cached) {
   console.log('Looking up favicon for url', url_string);

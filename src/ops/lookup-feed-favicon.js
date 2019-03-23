@@ -2,7 +2,7 @@ import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
-import {lookup, LookupRequest} from '/src/lib/favicon/favicon.js';
+import {lookup, LookupRequest} from '/src/lib/favicon.js';
 
 // TODO: revisit the conclusion that finding the lookup url is independent of
 // the model. If a feed already has a faviconURLString property, then what is

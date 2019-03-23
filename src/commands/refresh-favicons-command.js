@@ -1,5 +1,5 @@
 import db_open from '/src/db/ops/open.js';
-import * as favicon from '/src/lib/favicon/favicon.js';
+import * as favicon from '/src/lib/favicon.js';
 import refresh_feed_icons from '/src/ops/refresh-feed-icons.js';
 
 export default async function refresh_favicons_command() {

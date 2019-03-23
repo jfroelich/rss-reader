@@ -1,4 +1,4 @@
-import * as favicon from '/src/lib/favicon/favicon.js';
+import * as favicon from '/src/lib/favicon.js';
 
 export default async function clear_favicons_command() {
   console.log('Clearing favicon cache...');

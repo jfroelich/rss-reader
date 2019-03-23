@@ -1,4 +1,4 @@
-import * as favicon from '/src/lib/favicon/favicon.js';
+import * as favicon from '/src/lib/favicon.js';
 
 export default async function compact_favicons_command() {
   console.log('Compacting favicon cache...');

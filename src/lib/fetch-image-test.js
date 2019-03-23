@@ -20,7 +20,7 @@ export async function fetch_image_test() {
   assert(response);
 
   // Test against a non-existent image
-  path = '/src/lib/favicon/i-do-not-exist.png';
+  path = '/src/lib/i-do-not-exist.png';
   url_string = resolve_extension_path(path);
   url = new URL(url_string);
   options = undefined;  // reset for isolation, presumably indefinite default

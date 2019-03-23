@@ -9,7 +9,7 @@ import validate_entry from '/src/db/ops/validate-entry.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {composite_document_filter} from '/src/lib/dom-filters/dom-filters.js';
-import * as favicon from '/src/lib/favicon/favicon.js';
+import * as favicon from '/src/lib/favicon.js';
 import fetch_html from '/src/lib/fetch-html.js';
 import parse_html from '/src/lib/parse-html.js';
 import set_base_uri from '/src/lib/set-base-uri.js';

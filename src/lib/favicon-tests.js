@@ -1,5 +1,5 @@
 import assert from '/src/lib/assert.js';
-import * as favicon from '/src/lib/favicon/favicon.js';
+import * as favicon from '/src/lib/favicon.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 // This is a very specific test that ensures favicon lookup functionality
