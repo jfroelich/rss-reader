@@ -1,4 +1,4 @@
-import * as config from '/src/config/config.js';
+import * as config from '/src/config.js';
 import * as cron_control from '/src/cron.js';
 import db_open from '/src/db/ops/open.js';
 import open_view from '/src/extension/open-view.js';

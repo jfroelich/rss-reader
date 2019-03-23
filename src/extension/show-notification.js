@@ -1,4 +1,4 @@
-import * as config from '/src/config/config.js';
+import * as config from '/src/config.js';
 import open_view from '/src/extension/open-view.js';
 
 const default_icon = chrome.extension.getURL('/images/rss_icon_trans.gif');

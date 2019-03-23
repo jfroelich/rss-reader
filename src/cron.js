@@ -1,4 +1,4 @@
-import * as config from '/src/config/config.js';
+import * as config from '/src/config.js';
 import archive_entries from '/src/db/ops/archive-entries.js';
 import db_open from '/src/db/ops/open.js';
 import * as favicon from '/src/lib/favicon.js';

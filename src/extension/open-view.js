@@ -1,4 +1,4 @@
-import * as config from '/src/config/config.js';
+import * as config from '/src/config.js';
 
 // Open the slideshow view in a tab.
 export default async function open_view() {

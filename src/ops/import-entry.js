@@ -1,4 +1,4 @@
-import * as config from '/src/config/config.js';
+import * as config from '/src/config.js';
 import Entry from '/src/db/entry.js';
 import {ConstraintError} from '/src/db/errors.js';
 import * as locatable from '/src/db/locatable.js';

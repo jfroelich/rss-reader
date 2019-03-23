@@ -1,4 +1,4 @@
-import * as config from '/src/config/config.js';
+import * as config from '/src/config.js';
 import get_entries from '/src/db/ops/get-entries.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import db_open from '/src/db/ops/open.js';

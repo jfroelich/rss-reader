@@ -1,60 +1,83 @@
-import * as tls from '/src/config/typed-localstorage.js';
 import * as color from '/src/lib/color.js';
 
 export function rename(old_name, new_name) {
-  return tls.rename(old_name, new_name);
+  const value = read_string(old_name);
+  if (typeof value !== 'undefined') {
+    write_string(new_name, value);
+  }
+  remove(old_name);
 }
 
 export function has_key(key) {
-  return tls.has_key(key);
+  return typeof localStorage[key] !== 'undefined';
 }
 
 export function read_boolean(key) {
-  return tls.read_boolean(key);
+  return typeof localStorage[key] !== 'undefined';
 }
 
 export function write_boolean(key, value) {
-  return tls.write_boolean(key, value);
+  if (value) {
+    localStorage[key] = '1';
+  } else {
+    delete localStorage[key];
+  }
 }
 
+// TODO: drop support for fallback value
 export function read_int(key, fallback_value) {
-  return tls.read_int(key, fallback_value);
+  const string_value = localStorage[key];
+  if (string_value) {
+    const integer_value = parseInt(string_value, 10);
+    if (!isNaN(integer_value)) {
+      return integer_value;
+    }
+  }
+
+  if (Number.isInteger(fallback_value)) {
+    return fallback_value;
+  }
+
+  return NaN;
 }
 
 export function write_int(key, value) {
-  return tls.write_int(key, value);
+  localStorage[key] = '' + value;
 }
 
 export function read_float(key) {
-  return tls.read_float(key);
+  return parseFloat(localStorage[key], 10);
 }
 
 export function write_float(key, value) {
-  return tls.write_float(key, value);
+  localStorage[key] = '' + value;
 }
 
 export function read_string(key) {
-  return tls.read_string(key);
+  return localStorage[key];
 }
 
 export function write_string(key, value) {
-  return tls.write_string(key, value);
+  localStorage[key] = value;
 }
 
 export function read_array(key) {
-  return tls.read_array(key);
+  const value = localStorage[key];
+  return value ? JSON.parse(value) : [];
 }
 
-export function write_array(key, array) {
-  return tls.write_array(key, array);
+export function write_array(key, value) {
+  localStorage[key] = JSON.stringify(value);
 }
 
 export function remove(key) {
-  return tls.remove(key);
+  delete localStorage[key];
 }
 
 export function remove_all(keys) {
-  return tls.remove_all(keys);
+  for (const key of keys) {
+    delete localStorage[key];
+  }
 }
 
 // TODO: eventually figure out how to persist in localStorage
@@ -159,65 +182,65 @@ export function handle_update(event) {
     'entry_title_max_length', 'refresh_badge_delay', 'last_poll_date'
   ];
   for (const key of deprecated_keys) {
-    tls.remove(key);
+    remove(key);
   }
 
-  tls.rename('LAST_ALARM', 'last_alarm');
-  tls.rename(
+  rename('LAST_ALARM', 'last_alarm');
+  rename(
       'sanitize_document_image_size_fetch_timeout', 'set_image_sizes_timeout');
-  tls.rename(
+  rename(
       'sanitize_document_low_contrast_default_matte', 'contrast_default_matte');
-  tls.rename('sanitize_document_emphasis_max_length', 'emphasis_max_length');
-  tls.rename('sanitize_document_table_scan_max_rows', 'table_scan_max_rows');
-  tls.rename('article_title_display_max_length', 'entry_title_max_length');
-  tls.rename('MIN_CONTRAST_RATIO', 'min_contrast_ratio');
-  tls.rename('PADDING', 'padding');
-  tls.rename('BG_IMAGE', 'bg_image');
-  tls.rename('BG_COLOR', 'bg_color');
-  tls.rename('HEADER_FONT_FAMILY', 'header_font_family');
-  tls.rename('HEADER_FONT_SIZE', 'header_font_size');
-  tls.rename('BODY_FONT_FAMILY', 'body_font_family');
-  tls.rename('BODY_FONT_SIZE', 'body_font_size');
-  tls.rename('BODY_LINE_HEIGHT', 'body_line_height');
-  tls.rename('JUSTIFY_TEXT', 'justify_text');
-  tls.rename('COLUMN_COUNT', 'column_count');
-  tls.rename('SHOW_NOTIFICATIONS', 'show_notifications');
-  tls.rename('ONLY_POLL_IF_IDLE', 'only_poll_if_idle');
+  rename('sanitize_document_emphasis_max_length', 'emphasis_max_length');
+  rename('sanitize_document_table_scan_max_rows', 'table_scan_max_rows');
+  rename('article_title_display_max_length', 'entry_title_max_length');
+  rename('MIN_CONTRAST_RATIO', 'min_contrast_ratio');
+  rename('PADDING', 'padding');
+  rename('BG_IMAGE', 'bg_image');
+  rename('BG_COLOR', 'bg_color');
+  rename('HEADER_FONT_FAMILY', 'header_font_family');
+  rename('HEADER_FONT_SIZE', 'header_font_size');
+  rename('BODY_FONT_FAMILY', 'body_font_family');
+  rename('BODY_FONT_SIZE', 'body_font_size');
+  rename('BODY_LINE_HEIGHT', 'body_line_height');
+  rename('JUSTIFY_TEXT', 'justify_text');
+  rename('COLUMN_COUNT', 'column_count');
+  rename('SHOW_NOTIFICATIONS', 'show_notifications');
+  rename('ONLY_POLL_IF_IDLE', 'only_poll_if_idle');
 
   // Strip old path from bg_image setting
-  const path = tls.read_string('bg_image');
+  const path = read_string('bg_image');
   if (path && path.startsWith('/images/')) {
-    tls.write_string('bg_image', path.substring('/images/'.length));
+    write_string('bg_image', path.substring('/images/'.length));
   }
 }
 
 export function init(event) {
-  tls.write_boolean('reuse_newtab', true);
-  tls.write_boolean('show_notifications', true);
-  tls.write_boolean('only_poll_if_idle', true);
-  tls.write_int('idle_poll_secs', 30);
-  tls.write_int('contrast_default_matte', color.WHITE);
-  tls.write_int('emphasis_max_length', 200);
-  tls.write_int('table_scan_max_rows', 20);
-  tls.write_float('min_contrast_ratio', 4.5);
-  tls.write_int('set_image_sizes_timeout', 300);
-  tls.write_int('initial_entry_load_limit', 3);
-  tls.write_float('slide_transition_duration', 0.16);
-  tls.write_int('padding', 180);
-  tls.write_string('bg_color', '#fefdfd');
-  tls.write_string('header_font_family', 'Open Sans Regular');
-  tls.write_int('header_font_size', 70);
-  tls.write_string('body_font_family', 'Edward Tufte Roman');
-  tls.write_int('body_font_size', 36);
-  tls.write_int('body_line_height', 46);
-  tls.write_int('column_count', 1);
-  tls.write_boolean('justify_text', false);
-  tls.write_array('background_images', background_images);
+  write_boolean('reuse_newtab', true);
+  write_boolean('show_notifications', true);
+  write_boolean('only_poll_if_idle', true);
+  write_int('idle_poll_secs', 30);
+  write_int('contrast_default_matte', color.WHITE);
+  write_int('emphasis_max_length', 200);
+  write_int('table_scan_max_rows', 20);
+  write_float('min_contrast_ratio', 4.5);
+  write_int('set_image_sizes_timeout', 300);
+  write_int('initial_entry_load_limit', 3);
+  write_float('slide_transition_duration', 0.16);
+  write_int('padding', 180);
+  write_string('bg_color', '#fefdfd');
+  write_string('header_font_family', 'Open Sans Regular');
+  write_int('header_font_size', 70);
+  write_string('body_font_family', 'Edward Tufte Roman');
+  write_int('body_font_size', 36);
+  write_int('body_line_height', 46);
+  write_int('column_count', 1);
+  write_boolean('justify_text', false);
+  write_array('background_images', background_images);
 
   // NOTE: this is within an init context, so we disregard any existing value
   // and overwrite the value with the defaults. this will cause any custom
   // registered fonts to no longer exist
-  tls.write_array('fonts', default_fonts);
+  write_array('fonts', default_fonts);
 }
 
 // React to a localStorage property change. Note that this is only fired by the
@@ -313,7 +336,7 @@ export function dom_load_listener() {
   sheet.addRule('.entry .entry-title', page_style_title_rule_create());
   sheet.addRule('.entry .entry-content', page_style_content_rule_create());
 
-  const padding = tls.read_int('padding');
+  const padding = read_int('padding');
   if (!isNaN(padding)) {
     sheet.addRule('.slide-padding-wrapper', 'padding: ' + padding + 'px');
   }
@@ -322,8 +345,8 @@ export function dom_load_listener() {
 function page_style_entry_rule_create() {
   const buffer = [];
 
-  let path = tls.read_string('bg_image');
-  const color = tls.read_string('bg_color');
+  let path = read_string('bg_image');
+  const color = read_string('bg_color');
 
   if (path) {
     buffer.push(`background: url("/images/${path}");`);
@@ -336,12 +359,12 @@ function page_style_entry_rule_create() {
 
 function page_style_title_rule_create(sheet) {
   const buffer = [];
-  const font_size = tls.read_int('header_font_size');
+  const font_size = read_int('header_font_size');
   if (!isNaN(font_size)) {
     buffer.push(`font-size: ${font_size}px;`);
   }
 
-  const font_family = tls.read_string('header_font_family');
+  const font_family = read_string('header_font_family');
   if (font_family) {
     buffer.push(`font-family: ${font_family};`);
   }
@@ -351,26 +374,26 @@ function page_style_title_rule_create(sheet) {
 
 function page_style_content_rule_create(sheet) {
   const buffer = [];
-  const font_size = tls.read_int('body_font_size');
+  const font_size = read_int('body_font_size');
   if (!isNaN(font_size)) {
     buffer.push(`font-size: ${font_size}px;`);
   }
 
-  if (tls.read_boolean('justify_text')) {
+  if (read_boolean('justify_text')) {
     buffer.push('text-align: justify;');
   }
 
-  const font_family = tls.read_string('body_font_family');
+  const font_family = read_string('body_font_family');
   if (font_family) {
     buffer.push(`font-family: ${font_family};`);
   }
 
-  const line_height = tls.read_int('body_line_height');
+  const line_height = read_int('body_line_height');
   if (!isNaN(line_height)) {
     buffer.push(`line-height: ${line_height}px;`);
   }
 
-  const column_count = tls.read_int('column_count');
+  const column_count = read_int('column_count');
   if (column_count === 2 || column_count === 3) {
     buffer.push(`column-count: ${column_count};`);
     buffer.push('column-gap: 30px;');
