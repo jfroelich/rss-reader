@@ -1,4 +1,3 @@
-import * as rewrite_url_tests from '/src/config/rewrite-rules-tests.js';
 import {identifiable_test} from '/src/db/identifiable-test.js';
 import * as locatable_tests from '/src/db/locatable-tests.js';
 import {activate_feed_test} from '/src/db/ops/activate-feed-test.js';
@@ -44,6 +43,7 @@ import * as set_base_uri_tests from '/src/lib/set-base-uri-tests.js';
 import * as truncate_html_tests from '/src/lib/truncate-html-tests.js';
 import * as unwrap_element_tests from '/src/lib/unwrap-element-tests.js';
 import {sniffer_test} from '/src/lib/url-sniffer-test.js';
+import * as import_entry_tests from '/src/ops/import-entry-tests.js';
 import {import_opml_test} from '/src/ops/import-opml-test.js';
 import {subscribe_test} from '/src/ops/subscribe/subscribe-test.js';
 
@@ -84,7 +84,7 @@ register_module_tests(better_fetch_tests);
 register_test(parse_feed_test);
 register_test(query_entries_test);
 register_test(remove_html_test);
-register_module_tests(rewrite_url_tests);
+register_module_tests(import_entry_tests);
 register_test(sanitize_entry_test);
 register_module_tests(set_base_uri_tests);
 register_test(set_entry_read_state_test);
