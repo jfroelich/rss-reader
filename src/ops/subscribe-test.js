@@ -5,7 +5,7 @@ import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
-import {subscribe} from '/src/ops/subscribe.js';
+import subscribe from '/src/ops/subscribe.js';
 
 export async function subscribe_test() {
   const db_name = 'subscribe-test';

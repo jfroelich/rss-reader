@@ -6,7 +6,7 @@ import {is_assert_error_like} from '/src/lib/assert.js';
 import {Deadline} from '/src/lib/deadline.js';
 import fade_element from '/src/lib/fade-element.js';
 import * as favicon from '/src/lib/favicon.js';
-import {subscribe} from '/src/ops/subscribe.js';
+import subscribe from '/src/ops/subscribe.js';
 
 export function SubscriptionForm() {
   // Default to a reasonable amount of time. The user can optionally override
