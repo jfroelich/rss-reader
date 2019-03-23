@@ -1,6 +1,6 @@
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
-import {NetworkError} from '/src/lib/better-fetch/better-fetch.js';
+import {NetworkError} from '/src/lib/better-fetch.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {fetch_image_element} from '/src/lib/fetch-image-element.js';
 import * as srcset_utils from '/src/lib/srcset-utils.js';

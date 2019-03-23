@@ -10,7 +10,7 @@ import update_feed from '/src/db/ops/update-feed.js';
 import validate_feed from '/src/db/ops/validate-feed.js';
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
-import {better_fetch} from '/src/lib/better-fetch/better-fetch.js';
+import {better_fetch} from '/src/lib/better-fetch.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
 import {import_entry, ImportEntryArgs} from '/src/ops/import-entry.js';

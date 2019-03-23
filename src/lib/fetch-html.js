@@ -1,4 +1,4 @@
-import {better_fetch} from '/src/lib/better-fetch/better-fetch.js';
+import {better_fetch} from '/src/lib/better-fetch.js';
 
 export default function fetch_html(url, options = {}) {
   // We may be modifying options, so clone to avoid side effects

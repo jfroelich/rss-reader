@@ -1,5 +1,5 @@
 import assert from '/src/lib/assert.js';
-import {better_fetch} from '/src/lib/better-fetch/better-fetch.js';
+import {better_fetch} from '/src/lib/better-fetch.js';
 
 export function fetch_image(url, options = {}) {
   assert(url instanceof URL);

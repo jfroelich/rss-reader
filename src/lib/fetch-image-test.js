@@ -1,5 +1,5 @@
 import assert from '/src/lib/assert.js';
-import {NetworkError} from '/src/lib/better-fetch/better-fetch.js';
+import {NetworkError} from '/src/lib/better-fetch.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {fetch_image} from '/src/lib/fetch-image.js';
 

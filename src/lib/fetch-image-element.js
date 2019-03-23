@@ -1,5 +1,5 @@
 import assert from '/src/lib/assert.js';
-import {FetchError, NetworkError, TimeoutError} from '/src/lib/better-fetch/better-fetch.js';
+import {FetchError, NetworkError, TimeoutError} from '/src/lib/better-fetch.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 
 // Return a promise that resolves to an image element.

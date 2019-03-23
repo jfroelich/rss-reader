@@ -22,7 +22,7 @@ import {set_entry_read_state_test} from '/src/db/ops/set-entry-read-state-test.j
 import {update_entry_test} from '/src/db/ops/update-entry-test.js';
 import {update_feed_test} from '/src/db/ops/update-feed-test.js';
 import * as types_tests from '/src/db/types-tests.js';
-import * as better_fetch_tests from '/src/lib/better-fetch/better-fetch-tests.js';
+import * as better_fetch_tests from '/src/lib/better-fetch-tests.js';
 import {coerce_element_test} from '/src/lib/coerce-element-test.js';
 import {color_test} from '/src/lib/color-test.js';
 import * as color_contrast_filter_tests from '/src/lib/dom-filters/color-contrast-filter-test.js';
