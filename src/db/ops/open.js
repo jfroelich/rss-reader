@@ -9,7 +9,7 @@ import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 // @param upgrade_handler {Function}
 // @param timeout {Deadline} optional
 // @return {Promise} a promise that resolves to an {IDBDatabase} instance
-export default function db_open(
+export default function open(
     name = 'reader', version = 29, upgrade_handler = default_upgrade_handler,
     timeout = INDEFINITE) {
   return indexeddb_utils.open(name, version, upgrade_handler, timeout);
