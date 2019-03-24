@@ -28,103 +28,13 @@ export default async function open(
 }
 
 function default_upgrade_handler(channel, event) {
-  // event.oldVersion is 0 when the database is being created
-  // use conn.version to get the current version
-  const conn = event.target.result;
-  const txn = event.target.transaction;
-  let feed_store, entry_store;
-  const stores = conn.objectStoreNames;
-
-  if (event.oldVersion < 20) {
-    migrations.migrate20(event, channel);
-  }
-
-  if (event.oldVersion < 21) {
-    migrations.migrate21(event, channel);
-  }
-
-  if (event.oldVersion < 22) {
-    migrations.migrate22(event, channel);
-  }
-
-  if (event.oldVersion && event.oldVersion < 23) {
-    feed_store.deleteIndex('title');
-  }
-
-  if (event.oldVersion && event.oldVersion < 24) {
-    add_active_field_to_feeds(txn, channel);
-  }
-
-  if (event.oldVersion < 25) {
-    // Create an index on feed id and read state. This enables fast querying
-    // of unread entries per feed.
-    entry_store.createIndex('feed-readState', ['feed', 'readState']);
-  }
-
-  // Handle upgrading to or past version 26 from all prior versions.
-  // This version adds an index on the entry store on the datePublished
-  // property, so that all entries can be loaded sorted by datePublished
-  if (event.oldVersion < 26) {
-    // If there may be existing entries, then ensure that all older entries
-    // have a datePublished
-    if (event.oldVersion) {
-      ensure_entries_have_date_published(txn, channel);
-    }
-
-    entry_store.createIndex('datePublished', 'datePublished');
-  }
-
-  // Handle upgrade to 27, or past 27, from all prior versions. This version
-  // adds a new index for use in the reader-page view.
-  if (event.oldVersion < 27) {
-    const index_name = 'readState-datePublished';
-    const index_path = ['readState', 'datePublished'];
-    entry_store.createIndex(index_name, index_path);
-  }
-
-  if (event.oldVersion < 28) {
-    const index_name = 'feed-datePublished';
-    const index_path = ['feed', 'datePublished'];
-    entry_store.createIndex(index_name, index_path);
-  }
-
-  if (event.oldVersion < 29) {
-    const index_name = 'feed-readState-datePublished';
-    const index_path = ['feed', 'readState', 'datePublished'];
-    entry_store.createIndex(index_name, index_path);
-  }
-}
-
-// TODO: send proper channel messages
-function ensure_entries_have_date_published(txn, channel) {
-  const store = txn.objectStore('entry');
-  const request = store.openCursor();
-  request.onerror = _ => console.error(request.error);
-  request.onsuccess = event => {
-    const cursor = request.result;
-    if (cursor) {
-      const entry = cursor.value;
-      if (!entry.datePublished) {
-        entry.datePublished = entry.dateCreated;
-        entry.dateUpdated = new Date();
-        cursor.update(entry);
-      }
-      cursor.continue();
-    }
-  };
-}
-
-// TODO: send proper channel messages
-function add_active_field_to_feeds(txn, channel) {
-  const store = txn.objectStore('feed');
-  const request = store.getAll();
-  request.onerror = _ => console.error(request.error);
-  request.onsuccess = function(event) {
-    const feeds = event.target.result;
-    for (const feed of feeds) {
-      feed.active = true;
-      feed.dateUpdated = new Date();
-      store.put(feed);
-    }
-  };
+  migrations.migrate20(event, channel);
+  migrations.migrate21(event, channel);
+  migrations.migrate22(event, channel);
+  migrations.migrate23(event, channel);
+  migrations.migrate24(event, channel);
+  migrations.migrate25(event, channel);
+  migrations.migrate26(event, channel);
+  migrations.migrate27(event, channel);
+  migrations.migrate28(event, channel);
 }
