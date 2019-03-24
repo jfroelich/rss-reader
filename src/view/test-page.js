@@ -1,5 +1,6 @@
 import {identifiable_test} from '/src/db/identifiable-test.js';
 import * as locatable_tests from '/src/db/locatable-tests.js';
+import * as migrations_tests from '/src/db/migrations-tests.js';
 import {activate_feed_test} from '/src/db/ops/activate-feed-test.js';
 import {archive_entries_test} from '/src/db/ops/archive-entries-test.js';
 import {count_unread_entries_by_feed_test} from '/src/db/ops/count-unread-entries-by-feed-test.js';
@@ -78,6 +79,7 @@ register_test(import_opml_test);
 register_test(iterate_entries_test);
 register_test(legible_text_filter_test);
 register_module_tests(locatable_tests);
+register_module_tests(migrations_tests);
 register_test(mime_test);
 register_test(normalize_entry_test);
 register_module_tests(better_fetch_tests);

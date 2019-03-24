@@ -52,9 +52,13 @@ export function migrate20(event, channel) {
 
   const conn = event.target.result;
 
+  console.debug('Creating feed object store');
+
   const feed_store =
       conn.createObjectStore('feed', {keyPath: 'id', autoIncrement: true});
   feed_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
+
+  console.debug('Creating entry object store');
 
   const entry_store =
       conn.createObjectStore('entry', {keyPath: 'id', autoIncrement: true});
