@@ -17,13 +17,17 @@ import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 // to {BroadcastChannel}
 // @return {Promise} a promise that resolves to a connection {Connection}
 export default async function open(
-    name = 'reader', version = 29, upgrade_handler = default_upgrade_handler,
-    timeout = INDEFINITE, channel_name = 'reader',
-    channel_class = BroadcastChannel) {
+    name = 'reader', version = 29, timeout = INDEFINITE,
+    channel_name = 'reader', channel_class = BroadcastChannel) {
   const conn = new Connection();
   conn.channel = new channel_class(channel_name);
-  conn.conn = await indexeddb_utils.open(
-      name, version, upgrade_handler.bind(null, conn.channel), timeout);
+
+  const upgrade_handler = event => {
+    default_upgrade_handler(conn.channel, event);
+  };
+
+  conn.conn =
+      await indexeddb_utils.open(name, version, upgrade_handler, timeout);
   return conn;
 }
 
