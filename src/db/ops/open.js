@@ -1,4 +1,5 @@
 import Connection from '/src/db/connection.js';
+import * as migrations from '/src/db/migrations.js';
 import * as types from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
@@ -35,34 +36,22 @@ function default_upgrade_handler(channel, event) {
   const stores = conn.objectStoreNames;
 
   if (event.oldVersion < 20) {
-    const feed_store_props = {keyPath: 'id', autoIncrement: true};
-    feed_store = conn.createObjectStore('feed', feed_store_props);
-    const entry_store_props = {keyPath: 'id', autoIncrement: true};
-    entry_store = conn.createObjectStore('entry', entry_store_props);
-    feed_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
-    entry_store.createIndex('readState', 'readState');
-    entry_store.createIndex('feed', 'feed');
-    entry_store.createIndex(
-        'archiveState-readState', ['archiveState', 'readState']);
-    entry_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
-  } else {
-    feed_store = txn.objectStore('feed');
-    entry_store = txn.objectStore('entry');
+    migrations.migrate20(event, channel);
   }
 
-  if (event.oldVersion > 0 && event.oldVersion < 21) {
-    add_magic_to_entries(txn, channel);
+  if (event.oldVersion < 21) {
+    migrations.migrate21(event, channel);
   }
 
-  if (event.oldVersion > 0 && event.oldVersion < 22) {
-    add_magic_to_feeds(txn, channel);
+  if (event.oldVersion < 22) {
+    migrations.migrate22(event, channel);
   }
 
-  if (event.oldVersion > 0 && event.oldVersion < 23) {
+  if (event.oldVersion && event.oldVersion < 23) {
     feed_store.deleteIndex('title');
   }
 
-  if (event.oldVersion > 0 && event.oldVersion < 24) {
+  if (event.oldVersion && event.oldVersion < 24) {
     add_active_field_to_feeds(txn, channel);
   }
 
@@ -121,40 +110,6 @@ function ensure_entries_have_date_published(txn, channel) {
         cursor.update(entry);
       }
       cursor.continue();
-    }
-  };
-}
-
-// TODO: send proper channel messages
-function add_magic_to_entries(txn, channel) {
-  const store = txn.objectStore('entry');
-  const request = store.openCursor();
-  request.onerror = _ => console.error(request.error);
-  request.onsuccess = function() {
-    const cursor = request.result;
-    if (cursor) {
-      const entry = cursor.value;
-      if (!('magic' in entry)) {
-        entry.magic = types.ENTRY_MAGIC;
-        entry.dateUpdated = new Date();
-        cursor.update(entry);
-      }
-      cursor.continue();
-    }
-  };
-}
-
-// TODO: send proper channel messages
-function add_magic_to_feeds(txn, channel) {
-  const store = txn.objectStore('feed');
-  const request = store.getAll();
-  request.onerror = _ => console.error(request.error);
-  request.onsuccess = function(event) {
-    const feeds = event.target.result;
-    for (const feed of feeds) {
-      feed.magic = types.FEED_MAGIC;
-      feed.dateUpdated = new Date();
-      store.put(feed);
     }
   };
 }
