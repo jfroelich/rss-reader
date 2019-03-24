@@ -50,6 +50,8 @@ export function migrate20(event, channel) {
     return;
   }
 
+  console.debug('Applying migration 20');
+
   const conn = event.target.result;
 
   const feed_store =
@@ -74,6 +76,8 @@ export function migrate21(event, channel) {
   if (event.oldVersion > 20) {
     return;
   }
+
+  console.debug('Applying migration 21');
 
   // Add a magic property to each entry
   const entry_ids = [];
@@ -114,6 +118,8 @@ export function migrate22(event, channel) {
   if (event.oldVersion > 21) {
     return;
   }
+
+  console.debug('Applying migration 22');
 
   const transaction = event.target.transaction;
 
@@ -163,6 +169,8 @@ export function migrate23(event, channel) {
     return;
   }
 
+  console.debug('Applying migration 23');
+
   const transaction = event.target.transaction;
   const feed_store = transaction.objectStore('feed');
 
@@ -181,6 +189,8 @@ export function migrate24(event, channel) {
   if (event.oldVersion > 23) {
     return;
   }
+
+  console.debug('Applying migration 24');
 
   // Set the active property for existing feeds to true
   const feed_ids = [];
@@ -215,6 +225,8 @@ export function migrate25(event, channel) {
     return;
   }
 
+  console.debug('Applying migration 25');
+
   // Create an index on feed id and read state. This enables fast querying
   // of unread entries per feed.
   const transaction = event.target.transaction;
@@ -232,6 +244,8 @@ export function migrate26(event, channel) {
   if (event.oldVersion > 25) {
     return;
   }
+
+  console.debug('Applying migration 26');
 
   const transaction = event.target.transaction;
   const entry_store = transaction.objectStore('entry');
@@ -281,6 +295,8 @@ export function migrate27(event, channel) {
     return;
   }
 
+  console.debug('Applying migration 27');
+
   const transaction = event.target.transaction;
   const entry_store = transaction.objectStore('entry');
 
@@ -294,6 +310,8 @@ export function migrate28(event, channel) {
     return;
   }
 
+  console.debug('Applying migration 28');
+
   const transaction = event.target.transaction;
   const entry_store = transaction.objectStore('entry');
   const index_name = 'feed-datePublished';
@@ -305,6 +323,8 @@ export function migrate29(event, channel) {
   if (event.oldVersion > 28) {
     return;
   }
+
+  console.debug('Applying migration 29');
 
   const transaction = event.target.transaction;
   const entry_store = transaction.objectStore('entry');
