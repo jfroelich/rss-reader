@@ -8,6 +8,31 @@ export async function indexeddb_utils_basic_test() {
   await remove(conn.name);
 }
 
+// Assert that my understanding of old version is correct
+export async function indexeddb_utils_old_version_test() {
+  let old_version = undefined;
+  let new_version = undefined;
+
+  const initial_handler = event => {
+    old_version = event.oldVersion;
+    new_version = event.target.result.version;
+  };
+
+  // Call without a version
+  const conn = await open(
+      indexeddb_utils_old_version_test.name, undefined, initial_handler);
+  conn.close();
+
+  // When creating the database for the first time, the old version will be 0
+  assert(old_version === 0);
+
+  // When creating the database for the first time without specifying a version,
+  // the new version will be 1
+  assert(new_version === 1);
+
+  await remove(conn.name);
+}
+
 // Calling open without a name should fail
 export async function indexeddb_utils_unnamed_test() {
   // to be really clear, the name param is not set

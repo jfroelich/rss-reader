@@ -35,10 +35,8 @@ import * as types from '/src/db/types.js';
 // * event.target.result.version - grabs the current version (being upgraded
 // to), this will always be a number greater than 0, this value corresponds to
 // the version parameter given to indexedDB.open
-// * event.oldVersion - grabs the old version, this is not set when the database
-// is being created (no prior database exists)
-
-// TODO: clarify, is oldVersion NaN, undefined, or 0 in create case?
+// * event.oldVersion - grabs the old version, this is 0 when the database
+// is being created
 
 // Migrate the database from any previous version to 20
 export function migrate20(event, channel) {
