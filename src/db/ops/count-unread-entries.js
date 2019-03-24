@@ -1,8 +1,12 @@
+import Connection from '/src/db/connection.js';
 import Entry from '/src/db/entry.js';
+import assert from '/src/lib/assert.js';
 
 export default function count_unread_entries(conn) {
   return new Promise((resolve, reject) => {
-    const txn = conn.transaction('entry');
+    assert(conn instanceof Connection);
+
+    const txn = conn.conn.transaction('entry');
     const store = txn.objectStore('entry');
     const index = store.index('readState');
     const request = index.count(Entry.UNREAD);

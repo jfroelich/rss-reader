@@ -47,9 +47,7 @@ async function show_next_slide() {
   }
 
   const conn = await db_open();
-  const channel = new BroadcastChannel('reader');
-  await mark_slide_read_start(conn, channel, current_slide);
-  channel.close();
+  await mark_slide_read_start(conn, current_slide);
 
   const slide_unread_count = count_unread_slides();
   let entries = [];
@@ -218,10 +216,8 @@ async function slide_onclick(event) {
   if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
       !slide.hasAttribute('read-pending')) {
     const conn = await db_open();
-    const channel = new BroadcastChannel('reader');
-    await mark_slide_read_start(conn, channel, slide);
+    await mark_slide_read_start(conn, slide);
     conn.close();
-    channel.close();
   }
 }
 
@@ -278,7 +274,7 @@ function hide_no_articles_message() {
 
 // Starts transitioning a slide into the read state. Updates both the view and
 // the database. This resolves before the view is fully updated.
-function mark_slide_read_start(conn, channel, slide) {
+function mark_slide_read_start(conn, slide) {
   const entry_id_string = slide.getAttribute('entry');
   const entry_id = parseInt(entry_id_string, 10);
 
@@ -304,7 +300,7 @@ function mark_slide_read_start(conn, channel, slide) {
 
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
-  return set_entry_read_state(conn, channel, entry_id, true);
+  return set_entry_read_state(conn, entry_id, true);
 }
 
 function remove_slide(slide) {
@@ -340,14 +336,11 @@ async function refresh_button_onclick(event) {
 
   const promises = [db_open(), favicon.open()];
   const [conn, iconn] = await Promise.all(promises);
-  const channel = new BroadcastChannel('reader');
   const args = new PollFeedsArgs();
   args.conn = conn;
-  args.channel = channel;
   args.iconn = iconn;
   args.ignore_recency_check = true;
   await poll_feeds(args);
-  channel.close();
   conn.close();
   iconn.close();
 
@@ -450,10 +443,8 @@ function import_opml_prompt() {
     // This behavior changed sometime around Chrome 72 without notice
     const files = event.target.files;
     const conn = await db_open();
-    const channel = new BroadcastChannel('reader');
-    await import_opml(conn, channel, files);
+    await import_opml(conn, files);
     conn.close();
-    channel.close();
   };
   input.click();
 }

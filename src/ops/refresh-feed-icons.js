@@ -1,19 +1,19 @@
-import * as locatable from '/src/db/locatable.js';
 import Feed from '/src/db/feed.js';
+import * as locatable from '/src/db/locatable.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import update_feed from '/src/db/ops/update-feed.js';
 import {lookup_feed_favicon} from '/src/ops/lookup-feed-favicon.js';
 
-export default async function refresh_feed_icons(conn, iconn, channel) {
+export default async function refresh_feed_icons(conn, iconn) {
   const feeds = await get_feeds(conn, 'active', false);
   const promises = [];
   for (const feed of feeds) {
-    promises.push(refresh_feed_icon(conn, channel, iconn, feed));
+    promises.push(refresh_feed_icon(conn, iconn, feed));
   }
   return Promise.all(promises);
 }
 
-async function refresh_feed_icon(conn, channel, iconn, feed) {
+async function refresh_feed_icon(conn, iconn, feed) {
   if (!locatable.has_url(feed)) {
     return;
   }
@@ -29,6 +29,6 @@ async function refresh_feed_icon(conn, channel, iconn, feed) {
     }
 
     const overwrite_flag = true;
-    await update_feed(conn, channel, feed, overwrite_flag);
+    await update_feed(conn, feed, overwrite_flag);
   }
 }

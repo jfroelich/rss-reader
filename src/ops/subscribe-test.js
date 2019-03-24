@@ -1,6 +1,6 @@
 import Feed from '/src/db/feed.js';
 import * as identifiable from '/src/db/identifiable.js';
-import db_open from '/src/db/ops/open.js';
+import test_open from '/src/db/test-open.js';
 import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
@@ -11,15 +11,7 @@ export async function subscribe_test() {
   const db_name = 'subscribe-test';
   await indexeddb_utils.remove(db_name);
 
-  const conn = await db_open(db_name);
-
-  // Create a fake channel that records its messages
-  const messages = [];
-  const channel = {
-    name: 'subscribe-test-channel',
-    postMessage: message => messages.push(message),
-    close: function() {}
-  };
+  const conn = await test_open(db_name);
 
   const path = '/src/ops/subscribe-test-feed.xml';
   const local_url_string = chrome.extension.getURL(path);
@@ -38,8 +30,7 @@ export async function subscribe_test() {
   // Rethrow subscribe exceptions just like assertion failures by omitting
   // try/catch.
   const feed = await subscribe(
-      conn, iconn, channel, url, fetch_feed_timeout, notify,
-      feed_stored_callback);
+      conn, iconn, url, fetch_feed_timeout, notify, feed_stored_callback);
 
   // Test the subscription produced the desired result
   assert(feed);
@@ -55,8 +46,8 @@ export async function subscribe_test() {
 
   assert(feed.active);
 
-  // Assert that the subscription sent out correct messages
-  assert(messages.length > 0);
+  // Assert that the subscription dispatched messages
+  assert(conn.channel.messages.length);
 
   conn.close();
   await indexeddb_utils.remove(db_name);

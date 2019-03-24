@@ -1,8 +1,9 @@
+import Connection from '/src/db/connection.js';
+import Entry from '/src/db/entry.js';
 import {ConstraintError} from '/src/db/errors.js';
+import Feed from '/src/db/feed.js';
 import * as identifiable from '/src/db/identifiable.js';
 import * as locatable from '/src/db/locatable.js';
-import Entry from '/src/db/entry.js';
-import Feed from '/src/db/feed.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import sanitize_feed from '/src/db/ops/sanitize-feed.js';
@@ -19,7 +20,6 @@ import {lookup_feed_favicon} from '/src/ops/lookup-feed-favicon.js';
 export function ImportFeedArgs() {
   this.feed = undefined;
   this.conn = undefined;
-  this.channel = undefined;
   this.iconn = undefined;
   this.rewrite_rules = [];
   this.inaccessible_descriptors = [];
@@ -45,8 +45,7 @@ async function validate_feed_is_unique(feed, conn) {
 export async function import_feed(args) {
   assert(args instanceof ImportFeedArgs);
   assert(args.feed instanceof Feed);
-  assert(args.conn instanceof IDBDatabase);
-  assert(args.channel);
+  assert(args.conn instanceof Connection);
   assert(args.iconn === undefined || args.iconn instanceof IDBDatabase);
   assert(args.fetch_feed_timeout instanceof Deadline);
 
@@ -99,11 +98,16 @@ export async function import_feed(args) {
   sanitize_feed(args.feed);
   validate_feed(args.feed);
 
+  // init as active
   if (args.create) {
-    args.feed.id = await create_feed(args.conn, args.channel, args.feed);
+    args.feed.active = true;
+  }
+
+  if (args.create) {
+    args.feed.id = await create_feed(args.conn, args.feed);
   } else {
     const overwrite = true;
-    await update_feed(args.conn, args.channel, args.feed, overwrite);
+    await update_feed(args.conn, args.feed, overwrite);
   }
 
   // Early notify observer-caller if they are listening that we created the
@@ -134,7 +138,6 @@ export async function import_feed(args) {
 // ids. For all errors other than assertion errors, per-entry import errors are
 // suppressed and only logged. If there is an error importing an entry its
 // output id will be invalid.
-// TODO: do something more elegant with this mess of parameters
 function import_entries(entries, args) {
   // Map each entry into an import-entry promise
   const promises = entries.map(entry => {
@@ -148,7 +151,6 @@ function import_entries(entries, args) {
     iea.entry = entry;
     iea.feed = args.feed;
     iea.conn = args.conn;
-    iea.channel = args.channel;
     iea.iconn = args.iconn;
     iea.rewrite_rules = args.rewrite_rules;
     iea.inaccessible_descriptors = args.inaccessible_descriptors;

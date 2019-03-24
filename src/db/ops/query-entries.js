@@ -1,10 +1,12 @@
-import * as identifiable from '/src/db/identifiable.js';
+import Connection from '/src/db/connection.js';
 import Entry from '/src/db/entry.js';
 import Feed from '/src/db/feed.js';
+import * as identifiable from '/src/db/identifiable.js';
 import assert from '/src/lib/assert.js';
 
 export default function query_entries(conn, query = {}) {
   return new Promise((resolve, reject) => {
+    assert(conn instanceof Connection);
     assert(typeof query === 'object');
     assert(
         query.feed_id === undefined || identifiable.is_valid_id(query.feed_id));
@@ -17,7 +19,7 @@ export default function query_entries(conn, query = {}) {
     const direction = translate_direction(query.direction);
     const entries = [];
 
-    const txn = conn.transaction('entry');
+    const txn = conn.conn.transaction('entry');
     txn.onerror = event => reject(event.target.error);
     const store = txn.objectStore('entry');
     const request = build_request(store, query, direction);

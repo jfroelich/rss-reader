@@ -1,13 +1,15 @@
-import * as identifiable from '/src/db/identifiable.js';
+import Connection from '/src/db/connection.js';
 import Entry from '/src/db/entry.js';
+import * as identifiable from '/src/db/identifiable.js';
 import normalize_entry from '/src/db/ops/normalize-entry.js';
 import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
 // Overwrite the corresponding entry object in the object store.
-export default function update_entry(conn, channel, entry) {
+export default function update_entry(conn, entry) {
   return new Promise((resolve, reject) => {
+    assert(conn instanceof Connection);
     assert(is_entry(entry));
     assert(identifiable.is_valid_id(entry.id));
     // Entries are not required to have urls in the model layer, so there is no
@@ -21,10 +23,10 @@ export default function update_entry(conn, channel, entry) {
 
     filter_empty_properties(entry);
 
-    const txn = conn.transaction('entry', 'readwrite');
+    const txn = conn.conn.transaction('entry', 'readwrite');
     txn.oncomplete = event => {
-      if (channel) {
-        channel.postMessage({
+      if (conn.channel) {
+        conn.channel.postMessage({
           type: 'entry-updated',
           id: entry.id,
           // NOTE: this does not indicate transition, just current state

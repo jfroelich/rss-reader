@@ -19,7 +19,6 @@ export function ImportEntryArgs() {
   this.entry = undefined;
   this.feed = undefined;
   this.conn = undefined;
-  this.channel = undefined;
   this.iconn = undefined;
   this.rewrite_rules = [];
   this.inaccessible_descriptors = [];
@@ -107,7 +106,7 @@ export async function import_entry(args) {
 
   sanitize_entry(entry);
   validate_entry(entry);
-  const new_entry_id = await create_entry(args.conn, args.channel, entry);
+  const new_entry_id = await create_entry(args.conn, entry);
   return new_entry_id;
 }
 

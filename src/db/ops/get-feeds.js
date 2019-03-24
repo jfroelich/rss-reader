@@ -1,6 +1,11 @@
+import Connection from '/src/db/connection.js';
+import assert from '/src/lib/assert.js';
+
 export default function get_feeds(conn, mode = 'all', title_sort) {
   return new Promise((resolve, reject) => {
-    const txn = conn.transaction('feed');
+    assert(conn instanceof Connection);
+
+    const txn = conn.conn.transaction('feed');
     const store = txn.objectStore('feed');
     const request = store.getAll();
     request.onerror = event => reject(event.target.error);

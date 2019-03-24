@@ -1,6 +1,6 @@
 import * as config from '/src/config.js';
 import archive_entries from '/src/db/ops/archive-entries.js';
-import db_open from '/src/db/ops/open.js';
+import open from '/src/db/ops/open.js';
 import * as favicon from '/src/lib/favicon.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import refresh_feed_icons from '/src/ops/refresh-feed-icons.js';
@@ -58,21 +58,17 @@ export async function alarm_listener(alarm) {
   config.write_string('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
-    const conn = await db_open();
-    const channel = new BroadcastChannel('reader');
-    await archive_entries(conn, channel);
+    const conn = await open();
+    await archive_entries(conn);
     conn.close();
-    channel.close();
   } else if (alarm.name === 'poll') {
     await handle_alarm_poll();
   } else if (alarm.name === 'refresh-feed-icons') {
-    const proms = [db_open(), favicon.open()];
+    const proms = [open(), favicon.open()];
     const [conn, iconn] = await Promise.all(proms);
-    const channel = new BroadcastChannel('reader');
-    await refresh_feed_icons(conn, iconn, channel);
+    await refresh_feed_icons(conn, iconn);
     conn.close();
     iconn.close();
-    channel.close();
   } else if (alarm.name === 'compact-favicon-db') {
     const conn = await favicon.open();
     await favicon.compact(conn);
@@ -96,17 +92,14 @@ async function handle_alarm_poll() {
     }
   }
 
-  const promises = [db_open(), favicon.open()];
+  const promises = [open(), favicon.open()];
   const [conn, iconn] = await Promise.all(promises);
-  const channel = new BroadcastChannel('reader');
   const poll_args = new PollFeedsArgs();
   poll_args.conn = conn;
-  poll_args.channel = channel;
   poll_args.iconn = iconn;
   poll_args.ignore_recency_check = false;
   poll_args.notify = true;
   await poll_feeds(poll_args);
   conn.close();
   iconn.close();
-  channel.close();
 }

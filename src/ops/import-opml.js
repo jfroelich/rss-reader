@@ -1,10 +1,10 @@
-import * as locatable from '/src/db/locatable.js';
 import Feed from '/src/db/feed.js';
+import * as locatable from '/src/db/locatable.js';
 import create_feeds from '/src/db/ops/create-feeds.js';
 
 // Create and store feed objects in the database based on urls extracted from
 // zero or more opml files. |files| should be a FileList or an Array.
-export async function import_opml(conn, channel, files) {
+export async function import_opml(conn, files) {
   console.log('Importing %d OPML files', files.length);
 
   // Grab urls from each of the files. Per-file errors are logged not thrown.
@@ -37,7 +37,7 @@ export async function import_opml(conn, channel, files) {
     return feed;
   });
 
-  return create_feeds(conn, channel, feeds);
+  return create_feeds(conn, feeds);
 }
 
 // Return an array of outline urls (as URL objects) from OPML outline elements

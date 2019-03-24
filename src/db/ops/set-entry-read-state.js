@@ -1,21 +1,23 @@
+import Connection from '/src/db/connection.js';
+import Entry from '/src/db/entry.js';
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
 import * as identifiable from '/src/db/identifiable.js';
-import Entry from '/src/db/entry.js';
 import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 
 // Modify the read state property of an entry in the database. |id| is id of
 // entry in database to modify. |read| is boolean, true if marking as read,
 // false if marking as unread, defaults to false.
-export default function set_entry_read_state(conn, channel, id, read = false) {
+export default function set_entry_read_state(conn, id, read = false) {
   return new Promise((resolve, reject) => {
+    assert(conn instanceof Connection);
     assert(identifiable.is_valid_id(id));
     assert(typeof read === 'boolean');
-    const txn = conn.transaction('entry', 'readwrite');
+    const txn = conn.conn.transaction('entry', 'readwrite');
     txn.onerror = event => reject(event.target.error);
     txn.oncomplete = event => {
-      if (channel) {
-        channel.postMessage({type: 'entry-updated', id: id, read: read});
+      if (conn.channel) {
+        conn.channel.postMessage({type: 'entry-updated', id: id, read: read});
       }
 
       resolve();

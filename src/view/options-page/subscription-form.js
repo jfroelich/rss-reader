@@ -97,11 +97,10 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
 
   const promises = [db_open(), favicon.open()];
   const [conn, iconn] = await Promise.all(promises);
-  const channel = new BroadcastChannel('reader');
 
   try {
     await subscribe(
-        conn, iconn, channel, url, this.fetch_feed_timeout, true,
+        conn, iconn, url, this.fetch_feed_timeout, true,
         this.onFeedStored.bind(this));
   } catch (error) {
     if (is_assert_error_like(error)) {
@@ -119,7 +118,6 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
   } finally {
     conn.close();
     iconn.close();
-    channel.close();
   }
 };
 

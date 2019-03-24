@@ -1,3 +1,4 @@
+import Connection from '/src/db/connection.js';
 import * as locatable from '/src/db/locatable.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import assert from '/src/lib/assert.js';
@@ -5,7 +6,7 @@ import assert from '/src/lib/assert.js';
 // Returns an in memory OPML document object filled with the feeds from the
 // database. |document_title| is optional dom string (set by textContent).
 export default async function export_opml(conn, document_title) {
-  assert(conn instanceof IDBDatabase);
+  assert(conn instanceof Connection);
 
   const feeds = await get_feeds(conn, 'all', false);
   const outlines = feeds.map(feed_to_outline);

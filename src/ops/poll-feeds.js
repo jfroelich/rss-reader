@@ -17,7 +17,6 @@ export function PollFeedsArgs() {
   this.deactivation_threshold = 10;
   this.notify = true;
   this.conn = undefined;
-  this.channel = undefined;
   this.iconn = undefined;
   this.rewrite_rules = config.get_rewrite_rules();
   this.inaccessible_content_descriptors =
@@ -53,7 +52,6 @@ export async function poll_feeds(args) {
     const import_feed_args = new ImportFeedArgs();
     import_feed_args.feed = model_feed;
     import_feed_args.conn = args.conn;
-    import_feed_args.channel = args.channel;
     import_feed_args.iconn = args.iconn;
     import_feed_args.rewrite_rules = args.rewrite_rules;
     import_feed_args.inaccessible_descriptors =

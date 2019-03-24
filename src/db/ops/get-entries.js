@@ -1,14 +1,17 @@
+import Connection from '/src/db/connection.js';
 import Entry from '/src/db/entry.js';
 import assert from '/src/lib/assert.js';
 
 export default function get_entries(conn, mode = 'all', offset, limit) {
   return new Promise((resolve, reject) => {
+    assert(conn instanceof Connection);
+
     assert(is_valid_offset(offset));
     assert(is_valid_limit(limit));
     const entries = [];
     let advanced = false;
 
-    const txn = conn.transaction('entry');
+    const txn = conn.conn.transaction('entry');
     txn.oncomplete = _ => resolve(entries);
     txn.onerror = event => reject(event.target.error);
     const store = txn.objectStore('entry');

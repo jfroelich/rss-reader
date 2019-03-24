@@ -1,7 +1,7 @@
 import Entry from '/src/db/entry.js';
 import create_entry from '/src/db/ops/create-entry.js';
-import db_open from '/src/db/ops/open.js';
 import query_entries from '/src/db/ops/query-entries.js';
+import test_open from '/src/db/test-open.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
@@ -9,7 +9,7 @@ export async function query_entries_test() {
   const db_name = 'query-entries-test';
   await indexeddb_utils.remove(db_name);
 
-  const conn = await db_open(db_name);
+  const conn = await test_open(db_name);
 
   const create_promises = [];
   let entry;
@@ -20,7 +20,7 @@ export async function query_entries_test() {
     entry.readState = Entry.UNREAD;
     entry.feed = 1;
     entry.datePublished = new Date();
-    create_promises.push(create_entry(conn, undefined, entry));
+    create_promises.push(create_entry(conn, entry));
   }
 
   // Create 5 read entries tied to feed 1
@@ -29,7 +29,7 @@ export async function query_entries_test() {
     entry.readState = Entry.READ;
     entry.feed = 1;
     entry.datePublished = new Date();
-    create_promises.push(create_entry(conn, undefined, entry));
+    create_promises.push(create_entry(conn, entry));
   }
 
   // Create 5 unread entries tied to feed 2
@@ -38,7 +38,7 @@ export async function query_entries_test() {
     entry.readState = Entry.UNREAD;
     entry.feed = 2;
     entry.datePublished = new Date();
-    create_promises.push(create_entry(conn, undefined, entry));
+    create_promises.push(create_entry(conn, entry));
   }
 
   // Create 5 read entries tied to feed 2
@@ -47,7 +47,7 @@ export async function query_entries_test() {
     entry.readState = Entry.READ;
     entry.feed = 2;
     entry.datePublished = new Date();
-    create_promises.push(create_entry(conn, undefined, entry));
+    create_promises.push(create_entry(conn, entry));
   }
 
   // Wait until all creation is complete

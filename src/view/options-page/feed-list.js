@@ -1,5 +1,5 @@
-import * as locatable from '/src/db/locatable.js';
 import Feed from '/src/db/feed.js';
+import * as locatable from '/src/db/locatable.js';
 import activate_feed from '/src/db/ops/activate-feed.js';
 import deactivate_feed from '/src/db/ops/deactivate-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
@@ -170,10 +170,8 @@ FeedList.prototype.unsubscribeButtonOnclick = async function(event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const conn = await db_open();
-  const channel = new BroadcastChannel('reader');
-  await unsubscribe(conn, channel, feed_id);
+  await unsubscribe(conn, feed_id);
   conn.close();
-  channel.close();
 
   this.removeFeedById(feed_id);
 
@@ -206,10 +204,8 @@ FeedList.prototype.activateOnclick = async function(event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const conn = await db_open();
-  const channel = new BroadcastChannel('reader');
-  await activate_feed(conn, channel, feed_id);
+  await activate_feed(conn, feed_id);
   conn.close();
-  channel.close();
 
   // Mark the corresponding feed element loaded in the view as active
   const item_element =
@@ -230,10 +226,8 @@ FeedList.prototype.deactivateOnclick = async function(event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const conn = await db_open();
-  const channel = new BroadcastChannel('reader');
-  await deactivate_feed(conn, channel, feed_id, 'manual');
+  await deactivate_feed(conn, feed_id, 'manual');
   conn.close();
-  channel.close();
 
   // Deactivate the corresponding element in the view
   const item_element =

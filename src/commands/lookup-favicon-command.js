@@ -10,5 +10,4 @@ export default async function lookup_favicon_command(url_string, cached) {
   request.conn && request.conn.close();
 
   console.log('Lookup result:', result ? result.href : null);
-  return result ? result.href : undefined;
 }

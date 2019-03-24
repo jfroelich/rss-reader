@@ -1,21 +1,32 @@
+import Connection from '/src/db/connection.js';
 import * as types from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 // Asynchronously connect to the indexedDB database
-// @param name {String}
-// @param version {Number}
+// @param name {String} the name of the database
+// @param version {Number} the version of the database
 // @param upgrade_handler {Function}
 // @param timeout {Deadline} optional
-// @return {Promise} a promise that resolves to an {IDBDatabase} instance
-export default function open(
+// @param channel_name {String} optional, the channel to send messages, defaults
+// to 'reader'. Normal usage should leave as is, tests should use some name
+// other than the default.
+// @param channel_class {Function} optional, the class of the channel, defaults
+// to {BroadcastChannel}
+// @return {Promise} a promise that resolves to a connection {Connection}
+export default async function open(
     name = 'reader', version = 29, upgrade_handler = default_upgrade_handler,
-    timeout = INDEFINITE) {
-  return indexeddb_utils.open(name, version, upgrade_handler, timeout);
+    timeout = INDEFINITE, channel_name = 'reader',
+    channel_class = BroadcastChannel) {
+  const conn = new Connection();
+  conn.channel = new channel_class(channel_name);
+  conn.conn = await indexeddb_utils.open(
+      name, version, upgrade_handler.bind(null, conn.channel), timeout);
+  return conn;
 }
 
-function default_upgrade_handler(event) {
+function default_upgrade_handler(channel, event) {
   // event.oldVersion is 0 when the database is being created
   // use conn.version to get the current version
   const conn = event.target.result;
@@ -40,11 +51,11 @@ function default_upgrade_handler(event) {
   }
 
   if (event.oldVersion > 0 && event.oldVersion < 21) {
-    add_magic_to_entries(txn);
+    add_magic_to_entries(txn, channel);
   }
 
   if (event.oldVersion > 0 && event.oldVersion < 22) {
-    add_magic_to_feeds(txn);
+    add_magic_to_feeds(txn, channel);
   }
 
   if (event.oldVersion > 0 && event.oldVersion < 23) {
@@ -52,7 +63,7 @@ function default_upgrade_handler(event) {
   }
 
   if (event.oldVersion > 0 && event.oldVersion < 24) {
-    add_active_field_to_feeds(txn);
+    add_active_field_to_feeds(txn, channel);
   }
 
   if (event.oldVersion < 25) {
@@ -68,7 +79,7 @@ function default_upgrade_handler(event) {
     // If there may be existing entries, then ensure that all older entries
     // have a datePublished
     if (event.oldVersion) {
-      ensure_entries_have_date_published(txn);
+      ensure_entries_have_date_published(txn, channel);
     }
 
     entry_store.createIndex('datePublished', 'datePublished');
@@ -95,7 +106,8 @@ function default_upgrade_handler(event) {
   }
 }
 
-function ensure_entries_have_date_published(txn) {
+// TODO: send proper channel messages
+function ensure_entries_have_date_published(txn, channel) {
   const store = txn.objectStore('entry');
   const request = store.openCursor();
   request.onerror = _ => console.error(request.error);
@@ -113,7 +125,8 @@ function ensure_entries_have_date_published(txn) {
   };
 }
 
-function add_magic_to_entries(txn) {
+// TODO: send proper channel messages
+function add_magic_to_entries(txn, channel) {
   const store = txn.objectStore('entry');
   const request = store.openCursor();
   request.onerror = _ => console.error(request.error);
@@ -131,7 +144,8 @@ function add_magic_to_entries(txn) {
   };
 }
 
-function add_magic_to_feeds(txn) {
+// TODO: send proper channel messages
+function add_magic_to_feeds(txn, channel) {
   const store = txn.objectStore('feed');
   const request = store.getAll();
   request.onerror = _ => console.error(request.error);
@@ -145,7 +159,8 @@ function add_magic_to_feeds(txn) {
   };
 }
 
-function add_active_field_to_feeds(txn) {
+// TODO: send proper channel messages
+function add_active_field_to_feeds(txn, channel) {
   const store = txn.objectStore('feed');
   const request = store.getAll();
   request.onerror = _ => console.error(request.error);

@@ -1,8 +1,8 @@
-import * as locatable from '/src/db/locatable.js';
 import Entry from '/src/db/entry.js';
+import * as locatable from '/src/db/locatable.js';
 import count_unread_entries from '/src/db/ops/count-unread-entries.js';
 import create_entry from '/src/db/ops/create-entry.js';
-import db_open from '/src/db/ops/open.js';
+import test_open from '/src/db/test-open.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
@@ -10,7 +10,7 @@ export async function count_unread_entries_test() {
   const db_name = 'count-unread-entries-test';
   await indexeddb_utils.remove(db_name);
 
-  const conn = await db_open(db_name);
+  const conn = await test_open(db_name);
 
   let count = await count_unread_entries(conn);
   assert(0 === count);
@@ -34,7 +34,7 @@ export async function count_unread_entries_test() {
 
   const insert_promises = [];
   for (const entry of entries_to_insert) {
-    insert_promises.push(create_entry(conn, undefined, entry));
+    insert_promises.push(create_entry(conn, entry));
   }
   await Promise.all(insert_promises);
 

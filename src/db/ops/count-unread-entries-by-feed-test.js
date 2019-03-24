@@ -1,10 +1,10 @@
-import * as locatable from '/src/db/locatable.js';
 import Entry from '/src/db/entry.js';
 import Feed from '/src/db/feed.js';
+import * as locatable from '/src/db/locatable.js';
 import count_unread_entries_by_feed from '/src/db/ops/count-unread-entries-by-feed.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import create_feed from '/src/db/ops/create-feed.js';
-import db_open from '/src/db/ops/open.js';
+import test_open from '/src/db/test-open.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
@@ -12,12 +12,12 @@ export async function count_unread_entries_by_feed_test() {
   const db_name = 'db-count-unread-entries-by-feed-test';
   await indexeddb_utils.remove(db_name);
 
-  const conn = await db_open(db_name);
+  const conn = await test_open(db_name);
 
   const feed = new Feed();
   const url = new URL('http://www.example.com/feed.xml');
   locatable.append_url(feed, url);
-  const feed_id = await create_feed(conn, undefined, feed);
+  const feed_id = await create_feed(conn, feed);
 
   const num_entries_created_per_type = 5;
   const create_promises = [];
@@ -28,7 +28,7 @@ export async function count_unread_entries_by_feed_test() {
       const entry = new Entry();
       entry.feed = feed_id;
       entry.readState = read_state;
-      create_promises.push(create_entry(conn, undefined, entry));
+      create_promises.push(create_entry(conn, entry));
     }
   }
   const entry_ids = await Promise.all(create_promises);

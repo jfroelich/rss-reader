@@ -1,14 +1,17 @@
+import Connection from '/src/db/connection.js';
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
+import Feed from '/src/db/feed.js';
 import * as identifiable from '/src/db/identifiable.js';
 import * as locatable from '/src/db/locatable.js';
-import Feed from '/src/db/feed.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
 import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
-export default function update_feed(conn, channel, feed, overwrite) {
+export default function update_feed(conn, feed, overwrite) {
   return new Promise((resolve, reject) => {
+    assert(conn instanceof Connection);
+
     // If overwriting, the new feed must be valid. If partial update, the new
     // feed is just a bag of properties, but it at least must be an object.
     if (overwrite) {
@@ -52,11 +55,11 @@ export default function update_feed(conn, channel, feed, overwrite) {
       feed.dateUpdated = new Date();
     }
 
-    const txn = conn.transaction('feed', 'readwrite');
+    const txn = conn.conn.transaction('feed', 'readwrite');
     txn.onerror = event => reject(event.target.error);
     txn.oncomplete = event => {
-      if (channel) {
-        channel.postMessage({
+      if (conn.channel) {
+        conn.channel.postMessage({
           type: 'feed-updated',
           id: feed.id,
           feed: overwrite ? undefined : feed

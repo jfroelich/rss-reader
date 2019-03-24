@@ -2,18 +2,19 @@ import Entry from '/src/db/entry.js';
 import assert from '/src/lib/assert.js';
 import sizeof from '/src/lib/sizeof.js';
 import {is_entry} from '/src/db/types.js';
+import Connection from '/src/db/connection.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
-export default function archive_entries(conn, channel, max_age = TWO_DAYS_MS) {
+export default function archive_entries(conn, max_age = TWO_DAYS_MS) {
   return new Promise((resolve, reject) => {
-    assert(conn instanceof IDBDatabase);
+    assert(conn instanceof Connection);
     assert(max_age >= 0);
 
     const ids = [];
-    const transaction = conn.transaction('entry', 'readwrite');
+    const transaction = conn.conn.transaction('entry', 'readwrite');
     transaction.oncomplete =
-        transaction_oncomplete.bind(transaction, channel, ids, resolve);
+        transaction_oncomplete.bind(transaction, conn.channel, ids, resolve);
     transaction.onerror = event => reject(event.target.error);
 
     const request = create_archivable_entries_cursor_request(transaction);

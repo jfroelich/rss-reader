@@ -9,14 +9,12 @@ import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';
 // resolves when both the feed and the entries are fully imported. The callback
 // is invoked with the feed once it is stored, earlier.
 export default async function subscribe(
-    conn, iconn, channel, url, timeout = INDEFINITE, notify,
-    feed_stored_callback) {
+    conn, iconn, url, timeout = INDEFINITE, notify, feed_stored_callback) {
   const feed = new Feed();
   locatable.append_url(feed, url);
 
   const args = new ImportFeedArgs();
   args.conn = conn;
-  args.channel = channel;
   args.iconn = iconn;
   args.feed = feed;
   args.create = true;
