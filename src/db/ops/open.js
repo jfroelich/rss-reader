@@ -41,4 +41,5 @@ function default_upgrade_handler(channel, event) {
   migrations.migrate26(event, channel);
   migrations.migrate27(event, channel);
   migrations.migrate28(event, channel);
+  migrations.migrate29(event, channel);
 }
