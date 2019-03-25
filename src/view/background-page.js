@@ -1,8 +1,9 @@
 import * as config from '/src/config.js';
 import * as cron_control from '/src/cron.js';
-import db_open from '/src/db/ops/open.js';
+import open from '/src/db/ops/open.js';
 import open_view from '/src/extension/open-view.js';
 import refresh_badge from '/src/extension/refresh-badge.js';
+import {INDEFINITE} from '/src/lib/deadline.js';
 
 function add_install_listener(listener) {
   return chrome.runtime.onInstalled.addListener(listener);
@@ -48,7 +49,12 @@ add_install_listener(function(event) {
 
 add_install_listener(async function(event) {
   if (event.reason === 'install') {
-    const conn = await db_open();
+    // This is one of the earliest, if not the earliest, calls to open the
+    // database once the extension is installed or updated, so we want to
+    // allow for the extra time it takes to complete the upgrade, so we do not
+    // impose a timeout in this case.
+    const timeout = INDEFINITE;
+    const conn = await open(timeout);
     conn.close();
   }
 });
