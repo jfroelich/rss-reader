@@ -5,6 +5,8 @@ import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
+export const default_version = 29;
+
 // Asynchronously connect to the indexedDB database
 // @param name {String} the name of the database
 // @param version {Number} the version of the database
@@ -17,7 +19,7 @@ import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 // to {BroadcastChannel}
 // @return {Promise} a promise that resolves to a connection {Connection}
 export default async function open(
-    name = 'reader', version = 29, timeout = INDEFINITE,
+    name = 'reader', version = default_version, timeout = INDEFINITE,
     channel_name = 'reader', channel_class = BroadcastChannel) {
   const conn = new Connection();
   conn.channel = new channel_class(channel_name);
