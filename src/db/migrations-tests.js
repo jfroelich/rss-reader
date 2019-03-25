@@ -139,3 +139,41 @@ export async function migrations_tests_22() {
   conn.close();
   await indexeddb_utils.remove(conn.name);
 }
+
+// Verify that migrating to 23 drops the title index on the feed store
+export async function migrations_tests_23() {
+  const database_name = 'migrations-tests-23';
+  await indexeddb_utils.remove(database_name);
+
+  const handler = event => {
+    migrations.migrate20(event);
+    migrations.migrate21(event);
+    migrations.migrate22(event);
+    migrations.migrate23(event);
+  };
+
+  // It should not contain title index initially, because the index is no longer
+  // created, because the migration function was modified
+  let conn = await indexeddb_utils.open(database_name, 20, handler);
+  let transaction = conn.transaction('feed');
+  let store = transaction.objectStore('feed');
+  assert(!store.indexNames.contains('title'));
+  transaction.abort();
+  conn.close();
+
+  // It should no longer contain it (and it should not produce an error). Note
+  // that this test exposed a bug that was since fixed. The migration to 23
+  // assumed that the index exists, and called deleteIndex naively, which then
+  // produced an error about unable to delete non-existent index. Now the 23
+  // migration checks for the presence of the index. Therefore, this test is
+  // not only testing that the index is gone, it is also just exercising the
+  // migration and testing that it runs without error.
+  conn = await indexeddb_utils.open(database_name, 23, handler);
+  transaction = conn.transaction('feed');
+  store = transaction.objectStore('feed');
+  assert(!store.indexNames.contains('title'));
+  transaction.abort();
+  conn.close();
+
+  await indexeddb_utils.remove(conn.name);
+}

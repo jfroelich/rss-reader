@@ -179,8 +179,25 @@ export function migrate23(event, channel) {
   // In this migration, the title index is no longer in use because of problems
   // with how indexedDB indices exclude objects that are missing properties.
   // The view would load all feeds sorted by title and it would not display all
-  // feeds.
-  feed_store.deleteIndex('title');
+  // feeds because untitled feeds were filtered.
+
+  // NOTE: the title index is no longer created in the earlier migration, the
+  // original migration (either 20 or some lost code from before it) created the
+  // index but then that code was completely removed. If I recall the thinking
+  // was that there is no point to creating an index if it will just be removed.
+  // Therefore, this cannot assume the index actually exists. deleteIndex fails
+  // with an error when trying to delete an index that does not exist. To work
+  // around this triggering an exception, check if the index exists.
+
+  // The original error: Uncaught DOMException: Failed to execute 'deleteIndex'
+  // on 'IDBObjectStore': The specified index was not found.
+
+  if (feed_store.indexNames.contains('title')) {
+    console.debug('Deleting title index on feed store');
+    feed_store.deleteIndex('title');
+  } else {
+    console.debug('No title index found in migration23');
+  }
 }
 
 export function migrate24(event, channel) {
