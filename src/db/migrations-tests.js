@@ -37,3 +37,7 @@ export async function migrations_tests_20() {
 
   await indexeddb_utils.remove(conn.name);
 }
+
+// TODO: test creating database (old version 0) to 21. open to 20, insert an
+// entry without magic, close, open to 21, verify that 21 added the magic prop
+// to the test entry
