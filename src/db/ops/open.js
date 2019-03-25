@@ -31,7 +31,7 @@ export default async function open(
   return conn;
 }
 
-function default_upgrade_handler(channel, event) {
+export function default_upgrade_handler(channel, event) {
   migrations.migrate20(event, channel);
   migrations.migrate21(event, channel);
   migrations.migrate22(event, channel);
