@@ -5,13 +5,12 @@ import normalize_feed from '/src/db/ops/normalize-feed.js';
 import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
+import is_iterable from '/src/lib/is-iterable.js';
 
 export default function create_feeds(conn, feeds) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof Connection);
-
-    // TODO: assert is iterable
-    assert(feeds);
+    assert(is_iterable(feeds));
 
     for (const feed of feeds) {
       assert(is_feed(feed));
@@ -22,9 +21,7 @@ export default function create_feeds(conn, feeds) {
       normalize_feed(feed);
       filter_empty_properties(feed);
 
-      console.debug('feed active?', feed.active);
-
-      // Allow explicit false
+      // Default to active if not set, but leave as is if false
       if (feed.active === undefined) {
         feed.active = true;
       }
