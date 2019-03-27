@@ -818,23 +818,18 @@ function create_feed_source_element(entry) {
   const source_element = document.createElement('span');
   source_element.setAttribute('class', 'entry-source');
 
-  if (entry.faviconURLString) {
-    // BUG: there seems to be a bug with entry favicons, somehow the base uri
-    // for each one tends to be wrong. Check this here, and if it looks wrong,
-    // log a warning and do not embed it. It looks like somehow some of the
-    // entries have a relative favicon url.
-
+  if (entry.favicon_url_string) {
     let favicon_url;
     try {
-      favicon_url = new URL(entry.faviconURLString);
+      favicon_url = new URL(entry.favicon_url_string);
     } catch (error) {
     }
 
     if (!favicon_url || favicon_url.protocol === 'chrome-extension:') {
-      console.debug('Bad favicon url', entry.faviconURLString);
+      console.debug('Bad favicon url', entry.favicon_url_string);
     } else {
       const favicon_element = document.createElement('img');
-      favicon_element.setAttribute('src', entry.faviconURLString);
+      favicon_element.setAttribute('src', entry.favicon_url_string);
       favicon_element.setAttribute('width', '16');
       favicon_element.setAttribute('height', '16');
       source_element.appendChild(favicon_element);
@@ -847,12 +842,12 @@ function create_feed_source_element(entry) {
   }
 
   const buffer = [];
-  buffer.push(entry.feedTitle || 'Unknown feed');
+  buffer.push(entry.feed_title || 'Unknown feed');
   buffer.push(' by ');
   buffer.push(entry.author || 'Unknown author');
-  if (entry.datePublished) {
+  if (entry.date_published) {
     buffer.push(' on ');
-    buffer.push(format_date(entry.datePublished));
+    buffer.push(format_date(entry.date_published));
   }
   details.textContent = buffer.join('');
   source_element.appendChild(details);
@@ -1022,7 +1017,7 @@ function feeds_container_append_feed(feed) {
   col.textContent = 'Favicon';
   row.appendChild(col);
   col = document.createElement('td');
-  col.textContent = feed.faviconURLString || 'Unknown';
+  col.textContent = feed.favicon_url_string || 'Unknown';
   row.appendChild(col);
   feed_info_element.appendChild(row);
 

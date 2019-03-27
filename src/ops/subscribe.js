@@ -25,7 +25,7 @@ export default async function subscribe(
 
   if (notify) {
     const feed_title = feed.title || locatable.get_url(feed);
-    show_notification('Subscribed to ' + feed_title, feed.faviconURLString);
+    show_notification('Subscribed to ' + feed_title, feed.favicon_url_string);
   }
 
   return feed;

@@ -17,36 +17,36 @@ export async function query_entries_test() {
   // Create 5 unread entries tied to feed 1
   for (let i = 0; i < 5; i++) {
     entry = new Entry();
-    entry.readState = Entry.UNREAD;
+    entry.read_state = Entry.UNREAD;
     entry.feed = 1;
-    entry.datePublished = new Date();
+    entry.date_published = new Date();
     create_promises.push(create_entry(conn, entry));
   }
 
   // Create 5 read entries tied to feed 1
   for (let i = 0; i < 5; i++) {
     entry = new Entry();
-    entry.readState = Entry.READ;
+    entry.read_state = Entry.READ;
     entry.feed = 1;
-    entry.datePublished = new Date();
+    entry.date_published = new Date();
     create_promises.push(create_entry(conn, entry));
   }
 
   // Create 5 unread entries tied to feed 2
   for (let i = 0; i < 5; i++) {
     entry = new Entry();
-    entry.readState = Entry.UNREAD;
+    entry.read_state = Entry.UNREAD;
     entry.feed = 2;
-    entry.datePublished = new Date();
+    entry.date_published = new Date();
     create_promises.push(create_entry(conn, entry));
   }
 
   // Create 5 read entries tied to feed 2
   for (let i = 0; i < 5; i++) {
     entry = new Entry();
-    entry.readState = Entry.READ;
+    entry.read_state = Entry.READ;
     entry.feed = 2;
-    entry.datePublished = new Date();
+    entry.date_published = new Date();
     create_promises.push(create_entry(conn, entry));
   }
 
@@ -77,12 +77,12 @@ export async function query_entries_test() {
   // expected order.
   query = {direction: 'DESC'};
   entries = await query_entries(conn, query);
-  // Walk the array. When querying by DESC order, each entry's datePublished
+  // Walk the array. When querying by DESC order, each entry's date_published
   // value should be greater than or equal to the next one
   for (let i = 0; i < entries.length - 1; i++) {
     const entry1 = entries[i];
     const entry2 = entries[i + 1];
-    assert(entry1.datePublished >= entry2.datePublished);
+    assert(entry1.date_published >= entry2.date_published);
   }
 
   // Query using an offset and no limit. Here choose the smallest offset that
@@ -153,7 +153,7 @@ export async function query_entries_test() {
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === Entry.UNREAD);
+    assert(entry.read_state === Entry.UNREAD);
   }
 
   // Feed 1 read only
@@ -162,7 +162,7 @@ export async function query_entries_test() {
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === Entry.READ);
+    assert(entry.read_state === Entry.READ);
   }
 
   // Feed 1, unread, offset 3
@@ -171,7 +171,7 @@ export async function query_entries_test() {
   assert(entries.length === 2);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.readState === Entry.UNREAD);
+    assert(entry.read_state === Entry.UNREAD);
   }
 
   conn.close();

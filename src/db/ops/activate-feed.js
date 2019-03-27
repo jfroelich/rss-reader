@@ -8,8 +8,8 @@ export default function activate_feed(conn, id) {
   const props = {
     id: id,
     active: true,
-    deactivateDate: undefined,
-    deactivationReasonText: undefined
+    deactivate_date: undefined,
+    deactivation_reason_text: undefined
   };
 
   const overwrite_flag = false;

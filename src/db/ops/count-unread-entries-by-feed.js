@@ -8,7 +8,7 @@ export default function count_unread_entries_by_feed(conn, id) {
 
     const txn = conn.conn.transaction('entries');
     const store = txn.objectStore('entries');
-    const index = store.index('feed-readState');
+    const index = store.index('feed-read_state');
     const range_only_value = [id, Entry.UNREAD];
     const request = index.count(range_only_value);
     request.onsuccess = _ => resolve(request.result);

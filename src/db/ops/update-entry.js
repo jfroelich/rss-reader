@@ -15,7 +15,7 @@ export default function update_entry(conn, entry) {
     // Entries are not required to have urls in the model layer, so there is no
     // assertion here on entry.urls
 
-    entry.dateUpdated = new Date();
+    entry.date_updated = new Date();
 
     // Even though it would be more performant to normalize earlier in the
     // data flow, here we must do it because it is a model constraint.
@@ -30,7 +30,7 @@ export default function update_entry(conn, entry) {
           type: 'entry-updated',
           id: entry.id,
           // NOTE: this does not indicate transition, just current state
-          read: entry.readState === Entry.READ ? true : false
+          read: entry.read_state === Entry.READ ? true : false
         });
       }
 

@@ -209,7 +209,7 @@ function find_entry_enclosure(entry_element) {
   if (enclosure_element) {
     const enclosure = {};
     enclosure.url = enclosure_element.getAttribute('url');
-    enclosure.enclosureLength = enclosure_element.getAttribute('length');
+    enclosure.enclosure_length = enclosure_element.getAttribute('length');
     enclosure.type = enclosure_element.getAttribute('type');
     return enclosure;
   }

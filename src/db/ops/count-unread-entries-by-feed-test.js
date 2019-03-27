@@ -27,7 +27,7 @@ export async function count_unread_entries_by_feed_test() {
     for (let j = 0; j < num_entries_created_per_type; j++) {
       const entry = new Entry();
       entry.feed = feed_id;
-      entry.readState = read_state;
+      entry.read_state = read_state;
       create_promises.push(create_entry(conn, entry));
     }
   }

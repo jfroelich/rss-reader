@@ -26,9 +26,9 @@ export async function deactivate_feed_test() {
   assert(stored_feed);
   assert(is_feed(stored_feed));
   assert(stored_feed.active === false);
-  assert(stored_feed.deactivateDate);
+  assert(stored_feed.deactivate_date);
   const now = new Date();
-  assert(stored_feed.deactivateDate <= now);
+  assert(stored_feed.deactivate_date <= now);
 
   conn.close();
   await indexeddb_utils.remove(db_name);

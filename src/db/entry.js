@@ -1,20 +1,22 @@
 import * as types from '/src/db/types.js';
 
 export default function Entry() {
-  this.magic = types.ENTRY_MAGIC;
-  this.id = undefined;
+  this.archive_state = undefined;
   this.author = undefined;
-  this.title = undefined;
   this.content = undefined;
-  this.readState = undefined;
-  this.urls = undefined;
-  this.feed = undefined;
-  this.archiveState = undefined;
-  this.dateCreated = undefined;
-  this.dateUpdated = undefined;
-  this.datePublished = undefined;
+  this.date_created = undefined;
+  this.date_read = undefined;
+  this.date_updated = undefined;
+  this.date_published = undefined;
   this.enclosure = undefined;
-  this.faviconURLString = undefined;
+  this.favicon_url_string = undefined;
+  this.feed = undefined;
+  this.feed_title = undefined;
+  this.id = undefined;
+  this.magic = types.ENTRY_MAGIC;
+  this.read_state = undefined;
+  this.title = undefined;
+  this.urls = undefined;
 }
 
 // Read states

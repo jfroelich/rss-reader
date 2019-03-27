@@ -49,10 +49,10 @@ export default function update_feed(conn, feed, overwrite) {
       filter_empty_properties(feed);
     }
 
-    // If overwriting, set the dateUpdated property. If partial, it will be
+    // If overwriting, set the date_updated property. If partial, it will be
     // set later by the partial logic.
     if (overwrite) {
-      feed.dateUpdated = new Date();
+      feed.date_updated = new Date();
     }
 
     const txn = conn.conn.transaction('feeds', 'readwrite');
@@ -119,19 +119,19 @@ export default function update_feed(conn, feed, overwrite) {
       // When activating a feed, two other properties related to deactivation
       // should be specified as undefined to indicate intent to remove.
       if (feed.active === true) {
-        if (!('deactivationReasonText' in feed)) {
-          feed.deactivationReasonText = undefined;
+        if (!('deactivation_reason_text' in feed)) {
+          feed.deactivation_reason_text = undefined;
         }
 
-        if (!('deactivateDate' in feed)) {
-          feed.deactivateDate = undefined;
+        if (!('deactivate_date' in feed)) {
+          feed.deactivate_date = undefined;
         }
       }
 
       // When deactivating, record the date
       if (feed.active === false) {
-        if (!('deactivateDate' in feed)) {
-          feed.deactivateDate = new Date();
+        if (!('deactivate_date' in feed)) {
+          feed.deactivate_date = new Date();
         }
       }
 
@@ -153,7 +153,7 @@ export default function update_feed(conn, feed, overwrite) {
         }
       }
 
-      old_feed.dateUpdated = new Date();
+      old_feed.date_updated = new Date();
       event.target.source.put(old_feed);
     };
   });

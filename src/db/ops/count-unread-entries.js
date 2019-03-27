@@ -8,7 +8,7 @@ export default function count_unread_entries(conn) {
 
     const txn = conn.conn.transaction('entries');
     const store = txn.objectStore('entries');
-    const index = store.index('readState');
+    const index = store.index('read_state');
     const request = index.count(Entry.UNREAD);
     request.onsuccess = _ => resolve(request.result);
     request.onerror = _ => reject(request.error);

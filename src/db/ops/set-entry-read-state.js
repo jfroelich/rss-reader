@@ -41,32 +41,35 @@ export default function set_entry_read_state(conn, id, read = false) {
         return;
       }
 
-      if (entry.archiveState === Entry.ARCHIVED) {
+      if (entry.archive_state === Entry.ARCHIVED) {
         const message = 'Cannot change read state of archived entry ' + id;
         const error = new InvalidStateError(message);
         reject(error);
         return;
       }
 
-      if (read && entry.readState === Entry.READ) {
+      if (read && entry.read_state === Entry.READ) {
         const message = 'Cannot mark read entry as read ' + id;
         const error = new InvalidStateError(message);
         reject(error);
         return;
-      } else if (!read && entry.readState === Entry.UNREAD) {
+      } else if (!read && entry.read_state === Entry.UNREAD) {
         const message = 'Cannot mark unread entry as unread ' + id;
         const error = new InvalidStateError(message);
         reject(error);
         return;
       }
 
-      entry.readState = read ? Entry.READ : Entry.UNREAD;
-      const currentDate = new Date();
-      entry.dateUpdated = currentDate;
+      entry.read_state = read ? Entry.READ : Entry.UNREAD;
+
+      const current_date = new Date();
+
+      entry.date_updated = current_date;
+
       if (read) {
-        entry.dateRead = currentDate;
+        entry.date_read = current_date;
       } else {
-        delete entry.dateRead;
+        delete entry.date_read;
       }
 
       event.target.source.put(entry);

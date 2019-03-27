@@ -24,7 +24,7 @@ export default function archive_entries(conn, max_age = TWO_DAYS_MS) {
 
 function create_archivable_entries_cursor_request(transaction) {
   const store = transaction.objectStore('entries');
-  const index = store.index('archiveState-readState');
+  const index = store.index('archive_state-read_state');
   const key_path = [Entry.UNARCHIVED, Entry.READ];
   return index.openCursor(key_path);
 }
@@ -42,14 +42,14 @@ function request_onsuccess(ids, max_age, event) {
     return;
   }
 
-  if (!entry.dateCreated) {
+  if (!entry.date_created) {
     console.warn('Skiping entry missing date created', entry);
     cursor.continue();
     return;
   }
 
   const current_date = new Date();
-  const age = current_date - entry.dateCreated;
+  const age = current_date - entry.date_created;
 
   if (age < 0) {
     console.warn('Skipping entry created in the future', entry);
@@ -80,32 +80,31 @@ function archive_entry(entry) {
   const before_size = sizeof(entry);
 
   const ce = new Entry();
-  ce.dateCreated = entry.dateCreated;
-  ce.datePublished = entry.datePublished;
-  if (!ce.datePublished) {
-    ce.datePublished = ce.dateCreated;
+  ce.date_created = entry.date_created;
+  ce.date_published = entry.date_published;
+  if (!ce.date_published) {
+    ce.date_published = ce.date_created;
   }
 
-  if (entry.dateRead) {
-    ce.dateRead = entry.dateRead;
+  if (entry.date_read) {
+    ce.date_read = entry.date_read;
   }
 
   ce.feed = entry.feed;
   ce.id = entry.id;
-  ce.readState = entry.readState;
+  ce.read_state = entry.read_state;
   ce.urls = entry.urls;
 
   // We do not measure all fields
   const after_size = sizeof(ce);
   if (after_size > before_size) {
-    console.warn(
-        'Archiving entry increased size by %d', after_size - before_size, entry,
-        ce);
+    const delta = after_size - before_size;
+    console.warn('Archiving entry increased size by %d', delta, entry, ce);
   }
 
-  ce.archiveState = Entry.ARCHIVED;
+  ce.archive_state = Entry.ARCHIVED;
   const current_date = new Date();
-  ce.dateArchived = current_date;
-  ce.dateUpdated = current_date;
+  ce.date_archived = current_date;
+  ce.date_updated = current_date;
   return ce;
 }

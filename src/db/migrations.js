@@ -1,4 +1,5 @@
 import * as types from '/src/db/types.js';
+import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
 // The migrations module provides transition functions that handle creating the
 // schema of the database or applying changes to it when the database version
@@ -52,13 +53,9 @@ export function migrate20(event, channel) {
 
   const conn = event.target.result;
 
-  console.debug('Creating feed object store');
-
   const feed_store =
       conn.createObjectStore('feed', {keyPath: 'id', autoIncrement: true});
   feed_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
-
-  console.debug('Creating entry object store');
 
   const entry_store =
       conn.createObjectStore('entry', {keyPath: 'id', autoIncrement: true});
@@ -352,9 +349,6 @@ export function migrate29(event, channel) {
   entry_store.createIndex(index_name, index_path);
 }
 
-// TODO: before going live, implement a test for this migration and confirm it
-// copies over data. Once the test works, change all db functions to use the
-// plural names, then go live.
 export function migrate30(event, channel) {
   if (event.oldVersion > 29) {
     return;
@@ -400,8 +394,6 @@ export function migrate30(event, channel) {
   // necessary, but it is kind of unclear to me at the moment, so including the
   // check.
 
-  // TODO: once the test confirms this works remove the temporary logging
-
   // Copy over the feeds then delete the old store
   if (db.objectStoreNames.contains('feed')) {
     const old_feed_store = transaction.objectStore('feed');
@@ -409,7 +401,6 @@ export function migrate30(event, channel) {
     feed_request.onsuccess = event => {
       const cursor = event.target.result;
       if (cursor) {
-        console.debug('Copying feed', cursor.value.id);
         feed_store.put(cursor.value);
         cursor.continue();
       } else {
@@ -427,7 +418,6 @@ export function migrate30(event, channel) {
     entry_request.onsuccess = event => {
       const cursor = event.target.result;
       if (cursor) {
-        console.debug('Copying entry', cursor.value.id);
         entry_store.put(cursor.value);
         cursor.continue();
       } else {
@@ -435,4 +425,135 @@ export function migrate30(event, channel) {
       }
     };
   }
+}
+
+// Use snake_case instead of camelCase for object properties
+export function migrate31(event, channel) {
+  if (event.oldVersion > 30) {
+    return;
+  }
+
+  const connection = event.target.result;
+
+  // Ordinarily this check does not need to run, however there is a situation
+  // in the test context where we attach all migrations to an upgrade handler
+  // and then intentionally upgrade to an outdated version, and without this
+  // check, that would lead to duplicate migrations (one or more premature
+  // migrations).
+  if (connection.version < 31) {
+    return;
+  }
+
+  console.debug('Applying migration 31');
+
+  // Update relevant key paths. There is nothing to change in the feed store.
+
+  const transaction = event.target.transaction;
+  const entry_store = transaction.objectStore('entries');
+
+  entry_store.deleteIndex('feed-readState-datePublished');
+  entry_store.createIndex(
+      'feed-read_state-date_published',
+      ['feed', 'read_state', 'date_published']);
+
+  entry_store.deleteIndex('readState-datePublished');
+  entry_store.createIndex(
+      'read_state-date_published', ['read_state', 'date_published']);
+
+  entry_store.deleteIndex('readState');
+  entry_store.createIndex('read_state', 'read_state');
+
+  entry_store.deleteIndex('archiveState-readState');
+  entry_store.createIndex(
+      'archive_state-read_state', ['archive_state', 'read_state']);
+
+  entry_store.deleteIndex('feed-readState');
+  entry_store.createIndex('feed-read_state', ['feed', 'read_state']);
+
+  entry_store.deleteIndex('feed-datePublished');
+  entry_store.createIndex('feed-date_published', ['feed', 'date_published']);
+
+  entry_store.deleteIndex('datePublished');
+  entry_store.createIndex('date_published', 'date_published');
+
+  // In the next iterations we use filter-empty-props so that we can wastefully
+  // and lazily just copy props and then cleanup, instead of pedantically
+  // inspecting for non-emptiness per property. Shouldn't be a big deal.
+
+  // snake_case each feed object's properties
+  const feed_store = transaction.objectStore('feeds');
+  const feed_cursor_request = feed_store.openCursor();
+  feed_cursor_request.onsuccess = event => {
+    const cursor = event.target.result;
+    if (!cursor) {
+      return;
+    }
+
+    const feed = cursor.value;
+
+    feed.deactivation_reason_text = feed.deactivationReasonText;
+    delete feed.deactivationReasonText;
+
+    feed.deactivate_date = feed.deactivateDate;
+    delete feed.deactivateDate;
+
+    feed.date_created = feed.dateCreated;
+    delete feed.dateCreated;
+
+    feed.date_updated = feed.dateUpdated;
+    delete feed.dateUpdated;
+
+    feed.date_published = feed.datePublished;
+    delete feed.datePublished;
+
+    feed.favicon_url_string = feed.faviconURLString;
+    delete feed.faviconURLString;
+
+    filter_empty_properties(feed);
+
+    feed_store.put(feed);
+    cursor.continue();
+  };
+
+  // Next, replace each entry object with its proper snake case
+  const entry_cursor_request = entry_store.openCursor();
+  entry_cursor_request.onsuccess = event => {
+    const cursor = event.target.result;
+    if (!cursor) {
+      return;
+    }
+
+    const entry = cursor.value;
+
+    entry.feed_title = entry.feedTitle;
+    delete entry.feedTitle;
+
+    entry.read_state = entry.readState;
+    delete entry.readState;
+
+    entry.archive_state = entry.archiveState;
+    delete entry.archiveState;
+
+    entry.date_created = entry.dateCreated;
+    delete entry.dateCreated;
+
+    entry.date_updated = entry.dateUpdated;
+    delete entry.dateUpdated;
+
+    entry.date_published = entry.datePublished;
+    delete entry.datePublished;
+
+    entry.favicon_url_string = entry.faviconURLString;
+    delete entry.faviconURLString;
+
+    if (entry.enclosure && entry.enclosure.enclosureLength) {
+      entry.enclosure.enclosure_length = entry.enclosure.enclosureLength;
+      delete entry.enclosure.enclosureLength;
+    }
+
+    filter_empty_properties(entry);
+
+    entry_store.put(entry);
+    cursor.continue();
+  };
 }

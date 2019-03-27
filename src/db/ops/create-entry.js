@@ -11,24 +11,24 @@ export default function create_entry(conn, entry) {
     assert(is_entry(entry));
     assert(entry.id === undefined);
 
-    if (entry.readState === undefined) {
-      entry.readState = Entry.UNREAD;
+    if (entry.read_state === undefined) {
+      entry.read_state = Entry.UNREAD;
     }
 
-    if (entry.archiveState === undefined) {
-      entry.archiveState = Entry.UNARCHIVED;
+    if (entry.archive_state === undefined) {
+      entry.archive_state = Entry.UNARCHIVED;
     }
 
-    if (entry.dateCreated === undefined) {
-      entry.dateCreated = new Date();
+    if (entry.date_created === undefined) {
+      entry.date_created = new Date();
     }
 
-    // All entries need to appear in the datePublished index
-    if (entry.datePublished === undefined) {
-      entry.datePublished = entry.dateCreated;
+    // All entries need to appear in the date_published index
+    if (entry.date_published === undefined) {
+      entry.date_published = entry.date_created;
     }
 
-    delete entry.dateUpdated;
+    delete entry.date_updated;
     normalize_entry(entry);
     filter_empty_properties(entry);
 

@@ -18,7 +18,7 @@ export default function get_entries(conn, mode = 'all', offset, limit) {
 
     let request;
     if (mode === 'viewable') {
-      const index = store.index('archiveState-readState');
+      const index = store.index('archive_state-read_state');
       const path = [Entry.UNARCHIVED, Entry.UNREAD];
       request = index.openCursor(path);
     } else if (mode === 'all') {

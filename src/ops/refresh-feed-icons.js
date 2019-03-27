@@ -21,11 +21,11 @@ async function refresh_feed_icon(conn, iconn, feed) {
   const icon_url = await lookup_feed_favicon(feed, iconn);
   const icon_url_string = icon_url ? icon_url.href : undefined;
 
-  if (feed.faviconURLString !== icon_url_string) {
+  if (feed.favicon_url_string !== icon_url_string) {
     if (icon_url_string) {
-      feed.faviconURLString = icon_url_string;
+      feed.favicon_url_string = icon_url_string;
     } else {
-      delete feed.faviconURLString;
+      delete feed.favicon_url_string;
     }
 
     const overwrite_flag = true;

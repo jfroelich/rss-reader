@@ -1,5 +1,5 @@
-import * as identifiable from '/src/db/identifiable.js';
 import Feed from '/src/db/feed.js';
+import * as identifiable from '/src/db/identifiable.js';
 import {is_feed} from '/src/db/types.js';
 import {is_date_lte, is_valid_date, vassert} from '/src/db/validation-utils.js';
 import assert from '/src/lib/assert.js';
@@ -21,17 +21,17 @@ export default function validate_feed(feed) {
   vassert(
       feed.description === undefined || typeof feed.description === 'string');
   vassert(
-      feed.deactivationReasonText === undefined ||
-      typeof feed.deactivationReasonText === 'string');
+      feed.deactivation_reason_text === undefined ||
+      typeof feed.deactivation_reason_text === 'string');
 
-  vassert(is_valid_date(feed.deactivateDate));
-  vassert(is_date_lte(feed.deactivateDate, now));
-  vassert(is_valid_date(feed.dateCreated));
-  vassert(is_date_lte(feed.dateCreated, now));
-  vassert(is_date_lte(feed.dateCreated, feed.deactivateDate));
-  vassert(is_valid_date(feed.dateUpdated));
-  vassert(is_date_lte(feed.dateUpdated, now));
-  vassert(is_date_lte(feed.dateCreated, feed.dateUpdated));
-  vassert(is_valid_date(feed.datePublished));
-  vassert(is_date_lte(feed.datePublished, now));
+  vassert(is_valid_date(feed.deactivate_date));
+  vassert(is_date_lte(feed.deactivate_date, now));
+  vassert(is_valid_date(feed.date_created));
+  vassert(is_date_lte(feed.date_created, now));
+  vassert(is_date_lte(feed.date_created, feed.deactivate_date));
+  vassert(is_valid_date(feed.date_updated));
+  vassert(is_date_lte(feed.date_updated, now));
+  vassert(is_date_lte(feed.date_created, feed.date_updated));
+  vassert(is_valid_date(feed.date_published));
+  vassert(is_date_lte(feed.date_published, now));
 }

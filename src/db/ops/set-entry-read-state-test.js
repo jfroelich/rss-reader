@@ -13,23 +13,23 @@ export async function set_entry_read_state_test() {
   const conn = await test_open(db_name);
 
   const entry = new Entry();
-  entry.readState = Entry.UNREAD;
+  entry.read_state = Entry.UNREAD;
   const id = await create_entry(conn, entry);
   let stored_entry = await get_entry(conn, 'id', id, false);
   assert(stored_entry);
-  assert(stored_entry.readState === Entry.UNREAD);
+  assert(stored_entry.read_state === Entry.UNREAD);
   await set_entry_read_state(conn, id, true);
   stored_entry = undefined;
   stored_entry = await get_entry(conn, 'id', id, false);
   assert(stored_entry);
-  assert(stored_entry.readState === Entry.READ);
+  assert(stored_entry.read_state === Entry.READ);
 
   // Now mark it again as unread, and assert
   await set_entry_read_state(conn, id, false);
   stored_entry = undefined;
   stored_entry = await get_entry(conn, 'id', id, false);
   assert(stored_entry);
-  assert(stored_entry.readState === Entry.UNREAD);
+  assert(stored_entry.read_state === Entry.UNREAD);
 
   conn.close();
   await indexeddb_utils.remove(db_name);

@@ -19,7 +19,7 @@ export async function count_unread_entries_test() {
   const entries_to_insert = [];
   for (let i = 0; i < insert_unread_count; i++) {
     const entry = new Entry();
-    entry.readState = Entry.UNREAD;
+    entry.read_state = Entry.UNREAD;
     locatable.append_url(entry, new URL('a://b.c' + i));
     entries_to_insert.push(entry);
   }
@@ -27,7 +27,7 @@ export async function count_unread_entries_test() {
   const insert_read_count = 5;
   for (let i = 0; i < insert_read_count; i++) {
     const entry = new Entry();
-    entry.readState = Entry.READ;
+    entry.read_state = Entry.READ;
     locatable.append_url(entry, new URL('d://e.f' + i));
     entries_to_insert.push(entry);
   }

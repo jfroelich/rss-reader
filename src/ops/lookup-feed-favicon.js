@@ -5,7 +5,7 @@ import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {lookup, LookupRequest} from '/src/lib/favicon.js';
 
 // TODO: revisit the conclusion that finding the lookup url is independent of
-// the model. If a feed already has a faviconURLString property, then what is
+// the model. If a feed already has a favicon_url_string property, then what is
 // wrong with providing a utility function within the domain object itself? All
 // we are doing at that point then is adding a convenience function that cuts
 // out some common boilerplate, and provides consistent behavior. We are just
