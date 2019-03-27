@@ -12,7 +12,7 @@ export default function archive_entries(conn, max_age = TWO_DAYS_MS) {
     assert(max_age >= 0);
 
     const ids = [];
-    const transaction = conn.conn.transaction('entry', 'readwrite');
+    const transaction = conn.conn.transaction('entries', 'readwrite');
     transaction.oncomplete =
         transaction_oncomplete.bind(transaction, conn.channel, ids, resolve);
     transaction.onerror = event => reject(event.target.error);
@@ -23,7 +23,7 @@ export default function archive_entries(conn, max_age = TWO_DAYS_MS) {
 }
 
 function create_archivable_entries_cursor_request(transaction) {
-  const store = transaction.objectStore('entry');
+  const store = transaction.objectStore('entries');
   const index = store.index('archiveState-readState');
   const key_path = [Entry.UNARCHIVED, Entry.READ];
   return index.openCursor(key_path);

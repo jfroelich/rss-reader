@@ -28,7 +28,7 @@ export default function create_feed(conn, feed) {
     filter_empty_properties(feed);
 
     let id = 0;
-    const txn = conn.conn.transaction('feed', 'readwrite');
+    const txn = conn.conn.transaction('feeds', 'readwrite');
     txn.onerror = event => reject(event.target.error);
     txn.oncomplete = event => {
       if (conn.channel) {
@@ -38,7 +38,7 @@ export default function create_feed(conn, feed) {
       resolve(id);
     };
 
-    const store = txn.objectStore('feed');
+    const store = txn.objectStore('feeds');
     const request = store.put(feed);
     request.onsuccess = _ => id = request.result;
   });

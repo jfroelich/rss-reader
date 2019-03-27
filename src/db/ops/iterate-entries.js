@@ -5,10 +5,10 @@ export default function iterate_entries(conn, handle_entry) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof Connection);
     assert(typeof handle_entry === 'function');
-    const txn = conn.conn.transaction('entry', 'readwrite');
+    const txn = conn.conn.transaction('entries', 'readwrite');
     txn.oncomplete = resolve;
     txn.onerror = event => reject(event.target.error);
-    const store = txn.objectStore('entry');
+    const store = txn.objectStore('entries');
     const request = store.openCursor();
 
     request.onsuccess = event => {

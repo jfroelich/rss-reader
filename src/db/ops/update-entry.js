@@ -23,7 +23,7 @@ export default function update_entry(conn, entry) {
 
     filter_empty_properties(entry);
 
-    const txn = conn.conn.transaction('entry', 'readwrite');
+    const txn = conn.conn.transaction('entries', 'readwrite');
     txn.oncomplete = event => {
       if (conn.channel) {
         conn.channel.postMessage({
@@ -37,6 +37,6 @@ export default function update_entry(conn, entry) {
       resolve(entry);
     };
     txn.onerror = event => reject(event.target.error);
-    txn.objectStore('entry').put(entry);
+    txn.objectStore('entries').put(entry);
   });
 }

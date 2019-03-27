@@ -33,7 +33,7 @@ export default function create_entry(conn, entry) {
     filter_empty_properties(entry);
 
     let id;
-    const txn = conn.conn.transaction('entry', 'readwrite');
+    const txn = conn.conn.transaction('entries', 'readwrite');
     txn.oncomplete = _ => {
       if (conn.channel) {
         conn.channel.postMessage({type: 'entry-created', id: id});
@@ -42,7 +42,7 @@ export default function create_entry(conn, entry) {
       resolve(id);
     };
     txn.onerror = event => reject(event.target.error);
-    const store = txn.objectStore('entry');
+    const store = txn.objectStore('entries');
     const request = store.put(entry);
     request.onsuccess = _ => id = request.result;
   });

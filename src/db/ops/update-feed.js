@@ -55,7 +55,7 @@ export default function update_feed(conn, feed, overwrite) {
       feed.dateUpdated = new Date();
     }
 
-    const txn = conn.conn.transaction('feed', 'readwrite');
+    const txn = conn.conn.transaction('feeds', 'readwrite');
     txn.onerror = event => reject(event.target.error);
     txn.oncomplete = event => {
       if (conn.channel) {
@@ -68,7 +68,8 @@ export default function update_feed(conn, feed, overwrite) {
 
       resolve();
     };
-    const store = txn.objectStore('feed');
+
+    const store = txn.objectStore('feeds');
 
     // The overwrite case is simple
     if (overwrite) {

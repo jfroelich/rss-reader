@@ -7,7 +7,7 @@ export default function delete_entry(conn, id) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof Connection);
     assert(identifiable.is_valid_id(id));
-    const txn = conn.conn.transaction('entry', 'readwrite');
+    const txn = conn.conn.transaction('entries', 'readwrite');
     txn.oncomplete = event => {
       if (conn.channel) {
         conn.channel.postMessage({type: 'entry-deleted', id: id});
@@ -16,6 +16,6 @@ export default function delete_entry(conn, id) {
       resolve();
     };
     txn.onerror = event => reject(event.target.error);
-    txn.objectStore('entry').delete(id);
+    txn.objectStore('entries').delete(id);
   });
 }

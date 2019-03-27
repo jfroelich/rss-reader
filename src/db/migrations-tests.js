@@ -177,3 +177,62 @@ export async function migrations_tests_23() {
 
   await indexeddb_utils.remove(conn.name);
 }
+
+export async function migrations_tests_30() {
+  const database_name = 'migrations-tests-22';
+  await indexeddb_utils.remove(database_name);
+
+  let channel;
+
+  const handler = event => {
+    migrations.migrate20(event, channel);
+    migrations.migrate21(event, channel);
+    migrations.migrate22(event, channel);
+    migrations.migrate23(event, channel);
+    migrations.migrate24(event, channel);
+    migrations.migrate25(event, channel);
+    migrations.migrate26(event, channel);
+    migrations.migrate27(event, channel);
+    migrations.migrate28(event, channel);
+    migrations.migrate29(event, channel);
+    migrations.migrate30(event, channel);
+  };
+
+  let conn = await indexeddb_utils.open(database_name, 29, handler);
+
+  // It is not working, somehow the store is already modified by this step
+  // Ok the problem is that migration 30 is getting applied here already
+
+  // insert a test feed
+  let id = await new Promise((resolve, reject) => {
+    let id = undefined;
+    const transaction = conn.transaction('feed', 'readwrite');
+    transaction.oncomplete = event => resolve(id);
+    transaction.onerror = event => reject(event.target.error);
+
+    const store = transaction.objectStore('feed');
+    const request = store.put({title: 'test feed created in version 29'});
+    request.onsuccess = event => id = request.result;
+  });
+
+  // insert a test entry
+  id = await new Promise((resolve, reject) => {
+    let id = undefined;
+    const transaction = conn.transaction('entry', 'readwrite');
+    transaction.oncomplete = event => resolve(id);
+    transaction.onerror = event => reject(event.target.error);
+
+    const store = transaction.objectStore('entry');
+    const request = store.put({title: 'test entry created in version 29'});
+    request.onsuccess = event => id = request.result;
+  });
+
+  conn.close();
+
+  let conn30 = await indexeddb_utils.open(database_name, 30, handler);
+
+  // TODO: confirm the feed and entry were copied over
+
+  conn30.close();
+  await indexeddb_utils.remove(conn30.name);
+}

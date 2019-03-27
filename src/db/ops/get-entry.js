@@ -9,10 +9,10 @@ export default function get_entry(conn, mode = 'id', value, key_only) {
     assert(mode !== 'id' || identifiable.is_valid_id(value));
     assert(mode !== 'id' || !key_only);
 
-    const txn = conn.conn.transaction('entry');
+    const txn = conn.conn.transaction('entries');
     txn.onerror = event => reject(event.target.error);
 
-    const store = txn.objectStore('entry');
+    const store = txn.objectStore('entries');
     let request;
     if (mode === 'url') {
       const index = store.index('urls');

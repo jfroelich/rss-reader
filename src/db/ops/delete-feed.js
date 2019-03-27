@@ -10,7 +10,7 @@ export default function delete_feed(conn, feed_id, reason) {
 
     const entry_ids = [];
 
-    const txn = conn.conn.transaction(['feed', 'entry'], 'readwrite');
+    const txn = conn.conn.transaction(['feeds', 'entries'], 'readwrite');
     txn.onerror = event => reject(event.target.error);
     txn.oncomplete = _ => {
       if (conn.channel) {
@@ -29,11 +29,11 @@ export default function delete_feed(conn, feed_id, reason) {
       resolve(entry_ids);
     };
 
-    const feed_store = txn.objectStore('feed');
+    const feed_store = txn.objectStore('feeds');
     feed_store.delete(feed_id);
 
-    const entry_store = txn.objectStore('entry');
-    const feed_index = entry_store.index('feed');
+    const entry_store = txn.objectStore('entries');
+    const feed_index = entry_store.index('feeds');
     // Avoid loading full entry data
     const request = feed_index.getAllKeys(feed_id);
     request.onsucess = function(event) {

@@ -13,7 +13,7 @@ export default function set_entry_read_state(conn, id, read = false) {
     assert(conn instanceof Connection);
     assert(identifiable.is_valid_id(id));
     assert(typeof read === 'boolean');
-    const txn = conn.conn.transaction('entry', 'readwrite');
+    const txn = conn.conn.transaction('entries', 'readwrite');
     txn.onerror = event => reject(event.target.error);
     txn.oncomplete = event => {
       if (conn.channel) {
@@ -22,7 +22,7 @@ export default function set_entry_read_state(conn, id, read = false) {
 
       resolve();
     };
-    const store = txn.objectStore('entry');
+    const store = txn.objectStore('entries');
     const request = store.get(id);
     request.onsuccess = function(event) {
       const entry = event.target.result;

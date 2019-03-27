@@ -351,3 +351,88 @@ export function migrate29(event, channel) {
   const index_path = ['feed', 'readState', 'datePublished'];
   entry_store.createIndex(index_name, index_path);
 }
+
+// TODO: before going live, implement a test for this migration and confirm it
+// copies over data. Once the test works, change all db functions to use the
+// plural names, then go live.
+export function migrate30(event, channel) {
+  if (event.oldVersion > 29) {
+    return;
+  }
+
+  const db = event.target.result;
+
+  // In the test context we might be using this migration in a handler, but
+  // trying to open an antiquated version, so we also need this check
+  if (db.version < 30) {
+    return;
+  }
+
+  console.debug('Applying migration 30');
+
+  // Create the new stores and indices
+  const feed_store =
+      db.createObjectStore('feeds', {keyPath: 'id', autoIncrement: true});
+  feed_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
+
+  const entry_store =
+      db.createObjectStore('entries', {keyPath: 'id', autoIncrement: true});
+  entry_store.createIndex('feed', 'feed');
+  entry_store.createIndex(
+      'feed-readState-datePublished', ['feed', 'readState', 'datePublished']);
+  entry_store.createIndex(
+      'readState-datePublished', ['readState', 'datePublished']);
+  entry_store.createIndex('readState', 'readState');
+  entry_store.createIndex(
+      'archiveState-readState', ['archiveState', 'readState']);
+  entry_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
+  entry_store.createIndex('feed-readState', ['feed', 'readState']);
+  entry_store.createIndex('feed-datePublished', ['feed', 'datePublished']);
+  entry_store.createIndex('datePublished', 'datePublished');
+
+  const transaction = event.target.transaction;
+
+  // I decided not to generate events (dispatch messages to the channel) for
+  // these operations. I do not think copying an object from one store to
+  // another represents a creation or update of that object.
+
+  // The check for whether the store exists seems like it should not be
+  // necessary, but it is kind of unclear to me at the moment, so including the
+  // check.
+
+  // TODO: once the test confirms this works remove the temporary logging
+
+  // Copy over the feeds then delete the old store
+  if (db.objectStoreNames.contains('feed')) {
+    const old_feed_store = transaction.objectStore('feed');
+    const feed_request = old_feed_store.openCursor();
+    feed_request.onsuccess = event => {
+      const cursor = event.target.result;
+      if (cursor) {
+        console.debug('Copying feed', cursor.value.id);
+        feed_store.put(cursor.value);
+        cursor.continue();
+      } else {
+        // At this time it is finally safe to delete the store
+        db.deleteObjectStore('feed');
+      }
+    };
+  }
+
+
+  // Copy over the entries then delete the old store
+  if (db.objectStoreNames.contains('entry')) {
+    const old_entry_store = transaction.objectStore('entry');
+    const entry_request = old_entry_store.openCursor();
+    entry_request.onsuccess = event => {
+      const cursor = event.target.result;
+      if (cursor) {
+        console.debug('Copying entry', cursor.value.id);
+        entry_store.put(cursor.value);
+        cursor.continue();
+      } else {
+        db.deleteObjectStore('entry');
+      }
+    };
+  }
+}

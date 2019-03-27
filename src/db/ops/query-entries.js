@@ -19,9 +19,9 @@ export default function query_entries(conn, query = {}) {
     const direction = translate_direction(query.direction);
     const entries = [];
 
-    const txn = conn.conn.transaction('entry');
+    const txn = conn.conn.transaction('entries');
     txn.onerror = event => reject(event.target.error);
-    const store = txn.objectStore('entry');
+    const store = txn.objectStore('entries');
     const request = build_request(store, query, direction);
 
     // TODO: now that request handler is nested, this cursor_state object

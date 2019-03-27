@@ -11,10 +11,10 @@ export default function get_entries(conn, mode = 'all', offset, limit) {
     const entries = [];
     let advanced = false;
 
-    const txn = conn.conn.transaction('entry');
+    const txn = conn.conn.transaction('entries');
     txn.oncomplete = _ => resolve(entries);
     txn.onerror = event => reject(event.target.error);
-    const store = txn.objectStore('entry');
+    const store = txn.objectStore('entries');
 
     let request;
     if (mode === 'viewable') {

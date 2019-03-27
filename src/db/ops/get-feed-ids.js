@@ -5,9 +5,9 @@ export default function get_feed_ids(conn) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof Connection);
 
-    const txn = conn.conn.transaction('feed');
+    const txn = conn.conn.transaction('feeds');
     txn.onerror = event => reject(event.target.error);
-    const store = txn.objectStore('feed');
+    const store = txn.objectStore('feeds');
     const request = store.getAllKeys();
     request.onsuccess = _ => resolve(request.result);
   });

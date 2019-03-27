@@ -6,7 +6,7 @@ import {Deadline} from '/src/lib/deadline.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 export const default_name = 'reader';
-export const default_version = 29;
+export const default_version = 30;
 export const default_channel_name = 'reader';
 export const default_timeout = new Deadline(5000);
 
@@ -40,4 +40,5 @@ export function default_upgrade_handler(channel, event) {
   migrations.migrate27(event, channel);
   migrations.migrate28(event, channel);
   migrations.migrate29(event, channel);
+  migrations.migrate30(event, channel);
 }

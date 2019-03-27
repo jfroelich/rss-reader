@@ -5,8 +5,8 @@ export default function get_feeds(conn, mode = 'all', title_sort) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof Connection);
 
-    const txn = conn.conn.transaction('feed');
-    const store = txn.objectStore('feed');
+    const txn = conn.conn.transaction('feeds');
+    const store = txn.objectStore('feeds');
     const request = store.getAll();
     request.onerror = event => reject(event.target.error);
     request.onsuccess = _ => {

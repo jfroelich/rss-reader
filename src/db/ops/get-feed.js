@@ -10,9 +10,9 @@ export default function get_feed(conn, mode = 'id', value, key_only) {
     assert(mode !== 'id' || identifiable.is_valid_id(value));
     assert(mode !== 'id' || !key_only);
 
-    const txn = conn.conn.transaction('feed');
+    const txn = conn.conn.transaction('feeds');
     txn.onerror = event => reject(event.target.error);
-    const store = txn.objectStore('feed');
+    const store = txn.objectStore('feeds');
 
     let request;
     if (mode === 'url') {

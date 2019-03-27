@@ -21,6 +21,9 @@ export default function create_feeds(conn, feeds) {
     for (const feed of feeds) {
       normalize_feed(feed);
       filter_empty_properties(feed);
+
+      console.debug('feed active?', feed.active);
+
       // Allow explicit false
       if (feed.active === undefined) {
         feed.active = true;
@@ -30,7 +33,7 @@ export default function create_feeds(conn, feeds) {
     }
 
     const ids = [];
-    const txn = conn.conn.transaction('feed', 'readwrite');
+    const txn = conn.conn.transaction('feeds', 'readwrite');
     txn.onerror = event => reject(event.target.error);
     txn.oncomplete = event => {
       if (conn.channel) {
@@ -46,7 +49,7 @@ export default function create_feeds(conn, feeds) {
       ids.push(event.target.result);
     }
 
-    const store = txn.objectStore('feed');
+    const store = txn.objectStore('feeds');
     for (const feed of feeds) {
       const request = store.put(feed);
       request.onsuccess = request_onsuccess;

@@ -33,6 +33,7 @@ export async function import_opml(conn, files) {
 
   const feeds = url_set.map(url => {
     const feed = new Feed();
+    feed.active = true;
     locatable.append_url(feed, url);
     return feed;
   });
