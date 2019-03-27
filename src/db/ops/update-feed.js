@@ -59,11 +59,7 @@ export default function update_feed(conn, feed, overwrite) {
     txn.onerror = event => reject(event.target.error);
     txn.oncomplete = event => {
       if (conn.channel) {
-        conn.channel.postMessage({
-          type: 'feed-updated',
-          id: feed.id,
-          feed: overwrite ? undefined : feed
-        });
+        conn.channel.postMessage({type: 'feed-updated', id: feed.id});
       }
 
       resolve();
