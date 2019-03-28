@@ -132,15 +132,17 @@ export function migrate22(event, channel) {
   // then there are no feeds to modify.
   if (event.oldVersion) {
     const feed_store = transaction.objectStore('feed');
-    const request = feed_store.getAll();
+    const request = feed_store.openCursor();
     request.onerror = _ => console.error(request.error);
     request.onsuccess = function(event) {
-      const feeds = event.target.result;
-      for (const feed of feeds) {
+      const cursor = event.target.result;
+      if (cursor) {
+        const feed = cursor.value;
         feed_ids.push(feed.id);
         feed.magic = types.FEED_MAGIC;
         feed.dateUpdated = new Date();
         feed_store.put(feed);
+        cursor.continue();
       }
     };
   }
