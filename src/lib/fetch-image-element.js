@@ -45,7 +45,8 @@ export async function fetch_image_element(url, timeout = INDEFINITE) {
   let image;
   if (timeout.isDefinite()) {
     // TEMP: researching an issue with excessive timeouts during polling
-    console.debug('Fetching image with timeout', timeout.toInt());
+    console.debug(
+        'Fetching image %s with timeout %d', url.href, timeout.toInt());
 
     image = await Promise.race([fetch_promise, sleep(timeout)]);
   } else {
