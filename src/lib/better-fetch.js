@@ -41,7 +41,7 @@ export async function better_fetch(url, options = {}) {
   let response;
   try {
     if (timeout.isDefinite()) {
-      response = await Promise.race([fetch_promise, sleep(timeout)]);
+      response = await Promise.race([fetch_promise, timed_resolve(timeout)]);
     } else {
       response = await fetch_promise;
     }
@@ -56,8 +56,8 @@ export async function better_fetch(url, options = {}) {
     }
   }
 
-  // response is defined when fetch wins the race, and undefined when sleep wins
-  // the race.
+  // response is defined when fetch wins the race, and undefined when
+  // timed_resolve wins the race.
   if (!response) {
     throw new TimeoutError('Timed out trying to fetch ' + url.href);
   }
@@ -80,7 +80,7 @@ export async function better_fetch(url, options = {}) {
   return response;
 }
 
-function sleep(delay = INDEFINITE) {
+function timed_resolve(delay = INDEFINITE) {
   return new Promise(resolve => setTimeout(resolve, delay.toInt()));
 }
 
