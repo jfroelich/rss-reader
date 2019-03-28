@@ -69,9 +69,9 @@ FeedList.prototype.appendFeed = function(feed) {
   }
   item_element.onclick = this.itemOnclick.bind(this);
 
-  if (feed.favicon_url_string) {
+  if (feed.favicon_url) {
     const favicon_element = document.createElement('img');
-    favicon_element.src = feed.favicon_url_string;
+    favicon_element.src = feed.favicon_url;
     if (feed.title) {
       favicon_element.title = feed.title;
     }
@@ -130,8 +130,8 @@ FeedList.prototype.itemOnclick = async function(event) {
       feed.title || locatable.get_url_string(feed);
 
   const details_favicon_element = document.getElementById('details-favicon');
-  if (feed.favicon_url_string) {
-    details_favicon_element.setAttribute('src', feed.favicon_url_string);
+  if (feed.favicon_url) {
+    details_favicon_element.setAttribute('src', feed.favicon_url);
   } else {
     // TODO: set to default icon
     details_favicon_element.removeAttribute('src');

@@ -19,16 +19,17 @@ export default function create_entry(conn, entry) {
       entry.archive_state = Entry.UNARCHIVED;
     }
 
-    if (entry.date_created === undefined) {
-      entry.date_created = new Date();
+    if (entry.created_date === undefined) {
+      entry.created_date = new Date();
     }
 
-    // All entries need to appear in the date_published index
-    if (entry.date_published === undefined) {
-      entry.date_published = entry.date_created;
+    // All entries need a value for published_date in order to appear in the
+    // published_date index
+    if (entry.published_date === undefined) {
+      entry.published_date = entry.created_date;
     }
 
-    delete entry.date_updated;
+    delete entry.updated_date;
     normalize_entry(entry);
     filter_empty_properties(entry);
 

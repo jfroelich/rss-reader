@@ -8,11 +8,11 @@ export default function Feed() {
   this.type = undefined;
   this.link = undefined;
   this.description = undefined;
-  this.deactivation_reason_text = undefined;
-  this.deactivate_date = undefined;
-  this.date_created = undefined;
-  this.date_updated = undefined;
-  this.date_published = undefined;
-  this.favicon_url_string = undefined;
+  this.deactivation_reason = undefined;
+  this.deactivation_date = undefined;
+  this.created_date = undefined;
+  this.updated_date = undefined;
+  this.published_date = undefined;
+  this.favicon_url = undefined;
   this.urls = undefined;
 }

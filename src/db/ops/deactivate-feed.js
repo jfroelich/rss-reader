@@ -4,8 +4,8 @@ export default function deactivate_feed(conn, feed_id, reason) {
   const props = {
     id: feed_id,
     active: false,
-    deactivate_date: new Date(),
-    deactivation_reason_text: reason
+    deactivation_date: new Date(),
+    deactivation_reason: reason
   };
 
   const overwrite_flag = false;

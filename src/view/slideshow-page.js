@@ -818,18 +818,18 @@ function create_feed_source_element(entry) {
   const source_element = document.createElement('span');
   source_element.setAttribute('class', 'entry-source');
 
-  if (entry.favicon_url_string) {
+  if (entry.favicon_url) {
     let favicon_url;
     try {
-      favicon_url = new URL(entry.favicon_url_string);
+      favicon_url = new URL(entry.favicon_url);
     } catch (error) {
     }
 
     if (!favicon_url || favicon_url.protocol === 'chrome-extension:') {
-      console.debug('Bad favicon url', entry.favicon_url_string);
+      console.debug('Bad favicon url', entry.favicon_url);
     } else {
       const favicon_element = document.createElement('img');
-      favicon_element.setAttribute('src', entry.favicon_url_string);
+      favicon_element.setAttribute('src', entry.favicon_url);
       favicon_element.setAttribute('width', '16');
       favicon_element.setAttribute('height', '16');
       source_element.appendChild(favicon_element);
@@ -845,9 +845,9 @@ function create_feed_source_element(entry) {
   buffer.push(entry.feed_title || 'Unknown feed');
   buffer.push(' by ');
   buffer.push(entry.author || 'Unknown author');
-  if (entry.date_published) {
+  if (entry.published_date) {
     buffer.push(' on ');
-    buffer.push(format_date(entry.date_published));
+    buffer.push(format_date(entry.published_date));
   }
   details.textContent = buffer.join('');
   source_element.appendChild(details);
@@ -1017,7 +1017,7 @@ function feeds_container_append_feed(feed) {
   col.textContent = 'Favicon';
   row.appendChild(col);
   col = document.createElement('td');
-  col.textContent = feed.favicon_url_string || 'Unknown';
+  col.textContent = feed.favicon_url || 'Unknown';
   row.appendChild(col);
   feed_info_element.appendChild(row);
 

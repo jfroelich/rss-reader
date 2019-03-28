@@ -21,8 +21,8 @@ export default function create_feed(conn, feed) {
       feed.active = true;
     }
 
-    feed.date_created = new Date();
-    delete feed.date_updated;
+    feed.created_date = new Date();
+    delete feed.updated_date;
 
     normalize_feed(feed);
     filter_empty_properties(feed);

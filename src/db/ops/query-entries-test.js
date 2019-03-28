@@ -19,7 +19,7 @@ export async function query_entries_test() {
     entry = new Entry();
     entry.read_state = Entry.UNREAD;
     entry.feed = 1;
-    entry.date_published = new Date();
+    entry.published_date = new Date();
     create_promises.push(create_entry(conn, entry));
   }
 
@@ -28,7 +28,7 @@ export async function query_entries_test() {
     entry = new Entry();
     entry.read_state = Entry.READ;
     entry.feed = 1;
-    entry.date_published = new Date();
+    entry.published_date = new Date();
     create_promises.push(create_entry(conn, entry));
   }
 
@@ -37,7 +37,7 @@ export async function query_entries_test() {
     entry = new Entry();
     entry.read_state = Entry.UNREAD;
     entry.feed = 2;
-    entry.date_published = new Date();
+    entry.published_date = new Date();
     create_promises.push(create_entry(conn, entry));
   }
 
@@ -46,7 +46,7 @@ export async function query_entries_test() {
     entry = new Entry();
     entry.read_state = Entry.READ;
     entry.feed = 2;
-    entry.date_published = new Date();
+    entry.published_date = new Date();
     create_promises.push(create_entry(conn, entry));
   }
 
@@ -77,12 +77,12 @@ export async function query_entries_test() {
   // expected order.
   query = {direction: 'DESC'};
   entries = await query_entries(conn, query);
-  // Walk the array. When querying by DESC order, each entry's date_published
+  // Walk the array. When querying by DESC order, each entry's published_date
   // value should be greater than or equal to the next one
   for (let i = 0; i < entries.length - 1; i++) {
     const entry1 = entries[i];
     const entry2 = entries[i + 1];
-    assert(entry1.date_published >= entry2.date_published);
+    assert(entry1.published_date >= entry2.published_date);
   }
 
   // Query using an offset and no limit. Here choose the smallest offset that

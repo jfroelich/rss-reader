@@ -117,7 +117,7 @@ async function set_entry_favicon(entry, conn, doc) {
   request.document = doc;
   const icon_url = await favicon.lookup(request);
   if (icon_url) {
-    entry.favicon_url_string = icon_url.href;
+    entry.favicon_url = icon_url.href;
   }
 }
 

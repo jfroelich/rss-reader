@@ -42,12 +42,12 @@ export async function activate_feed_test() {
   assert(stored_feed.active === true);
 
   // Activation should have cleared out any dependent deactivation properties
-  assert(stored_feed.deactivate_date === undefined);
-  assert(stored_feed.deactivation_reason_text === undefined);
+  assert(stored_feed.deactivation_date === undefined);
+  assert(stored_feed.deactivation_reason === undefined);
 
   // The feed should not have somehow been updated in the future
   const now = new Date();
-  assert(stored_feed.date_updated <= now);
+  assert(stored_feed.updated_date <= now);
 
   // Activating a feed that is already active should fail
   let activation_error;

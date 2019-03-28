@@ -6,7 +6,7 @@ export function Feed() {
   this.title = undefined;
   this.description = undefined;
   this.link = undefined;
-  this.date_published = undefined;
+  this.published_date = undefined;
   this.entries = [];
 }
 
@@ -14,7 +14,7 @@ export function Entry() {
   this.title = undefined;
   this.author = undefined;
   this.link = undefined;
-  this.date_published = undefined;
+  this.published_date = undefined;
   this.content = undefined;
   this.enclosure = undefined;
 }
@@ -44,7 +44,7 @@ export function parse_from_document(doc) {
   feed.title = find_feed_title(chan_element);
   feed.description = find_feed_description(doc, chan_element);
   feed.link = find_feed_link(chan_element);
-  feed.date_published = find_feed_date(chan_element);
+  feed.published_date = find_feed_date(chan_element);
 
   const entry_elements = find_entry_elements(chan_element);
   feed.entries = entry_elements.map(element_to_entry);
@@ -192,7 +192,7 @@ function element_to_entry(entry_element) {
   entry.title = find_entry_title(entry_element);
   entry.author = find_entry_author(entry_element);
   entry.link = find_entry_link(entry_element);
-  entry.date_published = find_entry_date(entry_element);
+  entry.published_date = find_entry_date(entry_element);
   entry.content = find_entry_content(entry_element);
   entry.enclosure = find_entry_enclosure(entry_element);
   return entry;

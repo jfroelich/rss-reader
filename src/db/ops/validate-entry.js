@@ -9,9 +9,9 @@ export default function validate_entry(entry) {
   assert(is_entry(entry));
   const now = new Date();
 
-  // TODO: validate favicon_url_string
+  // TODO: validate favicon_url
   // TODO: validate feed_title
-  // TODO: validate date_read
+  // TODO: validate read_date
 
   vassert(entry.id === undefined || identifiable.is_valid_id(entry.id));
   vassert(entry.feed === undefined || identifiable.is_valid_id(entry.feed));
@@ -27,13 +27,13 @@ export default function validate_entry(entry) {
   vassert(entry.title === undefined || typeof entry.title === 'string');
   vassert(entry.content === undefined || typeof entry.content === 'string');
 
-  vassert(is_valid_date(entry.date_created));
-  vassert(is_date_lte(entry.date_created, now));
-  vassert(is_valid_date(entry.date_updated));
-  vassert(is_date_lte(entry.date_updated, now));
-  vassert(is_date_lte(entry.date_created, entry.date_updated));
-  vassert(is_valid_date(entry.date_published));
-  vassert(is_date_lte(entry.date_published, now));
+  vassert(is_valid_date(entry.created_date));
+  vassert(is_date_lte(entry.created_date, now));
+  vassert(is_valid_date(entry.updated_date));
+  vassert(is_date_lte(entry.updated_date, now));
+  vassert(is_date_lte(entry.created_date, entry.updated_date));
+  vassert(is_valid_date(entry.published_date));
+  vassert(is_date_lte(entry.published_date, now));
   validate_enclosure(entry.enclosure);
 }
 

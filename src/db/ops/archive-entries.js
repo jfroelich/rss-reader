@@ -42,14 +42,14 @@ function request_onsuccess(ids, max_age, event) {
     return;
   }
 
-  if (!entry.date_created) {
+  if (!entry.created_date) {
     console.warn('Skiping entry missing date created', entry);
     cursor.continue();
     return;
   }
 
   const current_date = new Date();
-  const age = current_date - entry.date_created;
+  const age = current_date - entry.created_date;
 
   if (age < 0) {
     console.warn('Skipping entry created in the future', entry);
@@ -80,14 +80,11 @@ function archive_entry(entry) {
   const before_size = sizeof(entry);
 
   const ce = new Entry();
-  ce.date_created = entry.date_created;
-  ce.date_published = entry.date_published;
-  if (!ce.date_published) {
-    ce.date_published = ce.date_created;
-  }
+  ce.created_date = entry.created_date;
+  ce.published_date = entry.published_date;
 
-  if (entry.date_read) {
-    ce.date_read = entry.date_read;
+  if (entry.read_date) {
+    ce.read_date = entry.read_date;
   }
 
   ce.feed = entry.feed;
@@ -105,6 +102,6 @@ function archive_entry(entry) {
   ce.archive_state = Entry.ARCHIVED;
   const current_date = new Date();
   ce.date_archived = current_date;
-  ce.date_updated = current_date;
+  ce.updated_date = current_date;
   return ce;
 }

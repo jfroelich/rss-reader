@@ -21,17 +21,17 @@ export default function validate_feed(feed) {
   vassert(
       feed.description === undefined || typeof feed.description === 'string');
   vassert(
-      feed.deactivation_reason_text === undefined ||
-      typeof feed.deactivation_reason_text === 'string');
+      feed.deactivation_reason === undefined ||
+      typeof feed.deactivation_reason === 'string');
 
-  vassert(is_valid_date(feed.deactivate_date));
-  vassert(is_date_lte(feed.deactivate_date, now));
-  vassert(is_valid_date(feed.date_created));
-  vassert(is_date_lte(feed.date_created, now));
-  vassert(is_date_lte(feed.date_created, feed.deactivate_date));
-  vassert(is_valid_date(feed.date_updated));
-  vassert(is_date_lte(feed.date_updated, now));
-  vassert(is_date_lte(feed.date_created, feed.date_updated));
-  vassert(is_valid_date(feed.date_published));
-  vassert(is_date_lte(feed.date_published, now));
+  vassert(is_valid_date(feed.deactivation_date));
+  vassert(is_date_lte(feed.deactivation_date, now));
+  vassert(is_valid_date(feed.created_date));
+  vassert(is_date_lte(feed.created_date, now));
+  vassert(is_date_lte(feed.created_date, feed.deactivation_date));
+  vassert(is_valid_date(feed.updated_date));
+  vassert(is_date_lte(feed.updated_date, now));
+  vassert(is_date_lte(feed.created_date, feed.updated_date));
+  vassert(is_valid_date(feed.published_date));
+  vassert(is_date_lte(feed.published_date, now));
 }

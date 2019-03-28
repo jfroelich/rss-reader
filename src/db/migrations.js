@@ -537,6 +537,9 @@ export function migrate31(event, channel) {
     entry.date_created = entry.dateCreated;
     delete entry.dateCreated;
 
+    entry.date_read = entry.dateRead;
+    delete entry.dateRead;
+
     entry.date_updated = entry.dateUpdated;
     delete entry.dateUpdated;
 
@@ -552,6 +555,109 @@ export function migrate31(event, channel) {
     }
 
     filter_empty_properties(entry);
+
+    entry_store.put(entry);
+    cursor.continue();
+  };
+}
+
+export function migrate32(event, channel) {
+  const connection = event.target.result;
+  if (connection.version < 32) {
+    return;
+  }
+
+  if (event.oldVersion > 31) {
+    return;
+  }
+
+  console.debug('Applying migration 32');
+
+  // This migration focuses on normalizing property names to some degree. In
+  // particular, names for dates should use a date suffix instead of a prefix.
+  // This means that derived indices should also use proper names, so start by
+  // modifying the appropriate indices.
+
+  // There are no feed indices to modify
+
+  // Update relevant entries object store indices
+  const transaction = event.target.transaction;
+  const entry_store = transaction.objectStore('entries');
+
+  entry_store.deleteIndex('feed-read_state-date_published');
+  entry_store.createIndex(
+      'feed-read_state-published_date',
+      ['feed', 'read_state', 'published_date']);
+
+  entry_store.deleteIndex('feed-date_published');
+  entry_store.createIndex('feed-published-date', ['feed', 'published_date']);
+
+  entry_store.deleteIndex('read_state-date_published');
+  entry_store.createIndex(
+      'read_state-published_date', ['read_state', 'published_date']);
+
+  entry_store.deleteIndex('date_published');
+  entry_store.createIndex('published_date', 'published_date');
+
+  // Update existing feeds
+  const feed_store = transaction.objectStore('feeds');
+  const feed_cursor_request = feed_store.openCursor();
+  feed_cursor_request.onsuccess = event => {
+    const cursor = event.target.result;
+    if (!cursor) {
+      return;
+    }
+
+    const feed = cursor.value;
+
+    feed.deactivation_reason = feed.deactivation_reason_text;
+    delete feed.deactivation_reason_text;
+
+    feed.deactivation_date = feed.deactivate_date;
+    delete feed.deactivate_date;
+
+    feed.created_date = feed.date_created;
+    delete feed.date_created;
+
+    feed.updated_date = feed.date_updated;
+    delete feed.date_updated;
+
+    feed.published_date = feed.date_published;
+    delete feed.date_published;
+
+    feed.favicon_url = feed.favicon_url_string;
+    delete feed.favicon_url_string;
+
+    filter_empty_properties(feed);
+
+    feed_store.put(feed);
+    cursor.continue();
+  };
+
+  // Update existing entries
+  const entry_cursor_request = entry_store.openCursor();
+  entry_cursor_request.onsuccess = event => {
+    const cursor = event.target.result;
+    if (!cursor) {
+      return;
+    }
+
+    const entry = cursor.value;
+
+    entry.created_date = entry.date_created;
+    delete entry.date_created;
+
+    entry.read_date = entry.date_read;
+    delete entry.date_read;
+
+    entry.updated_date = entry.date_updated;
+    delete entry.date_updated;
+
+    entry.published_date = entry.date_published;
+    delete entry.date_published;
+
+    entry.favicon_url = entry.favicon_url_string;
+    delete entry.favicon_url_string;
 
     entry_store.put(entry);
     cursor.continue();

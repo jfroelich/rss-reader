@@ -297,3 +297,70 @@ export async function migrations_tests_31() {
 
   await indexeddb_utils.remove(conn.name);
 }
+
+export async function migrations_tests_32() {
+  // TODO: similar to 31. open in 31, create an object or two, open in 32,
+  // verify object is correct
+
+  const database_name = 'migrations-tests-32';
+  await indexeddb_utils.remove(database_name);
+
+  const handler = event => {
+    migrations.migrate20(event);
+    migrations.migrate21(event);
+    migrations.migrate22(event);
+    migrations.migrate23(event);
+    migrations.migrate24(event);
+    migrations.migrate25(event);
+    migrations.migrate26(event);
+    migrations.migrate27(event);
+    migrations.migrate28(event);
+    migrations.migrate29(event);
+    migrations.migrate30(event);
+    migrations.migrate31(event);
+    migrations.migrate32(event);
+  };
+
+  let conn = await indexeddb_utils.open(database_name, 31, handler);
+
+  const date_updated = new Date();
+
+  // insert a test feed with a property we expect to be modified
+  await new Promise((resolve, reject) => {
+    const transaction = conn.transaction('feeds', 'readwrite');
+    transaction.oncomplete = resolve;
+    transaction.onerror = event => reject(event.target.error);
+    const store = transaction.objectStore('feeds');
+    const request = store.put({date_updated: date_updated});
+  });
+
+  conn.close();
+
+  conn = await indexeddb_utils.open(database_name, 32, handler);
+
+  // Verify the entry store has some of the appropriate indices (we can infer
+  // that if a few worked the rest worked). Create a temporary transaction and
+  // cancel it later.
+  const transaction = conn.transaction('entries');
+  const entry_store = transaction.objectStore('entries');
+  assert(!entry_store.indexNames.contains('feed-date_published'));
+  assert(entry_store.indexNames.contains('feed-published-date'));
+  transaction.abort();
+
+  let modified_feed = await new Promise((resolve, reject) => {
+    const transaction = conn.transaction('feeds');
+    const store = transaction.objectStore('feeds');
+    const request = store.get(1);
+    request.onsuccess = _ => resolve(request.result);
+    request.onerror = _ => reject(request.error);
+  });
+
+  conn.close();
+
+  // Verify the new state is as expected
+  assert(modified_feed);
+  assert(!modified_feed.date_updated);
+  assert(modified_feed.updated_date);
+
+  await indexeddb_utils.remove(conn.name);
+}

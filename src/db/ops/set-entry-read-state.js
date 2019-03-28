@@ -64,12 +64,12 @@ export default function set_entry_read_state(conn, id, read = false) {
 
       const current_date = new Date();
 
-      entry.date_updated = current_date;
+      entry.updated_date = current_date;
 
       if (read) {
-        entry.date_read = current_date;
+        entry.read_date = current_date;
       } else {
-        delete entry.date_read;
+        delete entry.read_date;
       }
 
       event.target.source.put(entry);

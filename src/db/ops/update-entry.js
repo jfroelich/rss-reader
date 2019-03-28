@@ -15,7 +15,7 @@ export default function update_entry(conn, entry) {
     // Entries are not required to have urls in the model layer, so there is no
     // assertion here on entry.urls
 
-    entry.date_updated = new Date();
+    entry.updated_date = new Date();
 
     // Even though it would be more performant to normalize earlier in the
     // data flow, here we must do it because it is a model constraint.

@@ -25,8 +25,8 @@ export default function create_feeds(conn, feeds) {
       if (feed.active === undefined) {
         feed.active = true;
       }
-      feed.date_created = new Date();
-      delete feed.date_updated;
+      feed.created_date = new Date();
+      delete feed.updated_date;
     }
 
     const ids = [];

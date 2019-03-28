@@ -83,17 +83,17 @@ function build_request(store, query, direction) {
 
   if (query.feed_id === 0 || query.feed_id === undefined) {
     if (query.read_state === undefined) {
-      const index = store.index('date_published');
+      const index = store.index('published_date');
       let range = undefined;
       request = index.openCursor(range, direction);
     } else if (query.read_state === unread) {
-      const index = store.index('read_state-date_published');
+      const index = store.index('read_state-published_date');
       const lower_bound = [unread, min_date];
       const upper_bound = [unread, max_date];
       const range = IDBKeyRange.bound(lower_bound, upper_bound);
       request = index.openCursor(range, direction);
     } else {
-      const index = store.index('read_state-date_published');
+      const index = store.index('read_state-published_date');
       const lower_bound = [read, min_date];
       const upper_bound = [read, max_date];
       const range = IDBKeyRange.bound(lower_bound, upper_bound);
@@ -101,19 +101,19 @@ function build_request(store, query, direction) {
     }
   } else {
     if (query.read_state === undefined) {
-      const index = store.index('feed-date_published');
+      const index = store.index('feed-published-date');
       const lower_bound = [query.feed_id, min_date];
       const upper_bound = [query.feed_id, max_date];
       const range = IDBKeyRange.bound(lower_bound, upper_bound);
       request = index.openCursor(range, direction);
     } else if (query.read_state === unread) {
-      const index = store.index('feed-read_state-date_published');
+      const index = store.index('feed-read_state-published_date');
       const lower_bound = [query.feed_id, unread, min_date];
       const upper_bound = [query.feed_id, unread, max_date];
       const range = IDBKeyRange.bound(lower_bound, upper_bound);
       request = index.openCursor(range, direction);
     } else {
-      const index = store.index('feed-read_state-date_published');
+      const index = store.index('feed-read_state-published_date');
       const lower_bound = [query.feed_id, read, min_date];
       const upper_bound = [query.feed_id, read, max_date];
       const range = IDBKeyRange.bound(lower_bound, upper_bound);

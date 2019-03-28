@@ -91,7 +91,7 @@ export async function import_feed(args) {
   if (args.create && args.iconn) {
     const icon_url = await lookup_feed_favicon(args.feed, args.iconn);
     if (icon_url) {
-      args.feed.favicon_url_string = icon_url.href;
+      args.feed.favicon_url = icon_url.href;
     }
   }
 
@@ -144,8 +144,8 @@ function import_entries(entries, args) {
     // Propagate feed information down to the entry
     entry.feed = args.feed.id;
     entry.feed_title = args.feed.title;
-    entry.favicon_url_string = args.feed.favicon_url_string;
-    entry.date_published = entry.date_published || args.feed.date_published;
+    entry.favicon_url = args.feed.favicon_url;
+    entry.published_date = entry.published_date || args.feed.published_date;
 
     const iea = new ImportEntryArgs();
     iea.entry = entry;
@@ -186,7 +186,7 @@ function update_model_feed_from_parsed_feed(feed, parsed_feed) {
   feed.type = parsed_feed.type;
   feed.title = parsed_feed.title;
   feed.description = parsed_feed.description;
-  feed.date_published = parsed_feed.date_published;
+  feed.published_date = parsed_feed.published_date;
 
   // Try to normalize the new link value and overwrite. The link value comes
   // from the raw data and we are not sure if it is valid.
@@ -205,7 +205,7 @@ function parsed_entry_to_model_entry(parsed_entry) {
   const entry = new Entry();
   entry.title = parsed_entry.title;
   entry.author = parsed_entry.author;
-  entry.date_published = parsed_entry.date_published;
+  entry.published_date = parsed_entry.published_date;
   entry.content = parsed_entry.content;
   entry.enclosure = parsed_entry.enclosure;
 

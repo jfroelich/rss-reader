@@ -4,12 +4,12 @@ export default function Entry() {
   this.archive_state = undefined;
   this.author = undefined;
   this.content = undefined;
-  this.date_created = undefined;
-  this.date_read = undefined;
-  this.date_updated = undefined;
-  this.date_published = undefined;
+  this.created_date = undefined;
+  this.read_date = undefined;
+  this.updated_date = undefined;
+  this.published_date = undefined;
   this.enclosure = undefined;
-  this.favicon_url_string = undefined;
+  this.favicon_url = undefined;
   this.feed = undefined;
   this.feed_title = undefined;
   this.id = undefined;
