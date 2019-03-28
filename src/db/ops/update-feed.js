@@ -4,6 +4,7 @@ import Feed from '/src/db/feed.js';
 import * as identifiable from '/src/db/identifiable.js';
 import * as locatable from '/src/db/locatable.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
+import * as types from '/src/db/types.js';
 import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
@@ -18,6 +19,10 @@ export default function update_feed(conn, feed, overwrite) {
       assert(is_feed(feed));
     } else {
       assert(typeof feed === 'object');
+
+      // Allow the caller to either not specify magic or to specify it while
+      // maintaining correctness so as to maintain the invariant property
+      assert(feed.magic === undefined || feed.magic === types.FEED_MAGIC);
     }
 
     // In both overwriting and partial situation, feed.id must be valid

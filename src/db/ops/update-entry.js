@@ -10,7 +10,10 @@ import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 export default function update_entry(conn, entry) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof Connection);
+
+    // Guarantee the invariant property that entry has its magic property
     assert(is_entry(entry));
+
     assert(identifiable.is_valid_id(entry.id));
     // Entries are not required to have urls in the model layer, so there is no
     // assertion here on entry.urls

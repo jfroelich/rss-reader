@@ -48,5 +48,5 @@ export default async function export_opml_test() {
   }
 
   conn.close();
-  await indexeddb_utils.remove(conn.name);
+  await indexeddb_utils.remove(db_name);
 }

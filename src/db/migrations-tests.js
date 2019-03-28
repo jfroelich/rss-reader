@@ -36,7 +36,7 @@ export async function migrations_tests_20() {
 
   conn.close();
 
-  await indexeddb_utils.remove(conn.name);
+  await indexeddb_utils.remove(database_name);
 }
 
 // Test upgrading to 20, inserting an entry, upgrading to 21, and then verify
@@ -92,7 +92,7 @@ export async function migrations_tests_20_21() {
   assert(channel.messages[0].id === id);
 
   conn.close();
-  await indexeddb_utils.remove(conn.name);
+  await indexeddb_utils.remove(database_name);
 }
 
 // Verify that when upgrading from 20 to 22 a feed is properly modified
@@ -137,7 +137,7 @@ export async function migrations_tests_22() {
   assert(channel.messages[0].id === id);
 
   conn.close();
-  await indexeddb_utils.remove(conn.name);
+  await indexeddb_utils.remove(database_name);
 }
 
 // Verify that migrating to 23 drops the title index on the feed store
@@ -175,7 +175,7 @@ export async function migrations_tests_23() {
   transaction.abort();
   conn.close();
 
-  await indexeddb_utils.remove(conn.name);
+  await indexeddb_utils.remove(database_name);
 }
 
 export async function migrations_tests_30() {
@@ -295,13 +295,10 @@ export async function migrations_tests_31() {
   assert(modified_feed.date_updated);
   assert(!modified_feed.dateUpdated);
 
-  await indexeddb_utils.remove(conn.name);
+  await indexeddb_utils.remove(database_name);
 }
 
 export async function migrations_tests_32() {
-  // TODO: similar to 31. open in 31, create an object or two, open in 32,
-  // verify object is correct
-
   const database_name = 'migrations-tests-32';
   await indexeddb_utils.remove(database_name);
 
@@ -362,5 +359,5 @@ export async function migrations_tests_32() {
   assert(!modified_feed.date_updated);
   assert(modified_feed.updated_date);
 
-  await indexeddb_utils.remove(conn.name);
+  await indexeddb_utils.remove(database_name);
 }

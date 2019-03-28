@@ -5,7 +5,7 @@ import {open, remove} from '/src/lib/indexeddb-utils.js';
 export async function indexeddb_utils_basic_test() {
   const conn = await open(indexeddb_utils_basic_test.name);
   conn.close();
-  await remove(conn.name);
+  await remove(indexeddb_utils_basic_test.name);
 }
 
 // Assert that my understanding of old version is correct
@@ -30,7 +30,7 @@ export async function indexeddb_utils_old_version_test() {
   // the new version will be 1
   assert(new_version === 1);
 
-  await remove(conn.name);
+  await remove(indexeddb_utils_old_version_test.name);
 }
 
 // Calling open without a name should fail
@@ -155,5 +155,5 @@ export async function indexeddb_utils_function_object_test() {
   }
 
   conn.close();
-  await remove(conn.name);
+  await remove('indexeddb-utils-function-object-test');
 }
