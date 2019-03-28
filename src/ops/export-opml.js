@@ -59,6 +59,7 @@ function create_opml_template(document_title) {
   if (document_title) {
     const title_element = doc.createElement('title');
     title_element.textContent = document_title;
+    head_element.appendChild(title_element);
   }
 
   const current_date = new Date();
