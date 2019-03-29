@@ -1,8 +1,10 @@
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
+import {AcceptError} from '/src/lib/better-fetch.js';
+import {better_fetch} from '/src/lib/better-fetch.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
-import {fetch_image} from '/src/lib/fetch-image.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
+import * as mime from '/src/lib/mime.js';
 
 const DEFAULT_NAME = 'favicon';
 const DEFAULT_VERSION = 1;
@@ -107,6 +109,20 @@ async function fetch_root_icon(request) {
     }
   }
 
+  const accepted_types = [
+    'application/octet-stream', 'image/x-icon', 'image/jpeg', 'image/gif',
+    'image/png', 'image/svg+xml', 'image/tiff', 'image/webp',
+    'image/vnd.microsoft.icon'
+  ];
+
+  const content_type = response.headers.get('Content-Type');
+  const mime_type = mime.parse_content_type(content_type);
+  if (mime_type && !accepted_types.includes(mime_type)) {
+    const message =
+        'Unacceptable type ' + mime_type + ' for url ' + root_icon.href;
+    throw new AcceptError(message);
+  }
+
   return response;
 }
 
@@ -135,6 +151,11 @@ function search_document(document) {
 
     return new URL(links[0].getAttribute('href'), document.baseURI);
   }
+}
+
+// exported only for testing
+export function fetch_image(url, options) {
+  return better_fetch(url, options);
 }
 
 export function Entry() {
