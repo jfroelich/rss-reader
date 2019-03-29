@@ -101,7 +101,7 @@ function archive_entry(entry) {
 
   ce.archive_state = Entry.ARCHIVED;
   const current_date = new Date();
-  ce.date_archived = current_date;
+  ce.archived_date = current_date;
   ce.updated_date = current_date;
   return ce;
 }

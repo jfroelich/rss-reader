@@ -2,6 +2,7 @@ import * as types from '/src/db/types.js';
 
 export default function Entry() {
   this.archive_state = undefined;
+  this.archived_date = undefined;
   this.author = undefined;
   this.content = undefined;
   this.created_date = undefined;

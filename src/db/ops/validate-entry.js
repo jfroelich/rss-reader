@@ -12,6 +12,7 @@ export default function validate_entry(entry) {
   // TODO: validate favicon_url
   // TODO: validate feed_title
   // TODO: validate read_date
+  // TODO: validate archived_date
 
   vassert(entry.id === undefined || identifiable.is_valid_id(entry.id));
   vassert(entry.feed === undefined || identifiable.is_valid_id(entry.feed));
