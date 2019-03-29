@@ -24,7 +24,7 @@ export function append_url(locatable, url) {
 }
 
 export function has_url(locatable) {
-  return locatable.urls.length;
+  return locatable.urls && locatable.urls.length;
 }
 
 // Returns the last url in the locatables list of urls as a url string. Throws

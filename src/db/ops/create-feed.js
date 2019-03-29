@@ -13,6 +13,9 @@ export default function create_feed(conn, feed) {
     assert(conn instanceof Connection);
     assert(is_feed(feed));
 
+    // A newly created feed should not have an id, and null is not allowed
+    assert(feed.id === undefined);
+
     // The model requires that a feed has a url
     assert(locatable.has_url(feed));
 
@@ -43,7 +46,7 @@ export default function create_feed(conn, feed) {
     };
 
     const store = txn.objectStore('feeds');
-    const request = store.put(feed);
+    const request = store.add(feed);
     request.onsuccess = _ => id = request.result;
   });
 }
