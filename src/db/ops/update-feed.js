@@ -4,6 +4,7 @@ import Feed from '/src/db/feed.js';
 import * as identifiable from '/src/db/identifiable.js';
 import * as locatable from '/src/db/locatable.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
+import validate_feed from '/src/db/ops/validate-feed.js';
 import * as types from '/src/db/types.js';
 import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
@@ -59,6 +60,13 @@ export default function update_feed(conn, feed, overwrite) {
     // TODO: if this is set in both cases then there is no need for this?
     if (overwrite) {
       feed.updated_date = new Date();
+    }
+
+    // If we are overwriting then we validate the input. If we are modifying we
+    // cannot properly validate until after the feed is loaded from the database
+    // and modified, so that is done later after the load.
+    if (overwrite) {
+      validate_feed(feed);
     }
 
     const txn = conn.conn.transaction('feeds', 'readwrite');
@@ -160,6 +168,9 @@ export default function update_feed(conn, feed, overwrite) {
       }
 
       old_feed.updated_date = new Date();
+
+      validate_feed(old_feed);
+
       event.target.source.put(old_feed);
     };
   });

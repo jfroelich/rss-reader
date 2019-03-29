@@ -8,7 +8,6 @@ import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import sanitize_feed from '/src/db/ops/sanitize-feed.js';
 import update_feed from '/src/db/ops/update-feed.js';
-import validate_feed from '/src/db/ops/validate-feed.js';
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
 import {better_fetch} from '/src/lib/better-fetch.js';
@@ -96,7 +95,7 @@ export async function import_feed(args) {
   }
 
   sanitize_feed(args.feed);
-  validate_feed(args.feed);
+
 
   // init as active
   if (args.create) {

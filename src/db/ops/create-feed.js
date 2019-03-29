@@ -2,6 +2,7 @@ import Connection from '/src/db/connection.js';
 import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
+import validate_feed from '/src/db/ops/validate-feed.js';
 import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
@@ -26,6 +27,7 @@ export default function create_feed(conn, feed) {
 
     normalize_feed(feed);
     filter_empty_properties(feed);
+    validate_feed(feed);
 
     let id = 0;
     const txn = conn.conn.transaction('feeds', 'readwrite');
