@@ -33,7 +33,7 @@ export default function delete_feed(conn, feed_id, reason) {
     feed_store.delete(feed_id);
 
     const entry_store = txn.objectStore('entries');
-    const feed_index = entry_store.index('feeds');
+    const feed_index = entry_store.index('feed');
     // Avoid loading full entry data
     const request = feed_index.getAllKeys(feed_id);
     request.onsucess = function(event) {
