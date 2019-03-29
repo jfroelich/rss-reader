@@ -2,6 +2,7 @@ import Connection from '/src/db/connection.js';
 import Entry from '/src/db/entry.js';
 import normalize_entry from '/src/db/ops/normalize-entry.js';
 import sanitize_entry from '/src/db/ops/sanitize-entry.js';
+import validate_entry from '/src/db/ops/validate-entry.js';
 import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
@@ -34,6 +35,7 @@ export default function create_entry(conn, entry) {
     normalize_entry(entry);
     sanitize_entry(entry);
     filter_empty_properties(entry);
+    validate_entry(entry);
 
     let id;
     const txn = conn.conn.transaction('entries', 'readwrite');
