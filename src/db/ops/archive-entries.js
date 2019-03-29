@@ -3,6 +3,7 @@ import assert from '/src/lib/assert.js';
 import sizeof from '/src/lib/sizeof.js';
 import {is_entry} from '/src/db/types.js';
 import Connection from '/src/db/connection.js';
+import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
@@ -96,12 +97,20 @@ function archive_entry(entry) {
   const after_size = sizeof(ce);
   if (after_size > before_size) {
     const delta = after_size - before_size;
-    console.warn('Archiving entry increased size by %d', delta, entry, ce);
+    console.warn(
+        'Archiving entry increased size by %d, before %o, after %o', delta,
+        entry, ce);
   }
 
   ce.archive_state = Entry.ARCHIVED;
   const current_date = new Date();
   ce.archived_date = current_date;
   ce.updated_date = current_date;
+
+  // ce is a new entry that we are writing directly back into the database. the
+  // new entry constructor will initialize default properties, but some of them
+  // we do not need, so we strip them again
+  filter_empty_properties(ce);
+
   return ce;
 }
