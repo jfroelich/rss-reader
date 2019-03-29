@@ -1,7 +1,10 @@
+import Entry from '/src/db/entry.js';
 import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
+import create_entry from '/src/db/ops/create-entry.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import delete_feed from '/src/db/ops/delete-feed.js';
+import get_entry from '/src/db/ops/get-entry.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import test_open from '/src/db/test-open.js';
 import assert from '/src/lib/assert.js';
@@ -18,16 +21,30 @@ export async function delete_feed_test() {
   locatable.append_url(feed1, url1);
   const feed_id1 = await create_feed(conn, feed1);
 
+  const entry = new Entry();
+  locatable.append_url(entry, new URL('a://b.c'));
+  entry.feed = feed_id1;
+  const entry_id = await create_entry(conn, entry);
+
+  // Creating the entry should have completed without error and produced a valid
+  // id, as a precondition to checking this id no longer exists later.
+  assert(entry_id);
+
   const delete_reason = 'test-reason';
   await delete_feed(conn, feed_id1, delete_reason);
 
-  assert(conn.channel.messages.length);
+  // Deleting the feed should have deleted the entry. We have a valid entry id,
+  // and should no longer be able to find it.
+  const matching_entry = await get_entry(conn, 'id', entry_id);
+  assert(!matching_entry);
 
-  const second_message = conn.channel.messages[1];
-  assert(typeof second_message === 'object');
-  assert(second_message.type === 'feed-deleted');
-  assert(second_message.id === feed_id1);
-  assert(second_message.reason === delete_reason);
+  // TODO: create a second entry, attach it to a second feed, and verify that
+  // the entry remains in order to verify that delete-feed did delete the wrong
+  // entry
+
+  // Doing these operations should have produced messages that the test channel
+  // recorded. The test channel's message log should not be empty.
+  assert(conn.channel.messages.length);
 
   conn.close();
   await indexeddb_utils.remove(db_name);
