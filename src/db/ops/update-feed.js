@@ -4,6 +4,7 @@ import Feed from '/src/db/feed.js';
 import * as identifiable from '/src/db/identifiable.js';
 import * as locatable from '/src/db/locatable.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
+import sanitize_feed from '/src/db/ops/sanitize-feed.js';
 import validate_feed from '/src/db/ops/validate-feed.js';
 import * as types from '/src/db/types.js';
 import {is_feed} from '/src/db/types.js';
@@ -46,6 +47,12 @@ export default function update_feed(conn, feed, overwrite) {
       if (feed.description) {
         feed.description = feed.description.normalize();
       }
+    }
+
+    // If overwrite we sanitize upfront. If partial we cannot sanitize until
+    // after load
+    if (overwrite) {
+      sanitize_feed(feed);
     }
 
     // If overwriting, remove unused properties. If partial, feed is just a
@@ -169,6 +176,7 @@ export default function update_feed(conn, feed, overwrite) {
 
       old_feed.updated_date = new Date();
 
+      sanitize_feed(old_feed);
       validate_feed(old_feed);
 
       event.target.source.put(old_feed);
