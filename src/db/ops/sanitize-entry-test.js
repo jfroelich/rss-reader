@@ -9,10 +9,7 @@ export default function sanitize_entry_test() {
   sanitize_entry(entry);
   assert(entry.content === content);
 
-  // Test that line breaks are not filtered from content. This was previously
-  // the source of a bug, where filter_controls was used in place of
-  // filter_unprintables within sanitize_entry, where filter_controls matches \n
-  // and such, but filter_unprintables does not
+  // Verify line breaks are retained
   content = '<html><head></head><body>hello\nworld</body></html>';
   entry.content = content;
   sanitize_entry(entry);

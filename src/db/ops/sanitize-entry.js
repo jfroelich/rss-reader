@@ -5,9 +5,6 @@ import filter_unprintables from '/src/lib/filter-unprintables.js';
 import remove_html from '/src/lib/remove-html.js';
 import truncate_html from '/src/lib/truncate-html.js';
 
-// TODO: constraints should come from config? or at least as a grouped parameter
-// object named constraints?
-
 export default function sanitize_entry(
     entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {

@@ -4,7 +4,6 @@ import {ConstraintError} from '/src/db/errors.js';
 import * as locatable from '/src/db/locatable.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import get_entry from '/src/db/ops/get-entry.js';
-import sanitize_entry from '/src/db/ops/sanitize-entry.js';
 import validate_entry from '/src/db/ops/validate-entry.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
@@ -104,7 +103,7 @@ export async function import_entry(args) {
 
   await filter_entry_content(entry, doc);
 
-  sanitize_entry(entry);
+
   validate_entry(entry);
   const new_entry_id = await create_entry(args.conn, entry);
   return new_entry_id;
