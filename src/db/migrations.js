@@ -373,7 +373,14 @@ export function migrate30(event, channel) {
 
   const entry_store =
       db.createObjectStore('entries', {keyPath: 'id', autoIncrement: true});
-  entry_store.createIndex('feed', 'feed');
+
+  // The feed index is dropped from the store in 33. Retroactively we just avoid
+  // creating it in the first place so as to minimize wasted work. The later
+  // migration can handle both cases
+  if (db.version < 33) {
+    entry_store.createIndex('feed', 'feed');
+  }
+
   entry_store.createIndex(
       'feed-readState-datePublished', ['feed', 'readState', 'datePublished']);
   entry_store.createIndex(
@@ -664,4 +671,30 @@ export function migrate32(event, channel) {
     entry_store.put(entry);
     cursor.continue();
   };
+}
+
+export function migrate33(event, channel) {
+  const connection = event.target.result;
+  if (connection.version < 33) {
+    return;
+  }
+
+  if (event.oldVersion > 32) {
+    return;
+  }
+
+  console.debug('Applying migration 33');
+
+  // In this migration from 32 to 33, we drop the feed index, if it exists.
+  // We check for existence in case it was not created in the first place. It
+  // was last modified in migration 30 when renaming the entry object store.
+  // That migration was retroactively modified to no longer create the index
+  // when upgrading to a version less than 33.
+
+  const transaction = event.target.transaction;
+  const entries_store = transaction.objectStore('entries');
+
+  if (entries_store.indexNames.contains('feed')) {
+    entries_store.deleteIndex('feed');
+  }
 }

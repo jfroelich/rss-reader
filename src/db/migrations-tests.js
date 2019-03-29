@@ -361,3 +361,58 @@ export async function migrations_tests_32() {
 
   await indexeddb_utils.remove(database_name);
 }
+
+export async function migrations_tests_33() {
+  const database_name = 'migrations-tests-33';
+  await indexeddb_utils.remove(database_name);
+
+  const handler = event => {
+    migrations.migrate20(event);
+    migrations.migrate21(event);
+    migrations.migrate22(event);
+    migrations.migrate23(event);
+    migrations.migrate24(event);
+    migrations.migrate25(event);
+    migrations.migrate26(event);
+    migrations.migrate27(event);
+    migrations.migrate28(event);
+    migrations.migrate29(event);
+    migrations.migrate30(event);
+    migrations.migrate31(event);
+    migrations.migrate32(event);
+    migrations.migrate33(event);
+  };
+
+  let conn = await indexeddb_utils.open(database_name, 32, handler);
+
+  let transaction = conn.transaction('entries');
+  let entries_store = transaction.objectStore('entries');
+  let feed_index = entries_store.index('feed');
+  transaction.abort();
+  assert(feed_index);
+
+  conn.close();
+
+  conn = await indexeddb_utils.open(database_name, 33, handler);
+
+  transaction = conn.transaction('entries');
+  entries_store = transaction.objectStore('entries');
+
+  feed_index = undefined;
+  let expected_error;
+  try {
+    feed_index = entries_store.index('feed');
+  } catch (error) {
+    expected_error = error;
+  }
+
+  transaction.abort();
+
+  // Attempting to reference the non-existent index should result in an error,
+  // and the index should be undefined
+  assert(!feed_index);
+  assert(expected_error instanceof DOMException);
+
+  conn.close();
+  await indexeddb_utils.remove(database_name);
+}
