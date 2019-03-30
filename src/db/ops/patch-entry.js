@@ -91,6 +91,11 @@ function get_request_onsuccess(props, event) {
     props.read_date = new Date();
   }
 
+  // Marking an entry as unread should delete its read date
+  if (props.read_state === Entry.UNREAD) {
+    props.read_date = undefined;
+  }
+
   // Apply the transitions
 
   for (const prop in props) {
