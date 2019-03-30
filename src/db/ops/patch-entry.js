@@ -10,11 +10,9 @@ import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
-// TODO: implement patch-entry-test.js
-// TODO: once this is implemented, revise set-entry-read-state to use this
-// operation
-// TODO: once this is implemented, I should also refactor update-feed, and
-// change it into two operations: patch-feed and put-feed.
+// TODO: revise update-entry as put-entry
+// TODO: revise set-entry-read-state to delegate to here
+// TODO: revise update-feed as put-feed and patch-feed
 
 // Given a set of properties which must include id, find the corresponding entry
 // in the database, properly adjust its properties to use the new values from
@@ -27,31 +25,12 @@ export default function patch_entry(conn, props) {
 function patch_entry_executor(conn, props, resolve, reject) {
   assert(conn instanceof Connection);
   assert(conn.conn instanceof IDBDatabase);
-
   assert(props && typeof props === 'object');
-
-  // id is required
   assert(is_valid_id(props.id));
 
-  // Normalize properties
-  // TODO: this is a hack to work around the sanity check in normalize-entry.
-  // it would be better to just not have that sanity check
-  props.magic = ENTRY_MAGIC;
   normalize_entry(props);
-
-  // Sanitize the new field values upfront.
-  // TODO: remove the is-entry check from sanitize-entry so that there is no
-  // need to store magic in props and so sanitize-entry can run on a partial
-  // object
   sanitize_entry(props);
-
   filter_empty_properties(props);
-
-  // TODO: we can do this before loading so as to skip the load in the case
-  // of invalid. however, this relies on the magic hack above. change
-  // validate-entry to not do the is-entry sanity check and also to not assume
-  // it is working with an actual entry object, just any kind of entry-like
-  // object
   validate_entry(props);
 
   const transaction = conn.conn.transaction('entries', 'readwrite');
@@ -127,8 +106,8 @@ function get_request_onsuccess(props, event) {
     }
   }
 
-  // Perform any implied mutations from using the patch operation. Note that
-  // these override whatever the caller specified in props.
+  // Perform any implied transitions from using the patch operation. These
+  // override caller props.
   entry.updated_date = new Date();
 
   const entry_store = event.target.source;
@@ -139,6 +118,6 @@ function get_request_onsuccess(props, event) {
 // to an entry because the entry's existing value is treated as immutable
 // (despite actually being mutable).
 function is_pseudo_immutable_prop(prop_name) {
-  const immutable_prop_names = ['id', 'updated_date'];
+  const immutable_prop_names = ['id', 'updated_date', 'magic'];
   return immutable_prop_names.includes(prop_name);
 }

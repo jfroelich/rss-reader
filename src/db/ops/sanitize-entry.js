@@ -1,4 +1,3 @@
-import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_controls from '/src/lib/filter-controls.js';
 import filter_unprintables from '/src/lib/filter-unprintables.js';
@@ -8,7 +7,10 @@ import truncate_html from '/src/lib/truncate-html.js';
 export default function sanitize_entry(
     entry, author_max_length = 200, title_max_length = 1000,
     content_max_length = 50000) {
-  assert(is_entry(entry));
+  // NOTE: this is intentionally a weaker duck-typing check, because sanitize-
+  // entry may be called on either an entry or an object that resembles one.
+  assert(entry && typeof entry === 'object');
+
 
   if (entry.author) {
     let author = entry.author;

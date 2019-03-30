@@ -1,12 +1,15 @@
 import Entry from '/src/db/entry.js';
 import Feed from '/src/db/feed.js';
 import * as identifiable from '/src/db/identifiable.js';
-import {is_entry} from '/src/db/types.js';
 import {is_date_lte, is_valid_date, vassert} from '/src/db/validation-utils.js';
 import assert from '/src/lib/assert.js';
 
 export default function validate_entry(entry) {
-  assert(is_entry(entry));
+  // This is intentionally a weaker assert than is-entry, because validate-entry
+  // may be called on either an actual entry or a plain object that resembles
+  // one.
+  assert(entry && typeof entry === 'object');
+
   const now = new Date();
 
   // TODO: validate favicon_url

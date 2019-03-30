@@ -3,10 +3,11 @@ import assert from '/src/lib/assert.js';
 
 // Normalize the property values of the entry. Currently this only touches
 // string values, but it may normalize other values in the future. Throws an
-// error if the input is not a database entry object, or if properties are of
-// the wrong type.
+// error if properties are of the wrong type.
 export default function normalize_entry(entry) {
-  assert(is_entry(entry));
+  // This is a duck-typing assert because normalize-entry may be called on
+  // either a real entry or an object that resembles one
+  assert(entry && typeof entry === 'object');
 
   // We do not specify the argument to String.prototype.normalize so that it
   // defaults to NFC. This is the appropriate normal form for strings. See #770
