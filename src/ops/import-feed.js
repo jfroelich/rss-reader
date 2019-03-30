@@ -6,14 +6,14 @@ import * as identifiable from '/src/db/identifiable.js';
 import * as locatable from '/src/db/locatable.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
-import update_feed from '/src/db/ops/update-feed.js';
+import put_feed from '/src/db/ops/put-feed.js';
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
 import {better_fetch} from '/src/lib/better-fetch.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
 import {import_entry, ImportEntryArgs} from '/src/ops/import-entry.js';
-import {lookup_feed_favicon} from '/src/ops/lookup-feed-favicon.js';
+import lookup_feed_favicon from '/src/ops/lookup-feed-favicon.js';
 
 export function ImportFeedArgs() {
   this.feed = undefined;
@@ -101,8 +101,7 @@ export async function import_feed(args) {
   if (args.create) {
     args.feed.id = await create_feed(args.conn, args.feed);
   } else {
-    const overwrite = true;
-    await update_feed(args.conn, args.feed, overwrite);
+    await put_feed(args.conn, args.feed);
   }
 
   // Early notify observer-caller if they are listening that we created the

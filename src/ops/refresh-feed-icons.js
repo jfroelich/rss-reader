@@ -1,8 +1,8 @@
 import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
-import update_feed from '/src/db/ops/update-feed.js';
-import {lookup_feed_favicon} from '/src/ops/lookup-feed-favicon.js';
+import put_feed from '/src/db/ops/put-feed.js';
+import lookup_feed_favicon from '/src/ops/lookup-feed-favicon.js';
 
 export default async function refresh_feed_icons(conn, iconn) {
   const feeds = await get_feeds(conn, 'active', false);
@@ -14,6 +14,8 @@ export default async function refresh_feed_icons(conn, iconn) {
 }
 
 async function refresh_feed_icon(conn, iconn, feed) {
+  // TODO: pretty sure this is paranoia (over use of caution), feeds all have
+  // urls if they make into the data
   if (!locatable.has_url(feed)) {
     return;
   }
@@ -28,7 +30,8 @@ async function refresh_feed_icon(conn, iconn, feed) {
       delete feed.favicon_url;
     }
 
-    const overwrite_flag = true;
-    await update_feed(conn, feed, overwrite_flag);
+    // TODO: should use patch here instead and just pass in favicon_url (either
+    // with a value or undefined to signal deletion intent).
+    await put_feed(conn, feed);
   }
 }

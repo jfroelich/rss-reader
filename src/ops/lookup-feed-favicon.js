@@ -23,7 +23,7 @@ import {lookup, LookupRequest} from '/src/lib/favicon.js';
 // check if it contains favicon information, defaults to indefinite (untimed)
 // @return {Promise} returns a promise that resolves to the {URL} url of the
 // favicon
-export function lookup_feed_favicon(feed, iconn, timeout = INDEFINITE) {
+export default function lookup_feed_favicon(feed, iconn, timeout = INDEFINITE) {
   assert(typeof feed === 'object');
   assert(iconn === undefined || iconn instanceof IDBDatabase);
   assert(timeout instanceof Deadline);
