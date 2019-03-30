@@ -49,8 +49,6 @@ export function migrate20(event, channel) {
     return;
   }
 
-  console.debug('Applying migration 20');
-
   const conn = event.target.result;
 
   const feed_store =
@@ -75,8 +73,6 @@ export function migrate21(event, channel) {
   if (event.oldVersion > 20) {
     return;
   }
-
-  console.debug('Applying migration 21');
 
   // Add a magic property to each entry
   const entry_ids = [];
@@ -117,8 +113,6 @@ export function migrate22(event, channel) {
   if (event.oldVersion > 21) {
     return;
   }
-
-  console.debug('Applying migration 22');
 
   const transaction = event.target.transaction;
 
@@ -170,8 +164,6 @@ export function migrate23(event, channel) {
     return;
   }
 
-  console.debug('Applying migration 23');
-
   const transaction = event.target.transaction;
   const feed_store = transaction.objectStore('feed');
 
@@ -192,10 +184,7 @@ export function migrate23(event, channel) {
   // on 'IDBObjectStore': The specified index was not found.
 
   if (feed_store.indexNames.contains('title')) {
-    console.debug('Deleting title index on feed store');
     feed_store.deleteIndex('title');
-  } else {
-    console.debug('No title index found in migration23');
   }
 }
 
@@ -207,8 +196,6 @@ export function migrate24(event, channel) {
   if (event.oldVersion > 23) {
     return;
   }
-
-  console.debug('Applying migration 24');
 
   // Set the active property for existing feeds to true
   const feed_ids = [];
@@ -243,8 +230,6 @@ export function migrate25(event, channel) {
     return;
   }
 
-  console.debug('Applying migration 25');
-
   // Create an index on feed id and read state. This enables fast querying
   // of unread entries per feed.
   const transaction = event.target.transaction;
@@ -262,8 +247,6 @@ export function migrate26(event, channel) {
   if (event.oldVersion > 25) {
     return;
   }
-
-  console.debug('Applying migration 26');
 
   const transaction = event.target.transaction;
   const entry_store = transaction.objectStore('entry');
@@ -313,8 +296,6 @@ export function migrate27(event, channel) {
     return;
   }
 
-  console.debug('Applying migration 27');
-
   const transaction = event.target.transaction;
   const entry_store = transaction.objectStore('entry');
 
@@ -328,8 +309,6 @@ export function migrate28(event, channel) {
     return;
   }
 
-  console.debug('Applying migration 28');
-
   const transaction = event.target.transaction;
   const entry_store = transaction.objectStore('entry');
   const index_name = 'feed-datePublished';
@@ -341,8 +320,6 @@ export function migrate29(event, channel) {
   if (event.oldVersion > 28) {
     return;
   }
-
-  console.debug('Applying migration 29');
 
   const transaction = event.target.transaction;
   const entry_store = transaction.objectStore('entry');
@@ -363,8 +340,6 @@ export function migrate30(event, channel) {
   if (db.version < 30) {
     return;
   }
-
-  console.debug('Applying migration 30');
 
   // Create the new stores and indices
   const feed_store =
@@ -452,8 +427,6 @@ export function migrate31(event, channel) {
   if (connection.version < 31) {
     return;
   }
-
-  console.debug('Applying migration 31');
 
   // Update relevant key paths. There is nothing to change in the feed store.
 
@@ -580,8 +553,6 @@ export function migrate32(event, channel) {
     return;
   }
 
-  console.debug('Applying migration 32');
-
   // This migration focuses on normalizing property names to some degree. In
   // particular, names for dates should use a date suffix instead of a prefix.
   // This means that derived indices should also use proper names, so start by
@@ -682,8 +653,6 @@ export function migrate33(event, channel) {
   if (event.oldVersion > 32) {
     return;
   }
-
-  console.debug('Applying migration 33');
 
   // In this migration from 32 to 33, we drop the feed index, if it exists.
   // We check for existence in case it was not created in the first place. It
