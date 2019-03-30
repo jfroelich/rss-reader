@@ -17,10 +17,10 @@ import {get_feeds_test} from '/src/db/ops/get-feeds-test.js';
 import {iterate_entries_test} from '/src/db/ops/iterate-entries-test.js';
 import {normalize_entry_test} from '/src/db/ops/normalize-entry-test.js';
 import patch_entry_test from '/src/db/ops/patch-entry-test.js';
+import {put_entry_test} from '/src/db/ops/put-entry-test.js';
 import {query_entries_test} from '/src/db/ops/query-entries-test.js';
 import sanitize_entry_test from '/src/db/ops/sanitize-entry-test.js';
 import {set_entry_read_state_test} from '/src/db/ops/set-entry-read-state-test.js';
-import {update_entry_test} from '/src/db/ops/update-entry-test.js';
 import {update_feed_test} from '/src/db/ops/update-feed-test.js';
 import * as types_tests from '/src/db/types-tests.js';
 import * as better_fetch_tests from '/src/lib/better-fetch-tests.js';
@@ -88,6 +88,7 @@ register_test(normalize_entry_test);
 register_module_tests(better_fetch_tests);
 register_test(parse_feed_test);
 register_test(patch_entry_test);
+register_test(put_entry_test);
 register_test(query_entries_test);
 register_test(remove_html_test);
 register_module_tests(import_entry_tests);
@@ -100,7 +101,6 @@ register_test(subscribe_test);
 register_module_tests(truncate_html_tests);
 register_module_tests(types_tests);
 register_module_tests(unwrap_element_tests);
-register_test(update_entry_test);
 register_test(update_feed_test);
 
 // On module load, expose console commands
