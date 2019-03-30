@@ -4,7 +4,6 @@ import get_entries from '/src/db/ops/get-entries.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import db_open from '/src/db/ops/open.js';
 import patch_entry from '/src/db/ops/patch-entry.js';
-import {is_entry} from '/src/db/types.js';
 import refresh_badge from '/src/extension/refresh-badge.js';
 import assert from '/src/lib/assert.js';
 import * as favicon from '/src/lib/favicon.js';
@@ -769,7 +768,6 @@ function append_slide(entry) {
 }
 
 function create_slide(entry) {
-  assert(is_entry(entry));
   assert(Array.isArray(entry.urls));
   assert(entry.urls.length > 0);
 

@@ -4,7 +4,6 @@ import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import patch_feed from '/src/db/ops/patch-feed.js';
 import test_open from '/src/db/test-open.js';
-import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
@@ -56,11 +55,7 @@ export async function activate_feed_test() {
 
   // Read the feed back out of the database to investigate
   const stored_feed = await get_feed(conn, 'id', id, false);
-
-  // Activation should not have somehow destroyed type info. For performance
-  // reasons this check is NOT implicit in the get_feed call, so it is not
-  // redundant or unreasonable to check here
-  assert(is_feed(stored_feed));
+  assert(stored_feed && typeof stored_feed === 'object');
 
   // Activation should result in the active state
   assert(stored_feed.active === true);
@@ -113,7 +108,6 @@ export async function deactivate_feed_test() {
 
   const stored_feed = await get_feed(conn, 'id', feed_id, false);
   assert(stored_feed);
-  assert(is_feed(stored_feed));
   assert(stored_feed.active === false);
   assert(stored_feed.deactivation_reason === 'testing');
   assert(stored_feed.deactivation_date);

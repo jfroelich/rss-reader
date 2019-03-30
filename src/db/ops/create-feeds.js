@@ -2,7 +2,6 @@ import Connection from '/src/db/connection.js';
 import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
-import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 import is_iterable from '/src/lib/is-iterable.js';
@@ -13,7 +12,7 @@ export default function create_feeds(conn, feeds) {
     assert(is_iterable(feeds));
 
     for (const feed of feeds) {
-      assert(is_feed(feed));
+      assert(feed && typeof feed === 'object');
       assert(locatable.has_url(feed));
     }
 

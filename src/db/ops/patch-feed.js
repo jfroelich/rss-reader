@@ -4,8 +4,6 @@ import {is_valid_id} from '/src/db/identifiable.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
 import sanitize_feed from '/src/db/ops/sanitize-feed.js';
 import validate_feed from '/src/db/ops/validate-feed.js';
-import * as types from '/src/db/types.js';
-import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -52,12 +50,6 @@ function get_request_onsuccess(props, reject, event) {
   if (!feed) {
     const message = 'Failed to find feed to patch for id ' + props.id;
     reject(new NotFoundError(message));
-    return;
-  }
-
-  if (!is_feed(feed)) {
-    const message = 'Matched object is not of type feed for id ' + props.id;
-    reject(new InvalidStateError(message));
     return;
   }
 

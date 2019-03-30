@@ -1,7 +1,6 @@
 import Feed from '/src/db/feed.js';
 import * as identifiable from '/src/db/identifiable.js';
 import test_open from '/src/db/test-open.js';
-import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
@@ -33,8 +32,7 @@ export async function subscribe_test() {
       conn, iconn, url, fetch_feed_timeout, notify, feed_stored_callback);
 
   // Test the subscription produced the desired result
-  assert(feed);
-  assert(is_feed(feed));
+  assert(feed && typeof feed === 'object');
   assert(identifiable.is_valid_id(feed.id));
 
   // subscribe should have invoked the callback

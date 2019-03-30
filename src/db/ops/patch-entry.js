@@ -5,8 +5,6 @@ import {is_valid_id} from '/src/db/identifiable.js';
 import normalize_entry from '/src/db/ops/normalize-entry.js';
 import sanitize_entry from '/src/db/ops/sanitize-entry.js';
 import validate_entry from '/src/db/ops/validate-entry.js';
-import {ENTRY_MAGIC} from '/src/db/types.js';
-import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -61,11 +59,6 @@ function get_request_onsuccess(props, reject, event) {
   if (!entry) {
     const message = 'No entry found for id ' + props.id;
     reject(new NotFoundError(message));
-  }
-
-  if (!is_entry(entry)) {
-    const message = 'Unable to patch non-entry object with id ' + props.id;
-    reject(new InvalidStateError(message));
   }
 
   // Validate transitions and throw an error if any transition is invalid

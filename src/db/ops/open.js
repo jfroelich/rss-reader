@@ -1,12 +1,11 @@
 import Connection from '/src/db/connection.js';
 import * as migrations from '/src/db/migrations.js';
-import * as types from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import {Deadline} from '/src/lib/deadline.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 export const default_name = 'reader';
-export const default_version = 33;
+export const default_version = 34;
 export const default_channel_name = 'reader';
 export const default_timeout = new Deadline(5000);
 
@@ -44,4 +43,5 @@ export function default_upgrade_handler(channel, event) {
   migrations.migrate31(event, channel);
   migrations.migrate32(event, channel);
   migrations.migrate33(event, channel);
+  migrations.migrate34(event, channel);
 }

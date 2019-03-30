@@ -1,7 +1,6 @@
 import Feed from '/src/db/feed.js';
 import * as identifiable from '/src/db/identifiable.js';
 import test_open from '/src/db/test-open.js';
-import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 import {import_opml} from '/src/ops/import-opml.js';

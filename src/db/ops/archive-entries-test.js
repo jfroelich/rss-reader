@@ -2,7 +2,6 @@ import Entry from '/src/db/entry.js';
 import archive_entries from '/src/db/ops/archive-entries.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import test_open from '/src/db/test-open.js';
-import * as types from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
@@ -70,32 +69,16 @@ export async function archive_entries_test() {
     request.onerror = event => reject(request.error);
   });
 
-  // The total number of entries in the entries store should not have been
-  // modified.
   assert(all_entries.length === 5);
 
   for (const entry of all_entries) {
-    // Archival should not have destroyed the validity of the entry objects
-    assert(types.is_entry(entry));
-
-    // Ids should correspond (somewhat, not vital)
     assert(entry_ids.includes(entry.id));
-
-    // The entry should now be in the archived state. This implies both that
-    // that the actual archive-state property has the expected value, and that
-    // other properties have expected values or no longer exist or are new.
-
     assert(entry.archive_state === Entry.ARCHIVED);
-
-    // content should be gone, this is the primary benefit of archival
     assert(entry.content === undefined);
-
-    // archive-entries should have introduced the new archived-date property
     assert(entry.archived_date instanceof Date);
   }
 
-  // Run it again. No additional entries should be archived. This verifies that
-  // archive-entries does not affect already-archived entries.
+  // No additional entries should be archived
   const second_pass_ids = await archive_entries(conn, max_age);
   assert(second_pass_ids.length === 0);
 

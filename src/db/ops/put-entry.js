@@ -3,7 +3,6 @@ import * as identifiable from '/src/db/identifiable.js';
 import normalize_entry from '/src/db/ops/normalize-entry.js';
 import sanitize_entry from '/src/db/ops/sanitize-entry.js';
 import validate_entry from '/src/db/ops/validate-entry.js';
-import {is_entry} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -11,7 +10,7 @@ import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 export default function put_entry(conn, entry) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof Connection);
-    assert(is_entry(entry));
+    assert(entry && typeof entry === 'object');
     assert(identifiable.is_valid_id(entry.id));
 
     normalize_entry(entry);

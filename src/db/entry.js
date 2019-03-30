@@ -1,5 +1,3 @@
-import * as types from '/src/db/types.js';
-
 export default function Entry() {
   this.archive_state = undefined;
   this.archived_date = undefined;
@@ -14,7 +12,7 @@ export default function Entry() {
   this.feed = undefined;
   this.feed_title = undefined;
   this.id = undefined;
-  this.magic = types.ENTRY_MAGIC;
+  this.magic = undefined;
   this.read_state = undefined;
   this.title = undefined;
   this.urls = undefined;

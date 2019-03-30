@@ -4,7 +4,6 @@ import * as locatable from '/src/db/locatable.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import test_open from '/src/db/test-open.js';
-import {is_feed} from '/src/db/types.js';
 import assert, {AssertionError} from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
@@ -23,13 +22,11 @@ export async function create_feed_test() {
 
   // The new feed should be findable by url
   let stored_feed = await get_feed(conn, 'url', feed_url, true);
-  assert(is_feed(stored_feed));
+  assert(stored_feed);
 
   // The new feed should be findable by id
   stored_feed = await get_feed(conn, 'id', stored_feed_id, false);
-  assert(is_feed(stored_feed));
-
-
+  assert(stored_feed);
 
   conn.close();
   await indexeddb_utils.remove(db_name);

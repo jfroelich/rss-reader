@@ -1,7 +1,6 @@
 import Entry from '/src/db/entry.js';
 import assert from '/src/lib/assert.js';
 import sizeof from '/src/lib/sizeof.js';
-import {is_entry} from '/src/db/types.js';
 import Connection from '/src/db/connection.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -37,11 +36,6 @@ function request_onsuccess(ids, max_age, event) {
   }
 
   const entry = cursor.value;
-  if (!is_entry(entry)) {
-    console.warn('Skipping non-entry object', entry);
-    cursor.continue();
-    return;
-  }
 
   if (!entry.created_date) {
     console.warn('Skiping entry missing date created', entry);

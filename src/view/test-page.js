@@ -20,7 +20,6 @@ import {put_entry_test} from '/src/db/ops/put-entry-test.js';
 import put_feed_test from '/src/db/ops/put-feed-test.js';
 import {query_entries_test} from '/src/db/ops/query-entries-test.js';
 import sanitize_entry_test from '/src/db/ops/sanitize-entry-test.js';
-import * as types_tests from '/src/db/types-tests.js';
 import * as better_fetch_tests from '/src/lib/better-fetch-tests.js';
 import {coerce_element_test} from '/src/lib/coerce-element-test.js';
 import {color_test} from '/src/lib/color-test.js';
@@ -96,7 +95,6 @@ register_test(sniffer_test);
 register_module_tests(filter_unprintables_tests);
 register_test(subscribe_test);
 register_module_tests(truncate_html_tests);
-register_module_tests(types_tests);
 register_module_tests(unwrap_element_tests);
 
 // On module load, expose console commands
