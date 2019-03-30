@@ -9,9 +9,6 @@ import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
-// TODO: implement patch-feed
-// TODO: remove update-feed
-
 // Write the feed to the database, replacing any feed with the same key path.
 export default function put_feed(conn, feed) {
   return new Promise(put_feed_executor.bind(this, conn, feed));

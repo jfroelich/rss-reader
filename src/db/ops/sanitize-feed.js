@@ -1,4 +1,3 @@
-import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_controls from '/src/lib/filter-controls.js';
 import remove_html from '/src/lib/remove-html.js';
@@ -6,7 +5,7 @@ import truncate_html from '/src/lib/truncate-html.js';
 
 export default function sanitize_feed(
     feed, title_max_len = 1024, desc_max_len = 10240) {
-  assert(is_feed(feed));
+  assert(feed && typeof feed === 'object');
 
   const repl_suffix = '';
 

@@ -1,13 +1,10 @@
-import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 
-// NOTE: no accompanying test module because it is redundant with
-// normalize-entry
 // TODO: maybe it would work out better to have normalize-resource since both
 // entry and feed are subtypes
 
 export default function normalize_feed(feed) {
-  assert(is_feed(feed));
+  assert(feed && typeof feed === 'object');
 
   // For comments on normalization see the normalize-entry implementation
   // We do not normalize urls because append-url takes care of that
