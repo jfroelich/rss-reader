@@ -9,7 +9,7 @@ import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 
 export async function activate_feed_test() {
-  const db_name = 'db-activate-feed-test';
+  const db_name = 'activate-feed-test';
   await indexeddb_utils.remove(db_name);
 
   const conn = await test_open(db_name);
@@ -20,6 +20,9 @@ export async function activate_feed_test() {
   locatable.append_url(feed, new URL('a://b.c'));
   const id = await create_feed(conn, feed);
 
+  const created_feed = await get_feed(conn, 'id', id, false);
+  assert(!created_feed.active);
+
   // Run the primary focus of this test. This should succeed without error. This
   // implies quite a lot, including that the feed object was found in the
   // database, that the object was of type feed, and that the feed was not
@@ -28,7 +31,6 @@ export async function activate_feed_test() {
 
   // Activating a feed should have produced a single message of a certain type
   assert(conn.channel.messages.length);
-  assert(conn.channel.messages[1].type === 'feed-updated');
 
   // Read the feed back out of the database to investigate
   const stored_feed = await get_feed(conn, 'id', id, false);
@@ -58,12 +60,7 @@ export async function activate_feed_test() {
   }
   assert(activation_error);
 
-  // Activating a feed that does not exist should fail. There is some subtle
-  // complexity here because we need to test against a feed identifier that at
-  // minimum appears to be a real feed identifier. There are implicit checks for
-  // invalid feed ids (e.g. anything less than 1), and we don't want to trigger
-  // those errors, we want to trigger only the error that occurs as a result of
-  // searching the object store and not finding something.
+  // Activating a feed that does not exist should fail
   const fake_id = 123456789;
   activation_error = undefined;
   try {

@@ -1,13 +1,12 @@
-import update_feed from '/src/db/ops/update-feed.js';
+import patch_feed from '/src/db/ops/patch-feed.js';
 
-export default function deactivate_feed(conn, feed_id, reason) {
-  const props = {
-    id: feed_id,
+// TODO: now that this is so simple, deprecate
+
+export default function deactivate_feed(conn, id, reason) {
+  return patch_feed(conn, {
+    id: id,
     active: false,
     deactivation_date: new Date(),
     deactivation_reason: reason
-  };
-
-  const overwrite_flag = false;
-  return update_feed(conn, props, overwrite_flag);
+  });
 }

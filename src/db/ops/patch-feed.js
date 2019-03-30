@@ -9,8 +9,6 @@ import {is_feed} from '/src/db/types.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
-// TODO: deprecate update-feed once this is implemented and tested
-
 // Update some of the properties of an existing feed
 export default function patch_feed(conn, props) {
   return new Promise(patch_feed_executor.bind(this, conn, props));
@@ -38,23 +36,28 @@ function patch_feed_executor(conn, props, resolve, reject) {
   const store = transaction.objectStore('feeds');
 
   const get_request = store.get(props.id);
-  get_request.onsuccess = get_request_onsuccess.bind(get_request, props);
+  get_request.onsuccess =
+      get_request_onsuccess.bind(get_request, props, reject);
 }
 
-function get_request_onsuccess(props, event) {
+function get_request_onsuccess(props, reject, event) {
   const feed = event.target.result;
+
+  // TODO: learn more about why this has to reject. it is unclear. if i throw
+  // here instead of reject, in this delayed setting, the promise never
+  // resolves, because the thrown exception is never translated into a rejection
+  // ideally i should just throw. this also causes concern about any other kind
+  // of error that could happen.
 
   if (!feed) {
     const message = 'Failed to find feed to patch for id ' + props.id;
-    const error = new NotFoundError(message);
-    reject(error);
+    reject(new NotFoundError(message));
     return;
   }
 
   if (!is_feed(feed)) {
     const message = 'Matched object is not of type feed for id ' + props.id;
-    const error = new InvalidStateError(message);
-    reject(error);
+    reject(new InvalidStateError(message));
     return;
   }
 
@@ -62,15 +65,13 @@ function get_request_onsuccess(props, event) {
 
   if (props.active === true && feed.active === true) {
     const message = 'Cannot activate already active feed with id ' + props.id;
-    const error = new InvalidStateError(message);
-    reject(error);
+    reject(new InvalidStateError(message));
     return;
   }
 
   if (props.active === false && feed.active === false) {
     const message = 'Cannot deactivate inactive feed with id ' + feed.id;
-    const error = new InvalidStateError(message);
-    reject(error);
+    reject(new InvalidStateError(message));
     return;
   }
 
@@ -84,8 +85,7 @@ function get_request_onsuccess(props, event) {
     props.deactivation_date = new Date();
   }
 
-  // Apply transitions
-
+  // Do the transitions
   for (const prop in props) {
     // Treat id as immutable.
     if (prop === 'id' || prop === 'magic') {
@@ -101,7 +101,6 @@ function get_request_onsuccess(props, event) {
   }
 
   feed.updated_date = new Date();
-
   event.target.source.put(feed);
 }
 

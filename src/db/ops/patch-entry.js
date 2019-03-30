@@ -40,7 +40,8 @@ function patch_entry_executor(conn, props, resolve, reject) {
 
   const entries_store = transaction.objectStore('entries');
   const get_request = entries_store.get(props.id);
-  get_request.onsuccess = get_request_onsuccess.bind(get_request, props);
+  get_request.onsuccess =
+      get_request_onsuccess.bind(get_request, props, reject);
 }
 
 function transaction_oncomplete(id, channel, callback, event) {
@@ -51,7 +52,7 @@ function transaction_oncomplete(id, channel, callback, event) {
   callback();
 }
 
-function get_request_onsuccess(props, event) {
+function get_request_onsuccess(props, reject, event) {
   const entry = event.target.result;
 
   // If the entry is undefined then there was no corresponding entry in the
@@ -59,12 +60,12 @@ function get_request_onsuccess(props, event) {
   // Throw an error.
   if (!entry) {
     const message = 'No entry found for id ' + props.id;
-    throw new NotFoundError(message);
+    reject(new NotFoundError(message));
   }
 
   if (!is_entry(entry)) {
     const message = 'Unable to patch non-entry object with id ' + props.id;
-    throw new InvalidStateError(message);
+    reject(new InvalidStateError(message));
   }
 
   // Validate transitions and throw an error if any transition is invalid
@@ -80,7 +81,7 @@ function get_request_onsuccess(props, event) {
   if (entry.read_state === Entry.READ && props.read_state === Entry.READ) {
     const message =
         'Cannot mark entry as read when already read for id ' + props.id;
-    throw new InvalidStateError(message);
+    reject(new InvalidStateError(message));
   }
 
   // Perform automatic implied transitions
@@ -97,9 +98,10 @@ function get_request_onsuccess(props, event) {
   }
 
   // Apply the transitions
+  const immutable_prop_names = ['id', 'updated_date', 'magic'];
 
   for (const prop in props) {
-    if (is_pseudo_immutable_prop(prop)) {
+    if (immutable_prop_names.includes(prop)) {
       continue;
     }
 
@@ -117,12 +119,4 @@ function get_request_onsuccess(props, event) {
 
   const entry_store = event.target.source;
   entry_store.put(entry);
-}
-
-// Return whether the property name is a property whose value cannot be applied
-// to an entry because the entry's existing value is treated as immutable
-// (despite actually being mutable).
-function is_pseudo_immutable_prop(prop_name) {
-  const immutable_prop_names = ['id', 'updated_date', 'magic'];
-  return immutable_prop_names.includes(prop_name);
 }
