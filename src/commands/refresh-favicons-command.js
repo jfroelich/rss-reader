@@ -6,8 +6,9 @@ export default async function refresh_favicons_command() {
   console.log('Refreshing favicons for feeds...');
   const proms = [open(), favicon.open()];
   const [conn, iconn] = await Promise.all(proms);
-  await refresh_feed_icons(conn, iconn);
+  const update_results = await refresh_feed_icons(conn, iconn);
   conn.close();
   iconn.close();
-  console.log('Completed refreshing favicons');
+  console.log(
+      'Completed refreshing favicons (%d inspected)', update_results.length);
 }
