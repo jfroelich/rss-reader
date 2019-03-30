@@ -1,10 +1,9 @@
 import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
-import activate_feed from '/src/db/ops/activate-feed.js';
-import deactivate_feed from '/src/db/ops/deactivate-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import db_open from '/src/db/ops/open.js';
+import patch_feed from '/src/db/ops/patch-feed.js';
 import assert from '/src/lib/assert.js';
 import {unsubscribe} from '/src/ops/unsubscribe.js';
 
@@ -204,7 +203,7 @@ FeedList.prototype.activateOnclick = async function(event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const conn = await db_open();
-  await activate_feed(conn, feed_id);
+  await patch_feed(conn, {id: feed_id, active: true});
   conn.close();
 
   // Mark the corresponding feed element loaded in the view as active
@@ -221,14 +220,14 @@ FeedList.prototype.activateOnclick = async function(event) {
   }
 };
 
-// TODO: this should be done in the channel message handler instead of here
 FeedList.prototype.deactivateOnclick = async function(event) {
   const feed_id = parseInt(event.target.value, 10);
-
   const conn = await db_open();
-  await deactivate_feed(conn, feed_id, 'manual');
+  const props = {id: feed_id, active: false, deactivation_reason: 'manual'};
+  await patch_feed(conn, props);
   conn.close();
 
+  // TODO: this should be done in the channel message handler instead of here
   // Deactivate the corresponding element in the view
   const item_element =
       this.list_element.querySelector('li[feed="' + feed_id + '"]');
