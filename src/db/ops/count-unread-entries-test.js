@@ -1,4 +1,3 @@
-import Entry from '/src/db/entry.js';
 import * as locatable from '/src/db/locatable.js';
 import count_unread_entries from '/src/db/ops/count-unread-entries.js';
 import create_entry from '/src/db/ops/create-entry.js';
@@ -18,16 +17,16 @@ export async function count_unread_entries_test() {
   const insert_unread_count = 3;
   const entries_to_insert = [];
   for (let i = 0; i < insert_unread_count; i++) {
-    const entry = new Entry();
-    entry.read_state = Entry.UNREAD;
+    const entry = {};
+    entry.read_state = 0;
     locatable.append_url(entry, new URL('a://b.c' + i));
     entries_to_insert.push(entry);
   }
 
   const insert_read_count = 5;
   for (let i = 0; i < insert_read_count; i++) {
-    const entry = new Entry();
-    entry.read_state = Entry.READ;
+    const entry = {};
+    entry.read_state = 1;
     locatable.append_url(entry, new URL('d://e.f' + i));
     entries_to_insert.push(entry);
   }

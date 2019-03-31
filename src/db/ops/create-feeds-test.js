@@ -1,5 +1,4 @@
-import Feed from '/src/db/feed.js';
-import * as identifiable from '/src/db/identifiable.js';
+import is_valid_id from '/src/db/is-valid-id.js';
 import * as locatable from '/src/db/locatable.js';
 import create_feeds from '/src/db/ops/create-feeds.js';
 import get_feed from '/src/db/ops/get-feed.js';
@@ -16,7 +15,7 @@ export async function create_feeds_test() {
 
   const num_feeds = 3, feeds = [];
   for (let i = 0; i < num_feeds; i++) {
-    const feed = new Feed();
+    const feed = {};
     locatable.append_url(feed, new URL('a://b.c' + i));
     feeds.push(feed);
   }
@@ -29,7 +28,7 @@ export async function create_feeds_test() {
   const get_proms = ids.map(id => get_feed(conn, 'id', id, false));
   const feeds_by_id = await Promise.all(get_proms);
   for (const feed of feeds_by_id) {
-    assert(identifiable.is_valid_id(feed.id));
+    assert(is_valid_id(feed.id));
   }
 
   conn.close();

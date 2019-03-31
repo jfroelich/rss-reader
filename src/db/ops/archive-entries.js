@@ -1,4 +1,3 @@
-import Entry from '/src/db/entry.js';
 import assert from '/src/lib/assert.js';
 import sizeof from '/src/lib/sizeof.js';
 import Connection from '/src/db/connection.js';
@@ -25,7 +24,7 @@ export default function archive_entries(conn, max_age = TWO_DAYS_MS) {
 function create_archivable_entries_cursor_request(transaction) {
   const store = transaction.objectStore('entries');
   const index = store.index('archive_state-read_state');
-  const key_path = [Entry.UNARCHIVED, Entry.READ];
+  const key_path = [0, 1];
   return index.openCursor(key_path);
 }
 
@@ -74,7 +73,7 @@ function transaction_oncomplete(channel, ids, callback, event) {
 function archive_entry(entry) {
   const before_size = sizeof(entry);
 
-  const ce = new Entry();
+  const ce = {};
   ce.created_date = entry.created_date;
   ce.published_date = entry.published_date;
 
@@ -96,7 +95,7 @@ function archive_entry(entry) {
         entry, ce);
   }
 
-  ce.archive_state = Entry.ARCHIVED;
+  ce.archive_state = 1;
   const current_date = new Date();
   ce.archived_date = current_date;
   ce.updated_date = current_date;

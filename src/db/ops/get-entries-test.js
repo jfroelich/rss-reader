@@ -1,4 +1,3 @@
-import Entry from '/src/db/entry.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import get_entries from '/src/db/ops/get-entries.js';
 import test_open from '/src/db/test-open.js';
@@ -14,7 +13,7 @@ export async function get_entries_test() {
   const n = 5;
   const create_promises = [];
   for (let i = 0; i < n; i++) {
-    const entry = new Entry();
+    const entry = {};
     entry.title = 'title ' + i;
     create_promises.push(create_entry(conn, entry));
   }

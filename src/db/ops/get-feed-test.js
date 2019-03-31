@@ -1,5 +1,4 @@
-import Feed from '/src/db/feed.js';
-import * as identifiable from '/src/db/identifiable.js';
+import is_valid_id from '/src/db/is-valid-id.js';
 import * as locatable from '/src/db/locatable.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
@@ -13,12 +12,12 @@ export async function get_feed_test() {
 
   const conn = await test_open(db_name);
 
-  const feed = new Feed();
+  const feed = {};
   const url = new URL('a://b.c');
   locatable.append_url(feed, url);
 
   const feed_id = await create_feed(conn, feed);
-  assert(identifiable.is_valid_id(feed_id));
+  assert(is_valid_id(feed_id));
   const stored_feed = await get_feed(conn, 'id', feed_id, false);
   assert(stored_feed);
   const stored_feed2 = await get_feed(conn, 'url', url, false);

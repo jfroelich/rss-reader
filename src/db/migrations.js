@@ -65,14 +65,10 @@ export function migrate20(event, channel) {
 }
 
 // TODO: deprecate, no longer care about entry.magic
-export function migrate21(event, channel) {
-  return;
-}
+export function migrate21(event, channel) {}
 
 // TODO: deprecate, no longer care about feed.magic
-export function migrate22(event, channel) {
-  return;
-}
+export function migrate22(event, channel) {}
 
 export function migrate23(event, channel) {
   // This migration only applies to databases that exist

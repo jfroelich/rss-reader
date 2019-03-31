@@ -1,13 +1,12 @@
 import Connection from '/src/db/connection.js';
-import Feed from '/src/db/feed.js';
-import * as identifiable from '/src/db/identifiable.js';
+import is_valid_id from '/src/db/is-valid-id.js';
 import assert from '/src/lib/assert.js';
 
 export default function get_feed(conn, mode = 'id', value, key_only) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof Connection);
     assert(mode !== 'url' || value instanceof URL);
-    assert(mode !== 'id' || identifiable.is_valid_id(value));
+    assert(mode !== 'id' || is_valid_id(value));
     assert(mode !== 'id' || !key_only);
 
     const txn = conn.conn.transaction('feeds');
@@ -30,8 +29,8 @@ export default function get_feed(conn, mode = 'id', value, key_only) {
       let feed;
       if (key_only) {
         const feed_id = request.result;
-        if (identifiable.is_valid_id(feed_id)) {
-          feed = new Feed();
+        if (is_valid_id(feed_id)) {
+          feed = {};
           feed.id = feed_id;
         }
       } else {

@@ -1,5 +1,4 @@
 import * as config from '/src/config.js';
-import Entry from '/src/db/entry.js';
 import get_entries from '/src/db/ops/get-entries.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import db_open from '/src/db/ops/open.js';
@@ -301,7 +300,7 @@ function mark_slide_read_start(conn, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  return patch_entry(conn, {id: entry_id, read_state: Entry.READ});
+  return patch_entry(conn, {id: entry_id, read_state: 1});
 }
 
 function remove_slide(slide) {

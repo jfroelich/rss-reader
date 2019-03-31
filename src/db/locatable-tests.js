@@ -1,11 +1,9 @@
-import Entry from '/src/db/entry.js';
-import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import assert from '/src/lib/assert.js';
 
 export function append_entry_url_test() {
   // Append a url
-  const entry = new Entry();
+  const entry = {};
   let appended = locatable.append_url(entry, new URL('a://b.c1'));
   assert(appended === true);
   assert(locatable.has_url(entry));
@@ -25,7 +23,7 @@ export function append_entry_url_test() {
 }
 
 export function append_feed_url_test() {
-  const feed = new Feed();
+  const feed = {};
   let appended = false;
   appended = locatable.append_url(feed, new URL('a://b.c1'));
   assert(appended);

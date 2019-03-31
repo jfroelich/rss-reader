@@ -1,6 +1,5 @@
 import Connection from '/src/db/connection.js';
-import Feed from '/src/db/feed.js';
-import * as identifiable from '/src/db/identifiable.js';
+import is_valid_id from '/src/db/is-valid-id.js';
 import * as locatable from '/src/db/locatable.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
 import sanitize_feed from '/src/db/ops/sanitize-feed.js';
@@ -16,7 +15,7 @@ export default function put_feed(conn, feed) {
 function put_feed_executor(conn, feed, resolve, reject) {
   assert(conn instanceof Connection);
   assert(feed && typeof feed === 'object');
-  assert(identifiable.is_valid_id(feed.id));
+  assert(is_valid_id(feed.id));
   assert(locatable.has_url(feed));
 
   // Prepare the feed for storage

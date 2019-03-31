@@ -1,7 +1,6 @@
 import Connection from '/src/db/connection.js';
-import Entry from '/src/db/entry.js';
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
-import {is_valid_id} from '/src/db/identifiable.js';
+import is_valid_id from '/src/db/is-valid-id.js';
 import normalize_entry from '/src/db/ops/normalize-entry.js';
 import sanitize_entry from '/src/db/ops/sanitize-entry.js';
 import validate_entry from '/src/db/ops/validate-entry.js';
@@ -71,7 +70,7 @@ function get_request_onsuccess(props, reject, event) {
   // 'set' the caller does not care what the old state is. if using the other,
   // we could throw an error to indicate to the caller that it was equal.
 
-  if (entry.read_state === Entry.READ && props.read_state === Entry.READ) {
+  if (entry.read_state === 1 && props.read_state === 1) {
     const message =
         'Cannot mark entry as read when already read for id ' + props.id;
     reject(new InvalidStateError(message));
@@ -81,17 +80,17 @@ function get_request_onsuccess(props, reject, event) {
   // TODO: what others are there? maybe the archive ones?
 
   // Marking an entry as read should set its read date if not specified
-  if (props.read_state === Entry.READ && !props.read_date) {
+  if (props.read_state === 1 && !props.read_date) {
     props.read_date = new Date();
   }
 
   // Marking an entry as unread should delete its read date
-  if (props.read_state === Entry.UNREAD) {
+  if (props.read_state === 0) {
     props.read_date = undefined;
   }
 
   // Apply the transitions
-  const immutable_prop_names = ['id', 'updated_date', 'magic'];
+  const immutable_prop_names = ['id', 'updated_date'];
 
   for (const prop in props) {
     if (immutable_prop_names.includes(prop)) {

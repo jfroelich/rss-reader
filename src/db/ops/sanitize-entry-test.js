@@ -1,9 +1,8 @@
-import Entry from '/src/db/entry.js';
 import sanitize_entry from '/src/db/ops/sanitize-entry.js';
 import assert from '/src/lib/assert.js';
 
 export default function sanitize_entry_test() {
-  const entry = new Entry();
+  const entry = {};
   let content = 'hello world';
   entry.content = content;
   sanitize_entry(entry);

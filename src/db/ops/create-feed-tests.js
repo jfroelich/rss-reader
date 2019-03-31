@@ -1,5 +1,4 @@
-import Feed from '/src/db/feed.js';
-import * as identifiable from '/src/db/identifiable.js';
+import is_valid_id from '/src/db/is-valid-id.js';
 import * as locatable from '/src/db/locatable.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
@@ -13,12 +12,12 @@ export async function create_feed_test() {
 
   const conn = await test_open(db_name);
 
-  const feed = new Feed();
+  const feed = {};
   const feed_url = new URL('http://www.example.com/example.rss');
   locatable.append_url(feed, feed_url);
 
   const stored_feed_id = await create_feed(conn, feed);
-  assert(identifiable.is_valid_id(stored_feed_id));
+  assert(is_valid_id(stored_feed_id));
 
   // The new feed should be findable by url
   let stored_feed = await get_feed(conn, 'url', feed_url, true);
@@ -41,7 +40,7 @@ export async function create_feed_without_channel_test() {
   // create-feed should proceed without error even in the absence of channel
   delete conn.channel;
 
-  let feed = new Feed();
+  let feed = {};
   locatable.append_url(feed, new URL('a://b.c'));
 
   // Any error here is test failure
@@ -57,23 +56,10 @@ export async function create_invalid_feed_test() {
 
   const conn = await test_open(db_name);
 
-  // Creating a feed without magic should fail with an assertion error
-  let feed = new Feed();
-  locatable.append_url(feed, new URL('a://b.c'));
-  delete feed.magic;
-  let expected_error;
-  try {
-    await create_feed(conn, feed);
-  } catch (error) {
-    expected_error = error;
-  }
-
-  assert(expected_error instanceof AssertionError);
-
   // Creating a feed without a url should fail with an assertion error.
-  feed = new Feed();
+  let feed = {};
   feed.urls = [];
-  expected_error = undefined;
+  let expected_error = undefined;
   try {
     await create_feed(conn, feed);
   } catch (error) {
@@ -94,7 +80,7 @@ export async function create_invalid_feed_test() {
   assert(expected_error instanceof AssertionError);
 
   // Creating a feed with an explicit id should fail
-  feed = new Feed();
+  feed = {};
   feed.id = 5;
   locatable.append_url(feed, new URL('a://b.c'));
   expected_error = undefined;
@@ -115,11 +101,11 @@ export async function create_duplicate_url_feed_test() {
 
   const conn = await test_open(db_name);
 
-  const feed1 = new Feed();
+  const feed1 = {};
   locatable.append_url(feed1, new URL('http://www.example.com/example.rss'));
   await create_feed(conn, feed1);
 
-  const feed2 = new Feed();
+  const feed2 = {};
   locatable.append_url(feed2, new URL('http://www.example.com/example.rss'));
 
   let create_error;

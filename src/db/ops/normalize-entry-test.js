@@ -1,9 +1,8 @@
-import Entry from '/src/db/entry.js';
 import normalize_entry from '/src/db/ops/normalize-entry.js';
 import assert from '/src/lib/assert.js';
 
 export function normalize_entry_test() {
-  let entry = new Entry();
+  let entry = {};
 
   // test when missing fields
   // this should run without error
@@ -24,7 +23,7 @@ export function normalize_entry_test() {
   assert(expected_error instanceof Error);
 
   // reset so if i forget about it later in this function it does not matter
-  entry = new Entry();
+  entry = {};
 
   // test basic strings where no change expected
   entry.author = 'foo';
@@ -40,7 +39,7 @@ export function normalize_entry_test() {
   assert(entry.content === 'baz');
 
   // reset again out of paranoia
-  entry = new Entry();
+  entry = {};
 
   // Now test a case where a value is modified as a result of normalization
   // https://unicode.org/reports/tr15/

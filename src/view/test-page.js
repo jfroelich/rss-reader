@@ -1,4 +1,4 @@
-import {identifiable_test} from '/src/db/identifiable-test.js';
+import {identifiable_test} from '/src/db/is-valid-id-test.js';
 import * as locatable_tests from '/src/db/locatable-tests.js';
 import * as migrations_tests from '/src/db/migrations-tests.js';
 import {archive_entries_test} from '/src/db/ops/archive-entries-test.js';

@@ -1,4 +1,3 @@
-import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import show_notification from '/src/extension/show-notification.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
@@ -10,7 +9,7 @@ import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';
 // is invoked with the feed once it is stored, earlier.
 export default async function subscribe(
     conn, iconn, url, timeout = INDEFINITE, notify, feed_stored_callback) {
-  const feed = new Feed();
+  const feed = {};
   locatable.append_url(feed, url);
 
   const args = new ImportFeedArgs();

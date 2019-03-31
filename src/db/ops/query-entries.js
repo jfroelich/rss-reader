@@ -1,15 +1,12 @@
 import Connection from '/src/db/connection.js';
-import Entry from '/src/db/entry.js';
-import Feed from '/src/db/feed.js';
-import * as identifiable from '/src/db/identifiable.js';
+import is_valid_id from '/src/db/is-valid-id.js';
 import assert from '/src/lib/assert.js';
 
 export default function query_entries(conn, query = {}) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof Connection);
     assert(typeof query === 'object');
-    assert(
-        query.feed_id === undefined || identifiable.is_valid_id(query.feed_id));
+    assert(query.feed_id === undefined || is_valid_id(query.feed_id));
     assert(is_valid_read_state(query.read_state));
     assert(is_valid_offset(query.offset));
     assert(is_valid_direction(query.direction));
@@ -78,8 +75,8 @@ function build_request(store, query, direction) {
   const min_date = new Date(1);
   const max_date = new Date();
   // Shorter alias
-  const read = Entry.READ;
-  const unread = Entry.UNREAD;
+  const read = 1;
+  const unread = 0;
 
   if (query.feed_id === 0 || query.feed_id === undefined) {
     if (query.read_state === undefined) {
@@ -134,7 +131,7 @@ function is_valid_direction(dir) {
 }
 
 function is_valid_read_state(state) {
-  return state === undefined || state === Entry.READ || state === Entry.UNREAD;
+  return state === undefined || state === 1 || state === 0;
 }
 
 function is_valid_offset(offset) {

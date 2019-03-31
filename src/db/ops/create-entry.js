@@ -1,5 +1,4 @@
 import Connection from '/src/db/connection.js';
-import Entry from '/src/db/entry.js';
 import normalize_entry from '/src/db/ops/normalize-entry.js';
 import sanitize_entry from '/src/db/ops/sanitize-entry.js';
 import validate_entry from '/src/db/ops/validate-entry.js';
@@ -13,11 +12,11 @@ export default function create_entry(conn, entry) {
     assert(entry.id === undefined);
 
     if (entry.read_state === undefined) {
-      entry.read_state = Entry.UNREAD;
+      entry.read_state = 0;
     }
 
     if (entry.archive_state === undefined) {
-      entry.archive_state = Entry.UNARCHIVED;
+      entry.archive_state = 0;
     }
 
     if (entry.created_date === undefined) {

@@ -1,5 +1,4 @@
 import * as config from '/src/config.js';
-import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import show_notification from '/src/extension/show-notification.js';
@@ -46,8 +45,9 @@ export async function poll_feeds(args) {
 
   // Concurrently process the feed data
   const promises = feeds.map(feed => {
-    // Convert the data object loaded from the database into a Feed
-    const model_feed = Object.assign(new Feed(), feed);
+    // Convert the data object loaded from the database into a feed
+    // TODO: i don't think this is needed any more
+    const model_feed = Object.assign({}, feed);
 
     const import_feed_args = new ImportFeedArgs();
     import_feed_args.feed = model_feed;

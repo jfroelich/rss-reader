@@ -1,4 +1,3 @@
-import Entry from '/src/db/entry.js';
 import archive_entries from '/src/db/ops/archive-entries.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import test_open from '/src/db/test-open.js';
@@ -28,7 +27,7 @@ export async function archive_entries_test() {
 
   const create_promises = [];
   for (let i = 0; i < 5; i++) {
-    const entry = new Entry();
+    const entry = {};
     entry.title = 'title' + 5;
     entry.content = content;
 
@@ -36,7 +35,7 @@ export async function archive_entries_test() {
     // archive-state will be initialized within create-entry to unarchived, and
     // read-state will be initialized to unread. Override the initial
     // read-state as read so that these entries are iterated later.
-    entry.read_state = Entry.READ;
+    entry.read_state = 1;
 
     create_promises.push(create_entry(conn, entry));
   }
@@ -73,7 +72,7 @@ export async function archive_entries_test() {
 
   for (const entry of all_entries) {
     assert(entry_ids.includes(entry.id));
-    assert(entry.archive_state === Entry.ARCHIVED);
+    assert(entry.archive_state === 1);
     assert(entry.content === undefined);
     assert(entry.archived_date instanceof Date);
   }

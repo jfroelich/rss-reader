@@ -1,8 +1,12 @@
-import Entry from '/src/db/entry.js';
-import Feed from '/src/db/feed.js';
-import * as identifiable from '/src/db/identifiable.js';
+import is_valid_id from '/src/db/is-valid-id.js';
 import {is_date_lte, is_valid_date, vassert} from '/src/db/validation-utils.js';
 import assert from '/src/lib/assert.js';
+
+const props = [
+  'archive_state', 'archived_date', 'author', 'content', 'created_date',
+  'read_date', 'updated_date', 'published_date', 'enclosure', 'favicon_url',
+  'feed', 'feed_title', 'id', 'read_state', 'title', 'urls'
+];
 
 export default function validate_entry(entry) {
   // This is intentionally a weaker assert than is-entry, because validate-entry
@@ -17,16 +21,15 @@ export default function validate_entry(entry) {
   // TODO: validate read_date
   // TODO: validate archived_date
 
-  vassert(entry.id === undefined || identifiable.is_valid_id(entry.id));
-  vassert(entry.feed === undefined || identifiable.is_valid_id(entry.feed));
+  vassert(entry.id === undefined || is_valid_id(entry.id));
+  vassert(entry.feed === undefined || is_valid_id(entry.feed));
   vassert(entry.urls === undefined || Array.isArray(entry.urls));
   vassert(
-      entry.read_state === undefined || entry.read_state === Entry.READ ||
-      entry.read_state === Entry.UNREAD);
+      entry.read_state === undefined || entry.read_state === 1 ||
+      entry.read_state === 0);
   vassert(
-      entry.archive_state === undefined ||
-      entry.archive_state === Entry.ARCHIVED ||
-      entry.archive_state === Entry.UNARCHIVED);
+      entry.archive_state === undefined || entry.archive_state === 1 ||
+      entry.archive_state === 0);
   vassert(entry.author === undefined || typeof entry.author === 'string');
   vassert(entry.title === undefined || typeof entry.title === 'string');
   vassert(entry.content === undefined || typeof entry.content === 'string');

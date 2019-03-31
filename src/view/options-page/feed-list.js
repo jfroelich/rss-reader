@@ -1,4 +1,3 @@
-import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
@@ -12,7 +11,7 @@ export function FeedList() {
   this.no_feeds_element = undefined;
 
   // Optional callback caller can specify that is called every time a feed
-  // is appended to the feed list with the appended Feed object
+  // is appended to the feed list with the appended feed object
   this.onappend_callback = undefined;
 
   this.unsubscribe_callback = undefined;
@@ -30,8 +29,9 @@ FeedList.prototype.init = async function(parent) {
   list_element.setAttribute('id', 'feedlist');
 
   for (let feed of feeds) {
-    // Specialize generic data object as model/Feed object
-    feed = Object.assign(new Feed(), feed);
+    // Specialize generic data object as feed object
+    // TODO: i don't think this is needed anymore?
+    feed = Object.assign({}, feed);
     // TODO: actually, this should be done by appendFeed
     feed.title = feed.title || 'Untitled';
     this.appendFeed(feed);
@@ -54,7 +54,7 @@ FeedList.prototype.init = async function(parent) {
 };
 
 FeedList.prototype.appendFeed = function(feed) {
-  assert(feed instanceof Feed);
+  assert(feed typeof feed === 'object');
   assert(this.list_element);
 
   const item_element = document.createElement('li');
@@ -122,7 +122,8 @@ FeedList.prototype.itemOnclick = async function(event) {
   let feed = await get_feed(conn, 'id', feed_id, false);
   conn.close();
 
-  feed = Object.assign(new Feed(), feed);
+  // TODO: i don't think this is needed anymore
+  feed = Object.assign({}, feed);
 
   const details_title_element = document.getElementById('details-title');
   details_title_element.textContent =

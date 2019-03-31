@@ -1,5 +1,4 @@
-import Feed from '/src/db/feed.js';
-import * as identifiable from '/src/db/identifiable.js';
+import is_valid_id from '/src/db/is-valid-id.js';
 import test_open from '/src/db/test-open.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
@@ -33,7 +32,7 @@ export async function subscribe_test() {
 
   // Test the subscription produced the desired result
   assert(feed && typeof feed === 'object');
-  assert(identifiable.is_valid_id(feed.id));
+  assert(is_valid_id(feed.id));
 
   // subscribe should have invoked the callback
   assert(callback_called);

@@ -1,5 +1,3 @@
-import Entry from '/src/db/entry.js';
-import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import count_unread_entries_by_feed from '/src/db/ops/count-unread-entries-by-feed.js';
 import create_entry from '/src/db/ops/create-entry.js';
@@ -14,7 +12,7 @@ export async function count_unread_entries_by_feed_test() {
 
   const conn = await test_open(db_name);
 
-  const feed = new Feed();
+  const feed = {};
   const url = new URL('http://www.example.com/feed.xml');
   locatable.append_url(feed, url);
   const feed_id = await create_feed(conn, feed);
@@ -23,9 +21,9 @@ export async function count_unread_entries_by_feed_test() {
   const create_promises = [];
 
   for (let i = 0; i < 2; i++) {
-    const read_state = i === 0 ? Entry.UNREAD : Entry.READ;
+    const read_state = i === 0 ? 0 : 1;
     for (let j = 0; j < num_entries_created_per_type; j++) {
-      const entry = new Entry();
+      const entry = {};
       entry.feed = feed_id;
       entry.read_state = read_state;
       create_promises.push(create_entry(conn, entry));

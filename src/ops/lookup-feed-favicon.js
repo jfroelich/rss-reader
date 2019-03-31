@@ -1,4 +1,3 @@
-import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';

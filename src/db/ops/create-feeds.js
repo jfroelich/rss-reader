@@ -1,5 +1,4 @@
 import Connection from '/src/db/connection.js';
-import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
 import assert from '/src/lib/assert.js';

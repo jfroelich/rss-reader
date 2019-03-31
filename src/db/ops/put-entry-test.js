@@ -1,4 +1,3 @@
-import Entry from '/src/db/entry.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import get_entry from '/src/db/ops/get-entry.js';
 import put_entry from '/src/db/ops/put-entry.js';
@@ -12,7 +11,7 @@ export async function put_entry_test() {
 
   const conn = await test_open(db_name);
 
-  let entry = new Entry();
+  let entry = {};
   entry.title = 'first-title';
   const entry_id = await create_entry(conn, entry);
   entry = await get_entry(conn, 'id', entry_id, false);

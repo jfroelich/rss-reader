@@ -1,6 +1,6 @@
 import Connection from '/src/db/connection.js';
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
-import {is_valid_id} from '/src/db/identifiable.js';
+import is_valid_id from '/src/db/is-valid-id.js';
 import normalize_feed from '/src/db/ops/normalize-feed.js';
 import sanitize_feed from '/src/db/ops/sanitize-feed.js';
 import validate_feed from '/src/db/ops/validate-feed.js';
@@ -80,7 +80,7 @@ function get_request_onsuccess(props, reject, event) {
   // Do the transitions
   for (const prop in props) {
     // Treat id as immutable.
-    if (prop === 'id' || prop === 'magic') {
+    if (prop === 'id' || prop === 'updated_date') {
       continue;
     }
 

@@ -1,4 +1,3 @@
-import Entry from '/src/db/entry.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import query_entries from '/src/db/ops/query-entries.js';
 import test_open from '/src/db/test-open.js';
@@ -16,8 +15,8 @@ export async function query_entries_test() {
 
   // Create 5 unread entries tied to feed 1
   for (let i = 0; i < 5; i++) {
-    entry = new Entry();
-    entry.read_state = Entry.UNREAD;
+    entry = {};
+    entry.read_state = 0;
     entry.feed = 1;
     entry.published_date = new Date();
     create_promises.push(create_entry(conn, entry));
@@ -25,8 +24,8 @@ export async function query_entries_test() {
 
   // Create 5 read entries tied to feed 1
   for (let i = 0; i < 5; i++) {
-    entry = new Entry();
-    entry.read_state = Entry.READ;
+    entry = {};
+    entry.read_state = 1;
     entry.feed = 1;
     entry.published_date = new Date();
     create_promises.push(create_entry(conn, entry));
@@ -34,8 +33,8 @@ export async function query_entries_test() {
 
   // Create 5 unread entries tied to feed 2
   for (let i = 0; i < 5; i++) {
-    entry = new Entry();
-    entry.read_state = Entry.UNREAD;
+    entry = {};
+    entry.read_state = 0;
     entry.feed = 2;
     entry.published_date = new Date();
     create_promises.push(create_entry(conn, entry));
@@ -43,8 +42,8 @@ export async function query_entries_test() {
 
   // Create 5 read entries tied to feed 2
   for (let i = 0; i < 5; i++) {
-    entry = new Entry();
-    entry.read_state = Entry.READ;
+    entry = {};
+    entry.read_state = 1;
     entry.feed = 2;
     entry.published_date = new Date();
     create_promises.push(create_entry(conn, entry));
@@ -63,13 +62,13 @@ export async function query_entries_test() {
 
   // Query for all unread entries, assert that it finds the expected number of
   // entries
-  query = {read_state: Entry.UNREAD};
+  query = {read_state: 0};
   entries = await query_entries(conn, query);
   assert(entries.length === 10);
 
   // Query for all read entries, assert that it finds the expected number of
   // entries
-  query = {read_state: Entry.READ};
+  query = {read_state: 1};
   entries = await query_entries(conn, query);
   assert(entries.length === 10);
 
@@ -148,30 +147,30 @@ export async function query_entries_test() {
   }
 
   // Query using particular feed unread only
-  query = {feed_id: 1, read_state: Entry.UNREAD};
+  query = {feed_id: 1, read_state: 0};
   entries = await query_entries(conn, query);
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.read_state === Entry.UNREAD);
+    assert(entry.read_state === 0);
   }
 
   // Feed 1 read only
-  query = {feed_id: 1, read_state: Entry.READ};
+  query = {feed_id: 1, read_state: 1};
   entries = await query_entries(conn, query);
   assert(entries.length === 5);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.read_state === Entry.READ);
+    assert(entry.read_state === 1);
   }
 
   // Feed 1, unread, offset 3
-  query = {feed_id: 1, read_state: Entry.UNREAD, offset: 3};
+  query = {feed_id: 1, read_state: 0, offset: 3};
   entries = await query_entries(conn, query);
   assert(entries.length === 2);
   for (const entry of entries) {
     assert(entry.feed === 1);
-    assert(entry.read_state === Entry.UNREAD);
+    assert(entry.read_state === 0);
   }
 
   conn.close();

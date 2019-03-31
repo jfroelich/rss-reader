@@ -1,4 +1,3 @@
-import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import create_feeds from '/src/db/ops/create-feeds.js';
 import test_open from '/src/db/test-open.js';
@@ -16,7 +15,7 @@ export default async function export_opml_test() {
   // Insert some test feeds
   let feeds = [];
   for (let i = 0; i < 3; i++) {
-    const feed = new Feed();
+    const feed = {};
     locatable.append_url(feed, new URL('a://b.c' + i));
     feeds.push(feed);
   }

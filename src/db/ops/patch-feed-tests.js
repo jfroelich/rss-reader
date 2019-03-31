@@ -1,4 +1,3 @@
-import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
@@ -13,7 +12,7 @@ export async function patch_feed_test() {
 
   const conn = await test_open(db_name);
 
-  let feed = new Feed();
+  let feed = {};
   feed.title = 'first';
   const url = new URL('a://b.c');
   locatable.append_url(feed, url);
@@ -36,7 +35,7 @@ export async function activate_feed_test() {
   const conn = await test_open(db_name);
 
   // Create an inactive feed and store it
-  const feed = new Feed();
+  const feed = {};
   feed.active = false;
   locatable.append_url(feed, new URL('a://b.c'));
   const id = await create_feed(conn, feed);
@@ -97,7 +96,7 @@ export async function deactivate_feed_test() {
 
   const conn = await test_open(db_name);
 
-  const feed = new Feed();
+  const feed = {};
   const url = new URL('a://b.c');
   locatable.append_url(feed, url);
   feed.active = true;

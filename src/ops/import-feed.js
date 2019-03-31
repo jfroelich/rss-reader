@@ -1,8 +1,6 @@
 import Connection from '/src/db/connection.js';
-import Entry from '/src/db/entry.js';
 import {ConstraintError} from '/src/db/errors.js';
-import Feed from '/src/db/feed.js';
-import * as identifiable from '/src/db/identifiable.js';
+import is_valid_id from '/src/db/is-valid-id.js';
 import * as locatable from '/src/db/locatable.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
@@ -42,7 +40,7 @@ async function validate_feed_is_unique(feed, conn) {
 
 export async function import_feed(args) {
   assert(args instanceof ImportFeedArgs);
-  assert(args.feed instanceof Feed);
+  assert(args.feed && typeof args.feed === 'object');
   assert(args.conn instanceof Connection);
   assert(args.iconn === undefined || args.iconn instanceof IDBDatabase);
   assert(args.fetch_feed_timeout instanceof Deadline);
@@ -54,7 +52,7 @@ export async function import_feed(args) {
     // to avoid network overhead, which is the bottleneck.
     await validate_feed_is_unique(args.feed, args.conn);
   } else {
-    assert(identifiable.is_valid_id(args.feed.id));
+    assert(is_valid_id(args.feed.id));
   }
 
   // Fetch the feed
@@ -126,12 +124,12 @@ export async function import_feed(args) {
   return output;
 }
 
-// Concurrently import an array of entries (of type model/Entry). Resolves when
-// all entries processed. Returns a promise that resolves when each individual
-// import-entry promise resolves, which then resolves to an array of new entry
-// ids. For all errors other than assertion errors, per-entry import errors are
-// suppressed and only logged. If there is an error importing an entry its
-// output id will be invalid.
+// Concurrently import an array of entry objects. Resolves when all entries
+// processed. Returns a promise that resolves when each individual import-entry
+// promise resolves, which then resolves to an array of new entry ids. For all
+// errors other than assertion errors, per-entry import errors are suppressed
+// and only logged. If there is an error importing an entry its output id will
+// be invalid.
 function import_entries(entries, args) {
   // Map each entry into an import-entry promise
   const promises = entries.map(entry => {
@@ -196,7 +194,7 @@ function update_model_feed_from_parsed_feed(feed, parsed_feed) {
 
 // Convert a parsed entry into a storable entry
 function parsed_entry_to_model_entry(parsed_entry) {
-  const entry = new Entry();
+  const entry = {};
   entry.title = parsed_entry.title;
   entry.author = parsed_entry.author;
   entry.published_date = parsed_entry.published_date;

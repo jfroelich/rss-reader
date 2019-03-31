@@ -1,4 +1,3 @@
-import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import create_feeds from '/src/db/ops/create-feeds.js';
 
@@ -32,7 +31,7 @@ export async function import_opml(conn, files) {
   }
 
   const feeds = url_set.map(url => {
-    const feed = new Feed();
+    const feed = {};
     feed.active = true;
     locatable.append_url(feed, url);
     return feed;

@@ -1,5 +1,4 @@
 import Connection from '/src/db/connection.js';
-import Entry from '/src/db/entry.js';
 import assert from '/src/lib/assert.js';
 
 export default function get_entries(conn, mode = 'all', offset, limit) {
@@ -19,7 +18,7 @@ export default function get_entries(conn, mode = 'all', offset, limit) {
     let request;
     if (mode === 'viewable') {
       const index = store.index('archive_state-read_state');
-      const path = [Entry.UNARCHIVED, Entry.UNREAD];
+      const path = [0, 0];
       request = index.openCursor(path);
     } else if (mode === 'all') {
       request = store.openCursor();

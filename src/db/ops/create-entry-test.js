@@ -1,4 +1,3 @@
-import Entry from '/src/db/entry.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import get_entry from '/src/db/ops/get-entry.js';
 import test_open from '/src/db/test-open.js';
@@ -11,7 +10,7 @@ export async function create_entry_test() {
 
   const conn = await test_open(db_name);
 
-  const entry = new Entry();
+  const entry = {};
   const id = await create_entry(conn, entry);
   const stored_entry = await get_entry(conn, 'id', id, false);
   assert(stored_entry);

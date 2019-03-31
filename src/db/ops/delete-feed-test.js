@@ -1,5 +1,3 @@
-import Entry from '/src/db/entry.js';
-import Feed from '/src/db/feed.js';
 import * as locatable from '/src/db/locatable.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import create_feed from '/src/db/ops/create-feed.js';
@@ -16,12 +14,12 @@ export async function delete_feed_test() {
 
   const conn = await test_open(db_name);
 
-  const feed1 = new Feed();
+  const feed1 = {};
   const url1 = new URL('http://www.example.com/foo.xml');
   locatable.append_url(feed1, url1);
   const feed_id1 = await create_feed(conn, feed1);
 
-  const entry = new Entry();
+  const entry = {};
   locatable.append_url(entry, new URL('a://b.c'));
   entry.feed = feed_id1;
   const entry_id = await create_entry(conn, entry);
@@ -58,12 +56,12 @@ export async function delete_feed_test2() {
 
   const conn = await test_open(db_name);
 
-  const feed1 = new Feed();
+  const feed1 = {};
   const url1 = new URL('http://www.example.com/foo.xml');
   locatable.append_url(feed1, url1);
   const feed_id1 = await create_feed(conn, feed1);
 
-  const feed2 = new Feed();
+  const feed2 = {};
   const url2 = new URL('http://www.example.com/bar.xml');
   locatable.append_url(feed2, url2);
   const feed_id2 = await create_feed(conn, feed2);
