@@ -30,7 +30,7 @@ export default function create_entry(conn, entry) {
     }
 
     delete entry.updated_date;
-    resource_utils.normalize_resource(entry);
+    resource_utils.normalize(entry);
     sanitize_entry(entry);
     filter_empty_properties(entry);
     validate_entry(entry);

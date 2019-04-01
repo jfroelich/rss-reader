@@ -1,6 +1,6 @@
-import * as locatable from '/src/db/locatable.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed_ids from '/src/db/ops/get-feed-ids.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import test_open from '/src/db/test-open.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
@@ -16,7 +16,7 @@ export async function get_feed_ids_test() {
   for (let i = 0; i < n; i++) {
     const feed = {};
     const url = new URL('a://b.c/feed' + i + '.xml');
-    locatable.append_url(feed, url);
+    resource_utils.set_url(feed, url);
     create_promises.push(create_feed(conn, feed));
   }
 

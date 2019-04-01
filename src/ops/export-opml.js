@@ -1,6 +1,6 @@
 import Connection from '/src/db/connection.js';
-import * as locatable from '/src/db/locatable.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 
 // Returns an in memory OPML document object filled with the feeds from the
@@ -33,8 +33,8 @@ function feed_to_outline(feed) {
   const outline = {};
   outline.type = feed.type;
 
-  if (locatable.has_url(feed)) {
-    outline.xml_url = locatable.get_url_string(feed);
+  if (resource_utils.has_url(feed)) {
+    outline.xml_url = resource_utils.get_url_string(feed);
   }
 
   outline.title = feed.title;

@@ -1,5 +1,5 @@
-import * as locatable from '/src/db/locatable.js';
 import create_feeds from '/src/db/ops/create-feeds.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import test_open from '/src/db/test-open.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
@@ -16,7 +16,7 @@ export default async function export_opml_test() {
   let feeds = [];
   for (let i = 0; i < 3; i++) {
     const feed = {};
-    locatable.append_url(feed, new URL('a://b.c' + i));
+    resource_utils.set_url(feed, new URL('a://b.c' + i));
     feeds.push(feed);
   }
 
@@ -40,7 +40,7 @@ export default async function export_opml_test() {
   // For each feed that has a url, it should have a corresponding outline based
   // on the outline's xmlurl attribute value.
   for (const feed of feeds) {
-    const url = locatable.get_url(feed);
+    const url = resource_utils.get_url(feed);
     const selector = 'outline[xmlUrl="' + url.href + '"]';
     const outline = document.querySelector(selector);
     assert(outline instanceof Element);

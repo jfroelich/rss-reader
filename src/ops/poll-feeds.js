@@ -1,6 +1,6 @@
 import * as config from '/src/config.js';
-import * as locatable from '/src/db/locatable.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import show_notification from '/src/extension/show-notification.js';
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
@@ -87,8 +87,8 @@ async function poll_feed_noexcept(import_feed_args) {
       throw error;
     } else {
       console.warn(
-          'Error polling feed', locatable.get_url_string(import_feed_args.feed),
-          error);
+          'Error polling feed',
+          resource_utils.get_url_string(import_feed_args.feed), error);
       return 0;
     }
   }

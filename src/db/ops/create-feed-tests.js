@@ -1,4 +1,3 @@
-import * as locatable from '/src/db/locatable.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import * as resource_utils from '/src/db/resource-utils.js';
@@ -14,7 +13,7 @@ export async function create_feed_test() {
 
   const feed = {};
   const feed_url = new URL('http://www.example.com/example.rss');
-  locatable.append_url(feed, feed_url);
+  resource_utils.set_url(feed, feed_url);
 
   const stored_feed_id = await create_feed(conn, feed);
   assert(resource_utils.is_valid_id(stored_feed_id));
@@ -41,7 +40,7 @@ export async function create_feed_without_channel_test() {
   delete conn.channel;
 
   let feed = {};
-  locatable.append_url(feed, new URL('a://b.c'));
+  resource_utils.set_url(feed, new URL('a://b.c'));
 
   // Any error here is test failure
   await create_feed(conn, feed);
@@ -82,7 +81,7 @@ export async function create_invalid_feed_test() {
   // Creating a feed with an explicit id should fail
   feed = {};
   feed.id = 5;
-  locatable.append_url(feed, new URL('a://b.c'));
+  resource_utils.set_url(feed, new URL('a://b.c'));
   expected_error = undefined;
   try {
     await create_feed(conn, feed);
@@ -102,11 +101,13 @@ export async function create_duplicate_url_feed_test() {
   const conn = await test_open(db_name);
 
   const feed1 = {};
-  locatable.append_url(feed1, new URL('http://www.example.com/example.rss'));
+  resource_utils.set_url(
+      feed1, new URL('http://www.example.com/example.rss'));
   await create_feed(conn, feed1);
 
   const feed2 = {};
-  locatable.append_url(feed2, new URL('http://www.example.com/example.rss'));
+  resource_utils.set_url(
+      feed2, new URL('http://www.example.com/example.rss'));
 
   let create_error;
   try {

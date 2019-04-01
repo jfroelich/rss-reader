@@ -1,6 +1,5 @@
 import Connection from '/src/db/connection.js';
 import {ConstraintError} from '/src/db/errors.js';
-import * as locatable from '/src/db/locatable.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import put_feed from '/src/db/ops/put-feed.js';
@@ -29,7 +28,7 @@ export function ImportFeedArgs() {
 // only checks against the tail url of the feed, so this result is unreliable
 // when there are multiple urls.
 async function validate_feed_is_unique(feed, conn) {
-  const url = locatable.get_url(feed);
+  const url = resource_utils.get_url(feed);
   const key_only = true;
   const existing_feed = await get_feed(conn, 'url', url, key_only);
   if (existing_feed) {
@@ -56,7 +55,7 @@ export async function import_feed(args) {
   }
 
   // Fetch the feed
-  const fetch_url = locatable.get_url(args.feed);
+  const fetch_url = resource_utils.get_url(args.feed);
   const fetch_options = {timeout: args.fetch_feed_timeout};
   const response = await better_fetch(fetch_url, fetch_options);
   const response_url = new URL(response.url);
@@ -73,7 +72,7 @@ export async function import_feed(args) {
   }
 
   // Possibly append the redirect url
-  locatable.append_url(args.feed, response_url);
+  resource_utils.set_url(args.feed, response_url);
 
   const response_text = await response.text();
   const parsed_feed = feed_parser.parse_from_string(response_text);
@@ -204,7 +203,7 @@ function parsed_entry_to_model_entry(parsed_entry) {
   if (parsed_entry.link) {
     try {
       const link_url = new URL(parsed_entry.link);
-      locatable.append_url(entry, link_url);
+      resource_utils.set_url(entry, link_url);
     } catch (error) {
       // Ignore
     }

@@ -24,7 +24,7 @@ function patch_entry_executor(conn, props, resolve, reject) {
   assert(props && typeof props === 'object');
   assert(resource_utils.is_valid_id(props.id));
 
-  resource_utils.normalize_resource(props);
+  resource_utils.normalize(props);
   sanitize_entry(props);
   filter_empty_properties(props);
   validate_entry(props);

@@ -1,4 +1,4 @@
-import * as locatable from '/src/db/locatable.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import show_notification from '/src/extension/show-notification.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';
@@ -10,7 +10,7 @@ import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';
 export default async function subscribe(
     conn, iconn, url, timeout = INDEFINITE, notify, feed_stored_callback) {
   const feed = {};
-  locatable.append_url(feed, url);
+  resource_utils.set_url(feed, url);
 
   const args = new ImportFeedArgs();
   args.conn = conn;
@@ -23,7 +23,7 @@ export default async function subscribe(
   await import_feed(args);
 
   if (notify) {
-    const feed_title = feed.title || locatable.get_url(feed);
+    const feed_title = feed.title || resource_utils.get_url(feed);
     show_notification('Subscribed to ' + feed_title, feed.favicon_url);
   }
 

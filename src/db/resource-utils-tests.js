@@ -11,12 +11,33 @@ export function is_valid_id_test() {
   assert(resource_utils.is_valid_id(123456789));
 }
 
+export function append_url_test() {
+  // Append a url
+  const resource = {};
+  let appended = resource_utils.set_url(resource, new URL('a://b.c1'));
+  assert(appended === true);
+  assert(resource_utils.has_url(resource));
+  assert(resource.urls.length === 1);
+
+  // Append a second url
+  const url2 = new URL('a://b.c2');
+  appended = resource_utils.set_url(resource, url2);
+  assert(appended);
+  assert(resource_utils.has_url(resource));
+  assert(resource.urls.length === 2);
+
+  // Append a duplicate
+  appended = resource_utils.set_url(resource, url2);
+  assert(!appended);
+  assert(resource.urls.length === 2);
+}
+
 export function normalize_resource_test() {
   let resource = {};
 
   // test when missing fields
   // this should run without error
-  resource_utils.normalize_resource(resource);
+  resource_utils.normalize(resource);
   // should not have somehow introduced values where none existed
   assert(resource.author === undefined);
   assert(resource.title === undefined);
@@ -26,7 +47,7 @@ export function normalize_resource_test() {
   resource.author = 1234;
   let expected_error = undefined;
   try {
-    resource_utils.normalize_resource(resource);
+    resource_utils.normalize(resource);
   } catch (error) {
     expected_error = error;
   }
@@ -39,27 +60,24 @@ export function normalize_resource_test() {
   resource.content = 'baz';
 
   // should run without error
-  resource_utils.normalize_resource(resource);
+  resource_utils.normalize(resource);
 
   // values should be the same
   assert(resource.author === 'foo');
   assert(resource.title === 'bar');
   assert(resource.content === 'baz');
 
-
   // Now test a case where a value is modified as a result of normalization
   // https://unicode.org/reports/tr15/
-  // 😱
-
   resource = {};
   assert('Å' === '\u212b');  // not normalized
   assert('Å' === '\u00c5');  // normalized
   resource.author = '\u212b';
-  resource_utils.normalize_resource(resource);
+  resource_utils.normalize(resource);
   assert(resource.author === '\u00c5', escape_unicode(resource.author));
 
   // test idempotency
-  resource_utils.normalize_resource(resource);
+  resource_utils.normalize(resource);
   assert(resource.author === '\u00c5', escape_unicode(resource.author));
 }
 

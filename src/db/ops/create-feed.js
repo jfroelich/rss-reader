@@ -1,5 +1,4 @@
 import Connection from '/src/db/connection.js';
-import * as locatable from '/src/db/locatable.js';
 import sanitize_feed from '/src/db/ops/sanitize-feed.js';
 import validate_feed from '/src/db/ops/validate-feed.js';
 import * as resource_utils from '/src/db/resource-utils.js';
@@ -15,7 +14,7 @@ export default function create_feed(conn, feed) {
     assert(feed.id === undefined);
 
     // The model requires that a feed has a url
-    assert(locatable.has_url(feed));
+    assert(resource_utils.has_url(feed));
 
     // If feed.active is true, then leave as true. If false, leave as false.
     // But if undefined, impute true. This allows the caller to create
@@ -27,7 +26,7 @@ export default function create_feed(conn, feed) {
     feed.created_date = new Date();
     delete feed.updated_date;
 
-    resource_utils.normalize_resource(feed);
+    resource_utils.normalize(feed);
     sanitize_feed(feed);
     filter_empty_properties(feed);
     validate_feed(feed);

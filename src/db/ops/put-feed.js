@@ -1,5 +1,4 @@
 import Connection from '/src/db/connection.js';
-import * as locatable from '/src/db/locatable.js';
 import sanitize_feed from '/src/db/ops/sanitize-feed.js';
 import validate_feed from '/src/db/ops/validate-feed.js';
 import * as resource_utils from '/src/db/resource-utils.js';
@@ -15,10 +14,10 @@ function put_feed_executor(conn, feed, resolve, reject) {
   assert(conn instanceof Connection);
   assert(feed && typeof feed === 'object');
   assert(resource_utils.is_valid_id(feed.id));
-  assert(locatable.has_url(feed));
+  assert(resource_utils.has_url(feed));
 
   // Prepare the feed for storage
-  resource_utils.normalize_resource(feed);
+  resource_utils.normalize(feed);
   sanitize_feed(feed);
   validate_feed(feed);
   filter_empty_properties(feed);

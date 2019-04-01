@@ -1,6 +1,6 @@
-import * as locatable from '/src/db/locatable.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import test_open from '/src/db/test-open.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
@@ -17,7 +17,7 @@ export async function get_feeds_test() {
   for (let i = 0; i < n; i++) {
     const feed = {};
     const url = new URL('a://b.c' + i);
-    locatable.append_url(feed, url);
+    resource_utils.set_url(feed, url);
     // make some inactive
     if (i % 2 === 0) {
       feed.active = false;

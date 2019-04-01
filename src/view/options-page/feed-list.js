@@ -1,8 +1,8 @@
-import * as locatable from '/src/db/locatable.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
 import db_open from '/src/db/ops/open.js';
 import patch_feed from '/src/db/ops/patch-feed.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import {unsubscribe} from '/src/ops/unsubscribe.js';
 
@@ -81,7 +81,7 @@ FeedList.prototype.appendFeed = function(feed) {
   }
 
   const title_element = document.createElement('span');
-  const feed_title = feed.title || locatable.get_url_string(feed);
+  const feed_title = feed.title || resource_utils.get_url_string(feed);
   // Title is automatically truncated via CSS so just produce the full value
   title_element.textContent = feed_title;
   item_element.appendChild(title_element);
@@ -127,7 +127,7 @@ FeedList.prototype.itemOnclick = async function(event) {
 
   const details_title_element = document.getElementById('details-title');
   details_title_element.textContent =
-      feed.title || locatable.get_url_string(feed);
+      feed.title || resource_utils.get_url_string(feed);
 
   const details_favicon_element = document.getElementById('details-favicon');
   if (feed.favicon_url) {
@@ -142,7 +142,7 @@ FeedList.prototype.itemOnclick = async function(event) {
   details_desc_element.textContent = feed.description || '';
 
   const feed_url_element = document.getElementById('details-feed-url');
-  feed_url_element.textContent = locatable.get_url_string(feed);
+  feed_url_element.textContent = resource_utils.get_url_string(feed);
 
   const feed_link_element = document.getElementById('details-feed-link');
   feed_link_element.textContent = feed.link || '';

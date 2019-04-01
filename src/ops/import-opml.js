@@ -1,5 +1,5 @@
-import * as locatable from '/src/db/locatable.js';
 import create_feeds from '/src/db/ops/create-feeds.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 
 // Create and store feed objects in the database based on urls extracted from
 // zero or more opml files. |files| should be a FileList or an Array.
@@ -33,7 +33,7 @@ export async function import_opml(conn, files) {
   const feeds = url_set.map(url => {
     const feed = {};
     feed.active = true;
-    locatable.append_url(feed, url);
+    resource_utils.set_url(feed, url);
     return feed;
   });
 

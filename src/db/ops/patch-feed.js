@@ -16,7 +16,7 @@ function patch_feed_executor(conn, props, resolve, reject) {
   assert(typeof props === 'object');
   assert(resource_utils.is_valid_id(props.id));
 
-  resource_utils.normalize_resource(props);
+  resource_utils.normalize(props);
   sanitize_feed(props);
   validate_feed(props);
   filter_empty_properties(props);

@@ -1,5 +1,4 @@
 import Connection from '/src/db/connection.js';
-import * as locatable from '/src/db/locatable.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
@@ -12,11 +11,11 @@ export default function create_feeds(conn, feeds) {
 
     for (const feed of feeds) {
       assert(feed && typeof feed === 'object');
-      assert(locatable.has_url(feed));
+      assert(resource_utils.has_url(feed));
     }
 
     for (const feed of feeds) {
-      resource_utils.normalize_resource(feed);
+      resource_utils.normalize(feed);
       filter_empty_properties(feed);
 
       // Default to active if not set, but leave as is if false

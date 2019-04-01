@@ -1,4 +1,3 @@
-import * as locatable from '/src/db/locatable.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import * as resource_utils from '/src/db/resource-utils.js';
@@ -14,7 +13,7 @@ export async function get_feed_test() {
 
   const feed = {};
   const url = new URL('a://b.c');
-  locatable.append_url(feed, url);
+  resource_utils.set_url(feed, url);
 
   const feed_id = await create_feed(conn, feed);
   assert(resource_utils.is_valid_id(feed_id));

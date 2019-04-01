@@ -1,8 +1,8 @@
 import * as config from '/src/config.js';
 import {ConstraintError} from '/src/db/errors.js';
-import * as locatable from '/src/db/locatable.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import get_entry from '/src/db/ops/get-entry.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {composite_document_filter} from '/src/lib/dom-filters/dom-filters.js';
@@ -30,12 +30,12 @@ export async function import_entry(args) {
 
   // Rewrite the entry's url. This is always done before processing, so there
   // no need to check whether the original url exists in the database.
-  const original_url = locatable.get_url(entry);
+  const original_url = resource_utils.get_url(entry);
   const rewritten_url = rewrite_url(original_url, args.rewrite_rules);
-  locatable.append_url(entry, rewritten_url);
+  resource_utils.set_url(entry, rewritten_url);
 
   // Check if the entry with the possibly rewritten url already exists
-  const after_rewrite_url = locatable.get_url(entry);
+  const after_rewrite_url = resource_utils.get_url(entry);
   const existing_entry =
       await get_entry(args.conn, 'url', after_rewrite_url, true);
   if (existing_entry) {
@@ -45,7 +45,7 @@ export async function import_entry(args) {
   }
 
   // Fetch the entry's full content. Rethrow any errors.
-  const fetch_url = locatable.get_url(entry);
+  const fetch_url = resource_utils.get_url(entry);
   const response = await fetch_entry_html(
       fetch_url, args.fetch_html_timeout, args.inaccessible_descriptors);
 
@@ -53,10 +53,10 @@ export async function import_entry(args) {
   if (response) {
     const response_url = new URL(response.url);
     if (fetch_url.href !== response_url.href) {
-      locatable.append_url(entry, response_url);
+      resource_utils.set_url(entry, response_url);
 
       const rewritten_url = rewrite_url(response_url, args.rewrite_rules);
-      locatable.append_url(entry, rewritten_url);
+      resource_utils.set_url(entry, rewritten_url);
 
       const existing_entry = get_entry(args.conn, 'url', rewritten_url, true);
       if (existing_entry) {
@@ -81,7 +81,7 @@ export async function import_entry(args) {
   // This must occur before doing favicon lookups because the lookup may inspect
   // the document and expects DOM element property getters like image.src to
   // have the proper base uri set.
-  set_base_uri(doc, locatable.get_url(entry));
+  set_base_uri(doc, resource_utils.get_url(entry));
 
   if (args.iconn) {
     // Only provide if doc came from remote. If it came from feed-xml then it
@@ -105,7 +105,7 @@ export async function import_entry(args) {
 
 async function set_entry_favicon(entry, conn, doc) {
   const request = new favicon.LookupRequest();
-  request.url = locatable.get_url(entry);
+  request.url = resource_utils.get_url(entry);
   request.conn = conn;
   request.document = doc;
   const icon_url = await favicon.lookup(request);

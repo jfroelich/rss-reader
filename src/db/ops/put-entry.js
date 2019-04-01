@@ -12,7 +12,7 @@ export default function put_entry(conn, entry) {
     assert(entry && typeof entry === 'object');
     assert(resource_utils.is_valid_id(entry.id));
 
-    resource_utils.normalize_resource(entry);
+    resource_utils.normalize(entry);
     sanitize_entry(entry);
     filter_empty_properties(entry);
     validate_entry(entry);

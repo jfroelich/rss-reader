@@ -1,4 +1,3 @@
-import * as locatable_tests from '/src/db/locatable-tests.js';
 import * as migrations_tests from '/src/db/migrations-tests.js';
 import {archive_entries_test} from '/src/db/ops/archive-entries-test.js';
 import {create_entry_test} from '/src/db/ops/create-entry-test.js';
@@ -70,7 +69,6 @@ register_module_tests(import_entry_tests);
 register_test(import_opml_test);
 register_test(is_iterable_test);
 register_test(legible_text_filter_test);
-register_module_tests(locatable_tests);
 register_module_tests(migrations_tests);
 register_test(mime_test);
 register_module_tests(better_fetch_tests);

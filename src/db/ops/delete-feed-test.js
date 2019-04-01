@@ -1,9 +1,9 @@
-import * as locatable from '/src/db/locatable.js';
 import create_entry from '/src/db/ops/create-entry.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import delete_feed from '/src/db/ops/delete-feed.js';
 import get_entry from '/src/db/ops/get-entry.js';
 import get_feed from '/src/db/ops/get-feed.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import test_open from '/src/db/test-open.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
@@ -16,11 +16,11 @@ export async function delete_feed_test() {
 
   const feed1 = {};
   const url1 = new URL('http://www.example.com/foo.xml');
-  locatable.append_url(feed1, url1);
+  resource_utils.set_url(feed1, url1);
   const feed_id1 = await create_feed(conn, feed1);
 
   const entry = {};
-  locatable.append_url(entry, new URL('a://b.c'));
+  resource_utils.set_url(entry, new URL('a://b.c'));
   entry.feed = feed_id1;
   const entry_id = await create_entry(conn, entry);
 
@@ -58,12 +58,12 @@ export async function delete_feed_test2() {
 
   const feed1 = {};
   const url1 = new URL('http://www.example.com/foo.xml');
-  locatable.append_url(feed1, url1);
+  resource_utils.set_url(feed1, url1);
   const feed_id1 = await create_feed(conn, feed1);
 
   const feed2 = {};
   const url2 = new URL('http://www.example.com/bar.xml');
-  locatable.append_url(feed2, url2);
+  resource_utils.set_url(feed2, url2);
   const feed_id2 = await create_feed(conn, feed2);
 
   await delete_feed(conn, feed_id1);

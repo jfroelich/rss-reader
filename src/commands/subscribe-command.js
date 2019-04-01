@@ -1,5 +1,5 @@
-import * as locatable from '/src/db/locatable.js';
 import open from '/src/db/ops/open.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import {Deadline} from '/src/lib/deadline.js';
 import * as favicon from '/src/lib/favicon.js';
 import subscribe from '/src/ops/subscribe.js';
@@ -21,5 +21,5 @@ export default async function subscribe_command(url_string) {
   conn.close();
   iconn.close();
 
-  console.log('Subscribed to feed', locatable.get_url_string(feed));
+  console.log('Subscribed to feed', resource_utils.get_url_string(feed));
 }
