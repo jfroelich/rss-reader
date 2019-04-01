@@ -16,16 +16,11 @@ export default function archive_entries(conn, max_age = TWO_DAYS_MS) {
         transaction_oncomplete.bind(transaction, conn.channel, ids, resolve);
     transaction.onerror = event => reject(event.target.error);
 
-    const request = create_archivable_entries_cursor_request(transaction);
+    const store = transaction.objectStore('entries');
+    const index = store.index('archive_state-read_state');
+    const request = index.openCursor([0, 1]);
     request.onsuccess = request_onsuccess.bind(request, ids, max_age);
   });
-}
-
-function create_archivable_entries_cursor_request(transaction) {
-  const store = transaction.objectStore('entries');
-  const index = store.index('archive_state-read_state');
-  const key_path = [0, 1];
-  return index.openCursor(key_path);
 }
 
 function request_onsuccess(ids, max_age, event) {
