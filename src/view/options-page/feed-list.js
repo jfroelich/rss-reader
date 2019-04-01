@@ -4,7 +4,7 @@ import db_open from '/src/db/ops/open.js';
 import patch_feed from '/src/db/ops/patch-feed.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
-import {unsubscribe} from '/src/ops/unsubscribe.js';
+import unsubscribe from '/src/ops/unsubscribe.js';
 
 export function FeedList() {
   this.list_element = undefined;

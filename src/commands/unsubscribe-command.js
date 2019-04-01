@@ -1,6 +1,6 @@
 import get_feed from '/src/db/ops/get-feed.js';
 import open from '/src/db/ops/open.js';
-import {unsubscribe} from '/src/ops/unsubscribe.js';
+import unsubscribe from '/src/ops/unsubscribe.js';
 
 export default async function unsubscribe_command(url_string) {
   console.log('Unsubscribing from', url_string);
