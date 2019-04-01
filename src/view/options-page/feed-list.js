@@ -54,7 +54,7 @@ FeedList.prototype.init = async function(parent) {
 };
 
 FeedList.prototype.appendFeed = function(feed) {
-  assert(feed typeof feed === 'object');
+  assert(feed && typeof feed === 'object');
   assert(this.list_element);
 
   const item_element = document.createElement('li');
