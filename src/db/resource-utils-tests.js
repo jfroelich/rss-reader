@@ -87,3 +87,19 @@ function escape_unicode(string) {
     return '\\u' + ('000' + ch.charCodeAt(0).toString(16)).slice(-4);
   });
 }
+
+
+export default function sanitize_test() {
+  const resource = {};
+  let content = 'hello world';
+  resource.content = content;
+  resource_utils.sanitize(resource);
+  assert(resource.content === content);
+
+  // Verify line breaks are retained in content prop
+  content = '<html><head></head><body>hello\nworld</body></html>';
+  resource.content = content;
+  resource_utils.sanitize(resource);
+  let expected = '<html><head></head><body>hello\nworld</body></html>';
+  assert(resource.content === expected, resource.content);
+}

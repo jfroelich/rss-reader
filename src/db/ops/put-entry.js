@@ -1,5 +1,4 @@
 import Connection from '/src/db/connection.js';
-import sanitize_entry from '/src/db/ops/sanitize-entry.js';
 import validate_entry from '/src/db/ops/validate-entry.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
@@ -13,7 +12,7 @@ export default function put_entry(conn, entry) {
     assert(resource_utils.is_valid_id(entry.id));
 
     resource_utils.normalize(entry);
-    sanitize_entry(entry);
+    resource_utils.sanitize(entry);
     filter_empty_properties(entry);
     validate_entry(entry);
 

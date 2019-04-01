@@ -1,6 +1,5 @@
 import Connection from '/src/db/connection.js';
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
-import sanitize_feed from '/src/db/ops/sanitize-feed.js';
 import validate_feed from '/src/db/ops/validate-feed.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
@@ -17,7 +16,7 @@ function patch_feed_executor(conn, props, resolve, reject) {
   assert(resource_utils.is_valid_id(props.id));
 
   resource_utils.normalize(props);
-  sanitize_feed(props);
+  resource_utils.sanitize(props);
   validate_feed(props);
   filter_empty_properties(props);
 

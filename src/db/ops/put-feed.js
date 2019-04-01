@@ -1,5 +1,4 @@
 import Connection from '/src/db/connection.js';
-import sanitize_feed from '/src/db/ops/sanitize-feed.js';
 import validate_feed from '/src/db/ops/validate-feed.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
@@ -18,7 +17,7 @@ function put_feed_executor(conn, feed, resolve, reject) {
 
   // Prepare the feed for storage
   resource_utils.normalize(feed);
-  sanitize_feed(feed);
+  resource_utils.sanitize(feed);
   validate_feed(feed);
   filter_empty_properties(feed);
   feed.updated_date = new Date();

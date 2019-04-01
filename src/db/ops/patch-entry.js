@@ -1,6 +1,5 @@
 import Connection from '/src/db/connection.js';
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
-import sanitize_entry from '/src/db/ops/sanitize-entry.js';
 import validate_entry from '/src/db/ops/validate-entry.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
@@ -25,7 +24,7 @@ function patch_entry_executor(conn, props, resolve, reject) {
   assert(resource_utils.is_valid_id(props.id));
 
   resource_utils.normalize(props);
-  sanitize_entry(props);
+  resource_utils.sanitize(props);
   filter_empty_properties(props);
   validate_entry(props);
 
