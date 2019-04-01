@@ -1,6 +1,6 @@
 import Connection from '/src/db/connection.js';
 import * as locatable from '/src/db/locatable.js';
-import normalize_feed from '/src/db/ops/normalize-feed.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 import is_iterable from '/src/lib/is-iterable.js';
@@ -16,7 +16,7 @@ export default function create_feeds(conn, feeds) {
     }
 
     for (const feed of feeds) {
-      normalize_feed(feed);
+      resource_utils.normalize_resource(feed);
       filter_empty_properties(feed);
 
       // Default to active if not set, but leave as is if false

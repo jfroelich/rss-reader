@@ -1,8 +1,8 @@
 import Connection from '/src/db/connection.js';
 import is_valid_id from '/src/db/is-valid-id.js';
-import normalize_entry from '/src/db/ops/normalize-entry.js';
 import sanitize_entry from '/src/db/ops/sanitize-entry.js';
 import validate_entry from '/src/db/ops/validate-entry.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -13,7 +13,7 @@ export default function put_entry(conn, entry) {
     assert(entry && typeof entry === 'object');
     assert(is_valid_id(entry.id));
 
-    normalize_entry(entry);
+    resource_utils.normalize_resource(entry);
     sanitize_entry(entry);
     filter_empty_properties(entry);
     validate_entry(entry);

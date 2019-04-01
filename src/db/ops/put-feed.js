@@ -1,9 +1,9 @@
 import Connection from '/src/db/connection.js';
 import is_valid_id from '/src/db/is-valid-id.js';
 import * as locatable from '/src/db/locatable.js';
-import normalize_feed from '/src/db/ops/normalize-feed.js';
 import sanitize_feed from '/src/db/ops/sanitize-feed.js';
 import validate_feed from '/src/db/ops/validate-feed.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
@@ -19,7 +19,7 @@ function put_feed_executor(conn, feed, resolve, reject) {
   assert(locatable.has_url(feed));
 
   // Prepare the feed for storage
-  normalize_feed(feed);
+  resource_utils.normalize_resource(feed);
   sanitize_feed(feed);
   validate_feed(feed);
   filter_empty_properties(feed);
