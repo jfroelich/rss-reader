@@ -4,13 +4,32 @@ import filter_unprintables from '/src/lib/filter-unprintables.js';
 import remove_html from '/src/lib/remove-html.js';
 import truncate_html from '/src/lib/truncate-html.js';
 
-// TODO: these were originally feed props, need to also bring in entry props and
-// merge these together
+// Known resource property names
 const resource_props = [
-  'id', 'active', 'title', 'type', 'link', 'description', 'deactivation_reason',
-  'deactivation_date', 'created_date', 'updated_date', 'published_date',
-  'favicon_url', 'urls'
+  'active',
+  'archived_date',
+  'archive_state',
+  'author',
+  'content',
+  'created_date',
+  'deactivation_date',
+  'deactivation_reason',
+  'description',
+  'enclosure',
+  'favicon_url',
+  'feed',
+  'feed_title',
+  'id',
+  'link',
+  'published_date',
+  'read_date',
+  'read_state',
+  'title',
+  'type',
+  'updated_date',
+  'urls'
 ];
+
 
 // Returns whether the given value represents a valid object identifier in the
 // datbase
@@ -76,7 +95,13 @@ export function normalize(resource) {
   }
 }
 
-export default function sanitize(resource, options = {}) {
+export function sanitize(resource, options = {}) {
+  for (const prop in resource) {
+    if (!resource_props.includes(prop)) {
+      console.warn('Unknown resource property not sanitized:', prop);
+    }
+  }
+
   const max_title_length =
       isNaN(options.max_title_length) ? 1024 : options.max_title_length;
   const max_description_length = isNaN(options.max_description_length) ?
@@ -121,4 +146,97 @@ export default function sanitize(resource, options = {}) {
 
 function condense_whitespace(value) {
   return value.replace(/\s\s+/g, ' ');
+}
+
+export function validate(resource) {
+  assert(resource && typeof resource === 'object');
+
+  const now = new Date();
+
+  vassert(
+      resource.favicon_url === undefined ||
+      typeof resource.favicon_url === 'string');
+
+  vassert(
+      resource.active === undefined || resource.active === true ||
+      resource.active === false);
+
+  vassert(
+      resource.type === undefined || resource.type === 'rss' ||
+      resource.type === 'feed' || resource.type === 'rdf');
+
+  vassert(resource.link === undefined || typeof resource.link === 'string');
+
+  vassert(resource.id === undefined || is_valid_id(resource.id));
+  vassert(resource.feed === undefined || is_valid_id(resource.feed));
+
+  vassert(
+      resource.feed_title === undefined ||
+      typeof resource.feed_title === 'string');
+
+  vassert(resource.urls === undefined || Array.isArray(resource.urls));
+  vassert(
+      resource.read_state === undefined || resource.read_state === 1 ||
+      resource.read_state === 0);
+  vassert(
+      resource.archive_state === undefined || resource.archive_state === 1 ||
+      resource.archive_state === 0);
+  vassert(resource.author === undefined || typeof resource.author === 'string');
+  vassert(resource.title === undefined || typeof resource.title === 'string');
+  vassert(
+      resource.description === undefined ||
+      typeof resource.description === 'string');
+
+  vassert(
+      resource.content === undefined || typeof resource.content === 'string');
+
+  vassert(
+      resource.deactivation_reason === undefined ||
+      typeof resource.deactivation_reason === 'string');
+
+  vassert(is_valid_date(resource.archived_date));
+  vassert(is_valid_date(resource.read_date));
+
+
+  vassert(is_valid_date(resource.deactivation_date));
+  vassert(is_date_lte(resource.deactivation_date, now));
+
+  vassert(is_valid_date(resource.created_date));
+  vassert(is_date_lte(resource.created_date, now));
+  vassert(is_valid_date(resource.updated_date));
+  vassert(is_date_lte(resource.updated_date, now));
+  vassert(is_date_lte(resource.created_date, resource.updated_date));
+  vassert(is_valid_date(resource.published_date));
+  vassert(is_date_lte(resource.published_date, now));
+
+  if (resource.enclosure) {
+    vassert(typeof resource.enclosure === 'object');
+    const url = resource.enclosure.url;
+    vassert(url === undefined || url === null || typeof url === 'string');
+    const len = resource.enclosure.enclosure_length;
+    vassert(len === undefined || len === null || typeof len === 'string');
+    const type = resource.enclosure.type;
+    vassert(type === undefined || type === null || typeof type === 'string');
+  }
+}
+
+function is_valid_date(value) {
+  return value === undefined || !isNaN(value.getTime());
+}
+
+function is_date_lte(date1, date2) {
+  return date1 === undefined || date2 === undefined || date1 <= date2;
+}
+
+// An assertion-like utility for throwing validation errors
+function vassert(condition, message) {
+  if (!condition) {
+    throw new ValidationError(message);
+  }
+}
+
+class ValidationError extends Error {
+  constructor(message = 'Validation error') {
+    super(message);
+  }
 }

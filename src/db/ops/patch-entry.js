@@ -1,6 +1,5 @@
 import Connection from '/src/db/connection.js';
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
-import validate_entry from '/src/db/ops/validate-entry.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
@@ -26,7 +25,7 @@ function patch_entry_executor(conn, props, resolve, reject) {
   resource_utils.normalize(props);
   resource_utils.sanitize(props);
   filter_empty_properties(props);
-  validate_entry(props);
+  resource_utils.validate(props);
 
   const transaction = conn.conn.transaction('entries', 'readwrite');
   transaction.oncomplete =

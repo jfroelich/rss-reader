@@ -1,5 +1,4 @@
 import Connection from '/src/db/connection.js';
-import validate_feed from '/src/db/ops/validate-feed.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
@@ -28,7 +27,7 @@ export default function create_feed(conn, feed) {
     resource_utils.normalize(feed);
     resource_utils.sanitize(feed);
     filter_empty_properties(feed);
-    validate_feed(feed);
+    resource_utils.validate(feed);
 
     let id = 0;
     const txn = conn.conn.transaction('feeds', 'readwrite');

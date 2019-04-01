@@ -1,6 +1,5 @@
 import Connection from '/src/db/connection.js';
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
-import validate_feed from '/src/db/ops/validate-feed.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
@@ -17,8 +16,8 @@ function patch_feed_executor(conn, props, resolve, reject) {
 
   resource_utils.normalize(props);
   resource_utils.sanitize(props);
-  validate_feed(props);
   filter_empty_properties(props);
+  resource_utils.validate(props);
 
   // TODO: move this to after feed loaded from db so as to better treat props
   // as immutable

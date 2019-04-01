@@ -1,5 +1,4 @@
 import Connection from '/src/db/connection.js';
-import validate_entry from '/src/db/ops/validate-entry.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
@@ -14,7 +13,7 @@ export default function put_entry(conn, entry) {
     resource_utils.normalize(entry);
     resource_utils.sanitize(entry);
     filter_empty_properties(entry);
-    validate_entry(entry);
+    resource_utils.validate(entry);
 
     entry.updated_date = new Date();
 
