@@ -1,4 +1,3 @@
-import {identifiable_test} from '/src/db/is-valid-id-test.js';
 import * as locatable_tests from '/src/db/locatable-tests.js';
 import * as migrations_tests from '/src/db/migrations-tests.js';
 import {archive_entries_test} from '/src/db/ops/archive-entries-test.js';
@@ -65,7 +64,6 @@ register_test(get_feed_ids_test);
 register_test(get_feed_test);
 register_test(get_feeds_test);
 register_test(get_path_extension_test);
-register_test(identifiable_test);
 register_module_tests(indexeddb_utils_tests);
 register_module_tests(image_size_filter_tests);
 register_module_tests(import_entry_tests);

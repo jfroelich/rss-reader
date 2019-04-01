@@ -1,8 +1,8 @@
-import is_valid_id from '/src/db/is-valid-id.js';
 import test_open from '/src/db/test-open.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 import {import_opml} from '/src/ops/import-opml.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 
 export async function import_opml_test() {
   const db_name = 'ops-import-opml-test';
@@ -22,7 +22,7 @@ export async function import_opml_test() {
   const results = await import_opml(conn, files);
   assert(results);
   assert(results.length === 1);
-  assert(is_valid_id(results[0]));
+  assert(resource_utils.is_valid_id(results[0]));
 
   assert(conn.channel.messages.length === 1);
   assert(conn.channel.messages[0].type === 'feed-created');

@@ -1,5 +1,4 @@
 import Connection from '/src/db/connection.js';
-import is_valid_id from '/src/db/is-valid-id.js';
 import sanitize_entry from '/src/db/ops/sanitize-entry.js';
 import validate_entry from '/src/db/ops/validate-entry.js';
 import * as resource_utils from '/src/db/resource-utils.js';
@@ -11,7 +10,7 @@ export default function put_entry(conn, entry) {
   return new Promise((resolve, reject) => {
     assert(conn instanceof Connection);
     assert(entry && typeof entry === 'object');
-    assert(is_valid_id(entry.id));
+    assert(resource_utils.is_valid_id(entry.id));
 
     resource_utils.normalize_resource(entry);
     sanitize_entry(entry);

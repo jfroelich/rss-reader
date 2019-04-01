@@ -1,4 +1,4 @@
-import is_valid_id from '/src/db/is-valid-id.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import {is_date_lte, is_valid_date, vassert} from '/src/db/validation-utils.js';
 import assert from '/src/lib/assert.js';
 
@@ -21,8 +21,8 @@ export default function validate_entry(entry) {
   // TODO: validate read_date
   // TODO: validate archived_date
 
-  vassert(entry.id === undefined || is_valid_id(entry.id));
-  vassert(entry.feed === undefined || is_valid_id(entry.feed));
+  vassert(entry.id === undefined || resource_utils.is_valid_id(entry.id));
+  vassert(entry.feed === undefined || resource_utils.is_valid_id(entry.feed));
   vassert(entry.urls === undefined || Array.isArray(entry.urls));
   vassert(
       entry.read_state === undefined || entry.read_state === 1 ||

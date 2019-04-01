@@ -1,10 +1,10 @@
 import Connection from '/src/db/connection.js';
 import {ConstraintError} from '/src/db/errors.js';
-import is_valid_id from '/src/db/is-valid-id.js';
 import * as locatable from '/src/db/locatable.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
 import put_feed from '/src/db/ops/put-feed.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
 import {better_fetch} from '/src/lib/better-fetch.js';
@@ -52,7 +52,7 @@ export async function import_feed(args) {
     // to avoid network overhead, which is the bottleneck.
     await validate_feed_is_unique(args.feed, args.conn);
   } else {
-    assert(is_valid_id(args.feed.id));
+    assert(resource_utils.is_valid_id(args.feed.id));
   }
 
   // Fetch the feed

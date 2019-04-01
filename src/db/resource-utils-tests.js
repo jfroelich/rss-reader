@@ -1,6 +1,16 @@
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 
+export function is_valid_id_test() {
+  assert(!resource_utils.is_valid_id(-1));
+  assert(!resource_utils.is_valid_id(0));
+  assert(!resource_utils.is_valid_id('hello'));
+  assert(!resource_utils.is_valid_id(true));
+  assert(!resource_utils.is_valid_id(false));
+  assert(resource_utils.is_valid_id(1));
+  assert(resource_utils.is_valid_id(123456789));
+}
+
 export function normalize_resource_test() {
   let resource = {};
 

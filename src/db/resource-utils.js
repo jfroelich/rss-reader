@@ -1,5 +1,11 @@
 import assert from '/src/lib/assert.js';
 
+// Returns whether the given value represents a valid object identifier in the
+// datbase
+export function is_valid_id(value) {
+  return Number.isInteger(value) && value > 0;
+}
+
 // Mutate the input resource object such that its properties are normalized. For
 // example, strings with different unicode encodings become canonical.
 export function normalize_resource(resource) {

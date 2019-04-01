@@ -1,7 +1,7 @@
-import is_valid_id from '/src/db/is-valid-id.js';
 import * as locatable from '/src/db/locatable.js';
 import create_feed from '/src/db/ops/create-feed.js';
 import get_feed from '/src/db/ops/get-feed.js';
+import * as resource_utils from '/src/db/resource-utils.js';
 import test_open from '/src/db/test-open.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
@@ -17,7 +17,7 @@ export async function get_feed_test() {
   locatable.append_url(feed, url);
 
   const feed_id = await create_feed(conn, feed);
-  assert(is_valid_id(feed_id));
+  assert(resource_utils.is_valid_id(feed_id));
   const stored_feed = await get_feed(conn, 'id', feed_id, false);
   assert(stored_feed);
   const stored_feed2 = await get_feed(conn, 'url', url, false);

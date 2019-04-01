@@ -1,6 +1,5 @@
 import Connection from '/src/db/connection.js';
 import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
-import is_valid_id from '/src/db/is-valid-id.js';
 import sanitize_entry from '/src/db/ops/sanitize-entry.js';
 import validate_entry from '/src/db/ops/validate-entry.js';
 import * as resource_utils from '/src/db/resource-utils.js';
@@ -23,7 +22,7 @@ function patch_entry_executor(conn, props, resolve, reject) {
   assert(conn instanceof Connection);
   assert(conn.conn instanceof IDBDatabase);
   assert(props && typeof props === 'object');
-  assert(is_valid_id(props.id));
+  assert(resource_utils.is_valid_id(props.id));
 
   resource_utils.normalize_resource(props);
   sanitize_entry(props);
