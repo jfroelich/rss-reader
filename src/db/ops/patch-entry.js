@@ -24,7 +24,6 @@ function patch_entry_executor(conn, props, resolve, reject) {
 
   resource_utils.normalize(props);
   resource_utils.sanitize(props);
-  filter_empty_properties(props);
   resource_utils.validate(props);
 
   const transaction = conn.conn.transaction('entries', 'readwrite');
@@ -86,6 +85,12 @@ function get_request_onsuccess(props, reject, event) {
     props.read_date = undefined;
   }
 
+  // Changing an entry into the archive state should set date if not set
+  if (props.archive_state === 1 && !props.archived_date &&
+      !entry.archived_date) {
+    props.archived_date = new Date();
+  }
+
   // Apply the transitions
   const immutable_prop_names = ['id', 'updated_date'];
 
@@ -101,6 +106,10 @@ function get_request_onsuccess(props, reject, event) {
       entry[prop] = value;
     }
   }
+
+  // Note: this must not happen prior to iterating props or it will delete all
+  // the nullify transitions.
+  filter_empty_properties(props);
 
   // Perform any implied transitions from using the patch operation. These
   // override caller props.

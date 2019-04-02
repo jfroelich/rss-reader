@@ -16,7 +16,7 @@ function patch_feed_executor(conn, props, resolve, reject) {
 
   resource_utils.normalize(props);
   resource_utils.sanitize(props);
-  filter_empty_properties(props);
+
   resource_utils.validate(props);
 
   // TODO: move this to after feed loaded from db so as to better treat props
@@ -89,6 +89,7 @@ function get_request_onsuccess(props, reject, event) {
     }
   }
 
+  filter_empty_properties(props);
   feed.updated_date = new Date();
   event.target.source.put(feed);
 }

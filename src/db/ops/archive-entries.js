@@ -1,104 +1,40 @@
+import get_entries from '/src/db/ops/get-entries.js';
+import patch_entry from '/src/db/ops/patch-entry.js';
 import assert from '/src/lib/assert.js';
-import sizeof from '/src/lib/sizeof.js';
-import Connection from '/src/db/connection.js';
-import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
-export default function archive_entries(conn, max_age = TWO_DAYS_MS) {
-  return new Promise((resolve, reject) => {
-    assert(conn instanceof Connection);
-    assert(max_age >= 0);
+export default async function archive_entries(conn, max_age = TWO_DAYS_MS) {
+  assert(max_age >= 0);
 
-    const ids = [];
-    const transaction = conn.conn.transaction('entries', 'readwrite');
-    transaction.oncomplete =
-        transaction_oncomplete.bind(transaction, conn.channel, ids, resolve);
-    transaction.onerror = event => reject(event.target.error);
-
-    const store = transaction.objectStore('entries');
-    const index = store.index('archive_state-read_state');
-    const request = index.openCursor([0, 1]);
-    request.onsuccess = request_onsuccess.bind(request, ids, max_age);
-  });
-}
-
-function request_onsuccess(ids, max_age, event) {
-  const cursor = event.target.result;
-  if (!cursor) {
-    return;
-  }
-
-  const entry = cursor.value;
-
-  if (!entry.created_date) {
-    console.warn('Skiping entry missing date created', entry);
-    cursor.continue();
-    return;
-  }
-
+  let iterating = true;
+  const buffer_size = 100;
+  let offset = 0;
   const current_date = new Date();
-  const age = current_date - entry.created_date;
+  let entries = await get_entries(conn, 'archivable', offset, buffer_size);
 
-  if (age < 0) {
-    console.warn('Skipping entry created in the future', entry);
-    cursor.continue();
-    return;
-  }
+  while (entries.length) {
+    for (const entry of entries) {
+      if (entry.created_date && (current_date - entry.created_date > max_age)) {
+        const delta_transitions = {
+          id: entry.id,
+          title: undefined,
+          author: undefined,
+          enclosure: undefined,
+          'content': undefined,
+          favicon_url: undefined,
+          feed_title: undefined,
+          archive_state: 1
+        };
+        await patch_entry(conn, delta_transitions);
+      }
+    }
 
-  if (age > max_age) {
-    const archived_entry = archive_entry(entry);
-    cursor.update(archived_entry);
-    ids.push(archived_entry.id);
-  }
-
-  cursor.continue();
-}
-
-function transaction_oncomplete(channel, ids, callback, event) {
-  if (channel) {
-    for (const id of ids) {
-      channel.postMessage({type: 'entry-archived', id: id});
+    if (entries.length === buffer_size) {
+      offset += buffer_size;
+      entries = await get_entries(conn, 'archivable', offset, buffer_size);
+    } else {
+      entries = [];
     }
   }
-
-  callback(ids);
-}
-
-function archive_entry(entry) {
-  const before_size = sizeof(entry);
-
-  const ce = {};
-  ce.created_date = entry.created_date;
-  ce.published_date = entry.published_date;
-
-  if (entry.read_date) {
-    ce.read_date = entry.read_date;
-  }
-
-  ce.feed = entry.feed;
-  ce.id = entry.id;
-  ce.read_state = entry.read_state;
-  ce.urls = entry.urls;
-
-  // We do not measure all fields
-  const after_size = sizeof(ce);
-  if (after_size > before_size) {
-    const delta = after_size - before_size;
-    console.warn(
-        'Archiving entry increased size by %d, before %o, after %o', delta,
-        entry, ce);
-  }
-
-  ce.archive_state = 1;
-  const current_date = new Date();
-  ce.archived_date = current_date;
-  ce.updated_date = current_date;
-
-  // ce is a new entry that we are writing directly back into the database. the
-  // new entry constructor will initialize default properties, but some of them
-  // we do not need, so we strip them again
-  filter_empty_properties(ce);
-
-  return ce;
 }

@@ -20,6 +20,10 @@ export default function get_entries(conn, mode = 'all', offset, limit) {
       const index = store.index('archive_state-read_state');
       const path = [0, 0];
       request = index.openCursor(path);
+    } else if (mode === 'archivable') {
+      const index = store.index('archive_state-read_state');
+      const path = [0, 1];
+      request = index.openCursor(path);
     } else if (mode === 'all') {
       request = store.openCursor();
     } else {

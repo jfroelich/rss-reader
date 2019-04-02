@@ -51,14 +51,7 @@ export async function archive_entries_test() {
   const max_age = 1;
 
   // Exercise the operation. Any error is a test failure.
-  const first_pass_ids = await archive_entries(conn, max_age);
-
-  // Now validate the state of the database after the archive has run.
-
-  // Because all entries we created are archivable, should have yielded proper
-  // number of ids
-  assert(first_pass_ids.length === 5);
-
+  await archive_entries(conn, max_age);
 
   const all_entries = await new Promise((resolve, reject) => {
     const transaction = conn.conn.transaction('entries');
@@ -78,8 +71,9 @@ export async function archive_entries_test() {
   }
 
   // No additional entries should be archived
-  const second_pass_ids = await archive_entries(conn, max_age);
-  assert(second_pass_ids.length === 0);
+  // TODO: we need to attach a recording channel and inspect it
+  // await archive_entries(conn, max_age);
+
 
   conn.close();
   await indexeddb_utils.remove(db_name);
