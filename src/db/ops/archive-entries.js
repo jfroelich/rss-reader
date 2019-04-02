@@ -7,7 +7,6 @@ const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 export default async function archive_entries(conn, max_age = TWO_DAYS_MS) {
   assert(max_age >= 0);
 
-  let iterating = true;
   const buffer_size = 100;
   let offset = 0;
   const current_date = new Date();
@@ -30,6 +29,7 @@ export default async function archive_entries(conn, max_age = TWO_DAYS_MS) {
       }
     }
 
+    // Only load more if we read up to the limit last time
     if (entries.length === buffer_size) {
       offset += buffer_size;
       entries = await get_entries(conn, 'archivable', offset, buffer_size);
