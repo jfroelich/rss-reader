@@ -20,7 +20,7 @@ export default async function archive_entries(conn, max_age = TWO_DAYS_MS) {
           title: undefined,
           author: undefined,
           enclosure: undefined,
-          'content': undefined,
+          content: undefined,
           favicon_url: undefined,
           feed_title: undefined,
           archive_state: 1
