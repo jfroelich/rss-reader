@@ -1,6 +1,6 @@
 import * as config from '/src/config.js';
 import * as cron_control from '/src/cron.js';
-import open from '/src/db/ops/open.js';
+import open from '/src/db/open.js';
 import open_view from '/src/extension/open-view.js';
 import refresh_badge from '/src/extension/refresh-badge.js';
 import {INDEFINITE} from '/src/lib/deadline.js';

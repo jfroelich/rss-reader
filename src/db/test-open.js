@@ -1,5 +1,5 @@
 import Connection from '/src/db/connection.js';
-import {default_upgrade_handler, default_version} from '/src/db/ops/open.js';
+import {default_upgrade_handler, default_version} from '/src/db/open.js';
 import assert from '/src/lib/assert.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 import {open} from '/src/lib/indexeddb-utils.js';

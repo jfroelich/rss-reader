@@ -1,5 +1,5 @@
 import count_unread_entries from '/src/db/ops/count-unread-entries.js';
-import open from '/src/db/ops/open.js';
+import open from '/src/db/open.js';
 import {Deadline} from '/src/lib/deadline.js';
 
 // Refreshes the unread count displayed on the badge in Chrome's toolbar

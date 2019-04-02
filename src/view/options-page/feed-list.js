@@ -1,6 +1,6 @@
 import get_feed from '/src/db/ops/get-feed.js';
 import get_feeds from '/src/db/ops/get-feeds.js';
-import db_open from '/src/db/ops/open.js';
+import db_open from '/src/db/open.js';
 import patch_feed from '/src/db/ops/patch-feed.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';

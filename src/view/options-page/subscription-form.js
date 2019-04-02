@@ -1,5 +1,5 @@
 import {ConstraintError} from '/src/db/errors.js';
-import db_open from '/src/db/ops/open.js';
+import db_open from '/src/db/open.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';

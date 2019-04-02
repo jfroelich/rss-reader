@@ -1,6 +1,6 @@
 import * as config from '/src/config.js';
 import archive_entries from '/src/db/ops/archive-entries.js';
-import open from '/src/db/ops/open.js';
+import open from '/src/db/open.js';
 import * as favicon from '/src/lib/favicon.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import refresh_feed_icons from '/src/ops/refresh-feed-icons.js';

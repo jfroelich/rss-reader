@@ -2,7 +2,7 @@ import * as config from '/src/config.js';
 import * as cron from '/src/cron.js';
 import archive_entries from '/src/db/ops/archive-entries.js';
 import get_feed from '/src/db/ops/get-feed.js';
-import open from '/src/db/ops/open.js';
+import open from '/src/db/open.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import {Deadline} from '/src/lib/deadline.js';
 import * as favicon from '/src/lib/favicon.js';
