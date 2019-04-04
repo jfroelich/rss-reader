@@ -1,5 +1,5 @@
 import * as config from '/src/config.js';
-import get_feeds from '/src/db/ops/get-feeds.js';
+import get_resources from '/src/db/ops/get-resources.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import show_notification from '/src/extension/show-notification.js';
 import assert from '/src/lib/assert.js';
@@ -40,7 +40,8 @@ export async function poll_feeds(args) {
 
   localStorage.last_poll_timestamp = '' + Date.now();
 
-  const feeds = await get_feeds(args.conn, 'active', /*sort*/ false);
+  const feeds = await get_resources(
+      {conn: args.conn, mode: 'active-feeds', title_sort: false});
   console.debug('Loaded %d active feeds for polling', feeds.length);
 
   // Concurrently process the feed data

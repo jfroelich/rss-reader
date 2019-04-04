@@ -26,7 +26,7 @@ const channel = new BroadcastChannel('reader');
 channel.onmessage = function(event) {
   // Ensure the badge is refreshed when an entry changes and only the background
   // page is loaded
-  const types = ['entry-created', 'entry-updated', 'entry-deleted'];
+  const types = ['resource-created', 'resource-updated', 'resource-deleted'];
   if (event.isTrusted && event.data && types.includes(event.data.type)) {
     refresh_badge().catch(console.warn);
   }

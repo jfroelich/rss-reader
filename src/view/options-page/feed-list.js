@@ -1,7 +1,7 @@
-import get_feed from '/src/db/ops/get-feed.js';
-import get_feeds from '/src/db/ops/get-feeds.js';
 import db_open from '/src/db/open.js';
-import patch_feed from '/src/db/ops/patch-feed.js';
+import get_resource from '/src/db/ops/get-resource.js';
+import get_resources from '/src/db/ops/get-resources.js';
+import patch_resource from '/src/db/ops/patch-resource.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import unsubscribe from '/src/ops/unsubscribe.js';
@@ -21,7 +21,8 @@ export function FeedList() {
 
 FeedList.prototype.init = async function(parent) {
   const conn = await db_open();
-  const feeds = await get_feeds(conn, 'all', true);
+  const feeds =
+      await get_resources({conn: conn, mode: 'feeds', title_sort: true});
   conn.close();
 
   const list_element = document.createElement('ul');
@@ -63,7 +64,7 @@ FeedList.prototype.appendFeed = function(feed) {
   if (feed.description) {
     item_element.setAttribute('title', feed.description);
   }
-  if (feed.active !== true) {
+  if (feed.active !== 1) {
     item_element.setAttribute('inactive', 'true');
   }
   item_element.onclick = this.itemOnclick.bind(this);
@@ -87,7 +88,7 @@ FeedList.prototype.appendFeed = function(feed) {
   item_element.appendChild(title_element);
 
   // Append the feed into the proper position in the feed list, using the same
-  // sorting order as the database would use when loading data in get_feeds
+  // sorting order as the database would use when loading data in get_resources
   const normal_title = feed_title.toLowerCase();
   let inserted = false;
   for (const child_node of (this.list_element.childNodes)) {
@@ -119,7 +120,8 @@ FeedList.prototype.itemOnclick = async function(event) {
   const feed_id = parseInt(item_element.getAttribute('feed'), 10);
 
   const conn = await db_open();
-  let feed = await get_feed(conn, 'id', feed_id, false);
+  let feed = await get_resource(
+      {conn: conn, mode: 'id', id: feed_id, key_only: false});
   conn.close();
 
   // TODO: i don't think this is needed anymore
@@ -153,12 +155,12 @@ FeedList.prototype.itemOnclick = async function(event) {
 
   const activate_button = document.getElementById('details-activate');
   activate_button.value = '' + feed.id;
-  activate_button.disabled = feed.active === true ? true : false;
+  activate_button.disabled = feed.active === 1 ? true : false;
   activate_button.onclick = this.activateOnclick.bind(this);
 
   const deactivate_button = document.getElementById('details-deactivate');
   deactivate_button.value = '' + feed.id;
-  deactivate_button.disabled = feed.active === false ? true : false;
+  deactivate_button.disabled = feed.active !== 1 ? true : false;
   deactivate_button.onclick = this.deactivateOnclick.bind(this);
 
   if (this.onclick_callback) {
@@ -204,7 +206,7 @@ FeedList.prototype.activateOnclick = async function(event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const conn = await db_open();
-  await patch_feed(conn, {id: feed_id, active: true});
+  await patch_resource(conn, {id: feed_id, active: 1});
   conn.close();
 
   // Mark the corresponding feed element loaded in the view as active
@@ -224,8 +226,8 @@ FeedList.prototype.activateOnclick = async function(event) {
 FeedList.prototype.deactivateOnclick = async function(event) {
   const feed_id = parseInt(event.target.value, 10);
   const conn = await db_open();
-  const props = {id: feed_id, active: false, deactivation_reason: 'manual'};
-  await patch_feed(conn, props);
+  const props = {id: feed_id, active: 0, deactivation_reason: 'manual'};
+  await patch_resource(conn, props);
   conn.close();
 
   // TODO: this should be done in the channel message handler instead of here

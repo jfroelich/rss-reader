@@ -193,7 +193,7 @@ export function migrate26(event, channel) {
     if (channel) {
       transaction.addEventListener('complete', event => {
         for (const id of entry_ids) {
-          channel.postMessage({type: 'entry-updated', id: id});
+          channel.postMessage({type: 'resource-updated', id: id});
         }
       });
     }
@@ -632,7 +632,7 @@ export function migrate34(event, channel) {
       }
 
       for (const id of entry_ids) {
-        channel.postMessage({type: 'entry-updated', id: id});
+        channel.postMessage({type: 'resource-updated', id: id});
       }
     });
   }

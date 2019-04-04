@@ -13,7 +13,9 @@ function get_resource_executor(query, resolve, reject) {
   if (query.mode === 'id') {
     assert(resource_utils.is_valid_id(query.id));
     assert(!query.key_only);
+    console.debug('Getting resource by id', query.id);
   } else if (query.mode === 'url') {
+    console.debug('Getting resource by url', query.url);
     assert(query.url instanceof URL);
   }
 
@@ -30,6 +32,22 @@ function get_resource_executor(query, resolve, reject) {
     request = resources_store.get(query.id);
   }
 
-  request.onsuccess = event =>
-      resolve(query.key_only ? {id: event.target.result} : event.target.result);
+  request.onsuccess = request_onsuccess.bind(request, query, resolve);
+}
+
+function request_onsuccess(query, callback, event) {
+  const result = event.target.result;
+
+  if (typeof result !== 'undefined') {
+    if (query.key_only) {
+      // key only match
+      callback({id: event.target.result});
+    } else {
+      // full match
+      callback(event.target.result);
+    }
+  } else {
+    // no match
+    callback();
+  }
 }

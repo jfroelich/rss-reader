@@ -38,6 +38,8 @@ function create_resource_executor(conn, resource, resolve, reject) {
   resource_utils.validate(resource);
   filter_empty_properties(resource);
 
+  console.debug('Creating resource', resource);
+
   const transaction = conn.conn.transaction('resources', 'readwrite');
   transaction.oncomplete =
       transaction_oncomplete.bind(transaction, resource, conn.channel, resolve);

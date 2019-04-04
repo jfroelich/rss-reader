@@ -1,6 +1,6 @@
 import * as config from '/src/config.js';
-import archive_entries from '/src/db/ops/archive-entries.js';
 import open from '/src/db/open.js';
+import archive_resources from '/src/db/ops/archive-resources.js';
 import * as favicon from '/src/lib/favicon.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import refresh_feed_icons from '/src/ops/refresh-feed-icons.js';
@@ -59,7 +59,7 @@ export async function alarm_listener(alarm) {
 
   if (alarm.name === 'archive') {
     const conn = await open();
-    await archive_entries(conn);
+    await archive_resources(conn);
     conn.close();
   } else if (alarm.name === 'poll') {
     await handle_alarm_poll();

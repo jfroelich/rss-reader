@@ -1,5 +1,5 @@
-import create_resource from '/src/db/ops2/create-resource.js';
-import get_resources from '/src/db/ops2/get-resources.js';
+import create_resource from '/src/db/ops/create-resource.js';
+import get_resources from '/src/db/ops/get-resources.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import test_open from '/src/db/test-open.js';
 import assert from '/src/lib/assert.js';

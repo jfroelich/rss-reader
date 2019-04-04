@@ -41,7 +41,7 @@ export async function subscribe_test() {
   assert(feed.urls.length);
   assert(feed.urls.includes(url.href));
 
-  assert(feed.active);
+  assert(feed.active === 1);
 
   // Assert that the subscription dispatched messages
   assert(conn.channel.messages.length);

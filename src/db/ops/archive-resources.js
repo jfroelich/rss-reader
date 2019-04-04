@@ -1,5 +1,5 @@
-import get_resources from '/src/db/ops2/get-resources.js';
-import patch_resource from '/src/db/ops2/patch-resource.js';
+import get_resources from '/src/db/ops/get-resources.js';
+import patch_resource from '/src/db/ops/patch-resource.js';
 import assert from '/src/lib/assert.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;

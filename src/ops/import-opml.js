@@ -1,4 +1,4 @@
-import create_feeds from '/src/db/ops/create-feeds.js';
+import create_resource from '/src/db/ops/create-resource.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 
 // Create and store feed objects in the database based on urls extracted from
@@ -32,12 +32,19 @@ export async function import_opml(conn, files) {
 
   const feeds = url_set.map(url => {
     const feed = {};
-    feed.active = true;
+    feed.active = 1;
+    feed.type = 'feed';
     resource_utils.set_url(feed, url);
     return feed;
   });
 
-  return create_feeds(conn, feeds);
+  const create_promises = [];
+  for (const feed of feeds) {
+    console.debug('Creating resource', feed);
+    create_promises.push(create_resource(conn, feed));
+  }
+
+  return Promise.all(create_promises);
 }
 
 // Return an array of outline urls (as URL objects) from OPML outline elements

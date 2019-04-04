@@ -1,5 +1,5 @@
-import count_unread_entries from '/src/db/ops/count-unread-entries.js';
 import open from '/src/db/open.js';
+import count_resources from '/src/db/ops/count-resources.js';
 import {Deadline} from '/src/lib/deadline.js';
 
 // Refreshes the unread count displayed on the badge in Chrome's toolbar
@@ -12,7 +12,8 @@ export default async function refresh_badge() {
   const timeout = new Deadline(15000);
 
   const conn = await open(timeout);
-  const count = await count_unread_entries(conn);
+  const query = {conn: conn, type: 'entry', read: 0};
+  const count = await count_resources(query);
   conn.close();
 
   const text = count > 999 ? '1k+' : '' + count;

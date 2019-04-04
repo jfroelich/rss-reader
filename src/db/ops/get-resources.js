@@ -7,8 +7,9 @@ export default function get_resources(query) {
 function get_resources_executor(query, resolve, reject) {
   assert(query && typeof query === 'object');
 
-  const modes =
-      ['all', 'active-feeds', 'viewable-entries', 'archivable-entries'];
+  const modes = [
+    'all', 'feeds', 'active-feeds', 'viewable-entries', 'archivable-entries'
+  ];
   assert(modes.includes(query.mode));
   assert(is_valid_offset(query.offset));
   assert(is_valid_limit(query.limit));
@@ -75,6 +76,10 @@ function resource_matches_query(mode, resource) {
     return true;
   }
 
+  if (mode === 'feeds') {
+    return resource.type === 'feed';
+  }
+
   if (mode === 'viewable-entries') {
     return resource.type === 'entry' && resource.archived === 0 &&
         resource.read === 0;
@@ -95,6 +100,11 @@ function resource_matches_query(mode, resource) {
 function open_cursor_request(query, store) {
   if (query.mode === 'all') {
     return store.openCursor();
+  }
+
+  if (query.mode === 'feeds') {
+    const index = store.index('type');
+    return index.openCursor('feed');
   }
 
   if (query.mode === 'active-feeds') {

@@ -1,9 +1,10 @@
-import get_feeds from '/src/db/ops/get-feeds.js';
-import patch_feed from '/src/db/ops/patch-feed.js';
+import get_resources from '/src/db/ops/get-resources.js';
+import patch_resource from '/src/db/ops/patch-resource.js';
 import lookup_feed_favicon from '/src/ops/lookup-feed-favicon.js';
 
 export default async function refresh_feed_icons(conn, iconn) {
-  const feeds = await get_feeds(conn, 'active', false);
+  const feeds = await get_resources(
+      {conn: conn, mode: 'active-feeds', title_sort: false});
   const promises = [];
   for (const feed of feeds) {
     promises.push(refresh_feed_icon(feed, conn, iconn));
@@ -19,6 +20,6 @@ async function refresh_feed_icon(feed, conn, iconn) {
   if (feed.favicon_url !== icon_url_string) {
     console.debug(
         'Updating feed favicon', {id: feed.id, icon: icon_url_string});
-    return patch_feed(conn, {id: feed.id, favicon_url: icon_url_string});
+    return patch_resource(conn, {id: feed.id, favicon_url: icon_url_string});
   }
 }

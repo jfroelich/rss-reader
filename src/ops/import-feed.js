@@ -1,8 +1,8 @@
 import Connection from '/src/db/connection.js';
 import {ConstraintError} from '/src/db/errors.js';
-import create_feed from '/src/db/ops/create-feed.js';
-import get_feed from '/src/db/ops/get-feed.js';
-import put_feed from '/src/db/ops/put-feed.js';
+import create_resource from '/src/db/ops/create-resource.js';
+import get_resource from '/src/db/ops/get-resource.js';
+import put_resource from '/src/db/ops/put-resource.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
@@ -24,25 +24,14 @@ export function ImportFeedArgs() {
   this.feed_stored_callback = undefined;
 }
 
-// Throw a constraint error if the feed exists in the database. Note that this
-// only checks against the tail url of the feed, so this result is unreliable
-// when there are multiple urls.
-async function validate_feed_is_unique(feed, conn) {
-  const url = resource_utils.get_url(feed);
-  const key_only = true;
-  const existing_feed = await get_feed(conn, 'url', url, key_only);
-  if (existing_feed) {
-    const message = 'Already subscribed to feed with url ' + url.href;
-    throw new ConstraintError(message);
-  }
-}
-
 export async function import_feed(args) {
   assert(args instanceof ImportFeedArgs);
   assert(args.feed && typeof args.feed === 'object');
   assert(args.conn instanceof Connection);
   assert(args.iconn === undefined || args.iconn instanceof IDBDatabase);
   assert(args.fetch_feed_timeout instanceof Deadline);
+
+  console.debug('Importing feed', args.feed);
 
   if (args.create) {
     // If we are creating a new feed, then verify that a similar feed does not
@@ -62,8 +51,8 @@ export async function import_feed(args) {
 
   // Check if redirected
   if (args.create && fetch_url.href !== response_url.href) {
-    const existing_feed =
-        await get_feed(args.conn, 'url', response_url, /* key_only */ true);
+    const existing_feed = await get_resource(
+        {conn: args.conn, mode: 'url', url: response_url, key_only: true});
     if (existing_feed) {
       const message =
           'Already subscribed to redirected feed url ' + response_url.href;
@@ -92,13 +81,13 @@ export async function import_feed(args) {
 
   // init as active
   if (args.create) {
-    args.feed.active = true;
+    args.feed.active = 1;
   }
 
   if (args.create) {
-    args.feed.id = await create_feed(args.conn, args.feed);
+    args.feed.id = await create_resource(args.conn, args.feed);
   } else {
-    await put_feed(args.conn, args.feed);
+    await put_resource(args.conn, args.feed);
   }
 
   // Early notify observer-caller if they are listening that we created the
@@ -174,7 +163,7 @@ async function import_entry_noexcept(args) {
 // feed object with new data. Note that response url has already been appended,
 // and that the local feed may already have one or more urls.
 function update_model_feed_from_parsed_feed(feed, parsed_feed) {
-  feed.type = parsed_feed.type;
+  feed.feed_format = parsed_feed.type;
   feed.title = parsed_feed.title;
   feed.description = parsed_feed.description;
   feed.published_date = parsed_feed.published_date;
@@ -188,6 +177,21 @@ function update_model_feed_from_parsed_feed(feed, parsed_feed) {
     } catch (error) {
       // Ignore, retain the prior link if it exists
     }
+  }
+}
+
+// Throw a constraint error if the feed exists in the database. Note that this
+// only checks against the tail url of the feed, so this result is unreliable
+// when there are multiple urls.
+async function validate_feed_is_unique(feed, conn) {
+  const url = resource_utils.get_url(feed);
+
+  const existing_feed =
+      await get_resource({conn: conn, mode: 'url', url: url, key_only: true});
+
+  if (existing_feed) {
+    const message = 'Already subscribed to feed with url ' + url.href;
+    throw new ConstraintError(message);
   }
 }
 

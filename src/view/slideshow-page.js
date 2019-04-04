@@ -1,8 +1,7 @@
 import * as config from '/src/config.js';
-import get_entries from '/src/db/ops/get-entries.js';
-import get_feeds from '/src/db/ops/get-feeds.js';
 import db_open from '/src/db/open.js';
-import patch_entry from '/src/db/ops/patch-entry.js';
+import get_resources from '/src/db/ops/get-resources.js';
+import patch_resource from '/src/db/ops/patch-resource.js';
 import refresh_badge from '/src/extension/refresh-badge.js';
 import assert from '/src/lib/assert.js';
 import * as favicon from '/src/lib/favicon.js';
@@ -51,14 +50,15 @@ async function show_next_slide() {
   const slide_unread_count = count_unread_slides();
   let entries = [];
   if (slide_unread_count < 3) {
-    const mode = 'viewable';
+    const mode = 'viewable-entries';
     const offset = slide_unread_count;
     let limit = undefined;
     const config_limit = config.read_int('initial_entry_load_limit');
     if (!isNaN(config_limit)) {
       limit = config_limit;
     }
-    entries = await get_entries(conn, mode, offset, limit);
+    entries = await get_resources(
+        {conn: conn, mode: mode, offset: offset, limit: limit});
   }
   conn.close();
 
@@ -300,7 +300,7 @@ function mark_slide_read_start(conn, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  return patch_entry(conn, {id: entry_id, read_state: 1});
+  return patch_resource(conn, {id: entry_id, read: 1});
 }
 
 function remove_slide(slide) {
@@ -309,7 +309,7 @@ function remove_slide(slide) {
 }
 
 // This should be called once the view acknowledges it has received the message
-// sent to the channel by mark_slide_read_start to fully resolve the mark read
+// sent to the  by mark_slide_read_start to fully resolve the mark read
 // operation.
 function mark_slide_read_end(slide) {
   if (slide.hasAttribute('read')) {
@@ -643,12 +643,13 @@ async function onmessage(event) {
   }
 
   // Common behavior for type handlers related to updating the badge
-  const badge_types = ['entry-created', 'entry-updated', 'entry-deleted'];
+  const badge_types =
+      ['resource-created', 'resource-updated', 'resource-deleted'];
   if (badge_types.includes(message.type)) {
     refresh_badge().catch(console.warn);  // intentionally unawaited
   }
 
-  if (message.type === 'entry-updated') {
+  if (message.type === 'resource-updated') {
     // If the update event represents a transition from unread to unread, it may
     // relate to a slide presently loaded that needs to be updated.
     if (message.read) {
@@ -664,7 +665,7 @@ async function onmessage(event) {
     return;
   }
 
-  if (message.type === 'entry-created') {
+  if (message.type === 'resource-created') {
     // Determine whether new articles should be loaded as a result of new
     // articles being added to the database.
     // TODO: this should come from config
@@ -696,8 +697,12 @@ async function onmessage(event) {
     // logic.
 
     const conn = await db_open();
-    const entries =
-        await get_entries(conn, 'viewable', unread_count, undefined);
+    const entries = await get_resources({
+      conn: conn,
+      mode: 'viewable-entries',
+      offset: unread_count,
+      limit: undefined
+    });
     conn.close();
 
     for (const entry of entries) {
@@ -706,7 +711,8 @@ async function onmessage(event) {
     return;
   }
 
-  if (message.type === 'entry-deleted' || message.type === 'entry-archived') {
+  if (message.type === 'resource-deleted' ||
+      message.type === 'resource-archived') {
     const slide = find_slide_by_entry_id(message.id);
     if (slide) {
       if (is_current_slide(slide)) {
@@ -719,27 +725,27 @@ async function onmessage(event) {
     return;
   }
 
-  if (message.type === 'feed-deleted') {
+  if (message.type === 'resource-deleted') {
     // TODO: implement
     return;
   }
 
-  if (message.type === 'feed-activated') {
+  if (message.type === 'resource-activated') {
     // TODO: implement
     return;
   }
 
-  if (message.type === 'feed-deactivated') {
+  if (message.type === 'resource-deactivated') {
     // TODO: implement
     return;
   }
 
-  if (message.type === 'feed-created') {
+  if (message.type === 'resource-created') {
     // TODO: implement
     return;
   }
 
-  if (message.type === 'feed-updated') {
+  if (message.type === 'resource-updated') {
     // TODO: implement
     return;
   }
@@ -791,11 +797,11 @@ function create_article_title_element(entry) {
   title_element.setAttribute('rel', 'noreferrer');
 
   // NOTE: title is a dom string and therefore may contain html tags and
-  // entities. When an entry is saved into the database, its title is sanitized
-  // and tags are removed, but entities remain. Therefore, the title loaded here
-  // does not need to undergo further sanization. Previously this was an error
-  // where the title underwent a second round of encoding, leading to encoded
-  // entities appearing in the UI.
+  // entities. When an entry is saved into the database, its title is
+  // sanitized and tags are removed, but entities remain. Therefore, the title
+  // loaded here does not need to undergo further sanization. Previously this
+  // was an error where the title underwent a second round of encoding,
+  // leading to encoded entities appearing in the UI.
 
   // In addition, this relies on using CSS to truncate the title as needed
   // instead of explicitly truncating the value here.
@@ -856,9 +862,9 @@ function create_feed_source_element(entry) {
 // TODO: this helper should probably be inlined into append_slide once I work
 // out the API better. One of the main things I want to do is resolve the
 // mismatch between the function name, append-slide, and its main parameter,
-// a database entry object. I think the solution is to separate entry-to-element
-// and append-element. This module should ultimately focus only on appending,
-// not creation and coercion.
+// a database entry object. I think the solution is to separate
+// entry-to-element and append-element. This module should ultimately focus
+// only on appending, not creation and coercion.
 function attach_slide(slide) {
   const container = document.getElementById('slideshow-container');
 
@@ -873,12 +879,12 @@ function attach_slide(slide) {
   // element, it must have the tabindex attribute.
   slide.setAttribute('tabindex', '-1');
 
-  // Slides are positioned absolutely. Setting left to 100% places the slide off
-  // the right side of the view. Setting left to 0 places the slide in the view.
-  // The initial value must be defined here and not via css, before adding the
-  // slide to the page. Otherwise, changing the style for the first slide causes
-  // an unwanted transition, and I have to change the style for the first slide
-  // because it is not set in css.
+  // Slides are positioned absolutely. Setting left to 100% places the slide
+  // off the right side of the view. Setting left to 0 places the slide in the
+  // view. The initial value must be defined here and not via css, before
+  // adding the slide to the page. Otherwise, changing the style for the first
+  // slide causes an unwanted transition, and I have to change the style for
+  // the first slide because it is not set in css.
   slide.style.left = container.childElementCount === 0 ? '0' : '100%';
 
   // TODO: review if webkit prefix was dropped for webkitTransitionEnd
@@ -894,10 +900,10 @@ function attach_slide(slide) {
 
   // Define the animation effect that will occur when moving the slide. Slides
   // are moved by changing a slide's css left property. This triggers a
-  // transition. The transition property must be defined dynamically in order to
-  // have the transition only apply to a slide when it is in a certain state. If
-  // set via css then this causes an undesirable immediate transition on the
-  // first slide.
+  // transition. The transition property must be defined dynamically in order
+  // to have the transition only apply to a slide when it is in a certain
+  // state. If set via css then this causes an undesirable immediate
+  // transition on the first slide.
   slide.style.transition = `left ${transition_duration}s ease-in-out`;
 
   // Initialize the current slide if needed
@@ -927,15 +933,15 @@ function set_transition_duration(input_duration) {
 
 // Handle the end of a transition. Should not be called directly.
 function transition_onend(event) {
-  // The slide that the transition occured upon (event.target) is not guaranteed
-  // to be equal to the current slide. We want to affect the current slide.
-  // We fire off two transitions per animation, one for the slide being moved
-  // out of view, and one for the slide being moved into view. Both transitions
-  // result in call to this listener, but we only want to call focus on one of
-  // the two elements. We want to be in the state where after both transitions
-  // complete, the new slide (which is the current slide at this point) is now
-  // focused. Therefore we ignore event.target and directly affect the current
-  // slide only.
+  // The slide that the transition occured upon (event.target) is not
+  // guaranteed to be equal to the current slide. We want to affect the
+  // current slide. We fire off two transitions per animation, one for the
+  // slide being moved out of view, and one for the slide being moved into
+  // view. Both transitions result in call to this listener, but we only want
+  // to call focus on one of the two elements. We want to be in the state
+  // where after both transitions complete, the new slide (which is the
+  // current slide at this point) is now focused. Therefore we ignore
+  // event.target and directly affect the current slide only.
   const slide = get_current_slide();
   slide.focus();
 
@@ -953,9 +959,10 @@ function format_date(date) {
     return 'Invalid date';
   }
 
-  // When using native date parsing and encountering an error, rather than throw
-  // that error, a date object is created with a NaN time property. Which would
-  // be ok but the format call below then throws if the time property is NaN
+  // When using native date parsing and encountering an error, rather than
+  // throw that error, a date object is created with a NaN time property.
+  // Which would be ok but the format call below then throws if the time
+  // property is NaN
   if (isNaN(date.getTime())) {
     return 'Invalid date';
   }
@@ -983,7 +990,7 @@ function feeds_container_append_feed(feed) {
   const feed_element = document.createElement('div');
   feed_element.id = feed.id;
 
-  if (feed.active !== true) {
+  if (feed.active !== 1) {
     feed_element.setAttribute('inactive', 'true');
   }
 
@@ -1043,7 +1050,7 @@ function feeds_container_append_feed(feed) {
   button.value = '' + feed.id;
   button.onclick = unsubscribe_button_onclick;
   button.textContent = 'Activate';
-  if (feed.active) {
+  if (feed.active === 1) {
     button.disabled = 'true';
   }
   col.appendChild(button);
@@ -1052,7 +1059,7 @@ function feeds_container_append_feed(feed) {
   button.value = '' + feed.id;
   button.onclick = unsubscribe_button_onclick;
   button.textContent = 'Deactivate';
-  if (!feed.active) {
+  if (feed.active !== 1) {
     button.disabled = 'true';
   }
   col.appendChild(button);
@@ -1124,8 +1131,10 @@ async function load_view() {
   show_splash();
 
   const conn = await db_open();
-  const get_entries_promise = get_entries(conn, 'viewable', 0, 6);
-  const get_feeds_promise = get_feeds(conn, 'all', true);
+  const get_entries_promise = get_resources(
+      {conn: conn, mode: 'viewable-entries', offset: 0, limit: 6});
+  const get_feeds_promise =
+      get_resources({conn: conn, mode: 'feeds', title_sort: true});
   conn.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)

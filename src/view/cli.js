@@ -1,8 +1,8 @@
 import * as config from '/src/config.js';
 import * as cron from '/src/cron.js';
-import archive_entries from '/src/db/ops/archive-entries.js';
-import get_feed from '/src/db/ops/get-feed.js';
 import open from '/src/db/open.js';
+import archive_resources from '/src/db/ops/archive-resources.js';
+import get_resource from '/src/db/ops/get-resource.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import {Deadline} from '/src/lib/deadline.js';
 import * as favicon from '/src/lib/favicon.js';
@@ -11,12 +11,12 @@ import refresh_feed_icons from '/src/ops/refresh-feed-icons.js';
 import subscribe from '/src/ops/subscribe.js';
 import unsubscribe from '/src/ops/unsubscribe.js';
 
-async function archive_entries_command() {
-  console.log('Archiving entries...');
+async function archive_resources_command() {
+  console.log('Archiving resources...');
   const conn = await open();
-  const entry_ids = await archive_entries(conn);
+  const resource_ids = await archive_resources(conn);
   conn.close();
-  console.debug('Archived %d entries', entry_ids.length);
+  console.debug('Archived %d resources', resource_ids.length);
 }
 
 async function clear_alarms_command() {
@@ -162,7 +162,8 @@ async function unsubscribe_command(url_string) {
 
   // unsubscribe does not check whether the feed actually exists, but we want
   // to know if that is the case in order to provide more information.
-  const feed = await get_feed(conn, 'url', url, true);
+  const feed =
+      await get_resource({conn: conn, mode: 'url', url: url, key_only: true});
   if (feed) {
     await unsubscribe(conn, feed.id);
 
@@ -180,7 +181,7 @@ async function unsubscribe_command(url_string) {
 }
 
 const commands = {};
-commands.archive_entries = archive_entries_command;
+commands.archive_resources = archive_resources_command;
 commands.clear_alarms = clear_alarms_command;
 commands.clear_favicons = clear_favicons_command;
 commands.compact_favicons = compact_favicons_command;

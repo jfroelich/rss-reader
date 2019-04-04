@@ -1,5 +1,5 @@
 import Connection from '/src/db/connection.js';
-import get_feeds from '/src/db/ops/get-feeds.js';
+import get_resources from '/src/db/ops/get-resources.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 
@@ -8,15 +8,14 @@ import assert from '/src/lib/assert.js';
 export default async function export_opml(conn, document_title) {
   assert(conn instanceof Connection);
 
-  const feeds = await get_feeds(conn, 'all', false);
+  const query = {conn: conn, mode: 'all', title_sort: false};
+  const feeds = await get_resources(query);
   const outlines = feeds.map(feed_to_outline);
 
   const doc = create_opml_template(document_title);
-  // The document.body shortcut is html-flagged documents only
   const body_element = doc.querySelector('body');
 
   for (const outline of outlines) {
-    // XSS: use the xml document, not the document running this script
     const elm = doc.createElement('outline');
     maybe_set(elm, 'type', outline.type);
     maybe_set(elm, 'xmlUrl', outline.xml_url);

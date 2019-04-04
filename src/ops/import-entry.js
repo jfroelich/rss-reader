@@ -1,7 +1,7 @@
 import * as config from '/src/config.js';
 import {ConstraintError} from '/src/db/errors.js';
-import create_entry from '/src/db/ops/create-entry.js';
-import get_entry from '/src/db/ops/get-entry.js';
+import create_resource from '/src/db/ops/create-resource.js';
+import get_resource from '/src/db/ops/get-resource.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
@@ -28,6 +28,8 @@ export function ImportEntryArgs() {
 export async function import_entry(args) {
   const entry = args.entry;
 
+  console.debug('Importing entry', entry);
+
   // Rewrite the entry's url. This is always done before processing, so there
   // no need to check whether the original url exists in the database.
   const original_url = resource_utils.get_url(entry);
@@ -36,9 +38,10 @@ export async function import_entry(args) {
 
   // Check if the entry with the possibly rewritten url already exists
   const after_rewrite_url = resource_utils.get_url(entry);
-  const existing_entry =
-      await get_entry(args.conn, 'url', after_rewrite_url, true);
+  const existing_entry = await get_resource(
+      {conn: args.conn, mode: 'url', url: after_rewrite_url, key_only: true});
   if (existing_entry) {
+    console.debug('Found existing entry', existing_entry, after_rewrite_url);
     const message =
         'The entry with url ' + after_rewrite_url.href + ' already exists.';
     throw new ConstraintError(message);
@@ -58,7 +61,8 @@ export async function import_entry(args) {
       const rewritten_url = rewrite_url(response_url, args.rewrite_rules);
       resource_utils.set_url(entry, rewritten_url);
 
-      const existing_entry = get_entry(args.conn, 'url', rewritten_url, true);
+      const existing_entry = get_resource(
+          {conn: args.conn, mode: 'url', url: rewritten_url, key_only: true});
       if (existing_entry) {
         const message =
             'The entry with url ' + rewritten_url.href + ' already exists.';
@@ -100,7 +104,11 @@ export async function import_entry(args) {
   }
 
   await filter_entry_content(entry, doc);
-  return await create_entry(args.conn, entry);
+
+  // Set the resource type
+  entry.type = 'entry';
+
+  return await create_resource(args.conn, entry);
 }
 
 async function set_entry_favicon(entry, conn, doc) {
@@ -120,11 +128,16 @@ async function filter_entry_content(entry, doc) {
   options.contrast_matte = config.read_int('contrast_default_matte');
   options.contrast_ratio = config.read_float('min_contrast_ratio');
 
-  const set_image_dimensions_timeout =
-      config.read_int('set_image_sizes_timeout');
-  if (!isNaN(set_image_dimensions_timeout)) {
-    options.image_size_timeout = new Deadline(set_image_dimensions_timeout);
-  }
+  // BUG: two diff prop names used, and it is too short (encountering a ton of
+  // timeouts)
+  // const set_image_dimensions_timeout =
+  //    config.read_int('set_image_sizes_timeout');
+  // if (!isNaN(set_image_dimensions_timeout)) {
+  //  options.image_size_timeout = new Deadline(set_image_dimensions_timeout);
+  //}
+  // For now, hardcode the time outs to a larger value
+  options.set_image_sizes_timeout = new Deadline(7000);
+  options.set_image_dimensions_timeout = new Deadline(7000);
 
   options.table_scan_max_rows = config.read_int('table_scan_max_rows');
 

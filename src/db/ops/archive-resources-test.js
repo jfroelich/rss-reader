@@ -1,6 +1,6 @@
-import archive_resources from '/src/db/ops2/archive-resources.js';
-import create_resource from '/src/db/ops2/create-resource.js';
-import get_resources from '/src/db/ops2/get-resources.js';
+import archive_resources from '/src/db/ops/archive-resources.js';
+import create_resource from '/src/db/ops/create-resource.js';
+import get_resources from '/src/db/ops/get-resources.js';
 import test_open from '/src/db/test-open.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';

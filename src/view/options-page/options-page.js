@@ -64,24 +64,12 @@ channel.onmessage = function(event) {
 
   const type = message.type;
 
-  if (type === 'feed-activated') {
-    // not implemented
-  } else if (type === 'feed-deactivated') {
-    // not implemented
-  } else if (type === 'feed-updated') {
-    // not implemented
-  } else if (type === 'feed-created') {
-    // TODO: feeds can be added (such as by opml-import) through slideshow or
-    // other pages, the feed-list displayed here needs to dynamically update
-    // not implemented
-  } else if (type === 'entry-created') {
-    refresh_badge();
-  } else if (type === 'entry-updated') {
-    refresh_badge();
-  } else if (type === 'feed-deleted') {
-    // not implemented
-  } else if (type === 'entry-deleted') {
-    refresh_badge();
+  if (type === 'resource-created') {
+    refresh_badge().catch(console.warn);
+  } else if (type === 'resource-updated') {
+    refresh_badge().catch(console.warn);
+  } else if (type === 'resource-deleted') {
+    refresh_badge().catch(console.warn);
   } else {
     console.warn('Unknown message type', type);
   }
