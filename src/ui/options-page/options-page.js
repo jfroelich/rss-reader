@@ -1,10 +1,10 @@
 import refresh_badge from '/src/extension/refresh-badge.js';
-import {About} from '/src/view/options-page/about.js';
-import {DisplaySettingsForm} from '/src/view/options-page/display-settings-form.js';
-import {FeedList} from '/src/view/options-page/feed-list.js';
-import {GeneralSettingsForm} from '/src/view/options-page/general-settings-form.js';
-import {NavMenu} from '/src/view/options-page/nav-menu.js';
-import {SubscriptionForm} from '/src/view/options-page/subscription-form.js';
+import {About} from '/src/ui/options-page/about.js';
+import {DisplaySettingsForm} from '/src/ui/options-page/display-settings-form.js';
+import {FeedList} from '/src/ui/options-page/feed-list.js';
+import {GeneralSettingsForm} from '/src/ui/options-page/general-settings-form.js';
+import {NavMenu} from '/src/ui/options-page/nav-menu.js';
+import {SubscriptionForm} from '/src/ui/options-page/subscription-form.js';
 
 let current_section;
 

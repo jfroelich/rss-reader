@@ -1,10 +1,10 @@
-import * as migrations_tests from '/src/db/migrations-tests.js';
 import archive_resources_test from '/src/db/archive-resources-test.js';
 import count_resources_test from '/src/db/count-resources-test.js';
 import create_resource_test from '/src/db/create-resource-test.js';
 import delete_resource_test from '/src/db/delete-resource-test.js';
 import get_resource_test from '/src/db/get-resource-test.js';
 import get_resources_test from '/src/db/get-resources-test.js';
+import * as migrations_tests from '/src/db/migrations-tests.js';
 import patch_resource_test from '/src/db/patch-resource-test.js';
 import put_resource_test from '/src/db/put-resource-test.js';
 import * as resource_utils_tests from '/src/db/resource-utils-tests.js';
@@ -34,8 +34,6 @@ import export_opml_test from '/src/ops/export-opml-test.js';
 import * as import_entry_tests from '/src/ops/import-entry-tests.js';
 import {import_opml_test} from '/src/ops/import-opml-test.js';
 import {subscribe_test} from '/src/ops/subscribe-test.js';
-
-
 
 const registry = [];
 
