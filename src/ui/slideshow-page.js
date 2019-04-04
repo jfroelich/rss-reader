@@ -2,8 +2,10 @@ import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
 import refresh_badge from '/src/extension/refresh-badge.js';
 import assert from '/src/lib/assert.js';
+import download_opml_document from '/src/lib/download-opml-document.js';
 import * as favicon from '/src/lib/favicon.js';
 import filter_publisher from '/src/lib/filter-publisher.js';
+import format_date from '/src/lib/format-date.js';
 import export_opml from '/src/ops/export-opml.js';
 import {import_opml} from '/src/ops/import-opml.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
@@ -482,26 +484,6 @@ async function options_menu_onclick(event) {
   }
 }
 
-// Given an opml document, converts it into a file and then triggers the
-// download of that file in the browser.
-// TODO: make this more generic (e.g any type of file, not just opml, or maybe
-// at least xml, and then move it somewhere like a library)
-function download_opml_document(opml_document, file_name = 'subs.xml') {
-  // Generate a file. Files implement the Blob interface so we really just
-  // generate a blob.
-  const serializer = new XMLSerializer();
-  const xml_string = serializer.serializeToString(opml_document);
-  const blob = new Blob([xml_string], {type: 'application/xml'});
-
-  // Download the blob file by simulating an anchor click
-  const anchor = document.createElement('a');
-  anchor.setAttribute('download', file_name);
-  const url = URL.createObjectURL(blob);
-  anchor.setAttribute('href', url);
-  anchor.click();
-  URL.revokeObjectURL(url);
-}
-
 function header_font_menu_init(fonts) {
   const menu = document.getElementById('header-font-menu');
   menu.onchange = header_font_menu_onchange;
@@ -738,15 +720,6 @@ async function onmessage(event) {
     return;
   }
 
-  if (message.type === 'resource-created') {
-    // TODO: implement
-    return;
-  }
-
-  if (message.type === 'resource-updated') {
-    // TODO: implement
-    return;
-  }
 
   // All types should be explicitly handled, even if they do nothing but exit.
   // This message appearing serves as a continual incentive.
@@ -948,33 +921,6 @@ function transition_onend(event) {
   decrement_active_transition_count();
 }
 
-// TODO: move to a library like date-utils
-// Return a date as a formatted string. This is an opinionated implementation
-// that is intended to be very simple. This tries to recover from errors and
-// not throw.
-function format_date(date) {
-  if (!(date instanceof Date)) {
-    return 'Invalid date';
-  }
-
-  // When using native date parsing and encountering an error, rather than
-  // throw that error, a date object is created with a NaN time property.
-  // Which would be ok but the format call below then throws if the time
-  // property is NaN
-  if (isNaN(date.getTime())) {
-    return 'Invalid date';
-  }
-
-  // The try/catch is just paranoia for now. This previously threw when date
-  // contained time NaN.
-  const formatter = new Intl.DateTimeFormat();
-  try {
-    return formatter.format(date);
-  } catch (error) {
-    console.debug(error);
-    return 'Invalid date';
-  }
-}
 
 // Returns the number of unread slide elements present in the view
 function count_unread_slides() {
