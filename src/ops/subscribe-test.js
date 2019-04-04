@@ -1,5 +1,4 @@
-import * as resource_utils from '/src/db/resource-utils.js';
-import test_open from '/src/db/test-open.js';
+import * as db from '/src/db/db.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
@@ -9,7 +8,7 @@ export async function subscribe_test() {
   const db_name = 'subscribe-test';
   await indexeddb_utils.remove(db_name);
 
-  const conn = await test_open(db_name);
+  const conn = await db.test_open(db_name);
 
   const path = '/src/ops/subscribe-test-feed.xml';
   const local_url_string = chrome.extension.getURL(path);
@@ -32,7 +31,7 @@ export async function subscribe_test() {
 
   // Test the subscription produced the desired result
   assert(feed && typeof feed === 'object');
-  assert(resource_utils.is_valid_id(feed.id));
+  assert(db.is_valid_id(feed.id));
 
   // subscribe should have invoked the callback
   assert(callback_called);

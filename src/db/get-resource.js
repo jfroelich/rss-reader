@@ -13,9 +13,7 @@ function get_resource_executor(query, resolve, reject) {
   if (query.mode === 'id') {
     assert(resource_utils.is_valid_id(query.id));
     assert(!query.key_only);
-    console.debug('Getting resource by id', query.id);
   } else if (query.mode === 'url') {
-    console.debug('Getting resource by url', query.url);
     assert(query.url instanceof URL);
   }
 

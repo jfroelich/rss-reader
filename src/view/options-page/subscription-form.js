@@ -1,6 +1,4 @@
-import {ConstraintError} from '/src/db/errors.js';
-import db_open from '/src/db/open.js';
-import * as resource_utils from '/src/db/resource-utils.js';
+import * as db from '/src/db/db.js';
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
 import {Deadline} from '/src/lib/deadline.js';
@@ -95,7 +93,7 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
   this.showMonitor();
   this.appendMonitorMessage(`Subscribing to ${url.href}`);
 
-  const promises = [db_open(), favicon.open()];
+  const promises = [db.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(promises);
 
   try {
@@ -107,7 +105,7 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
       throw error;
     }
 
-    if (error instanceof ConstraintError) {
+    if (error instanceof db.ConstraintError) {
       this.appendMonitorMessage(
           'Already subscribed to feed with similar url ' + url.href);
       this.hideMonitor();
@@ -122,8 +120,7 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
 };
 
 SubscriptionForm.prototype.onFeedStored = function(feed) {
-  this.appendMonitorMessage(
-      'Subscribed to ' + resource_utils.get_url_string(feed));
+  this.appendMonitorMessage('Subscribed to ' + db.get_url_string(feed));
   this.hideMonitor();
   if (this.onsubscribe) {
     this.onsubscribe(feed);

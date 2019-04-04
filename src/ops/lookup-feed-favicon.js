@@ -1,4 +1,4 @@
-import * as resource_utils from '/src/db/resource-utils.js';
+import * as db from '/src/db/db.js';
 import assert from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {lookup, LookupRequest} from '/src/lib/favicon.js';
@@ -32,8 +32,8 @@ export default function lookup_feed_favicon(feed, iconn, timeout = INDEFINITE) {
   let lookup_url;
   if (feed.link) {
     lookup_url = new URL(feed.link);
-  } else if (resource_utils.has_url(feed)) {
-    lookup_url = new URL(resource_utils.get_url(feed).origin);
+  } else if (db.has_url(feed)) {
+    lookup_url = new URL(db.get_url(feed).origin);
   } else {
     const error = new Error('Cannot build lookup url for feed');
     return Promise.reject(error);

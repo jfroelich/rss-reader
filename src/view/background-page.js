@@ -1,6 +1,6 @@
 import * as config from '/src/config.js';
 import * as cron_control from '/src/cron.js';
-import open from '/src/db/open.js';
+import * as db from '/src/db/db.js';
 import open_view from '/src/extension/open-view.js';
 import refresh_badge from '/src/extension/refresh-badge.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
@@ -54,7 +54,7 @@ add_install_listener(async function(event) {
     // allow for the extra time it takes to complete the upgrade, so we do not
     // impose a timeout in this case.
     const timeout = INDEFINITE;
-    const conn = await open(timeout);
+    const conn = await db.open(timeout);
     conn.close();
   }
 });

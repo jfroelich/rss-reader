@@ -1,7 +1,5 @@
 import * as config from '/src/config.js';
-import db_open from '/src/db/open.js';
-import get_resources from '/src/db/ops/get-resources.js';
-import patch_resource from '/src/db/ops/patch-resource.js';
+import * as db from '/src/db/db.js';
 import refresh_badge from '/src/extension/refresh-badge.js';
 import assert from '/src/lib/assert.js';
 import * as favicon from '/src/lib/favicon.js';
@@ -44,7 +42,7 @@ async function show_next_slide() {
     return;
   }
 
-  const conn = await db_open();
+  const conn = await db.open();
   await mark_slide_read_start(conn, current_slide);
 
   const slide_unread_count = count_unread_slides();
@@ -57,7 +55,7 @@ async function show_next_slide() {
     if (!isNaN(config_limit)) {
       limit = config_limit;
     }
-    entries = await get_resources(
+    entries = await db.get_resources(
         {conn: conn, mode: mode, offset: offset, limit: limit});
   }
   conn.close();
@@ -214,7 +212,7 @@ async function slide_onclick(event) {
   // the checks within mark_slide_read_start, it avoids opening the connection.
   if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
       !slide.hasAttribute('read-pending')) {
-    const conn = await db_open();
+    const conn = await db.open();
     await mark_slide_read_start(conn, slide);
     conn.close();
   }
@@ -300,7 +298,7 @@ function mark_slide_read_start(conn, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  return patch_resource(conn, {id: entry_id, read: 1});
+  return db.patch_resource(conn, {id: entry_id, read: 1});
 }
 
 function remove_slide(slide) {
@@ -334,7 +332,7 @@ async function refresh_button_onclick(event) {
 
   refresh_in_progress = true;
 
-  const promises = [db_open(), favicon.open()];
+  const promises = [db.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(promises);
   const args = new PollFeedsArgs();
   args.conn = conn;
@@ -442,7 +440,7 @@ function import_opml_prompt() {
     // For unknown reason we must grab this before the await, otherwise error.
     // This behavior changed sometime around Chrome 72 without notice
     const files = event.target.files;
-    const conn = await db_open();
+    const conn = await db.open();
     await import_opml(conn, files);
     conn.close();
   };
@@ -466,7 +464,7 @@ async function options_menu_onclick(event) {
       import_opml_prompt();
       break;
     case 'menu-option-export':
-      const conn = await db_open();
+      const conn = await db.open();
       const document_title = 'Subscriptions';
       const opml_document = await export_opml(conn, document_title);
       conn.close();
@@ -696,8 +694,8 @@ async function onmessage(event) {
     // just inventing an approach that doesn't run headfirst into this crappy
     // logic.
 
-    const conn = await db_open();
-    const entries = await get_resources({
+    const conn = await db.open();
+    const entries = await db.get_resources({
       conn: conn,
       mode: 'viewable-entries',
       offset: unread_count,
@@ -1130,11 +1128,11 @@ function hide_splash() {
 async function load_view() {
   show_splash();
 
-  const conn = await db_open();
-  const get_entries_promise = get_resources(
+  const conn = await db.open();
+  const get_entries_promise = db.get_resources(
       {conn: conn, mode: 'viewable-entries', offset: 0, limit: 6});
   const get_feeds_promise =
-      get_resources({conn: conn, mode: 'feeds', title_sort: true});
+      db.get_resources({conn: conn, mode: 'feeds', title_sort: true});
   conn.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)

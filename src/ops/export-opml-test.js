@@ -1,6 +1,4 @@
-import create_resource from '/src/db/ops/create-resource.js';
-import * as resource_utils from '/src/db/resource-utils.js';
-import test_open from '/src/db/test-open.js';
+import * as db from '/src/db/db.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 import export_opml from '/src/ops/export-opml.js';
@@ -10,19 +8,19 @@ export default async function export_opml_test() {
   const db_name = 'export-opml-test';
   await indexeddb_utils.remove(db_name);
 
-  const conn = await test_open(db_name);
+  const conn = await db.test_open(db_name);
 
   // Insert some test feeds
   let resources = [];
   for (let i = 0; i < 3; i++) {
     const feed = {};
-    resource_utils.set_url(feed, new URL('a://b.c' + i));
+    db.set_url(feed, new URL('a://b.c' + i));
     resources.push(feed);
   }
 
   const promises = [];
   for (const resource of resources) {
-    promises.push(create_resource(conn, resource));
+    promises.push(db.create_resource(conn, resource));
   }
   await Promise.all(promises);
 
@@ -45,7 +43,7 @@ export default async function export_opml_test() {
   // For each feed that has a url, it should have a corresponding outline based
   // on the outline's xmlurl attribute value.
   for (const feed of resources) {
-    const url = resource_utils.get_url(feed);
+    const url = db.get_url(feed);
     const selector = 'outline[xmlUrl="' + url.href + '"]';
     const outline = document.querySelector(selector);
     assert(outline instanceof Element);

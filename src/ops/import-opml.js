@@ -1,5 +1,4 @@
-import create_resource from '/src/db/ops/create-resource.js';
-import * as resource_utils from '/src/db/resource-utils.js';
+import * as db from '/src/db/db.js';
 
 // Create and store feed objects in the database based on urls extracted from
 // zero or more opml files. |files| should be a FileList or an Array.
@@ -34,14 +33,14 @@ export async function import_opml(conn, files) {
     const feed = {};
     feed.active = 1;
     feed.type = 'feed';
-    resource_utils.set_url(feed, url);
+    db.set_url(feed, url);
     return feed;
   });
 
   const create_promises = [];
   for (const feed of feeds) {
     console.debug('Creating resource', feed);
-    create_promises.push(create_resource(conn, feed));
+    create_promises.push(db.create_resource(conn, feed));
   }
 
   return Promise.all(create_promises);

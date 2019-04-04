@@ -1,14 +1,13 @@
-import test_open from '/src/db/test-open.js';
+import * as db from '/src/db/db.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
 import {import_opml} from '/src/ops/import-opml.js';
-import * as resource_utils from '/src/db/resource-utils.js';
 
 export async function import_opml_test() {
   const db_name = 'ops-import-opml-test';
   await indexeddb_utils.remove(db_name);
 
-  const conn = await test_open(db_name);
+  const conn = await db.test_open(db_name);
 
   let iconn = undefined;  // test without favicon caching support
 
@@ -22,7 +21,7 @@ export async function import_opml_test() {
   const results = await import_opml(conn, files);
   assert(results);
   assert(results.length === 1);
-  assert(resource_utils.is_valid_id(results[0]));
+  assert(db.is_valid_id(results[0]));
 
   assert(conn.channel.messages.length === 1);
   assert(conn.channel.messages[0].type === 'feed-created');

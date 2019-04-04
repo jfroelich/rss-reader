@@ -1,8 +1,4 @@
-import db_open from '/src/db/open.js';
-import get_resource from '/src/db/ops/get-resource.js';
-import get_resources from '/src/db/ops/get-resources.js';
-import patch_resource from '/src/db/ops/patch-resource.js';
-import * as resource_utils from '/src/db/resource-utils.js';
+import * as db from '/src/db/db.js';
 import assert from '/src/lib/assert.js';
 import unsubscribe from '/src/ops/unsubscribe.js';
 
@@ -20,9 +16,9 @@ export function FeedList() {
 }
 
 FeedList.prototype.init = async function(parent) {
-  const conn = await db_open();
+  const conn = await db.open();
   const feeds =
-      await get_resources({conn: conn, mode: 'feeds', title_sort: true});
+      await db.get_resources({conn: conn, mode: 'feeds', title_sort: true});
   conn.close();
 
   const list_element = document.createElement('ul');
@@ -82,7 +78,7 @@ FeedList.prototype.appendFeed = function(feed) {
   }
 
   const title_element = document.createElement('span');
-  const feed_title = feed.title || resource_utils.get_url_string(feed);
+  const feed_title = feed.title || db.get_url_string(feed);
   // Title is automatically truncated via CSS so just produce the full value
   title_element.textContent = feed_title;
   item_element.appendChild(title_element);
@@ -119,8 +115,8 @@ FeedList.prototype.itemOnclick = async function(event) {
   const item_element = event.currentTarget;
   const feed_id = parseInt(item_element.getAttribute('feed'), 10);
 
-  const conn = await db_open();
-  let feed = await get_resource(
+  const conn = await db.open();
+  let feed = await db.get_resource(
       {conn: conn, mode: 'id', id: feed_id, key_only: false});
   conn.close();
 
@@ -128,8 +124,7 @@ FeedList.prototype.itemOnclick = async function(event) {
   feed = Object.assign({}, feed);
 
   const details_title_element = document.getElementById('details-title');
-  details_title_element.textContent =
-      feed.title || resource_utils.get_url_string(feed);
+  details_title_element.textContent = feed.title || db.get_url_string(feed);
 
   const details_favicon_element = document.getElementById('details-favicon');
   if (feed.favicon_url) {
@@ -144,7 +139,7 @@ FeedList.prototype.itemOnclick = async function(event) {
   details_desc_element.textContent = feed.description || '';
 
   const feed_url_element = document.getElementById('details-feed-url');
-  feed_url_element.textContent = resource_utils.get_url_string(feed);
+  feed_url_element.textContent = db.get_url_string(feed);
 
   const feed_link_element = document.getElementById('details-feed-link');
   feed_link_element.textContent = feed.link || '';
@@ -171,7 +166,7 @@ FeedList.prototype.itemOnclick = async function(event) {
 FeedList.prototype.unsubscribeButtonOnclick = async function(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const conn = await db_open();
+  const conn = await db.open();
   await unsubscribe(conn, feed_id);
   conn.close();
 
@@ -205,8 +200,8 @@ FeedList.prototype.removeFeedById = function(feed_id) {
 FeedList.prototype.activateOnclick = async function(event) {
   const feed_id = parseInt(event.target.value, 10);
 
-  const conn = await db_open();
-  await patch_resource(conn, {id: feed_id, active: 1});
+  const conn = await db.open();
+  await db.patch_resource(conn, {id: feed_id, active: 1});
   conn.close();
 
   // Mark the corresponding feed element loaded in the view as active
@@ -225,9 +220,9 @@ FeedList.prototype.activateOnclick = async function(event) {
 
 FeedList.prototype.deactivateOnclick = async function(event) {
   const feed_id = parseInt(event.target.value, 10);
-  const conn = await db_open();
+  const conn = await db.open();
   const props = {id: feed_id, active: 0, deactivation_reason: 'manual'};
-  await patch_resource(conn, props);
+  await db.patch_resource(conn, props);
   conn.close();
 
   // TODO: this should be done in the channel message handler instead of here

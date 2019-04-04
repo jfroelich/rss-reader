@@ -1,9 +1,6 @@
 import * as config from '/src/config.js';
 import * as cron from '/src/cron.js';
-import open from '/src/db/open.js';
-import archive_resources from '/src/db/ops/archive-resources.js';
-import get_resource from '/src/db/ops/get-resource.js';
-import * as resource_utils from '/src/db/resource-utils.js';
+import * as db from '/src/db/db.js';
 import {Deadline} from '/src/lib/deadline.js';
 import * as favicon from '/src/lib/favicon.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
@@ -13,8 +10,8 @@ import unsubscribe from '/src/ops/unsubscribe.js';
 
 async function archive_resources_command() {
   console.log('Archiving resources...');
-  const conn = await open();
-  const resource_ids = await archive_resources(conn);
+  const conn = await db.open();
+  const resource_ids = await db.archive_resources(conn);
   conn.close();
   console.debug('Archived %d resources', resource_ids.length);
 }
@@ -66,7 +63,7 @@ async function lookup_favicon_command(url_string, cached) {
 async function poll_feeds_command() {
   console.log('Polling feeds...');
 
-  const proms = [open(), favicon.open()];
+  const proms = [db.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(proms);
 
   const args = new PollFeedsArgs();
@@ -101,7 +98,7 @@ function get_all_alarms() {
 
 async function refresh_favicons_command() {
   console.log('Refreshing favicons for feeds...');
-  const proms = [open(), favicon.open()];
+  const proms = [db.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(proms);
   const update_results = await refresh_feed_icons(conn, iconn);
   conn.close();
@@ -144,13 +141,13 @@ async function subscribe_command(url_string) {
     console.debug('Stored new feed, now storing entries...');
   };
 
-  const proms = [open(), favicon.open()];
+  const proms = [db.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(proms);
   const feed = await subscribe(conn, iconn, url, timeout, notify, callback);
   conn.close();
   iconn.close();
 
-  console.log('Subscribed to feed', resource_utils.get_url_string(feed));
+  console.log('Subscribed to feed', db.get_url_string(feed));
 }
 
 async function unsubscribe_command(url_string) {
@@ -158,12 +155,12 @@ async function unsubscribe_command(url_string) {
 
   const url = new URL(url_string);
 
-  const conn = await open();
+  const conn = await db.open();
 
   // unsubscribe does not check whether the feed actually exists, but we want
   // to know if that is the case in order to provide more information.
-  const feed =
-      await get_resource({conn: conn, mode: 'url', url: url, key_only: true});
+  const feed = await db.get_resource(
+      {conn: conn, mode: 'url', url: url, key_only: true});
   if (feed) {
     await unsubscribe(conn, feed.id);
 

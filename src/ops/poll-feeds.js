@@ -1,6 +1,5 @@
 import * as config from '/src/config.js';
-import get_resources from '/src/db/ops/get-resources.js';
-import * as resource_utils from '/src/db/resource-utils.js';
+import * as db from '/src/db/db.js';
 import show_notification from '/src/extension/show-notification.js';
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
@@ -40,7 +39,7 @@ export async function poll_feeds(args) {
 
   localStorage.last_poll_timestamp = '' + Date.now();
 
-  const feeds = await get_resources(
+  const feeds = await db.get_resources(
       {conn: args.conn, mode: 'active-feeds', title_sort: false});
   console.debug('Loaded %d active feeds for polling', feeds.length);
 
@@ -88,8 +87,8 @@ async function poll_feed_noexcept(import_feed_args) {
       throw error;
     } else {
       console.warn(
-          'Error polling feed',
-          resource_utils.get_url_string(import_feed_args.feed), error);
+          'Error polling feed', db.get_url_string(import_feed_args.feed),
+          error);
       return 0;
     }
   }

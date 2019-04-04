@@ -1,5 +1,5 @@
 import Connection from '/src/db/connection.js';
-import {InvalidStateError, NotFoundError} from '/src/db/errors.js';
+import {NotFoundError} from '/src/db/errors.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';

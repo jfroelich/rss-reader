@@ -1,15 +1,13 @@
-import Connection from '/src/db/connection.js';
-import get_resources from '/src/db/ops/get-resources.js';
-import * as resource_utils from '/src/db/resource-utils.js';
+import * as db from '/src/db/db.js';
 import assert from '/src/lib/assert.js';
 
 // Returns an in memory OPML document object filled with the feeds from the
 // database. |document_title| is optional dom string (set by textContent).
 export default async function export_opml(conn, document_title) {
-  assert(conn instanceof Connection);
+  assert(conn instanceof db.Connection);
 
   const query = {conn: conn, mode: 'all', title_sort: false};
-  const feeds = await get_resources(query);
+  const feeds = await db.get_resources(query);
   const outlines = feeds.map(feed_to_outline);
 
   const doc = create_opml_template(document_title);
@@ -32,8 +30,8 @@ function feed_to_outline(feed) {
   const outline = {};
   outline.type = feed.type;
 
-  if (resource_utils.has_url(feed)) {
-    outline.xml_url = resource_utils.get_url_string(feed);
+  if (db.has_url(feed)) {
+    outline.xml_url = db.get_url_string(feed);
   }
 
   outline.title = feed.title;

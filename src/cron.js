@@ -1,6 +1,5 @@
 import * as config from '/src/config.js';
-import open from '/src/db/open.js';
-import archive_resources from '/src/db/ops/archive-resources.js';
+import * as db from '/src/db/db.js';
 import * as favicon from '/src/lib/favicon.js';
 import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
 import refresh_feed_icons from '/src/ops/refresh-feed-icons.js';
@@ -58,13 +57,13 @@ export async function alarm_listener(alarm) {
   config.write_string('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
-    const conn = await open();
-    await archive_resources(conn);
+    const conn = await db.open();
+    await db.archive_resources(conn);
     conn.close();
   } else if (alarm.name === 'poll') {
     await handle_alarm_poll();
   } else if (alarm.name === 'refresh-feed-icons') {
-    const proms = [open(), favicon.open()];
+    const proms = [db.open(), favicon.open()];
     const [conn, iconn] = await Promise.all(proms);
     await refresh_feed_icons(conn, iconn);
     conn.close();
@@ -92,7 +91,7 @@ async function handle_alarm_poll() {
     }
   }
 
-  const promises = [open(), favicon.open()];
+  const promises = [db.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(promises);
   const poll_args = new PollFeedsArgs();
   poll_args.conn = conn;

@@ -1,9 +1,5 @@
-import Connection from '/src/db/connection.js';
+import * as db from '/src/db/db.js';
 import {ConstraintError} from '/src/db/errors.js';
-import create_resource from '/src/db/ops/create-resource.js';
-import get_resource from '/src/db/ops/get-resource.js';
-import put_resource from '/src/db/ops/put-resource.js';
-import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
 import {better_fetch} from '/src/lib/better-fetch.js';
@@ -25,9 +21,11 @@ export function ImportFeedArgs() {
 }
 
 export async function import_feed(args) {
+  assert(typeof db.Connection === 'function');
+
   assert(args instanceof ImportFeedArgs);
   assert(args.feed && typeof args.feed === 'object');
-  assert(args.conn instanceof Connection);
+  assert(args.conn instanceof db.Connection);
   assert(args.iconn === undefined || args.iconn instanceof IDBDatabase);
   assert(args.fetch_feed_timeout instanceof Deadline);
 
@@ -40,18 +38,18 @@ export async function import_feed(args) {
     // to avoid network overhead, which is the bottleneck.
     await validate_feed_is_unique(args.feed, args.conn);
   } else {
-    assert(resource_utils.is_valid_id(args.feed.id));
+    assert(db.is_valid_id(args.feed.id));
   }
 
   // Fetch the feed
-  const fetch_url = resource_utils.get_url(args.feed);
+  const fetch_url = db.get_url(args.feed);
   const fetch_options = {timeout: args.fetch_feed_timeout};
   const response = await better_fetch(fetch_url, fetch_options);
   const response_url = new URL(response.url);
 
   // Check if redirected
   if (args.create && fetch_url.href !== response_url.href) {
-    const existing_feed = await get_resource(
+    const existing_feed = await db.get_resource(
         {conn: args.conn, mode: 'url', url: response_url, key_only: true});
     if (existing_feed) {
       const message =
@@ -61,7 +59,7 @@ export async function import_feed(args) {
   }
 
   // Possibly append the redirect url
-  resource_utils.set_url(args.feed, response_url);
+  db.set_url(args.feed, response_url);
 
   const response_text = await response.text();
   const parsed_feed = feed_parser.parse_from_string(response_text);
@@ -85,9 +83,9 @@ export async function import_feed(args) {
   }
 
   if (args.create) {
-    args.feed.id = await create_resource(args.conn, args.feed);
+    args.feed.id = await db.create_resource(args.conn, args.feed);
   } else {
-    await put_resource(args.conn, args.feed);
+    await db.put_resource(args.conn, args.feed);
   }
 
   // Early notify observer-caller if they are listening that we created the
@@ -184,10 +182,10 @@ function update_model_feed_from_parsed_feed(feed, parsed_feed) {
 // only checks against the tail url of the feed, so this result is unreliable
 // when there are multiple urls.
 async function validate_feed_is_unique(feed, conn) {
-  const url = resource_utils.get_url(feed);
+  const url = db.get_url(feed);
 
-  const existing_feed =
-      await get_resource({conn: conn, mode: 'url', url: url, key_only: true});
+  const existing_feed = await db.get_resource(
+      {conn: conn, mode: 'url', url: url, key_only: true});
 
   if (existing_feed) {
     const message = 'Already subscribed to feed with url ' + url.href;
@@ -207,7 +205,7 @@ function parsed_entry_to_model_entry(parsed_entry) {
   if (parsed_entry.link) {
     try {
       const link_url = new URL(parsed_entry.link);
-      resource_utils.set_url(entry, link_url);
+      db.set_url(entry, link_url);
     } catch (error) {
       // Ignore
     }
