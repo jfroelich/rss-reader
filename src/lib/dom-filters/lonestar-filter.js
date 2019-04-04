@@ -1,5 +1,5 @@
 import assert from '/src/lib/assert.js';
-import {is_hidden_inline} from '/src/lib/dom-visibility.js';
+import {is_hidden_inline} from '/src/lib/is-hidden-inline.js';
 import * as image_utils from '/src/lib/image-utils.js';
 
 // The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
