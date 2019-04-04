@@ -8,7 +8,7 @@ import truncate_html from '/src/lib/truncate-html.js';
 const resource_props = [
   'active',
   'archived_date',
-  'archive_state',
+  'archived',
   'author',
   'content',
   'created_date',
@@ -18,12 +18,14 @@ const resource_props = [
   'enclosure',
   'favicon_url',
   'feed',
+  'feed_format',
   'feed_title',
   'id',
   'link',
+  'parent',
   'published_date',
   'read_date',
-  'read_state',
+  'read',
   'title',
   'type',
   'updated_date',
@@ -158,12 +160,13 @@ export function validate(resource) {
       typeof resource.favicon_url === 'string');
 
   vassert(
-      resource.active === undefined || resource.active === true ||
-      resource.active === false);
+      resource.active === undefined || resource.active === 1 ||
+      resource.active === 0);
 
+  const formats = ['rss', 'feed', 'rdf'];
   vassert(
-      resource.type === undefined || resource.type === 'rss' ||
-      resource.type === 'feed' || resource.type === 'rdf');
+      resource.feed_format === undefined ||
+      formats.includes(resource.feed_format));
 
   vassert(resource.link === undefined || typeof resource.link === 'string');
 
@@ -176,11 +179,11 @@ export function validate(resource) {
 
   vassert(resource.urls === undefined || Array.isArray(resource.urls));
   vassert(
-      resource.read_state === undefined || resource.read_state === 1 ||
-      resource.read_state === 0);
+      resource.read === undefined || resource.read === 1 ||
+      resource.read === 0);
   vassert(
-      resource.archive_state === undefined || resource.archive_state === 1 ||
-      resource.archive_state === 0);
+      resource.archived === undefined || resource.archived === 1 ||
+      resource.archived === 0);
   vassert(resource.author === undefined || typeof resource.author === 'string');
   vassert(resource.title === undefined || typeof resource.title === 'string');
   vassert(

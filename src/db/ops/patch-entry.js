@@ -4,10 +4,6 @@ import * as resource_utils from '/src/db/resource-utils.js';
 import assert from '/src/lib/assert.js';
 import filter_empty_properties from '/src/lib/filter-empty-properties.js';
 
-// TODO: revise update-entry as put-entry
-// TODO: revise set-entry-read-state to delegate to here
-// TODO: revise update-feed as put-feed and patch-feed
-
 // Given a set of properties which must include id, find the corresponding entry
 // in the database, properly adjust its properties to use the new values from
 // the props parameter, then write it back. If fully replacing the entry it is
@@ -109,12 +105,11 @@ function get_request_onsuccess(props, reject, event) {
 
   // Note: this must not happen prior to iterating props or it will delete all
   // the nullify transitions.
-  filter_empty_properties(props);
+  filter_empty_properties(entry);
 
   // Perform any implied transitions from using the patch operation. These
   // override caller props.
   entry.updated_date = new Date();
 
-  const entry_store = event.target.source;
-  entry_store.put(entry);
+  event.target.source.put(entry);
 }

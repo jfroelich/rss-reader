@@ -89,7 +89,7 @@ function get_request_onsuccess(props, reject, event) {
     }
   }
 
-  filter_empty_properties(props);
+  filter_empty_properties(feed);
   feed.updated_date = new Date();
   event.target.source.put(feed);
 }

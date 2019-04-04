@@ -12,6 +12,14 @@ import patch_entry_test from '/src/db/ops/patch-entry-test.js';
 import * as patch_feed_tests from '/src/db/ops/patch-feed-tests.js';
 import {put_entry_test} from '/src/db/ops/put-entry-test.js';
 import put_feed_test from '/src/db/ops/put-feed-test.js';
+import archive_resources_test from '/src/db/ops2/archive-resources-test.js';
+import count_resources_test from '/src/db/ops2/count-resources-test.js';
+import create_resource_test from '/src/db/ops2/create-resource-test.js';
+import delete_resource_test from '/src/db/ops2/delete-resource-test.js';
+import get_resource_test from '/src/db/ops2/get-resource-test.js';
+import get_resources_test from '/src/db/ops2/get-resources-test.js';
+import patch_resource_test from '/src/db/ops2/patch-resource-test.js';
+import put_resource_test from '/src/db/ops2/put-resource-test.js';
 import * as resource_utils_tests from '/src/db/resource-utils-tests.js';
 import * as better_fetch_tests from '/src/lib/better-fetch-tests.js';
 import {coerce_element_test} from '/src/lib/coerce-element-test.js';
@@ -40,7 +48,21 @@ import * as import_entry_tests from '/src/ops/import-entry-tests.js';
 import {import_opml_test} from '/src/ops/import-opml-test.js';
 import {subscribe_test} from '/src/ops/subscribe-test.js';
 
+
+
 const registry = [];
+
+// db-resource ops tests
+register_test(archive_resources_test);
+register_test(count_resources_test);
+register_test(create_resource_test);
+register_test(delete_resource_test);
+register_test(get_resource_test);
+register_test(get_resources_test);
+register_test(patch_resource_test);
+register_test(put_resource_test);
+
+// Other tests
 register_test(archive_entries_test);
 register_test(coerce_element_test);
 register_module_tests(color_contrast_filter_tests);

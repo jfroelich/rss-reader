@@ -637,3 +637,86 @@ export function migrate34(event, channel) {
     });
   }
 }
+
+// Switch from feeds and entries stores to a single resources store
+export function migrate35(event, channel) {
+  const connection = event.target.result;
+  const transaction = event.target.transaction;
+
+  if (connection.version < 35) {
+    return;
+  }
+
+  if (event.oldVersion > 34) {
+    return;
+  }
+
+  // Create the resources store and appropriate indices
+  let resources_store = connection.createObjectStore(
+      'resources', {keyPath: 'id', autoIncrement: true});
+  resources_store.createIndex('urls', 'urls', {multiEntry: true, unique: true});
+
+  // Each resource object gets a type so ops can quickly find all feeds or
+  // query only entries
+  resources_store.createIndex('type', 'type');
+
+  resources_store.createIndex('type-read', ['type', 'read']);
+
+  const feeds_store = transaction.objectStore('feeds');
+  const feeds_store_cursor_request = feeds_store.openCursor();
+  feeds_store_cursor_request.onsuccess = event => {
+    const cursor = event.target.result;
+    if (cursor) {
+      const feed = cursor.value;
+
+      // rename type to a more specific type so it does not conflict with
+      // planned type
+      if (feed.type) {
+        feed.feed_format = feed.type;
+        delete feed.type;
+      }
+
+      // boolean to int
+      feed.active = feed.active ? 1 : 0;
+
+      // introduce resource type
+      feed.type = 'feed';
+
+      resources_store.put(feed);
+      cursor.continue();
+    } else {
+      connection.deleteObjectStore('feeds');
+    }
+  };
+
+  const entries_store = transaction.objectStore('entries');
+  const entries_store_cursor_request = entries_store.openCursor();
+  entries_store_cursor_request.onsuccess = event => {
+    const cursor = event.target.result;
+    if (cursor) {
+      const entry = cursor.value;
+      // introduce new type
+      entry.type = 'entry';
+
+      // rename feed to parent
+      entry.parent = entry.feed;
+      delete entry.feed;
+
+      if (entry.feed_title) {
+        entry.parent_title = entry.feed_title;
+        delete entry.feed_title;
+      }
+
+      // rename read state and archive state
+      entry.archived = entry.archive_state;
+      delete entry.archive_state;
+      entry.read = entry.read_state;
+      delete entry.read_state;
+
+      resources_store.put(entry);
+      cursor.continue();
+    } else {
+      connection.deleteObjectStore('entries');
+    }
+  };
+}
