@@ -2,7 +2,7 @@ import * as db from '/src/db/db.js';
 
 // Create and store feed objects in the database based on urls extracted from
 // zero or more opml files. |files| should be a FileList or an Array.
-export async function import_opml(conn, files) {
+export default async function import_opml(conn, files) {
   console.log('Importing %d OPML files', files.length);
 
   // Grab urls from each of the files. Per-file errors are logged not thrown.
@@ -54,7 +54,7 @@ async function file_find_urls(file) {
 
 // Return an array of outline urls (as URL objects) from outlines found in an
 // OPML document
-export function find_outline_urls(doc) {
+function find_outline_urls(doc) {
   // Assume the document is semi-well-formed. As a compromise between a deep
   // strict validation and no validation at all, use the CSS restricted-parent
   // selector syntax. We also do some filtering of outlines here up front to
@@ -83,7 +83,7 @@ export function find_outline_urls(doc) {
   return urls;
 }
 
-export function file_read_text(file) {
+function file_read_text(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsText(file);
@@ -92,7 +92,7 @@ export function file_read_text(file) {
   });
 }
 
-export function parse_opml(xml_string) {
+function parse_opml(xml_string) {
   const parser = new DOMParser();
   const document = parser.parseFromString(xml_string, 'application/xml');
   const error = document.querySelector('parsererror');
@@ -109,7 +109,7 @@ export function parse_opml(xml_string) {
   return document;
 }
 
-export class OPMLParseError extends Error {
+class OPMLParseError extends Error {
   constructor(message = 'OPML parse error') {
     super(message);
   }

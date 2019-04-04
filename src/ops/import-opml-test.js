@@ -1,9 +1,9 @@
 import * as db from '/src/db/db.js';
 import assert from '/src/lib/assert.js';
 import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
-import {import_opml} from '/src/ops/import-opml.js';
+import import_opml from '/src/ops/import-opml.js';
 
-export async function import_opml_test() {
+export default async function import_opml_test() {
   const db_name = 'ops-import-opml-test';
   await indexeddb_utils.remove(db_name);
 
