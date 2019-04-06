@@ -204,8 +204,9 @@ export function handle_update(event) {
   rename('BODY_LINE_HEIGHT', 'body_line_height');
   rename('JUSTIFY_TEXT', 'justify_text');
   rename('COLUMN_COUNT', 'column_count');
-  rename('SHOW_NOTIFICATIONS', 'show_notifications');
+  rename('SHOW_NOTIFICATIONS', 'notifications_enabled');
   rename('ONLY_POLL_IF_IDLE', 'only_poll_if_idle');
+  rename('show_notifications', 'notifications_enabled');
 
   // Strip old path from bg_image setting
   const path = read_string('bg_image');
@@ -216,7 +217,7 @@ export function handle_update(event) {
 
 export function init(event) {
   write_boolean('reuse_newtab', true);
-  write_boolean('show_notifications', true);
+  write_boolean('notifications_enabled', true);
   write_boolean('only_poll_if_idle', true);
   write_int('idle_poll_secs', 30);
   write_int('contrast_default_matte', color.WHITE);

@@ -4,7 +4,8 @@ import open_view from '/src/extension/open-view.js';
 const default_icon = chrome.extension.getURL('/images/rss_icon_trans.gif');
 
 export default function show_notification(message = '', icon = default_icon) {
-  if (!config.read_boolean('show_notifications')) {
+  const enabled = config.read_boolean('notifications_enabled');
+  if (!enabled) {
     return;
   }
 

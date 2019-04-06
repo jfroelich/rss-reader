@@ -19,10 +19,10 @@ GeneralSettingsForm.prototype.init = async function(parent) {
   input.setAttribute('id', 'enable-notifications');
 
   input.onclick = event => {
-    config.write_boolean('show_notifications', event.target.checked);
+    config.write_boolean('notifications_enabled', event.target.checked);
   };
 
-  input.checked = config.read_boolean('show_notifications');
+  input.checked = config.read_boolean('notifications_enabled');
 
   let label = document.createTextNode('Enable notifications');
   cell.append(input);
