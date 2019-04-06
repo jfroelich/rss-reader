@@ -1,7 +1,6 @@
-import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
 import assert from '/src/lib/assert.js';
-import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
+import {INDEFINITE} from '/src/lib/deadline.js';
 import {composite_document_filter} from '/src/lib/dom-filters/dom-filters.js';
 import * as favicon from '/src/lib/favicon.js';
 import fetch_html from '/src/lib/fetch-html.js';
@@ -99,11 +98,10 @@ export async function import_entry(args) {
     }
   }
 
-  await filter_entry_content(entry, doc);
+  await composite_document_filter(doc, args.filter_options);
+  entry.content = doc.documentElement.outerHTML;
 
-  // Set the resource type
   entry.type = 'entry';
-
   return await db.create_resource(args.conn, entry);
 }
 
@@ -116,37 +114,6 @@ async function set_entry_favicon(entry, conn, doc) {
   if (icon_url) {
     entry.favicon_url = icon_url.href;
   }
-}
-
-async function filter_entry_content(entry, doc) {
-  // Filter the document content
-  const options = {};
-  options.contrast_matte = config.read_int('contrast_default_matte');
-  options.contrast_ratio = config.read_float('min_contrast_ratio');
-
-  // BUG: two diff prop names used, and it is too short (encountering a ton of
-  // timeouts)
-  // const set_image_dimensions_timeout =
-  //    config.read_int('set_image_sizes_timeout');
-  // if (!isNaN(set_image_dimensions_timeout)) {
-  //  options.image_size_timeout = new Deadline(set_image_dimensions_timeout);
-  //}
-  // For now, hardcode the time outs to a larger value
-  options.set_image_sizes_timeout = new Deadline(7000);
-  options.set_image_dimensions_timeout = new Deadline(7000);
-
-  options.table_scan_max_rows = config.read_int('table_scan_max_rows');
-
-  const emphasis_max_length = config.read_int('emphasis_max_length');
-  if (!isNaN(emphasis_max_length)) {
-    options.emphasis_max_length = emphasis_max_length;
-  }
-
-  options.empty_frame_body_message =
-      'Unable to display document because it uses HTML frames';
-
-  await composite_document_filter(doc, options);
-  entry.content = doc.documentElement.outerHTML;
 }
 
 function fetch_entry_html(url, timeout, inaccessible_descriptors) {

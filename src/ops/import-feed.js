@@ -1,3 +1,4 @@
+import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
 import {ConstraintError} from '/src/db/errors.js';
 import assert from '/src/lib/assert.js';
@@ -133,6 +134,28 @@ function import_entries(entries, args) {
     iea.rewrite_rules = args.rewrite_rules;
     iea.inaccessible_descriptors = args.inaccessible_descriptors;
     iea.fetch_html_timeout = args.fetch_html_timeout;
+
+    // TODO: decouple from config. In the interim I am loading from config here
+    // in order to decouple import-empty from config.
+    iea.filter_options = {};
+    iea.filter_options.contrast_matte =
+        config.read_int('contrast_default_matte');
+    iea.filter_options.contrast_ratio = config.read_float('min_contrast_ratio');
+    // TODO: read from config (temporarily hardcoded due to a bug)
+    iea.filter_options.set_image_sizes_timeout = new Deadline(7000);
+    // TODO: read from config (temporarily hardcoded due to a bug)
+    iea.filter_options.set_image_dimensions_timeout = new Deadline(7000);
+    iea.filter_options.table_scan_max_rows =
+        config.read_int('table_scan_max_rows');
+
+    const emphasis_max_length = config.read_int('emphasis_max_length');
+    if (!isNaN(emphasis_max_length)) {
+      iea.filter_options.emphasis_max_length = emphasis_max_length;
+    }
+
+    iea.filter_options.empty_frame_body_message =
+        'Unable to display document because it uses HTML frames';
+
 
     return import_entry_noexcept(iea);
   });
