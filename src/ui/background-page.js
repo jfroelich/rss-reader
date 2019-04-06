@@ -1,5 +1,5 @@
 import * as config from '/src/config.js';
-import * as cron_control from '/src/cron.js';
+import * as cron from '/src/cron.js';
 import * as db from '/src/db/db.js';
 import open_view from '/src/extension/open-view.js';
 import refresh_badge from '/src/extension/refresh-badge.js';
@@ -33,7 +33,7 @@ channel.onmessage = function(event) {
 };
 
 // TODO: re-inline the listener here
-add_alarm_listener(cron_control.alarm_listener);
+add_alarm_listener(cron.alarm_listener);
 
 add_startup_listener(event => {
   refresh_badge().catch(console.warn);
@@ -61,9 +61,9 @@ add_install_listener(async function(event) {
 
 add_install_listener(event => {
   if (event.reason === 'install') {
-    cron_control.create_alarms();
+    cron.create_alarms();
   } else {
-    cron_control.update_alarms(event.previousVersion).catch(console.warn);
+    cron.update_alarms(event.previousVersion).catch(console.warn);
   }
 });
 
@@ -73,4 +73,7 @@ add_install_listener(event => {
 // text is unset.
 add_install_listener(_ => refresh_badge().catch(console.warn));
 
-add_badge_listener(_ => open_view().catch(console.warn));
+add_badge_listener(event => {
+  const reuse_newtab = config.read_boolean('reuse_newtab');
+  open_view(reuse_newtab).catch(console.warn)
+});

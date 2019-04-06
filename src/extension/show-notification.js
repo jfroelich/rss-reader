@@ -22,6 +22,7 @@ export default function show_notification(message = '', icon = default_icon) {
       return;
     }
 
-    open_view().catch(console.warn);
+    const reuse_newtab = config.read_boolean('reuse_newtab');
+    open_view(reuse_newtab).catch(console.warn);
   });
 }

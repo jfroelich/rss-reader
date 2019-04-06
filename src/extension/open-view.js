@@ -1,8 +1,5 @@
-import * as config from '/src/config.js';
-
 // Open the slideshow view in a tab.
-export default async function open_view() {
-  // Check if the view is already open and switch to it
+export default async function open_view(reuse_newtab) {
   const url_string = chrome.extension.getURL('slideshow.html');
   const view_tab = await find_tab(url_string);
   if (view_tab) {
@@ -10,8 +7,6 @@ export default async function open_view() {
     return;
   }
 
-  // Otherwise, try and reuse the newtab tab
-  const reuse_newtab = config.read_boolean('reuse_newtab');
   if (reuse_newtab) {
     const newtab = await find_tab('chrome://newtab/');
     if (newtab) {
@@ -20,8 +15,6 @@ export default async function open_view() {
     }
   }
 
-  // Otherwise, open the view in a new tab. Note that not using tab create is
-  // to try and make less platform specific.
   open(url_string, '_blank');
 }
 
