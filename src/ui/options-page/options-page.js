@@ -1,4 +1,4 @@
-import refresh_badge from '/src/extension/refresh-badge.js';
+import refresh_badge from '/src/refresh-badge.js';
 import {About} from '/src/ui/options-page/about.js';
 import {DisplaySettingsForm} from '/src/ui/options-page/display-settings-form.js';
 import {FeedList} from '/src/ui/options-page/feed-list.js';

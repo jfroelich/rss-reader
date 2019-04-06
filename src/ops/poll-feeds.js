@@ -1,6 +1,6 @@
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
-import show_notification from '/src/extension/show-notification.js';
+import show_notification from '/src/show-notification.js';
 import assert from '/src/lib/assert.js';
 import {is_assert_error_like} from '/src/lib/assert.js';
 import {Deadline} from '/src/lib/deadline.js';

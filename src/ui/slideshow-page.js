@@ -1,6 +1,6 @@
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
-import refresh_badge from '/src/extension/refresh-badge.js';
+import refresh_badge from '/src/refresh-badge.js';
 import assert from '/src/lib/assert.js';
 import download_xml_document from '/src/lib/download-xml-document.js';
 import * as favicon from '/src/lib/favicon.js';

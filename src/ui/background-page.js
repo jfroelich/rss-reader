@@ -1,8 +1,8 @@
 import * as config from '/src/config.js';
 import * as cron from '/src/cron.js';
 import * as db from '/src/db/db.js';
-import open_view from '/src/extension/open-view.js';
-import refresh_badge from '/src/extension/refresh-badge.js';
+import open_view from '/src/open-view.js';
+import refresh_badge from '/src/refresh-badge.js';
 import {INDEFINITE} from '/src/lib/deadline.js';
 
 function add_install_listener(listener) {
