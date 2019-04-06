@@ -6,21 +6,22 @@ import assert from '/src/lib/assert.js';
 export default async function export_opml(conn, document_title) {
   assert(conn instanceof db.Connection);
 
-  const query = {conn: conn, mode: 'all', title_sort: false};
-  const feeds = await db.get_resources(query);
+  const feeds = await db.get_resources({conn: conn, mode: 'feeds'});
   const outlines = feeds.map(feed_to_outline);
 
   const doc = create_opml_template(document_title);
   const body_element = doc.querySelector('body');
+  body_element.append('\n');
 
   for (const outline of outlines) {
     const elm = doc.createElement('outline');
-    maybe_set(elm, 'type', outline.type);
+    maybe_set(elm, 'type', outline.feed_format);
     maybe_set(elm, 'xmlUrl', outline.xml_url);
     maybe_set(elm, 'title', outline.title);
     maybe_set(elm, 'description', outline.description);
     maybe_set(elm, 'htmlUrl', outline.html_url);
     body_element.append(elm);
+    body_element.append('\n');
   }
 
   return doc;
