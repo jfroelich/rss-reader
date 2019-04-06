@@ -18,16 +18,16 @@ ErrorMessage.prototype.show = function(message, fade_in) {
   container.setAttribute('id', 'options-error-message');
   const message_element = document.createElement('span');
   message_element.textContent = message;
-  container.appendChild(message_element);
+  container.append(message_element);
 
   const dismiss_button = document.createElement('button');
   dismiss_button.setAttribute('id', 'dismiss-error-button');
   dismiss_button.textContent = 'Dismiss';
   dismiss_button.onclick = this.hide;
-  container.appendChild(dismiss_button);
+  container.append(dismiss_button);
 
   container.style.opacity = '0';
-  document.body.appendChild(container);
+  document.body.append(container);
 
   if (fade_in) {
     const duration = 1, delay = 0;

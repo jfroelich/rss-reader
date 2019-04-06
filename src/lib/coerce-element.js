@@ -71,15 +71,14 @@ export default function coerce_element(element, new_name) {
     'param', 'source', 'track', 'wbr'
   ];
   if (!void_elements.includes(new_element.localName)) {
-    // Move the nodes one at a time, maintaining order. Each appendChild call
+    // Move the nodes one at a time, maintaining order. Each append call
     // causes firstChild to point to the next node.
     for (let node = element.firstChild; node; node = element.firstChild) {
-      new_element.appendChild(node);
+      new_element.append(node);
     }
   }
 
   // Insert the new element into the element's owner document in the same
-  // position as the old node, and return the new element. When the next sibling
-  // is undefined, insertBefore behaves like appendChild.
+  // position as the old node, and return the new element.
   return parent.insertBefore(new_element, next_sibling);
 }

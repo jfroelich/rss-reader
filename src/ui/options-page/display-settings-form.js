@@ -8,7 +8,7 @@ DisplaySettingsForm.prototype.init = function(parent) {
 
   const heading = document.createElement('h1');
   heading.textContent = 'Display Settings';
-  parent.appendChild(heading);
+  parent.append(heading);
 
   const table = document.createElement('table');
   table.setAttribute('id', 'options-table');
@@ -18,8 +18,8 @@ DisplaySettingsForm.prototype.init = function(parent) {
   let cell = document.createElement('td');
   cell.setAttribute('class', 'options-text');
   let label = document.createTextNode('Margins:');
-  cell.appendChild(label);
-  row.appendChild(cell);
+  cell.append(label);
+  row.append(cell);
 
   cell = document.createElement('td');
   let input = document.createElement('input');
@@ -35,16 +35,16 @@ DisplaySettingsForm.prototype.init = function(parent) {
     input.value = current_entry_margin;
   }
 
-  cell.appendChild(input);
-  row.appendChild(cell);
-  table.appendChild(row);
+  cell.append(input);
+  row.append(cell);
+  table.append(row);
 
   // Initialize the background image setting
   row = document.createElement('tr');
   cell = document.createElement('td');
   cell.setAttribute('class', 'options-text');
   cell.textContent = 'Background Image:';
-  row.appendChild(cell);
+  row.append(cell);
 
   cell = document.createElement('td');
   const background_image_menu = document.createElement('select');
@@ -54,7 +54,7 @@ DisplaySettingsForm.prototype.init = function(parent) {
   let option = document.createElement('option');
   option.value = '';
   option.textContent = 'Use background color';
-  background_image_menu.appendChild(option);
+  background_image_menu.append(option);
 
   const current_background_image_path = config.read_string('bg_image');
   const background_images = config.read_array('background_images');
@@ -63,17 +63,17 @@ DisplaySettingsForm.prototype.init = function(parent) {
     option.value = background_image_path;
     option.textContent = background_image_path;
     option.selected = current_background_image_path === background_image_path;
-    background_image_menu.appendChild(option);
+    background_image_menu.append(option);
   }
-  cell.appendChild(background_image_menu);
-  row.appendChild(cell);
-  table.appendChild(row);
+  cell.append(background_image_menu);
+  row.append(cell);
+  table.append(row);
 
   // Initialize the background color setting
   row = document.createElement('tr');
   cell = document.createElement('td');
   cell.textContent = 'Background color:';
-  row.appendChild(cell);
+  row.append(cell);
   cell = document.createElement('td');
 
   input = document.createElement('input');
@@ -86,16 +86,15 @@ DisplaySettingsForm.prototype.init = function(parent) {
     input.value = background_color;
   }
 
-  cell.appendChild(input);
-  row.appendChild(cell);
-  table.appendChild(row);
-
+  cell.append(input);
+  row.append(cell);
+  table.append(row);
 
   // Init header size range
   row = document.createElement('tr');
   cell = document.createElement('td');
   cell.textContent = 'Header size';
-  row.appendChild(cell);
+  row.append(cell);
 
   cell = document.createElement('td');
 
@@ -112,14 +111,14 @@ DisplaySettingsForm.prototype.init = function(parent) {
   if (!isNaN(header_font_size)) {
     input.value = header_font_size;
   }
-  cell.appendChild(input);
-  row.appendChild(cell);
-  table.appendChild(row);
+  cell.append(input);
+  row.append(cell);
+  table.append(row);
 
   row = document.createElement('tr');
   cell = document.createElement('td');
   cell.textContent = 'Body font size:';
-  row.appendChild(cell);
+  row.append(cell);
 
   cell = document.createElement('td');
   input = document.createElement('input');
@@ -136,9 +135,9 @@ DisplaySettingsForm.prototype.init = function(parent) {
   if (!isNaN(body_font_size)) {
     input.value = body_font_size;
   }
-  cell.appendChild(input);
-  row.appendChild(cell);
-  table.appendChild(row);
+  cell.append(input);
+  row.append(cell);
+  table.append(row);
 
   row = document.createElement('tr');
   cell = document.createElement('td');
@@ -150,15 +149,15 @@ DisplaySettingsForm.prototype.init = function(parent) {
   input.onchange = this.justifyTextOnchange.bind(this);
   input.checked = config.read_boolean('justify_text');
 
-  cell.appendChild(input);
-  cell.appendChild(document.createTextNode('Justify text'));
-  row.appendChild(cell);
-  table.appendChild(row);
+  cell.append(input);
+  cell.append('Justify text');
+  row.append(cell);
+  table.append(row);
 
   row = document.createElement('tr');
   cell = document.createElement('td');
   cell.textContent = 'Body line height';
-  row.appendChild(cell);
+  row.append(cell);
   cell = document.createElement('td');
 
   input = document.createElement('input');
@@ -174,14 +173,14 @@ DisplaySettingsForm.prototype.init = function(parent) {
   if (!isNaN(body_line_height)) {
     input.value = body_line_height;
   }
-  cell.appendChild(input);
-  row.appendChild(cell);
-  table.appendChild(row);
+  cell.append(input);
+  row.append(cell);
+  table.append(row);
 
   row = document.createElement('tr');
   cell = document.createElement('td');
   cell.textContent = 'Column count:';
-  row.appendChild(cell);
+  row.append(cell);
   cell = document.createElement('td');
 
   const select = document.createElement('select');
@@ -195,13 +194,13 @@ DisplaySettingsForm.prototype.init = function(parent) {
     option.value = column_count;
     option.selected = column_count === current_column_count;
     option.textContent = column_count;
-    select.appendChild(option);
+    select.append(option);
   }
-  cell.appendChild(select);
-  row.appendChild(cell);
-  table.appendChild(row);
+  cell.append(select);
+  row.append(cell);
+  table.append(row);
 
-  parent.appendChild(table);
+  parent.append(table);
 };
 
 DisplaySettingsForm.prototype.entryMarginSliderOnchange = function(event) {

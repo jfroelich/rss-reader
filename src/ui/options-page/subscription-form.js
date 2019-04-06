@@ -21,7 +21,7 @@ export function SubscriptionForm() {
 SubscriptionForm.prototype.init = function(parent) {
   const heading = document.createElement('h1');
   heading.textContent = 'Add a subscription';
-  parent.appendChild(heading);
+  parent.append(heading);
 
   const form_element = document.createElement('form');
   form_element.id = 'subscription-form';
@@ -31,18 +31,18 @@ SubscriptionForm.prototype.init = function(parent) {
   url_element.setAttribute('id', 'subscribe-url');
   url_element.setAttribute('placeholder', 'http://example.com/feed.rss');
   url_element.setAttribute('required', '');
-  form_element.appendChild(url_element);
+  form_element.append(url_element);
 
   this.url_element = url_element;
 
   const submit_button = document.createElement('input');
   submit_button.setAttribute('type', 'submit');
   submit_button.setAttribute('value', 'Subscribe');
-  form_element.appendChild(submit_button);
+  form_element.append(submit_button);
 
   form_element.onsubmit = this.onsubmit.bind(this);
 
-  parent.appendChild(form_element);
+  parent.append(form_element);
 };
 
 SubscriptionForm.prototype.showMonitor = function() {
@@ -54,9 +54,9 @@ SubscriptionForm.prototype.showMonitor = function() {
 
   const progress_element = document.createElement('progress');
   progress_element.textContent = 'Working...';
-  monitor_element.appendChild(progress_element);
+  monitor_element.append(progress_element);
 
-  document.body.appendChild(monitor_element);
+  document.body.append(monitor_element);
 };
 
 SubscriptionForm.prototype.appendMonitorMessage = function(message) {
@@ -64,7 +64,7 @@ SubscriptionForm.prototype.appendMonitorMessage = function(message) {
 
   const message_element = document.createElement('p');
   message_element.textContent = message;
-  this.monitor_element.appendChild(message_element);
+  this.monitor_element.append(message_element);
 };
 
 SubscriptionForm.prototype.onsubmit = async function(event) {

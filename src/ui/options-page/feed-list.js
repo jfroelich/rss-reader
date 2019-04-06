@@ -46,8 +46,8 @@ FeedList.prototype.init = async function(parent) {
     list_element.style.display = 'none';
   }
 
-  parent.appendChild(list_element);
-  parent.appendChild(no_feeds_element);
+  parent.append(list_element);
+  parent.append(no_feeds_element);
 };
 
 FeedList.prototype.appendFeed = function(feed) {
@@ -74,14 +74,14 @@ FeedList.prototype.appendFeed = function(feed) {
 
     favicon_element.setAttribute('width', '16');
     favicon_element.setAttribute('height', '16');
-    item_element.appendChild(favicon_element);
+    item_element.append(favicon_element);
   }
 
   const title_element = document.createElement('span');
   const feed_title = feed.title || db.get_url_string(feed);
   // Title is automatically truncated via CSS so just produce the full value
   title_element.textContent = feed_title;
-  item_element.appendChild(title_element);
+  item_element.append(title_element);
 
   // Append the feed into the proper position in the feed list, using the same
   // sorting order as the database would use when loading data in get_resources
@@ -98,7 +98,7 @@ FeedList.prototype.appendFeed = function(feed) {
   }
 
   if (!inserted) {
-    this.list_element.appendChild(item_element);
+    this.list_element.append(item_element);
   }
 
   if (this.onappend_callback) {

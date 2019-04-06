@@ -491,7 +491,7 @@ function header_font_menu_init(fonts) {
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Header Font';
-  menu.appendChild(default_option);
+  menu.append(default_option);
 
   for (const font_name of fonts) {
     const option = document.createElement('option');
@@ -500,7 +500,7 @@ function header_font_menu_init(fonts) {
     if (font_name === current_header_font) {
       option.selected = true;
     }
-    menu.appendChild(option);
+    menu.append(option);
   }
 }
 
@@ -511,7 +511,7 @@ function body_font_menu_init(fonts) {
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Body Font';
-  menu.appendChild(default_option);
+  menu.append(default_option);
 
   for (const font_name of fonts) {
     const option = document.createElement('option');
@@ -520,7 +520,7 @@ function body_font_menu_init(fonts) {
     if (font_name === current_body_font) {
       option.selected = true;
     }
-    menu.appendChild(option);
+    menu.append(option);
   }
 }
 
@@ -754,10 +754,10 @@ function create_slide(entry) {
 
   const slide_pad_wrap = document.createElement('div');
   slide_pad_wrap.className = 'slide-padding-wrapper';
-  slide_pad_wrap.appendChild(create_article_title_element(entry));
-  slide_pad_wrap.appendChild(create_article_content_element(entry));
-  slide_pad_wrap.appendChild(create_feed_source_element(entry));
-  slide.appendChild(slide_pad_wrap);
+  slide_pad_wrap.append(create_article_title_element(entry));
+  slide_pad_wrap.append(create_article_content_element(entry));
+  slide_pad_wrap.append(create_feed_source_element(entry));
+  slide.append(slide_pad_wrap);
   return slide;
 }
 
@@ -808,7 +808,7 @@ function create_feed_source_element(entry) {
       favicon_element.setAttribute('src', entry.favicon_url);
       favicon_element.setAttribute('width', '16');
       favicon_element.setAttribute('height', '16');
-      source_element.appendChild(favicon_element);
+      source_element.append(favicon_element);
     }
   }
 
@@ -826,7 +826,7 @@ function create_feed_source_element(entry) {
     buffer.push(format_date(entry.published_date));
   }
   details.textContent = buffer.join('');
-  source_element.appendChild(details);
+  source_element.append(details);
   return source_element;
 }
 
@@ -885,7 +885,7 @@ function attach_slide(slide) {
     set_current_slide(slide);
   }
 
-  container.appendChild(slide);
+  container.append(slide);
 }
 
 function is_valid_transition_duration(transition_duration) {
@@ -940,45 +940,45 @@ function feeds_container_append_feed(feed) {
 
   const title_element = document.createElement('span');
   title_element.textContent = feed.title;
-  feed_element.appendChild(title_element);
+  feed_element.append(title_element);
 
   const feed_info_element = document.createElement('table');
 
   let row = document.createElement('tr');
   let col = document.createElement('td');
   col.textContent = 'Description';
-  row.appendChild(col);
+  row.append(col);
   col = document.createElement('td');
   col.textContent = feed.description || 'No description';
-  row.appendChild(col);
-  feed_info_element.appendChild(row);
+  row.append(col);
+  feed_info_element.append(row);
 
   row = document.createElement('tr');
   col = document.createElement('td');
   col.textContent = 'Webpage';
-  row.appendChild(col);
+  row.append(col);
   col = document.createElement('td');
   col.textContent = feed.link || 'Not specified';
-  row.appendChild(col);
-  feed_info_element.appendChild(row);
+  row.append(col);
+  feed_info_element.append(row);
 
   row = document.createElement('tr');
   col = document.createElement('td');
   col.textContent = 'Favicon';
-  row.appendChild(col);
+  row.append(col);
   col = document.createElement('td');
   col.textContent = feed.favicon_url || 'Unknown';
-  row.appendChild(col);
-  feed_info_element.appendChild(row);
+  row.append(col);
+  feed_info_element.append(row);
 
   row = document.createElement('tr');
   col = document.createElement('td');
   col.textContent = 'URL';
-  row.appendChild(col);
+  row.append(col);
   col = document.createElement('td');
   col.textContent = feed.urls[feed.urls.length - 1];
-  row.appendChild(col);
-  feed_info_element.appendChild(row);
+  row.append(col);
+  feed_info_element.append(row);
 
   row = document.createElement('tr');
   col = document.createElement('td');
@@ -988,7 +988,7 @@ function feeds_container_append_feed(feed) {
   button.value = '' + feed.id;
   button.onclick = unsubscribe_button_onclick;
   button.textContent = 'Unsubscribe';
-  col.appendChild(button);
+  col.append(button);
 
   button = document.createElement('button');
   button.value = '' + feed.id;
@@ -997,7 +997,7 @@ function feeds_container_append_feed(feed) {
   if (feed.active === 1) {
     button.disabled = 'true';
   }
-  col.appendChild(button);
+  col.append(button);
 
   button = document.createElement('button');
   button.value = '' + feed.id;
@@ -1006,13 +1006,13 @@ function feeds_container_append_feed(feed) {
   if (feed.active !== 1) {
     button.disabled = 'true';
   }
-  col.appendChild(button);
+  col.append(button);
 
-  row.appendChild(col);
-  feed_info_element.appendChild(row);
-  feed_element.appendChild(feed_info_element);
+  row.append(col);
+  feed_info_element.append(row);
+  feed_element.append(feed_info_element);
 
-  feeds_container.appendChild(feed_element);
+  feeds_container.append(feed_element);
 }
 
 function feeds_container_onclick(event) {

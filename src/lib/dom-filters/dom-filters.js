@@ -175,8 +175,8 @@ function ensure_body_element_filter(doc) {
     const message = 'This document has no content';
     const error_node = doc.createTextNode(message);
     const body_element = doc.createElement('body');
-    body_element.appendChild(error_node);
-    doc.documentElement.appendChild(body_element);
+    body_element.append(error_node);
+    doc.documentElement.append(body_element);
   }
 }
 
@@ -376,7 +376,7 @@ export function frame_filter(
   const noframes_elements = frameset_element.querySelectorAll('noframes');
   for (const e of noframes_elements) {
     for (let node = e.firstChild; node; node = e.firstChild) {
-      body_element.appendChild(node);
+      body_element.append(node);
     }
   }
 
@@ -392,8 +392,7 @@ export function frame_filter(
   // without a frameset, so this is not going to affect to the empty-body
   // case in a frameless document.
   if (!body_element.firstChild) {
-    const node = doc.createTextNode(default_message);
-    body_element.appendChild(node);
+    body_element.append(default_message);
   }
 }
 
@@ -593,9 +592,9 @@ export function nest_filter(doc) {
     if (ancestor && ancestor.parentNode) {
       ancestor.parentNode.insertBefore(block, ancestor);
       for (let node = block.firstChild; node; node = block.firstChild) {
-        ancestor.appendChild(node);
+        ancestor.append(node);
       }
-      block.appendChild(ancestor);
+      block.append(ancestor);
     }
   }
 }

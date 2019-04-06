@@ -5,7 +5,7 @@ export function GeneralSettingsForm() {}
 GeneralSettingsForm.prototype.init = async function(parent) {
   const heading = document.createElement('h1');
   heading.textContent = 'General Settings';
-  parent.appendChild(heading);
+  parent.append(heading);
 
   const table = document.createElement('table');
   table.setAttribute('id', 'general-settings-table');
@@ -25,10 +25,10 @@ GeneralSettingsForm.prototype.init = async function(parent) {
   input.checked = config.read_boolean('show_notifications');
 
   let label = document.createTextNode('Enable notifications');
-  cell.appendChild(input);
-  cell.appendChild(label);
-  row.appendChild(cell);
-  table.appendChild(row);
+  cell.append(input);
+  cell.append(label);
+  row.append(cell);
+  table.append(row);
 
   row = document.createElement('tr');
   cell = document.createElement('td');
@@ -54,10 +54,10 @@ GeneralSettingsForm.prototype.init = async function(parent) {
   label = document.createTextNode(
       'Permit this extension to check for updates in the background if ' +
       'Chrome is configured to allow background processing.');
-  cell.appendChild(input);
-  cell.appendChild(label);
-  row.appendChild(cell);
-  table.appendChild(row);
+  cell.append(input);
+  cell.append(label);
+  row.append(cell);
+  table.append(row);
 
   row = document.createElement('tr');
   cell = document.createElement('td');
@@ -73,12 +73,12 @@ GeneralSettingsForm.prototype.init = async function(parent) {
 
   label =
       document.createTextNode('Only check for updates when my device is idle');
-  cell.appendChild(input);
-  cell.appendChild(label);
-  row.appendChild(cell);
-  table.appendChild(row);
+  cell.append(input);
+  cell.append(label);
+  row.append(cell);
+  table.append(row);
 
-  parent.appendChild(table);
+  parent.append(table);
 };
 
 function request_permission(name) {

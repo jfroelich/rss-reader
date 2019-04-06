@@ -20,7 +20,7 @@ export default async function export_opml(conn, document_title) {
     maybe_set(elm, 'title', outline.title);
     maybe_set(elm, 'description', outline.description);
     maybe_set(elm, 'htmlUrl', outline.html_url);
-    body_element.appendChild(elm);
+    body_element.append(elm);
   }
 
   return doc;
@@ -51,12 +51,12 @@ function create_opml_template(document_title) {
   doc.documentElement.setAttribute('version', '2.0');
 
   const head_element = doc.createElement('head');
-  doc.documentElement.appendChild(head_element);
+  doc.documentElement.append(head_element);
 
   if (document_title) {
     const title_element = doc.createElement('title');
-    title_element.textContent = document_title;
-    head_element.appendChild(title_element);
+    title_element.append(document_title);
+    head_element.append(title_element);
   }
 
   const current_date = new Date();
@@ -64,17 +64,17 @@ function create_opml_template(document_title) {
 
   const date_created_element = doc.createElement('datecreated');
   date_created_element.textContent = current_date_utc_string;
-  head_element.appendChild(date_created_element);
+  head_element.append(date_created_element);
 
   const date_modified_element = doc.createElement('datemodified');
   date_modified_element.textContent = current_date_utc_string;
-  head_element.appendChild(date_modified_element);
+  head_element.append(date_modified_element);
 
   const docs_element = doc.createElement('docs');
   docs_element.textContent = 'http://dev.opml.org/spec2.html';
-  head_element.appendChild(docs_element);
+  head_element.append(docs_element);
 
   const body_element = doc.createElement('body');
-  doc.documentElement.appendChild(body_element);
+  doc.documentElement.append(body_element);
   return doc;
 }

@@ -34,10 +34,10 @@ export default function unwrap_element(element) {
   element.remove();
 
   if (is_table || is_list) {
-    frag.appendChild(doc.createTextNode(' '));
+    frag.append(' ');
   } else if (
       prev && prev.nodeType === TEXT && first && first.nodeType === TEXT) {
-    frag.appendChild(doc.createTextNode(' '));
+    frag.append(' ');
   }
 
   // Move the child content into the fragment
@@ -47,7 +47,7 @@ export default function unwrap_element(element) {
       for (let j = 0, row = element.rows[i]; j < row.cells.length; j++) {
         for (let cell = row.cells[j], node = cell.firstChild; node;
              node = cell.firstChild) {
-          frag.appendChild(node);
+          frag.append(node);
         }
       }
     }
@@ -61,8 +61,8 @@ export default function unwrap_element(element) {
       if (list_item_names.includes(item.localName)) {
         // Unlike the outer loop, here firstChild does change each move
         for (let child = item.firstChild; child; child = item.firstChild) {
-          frag.appendChild(child);
-          frag.appendChild(doc.createTextNode(' '));
+          frag.append(child);
+          frag.append(' ');
         }
         // Advance after, since we can, and it is simpler
         item = item.nextSibling;
@@ -73,25 +73,25 @@ export default function unwrap_element(element) {
         const prev = item;
         item = item.nextSibling;
         // For non-item child node of list element, move the entire thing
-        frag.appendChild(prev);
+        frag.append(prev);
       }
     }
   } else {
     for (let node = element.firstChild; node; node = element.firstChild) {
-      frag.appendChild(node);
+      frag.append(node);
     }
   }
 
   if (is_table || is_list) {
-    frag.appendChild(doc.createTextNode(' '));
+    frag.append(' ');
   } else if (last && next && next.nodeType === TEXT && last.nodeType === TEXT) {
-    frag.appendChild(doc.createTextNode(' '));
+    frag.append(' ');
   }
 
   // Create one space if the element was empty between two text nodes
   if (!first && prev && next && prev.nodeType === TEXT &&
       next.nodeType === TEXT) {
-    frag.appendChild(doc.createTextNode(' '));
+    frag.append(' ');
   }
 
   parent.insertBefore(frag, next);

@@ -214,6 +214,6 @@ function populate_test_menu() {
     const option = document.createElement('option');
     option.value = test.name;
     option.textContent = test.name.replace(/_/g, '-').toLowerCase();
-    menu.appendChild(option);
+    menu.append(option);
   }
 }

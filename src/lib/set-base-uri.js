@@ -22,14 +22,13 @@ export default function set_base_uri(doc, url, overwrite) {
     base.setAttribute('href', url.href);
 
     if (head) {
-      // Insert the base as the first element within head. If firstElementChild
-      // is undefined, this devolves into appendChild.
+      // Insert the base as the first or only element within head
       head.insertBefore(base, head.firstElementChild);
     } else {
       head = doc.createElement('head');
       // Appending to new head while it is still detached is better performance
       // in case document is live
-      head.appendChild(base);
+      head.append(base);
       // Insert the head before the body (fallback to append if body not found)
       doc.documentElement.insertBefore(head, body);
     }
@@ -45,7 +44,7 @@ export default function set_base_uri(doc, url, overwrite) {
       head.insertBefore(base, head.firstElementChild);
     } else {
       head = doc.createElement('head');
-      head.appendChild(base);
+      head.append(base);
       doc.documentElement.insertBefore(head, body);
     }
 

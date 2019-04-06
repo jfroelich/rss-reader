@@ -11,9 +11,9 @@ export function legible_text_filter_test() {
   console.debug('Average font size', average_font_size);
 
   const p2 = doc.createElement('p');
-  p2.appendChild(doc.createTextNode('p2'));
+  p2.append('p2');
   p2.attributeStyleMap.set('font-size', '20px');
-  doc.body.appendChild(p2);
+  doc.body.append(p2);
 
   font_size = ltf.get_element_font_size(p2);
   console.debug('p2 font size', font_size);
@@ -21,9 +21,9 @@ export function legible_text_filter_test() {
   console.debug('Average font size', average_font_size);
 
   const p3 = doc.createElement('p');
-  p3.appendChild(doc.createTextNode('p3'));
+  p3.append('p3');
   p3.attributeStyleMap.set('font-size', '50%');
-  doc.body.appendChild(p3);
+  doc.body.append(p3);
   font_size = ltf.get_element_font_size(p3);
   console.debug('p3 font size', font_size);
   average_font_size = ltf.calc_avg_font_size(doc);

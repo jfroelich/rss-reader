@@ -27,7 +27,7 @@ export function set_base_uri_test() {
   doc = document.implementation.createHTMLDocument(title);
   let base = doc.createElement('base');
   base.setAttribute('href', 'http://www.example1.com/');
-  doc.head.appendChild(base);
+  doc.head.append(base);
   assert(doc.baseURI === 'http://www.example1.com/');
   url = new URL('http://www.example2.com');
   set_base_uri(doc, url, false);
@@ -43,7 +43,7 @@ export function set_base_uri_test() {
   doc = document.implementation.createHTMLDocument(title);
   base = doc.createElement('base');
   base.setAttribute('href', '/path');
-  doc.head.appendChild(base);
+  doc.head.append(base);
   // Before the change, baseURI is the result of resolving the relative url to
   // the extension's base url (because that is the 'page' executing the script
   // that created the document without a base element).
@@ -61,7 +61,7 @@ export function set_base_uri_test() {
   doc = document.implementation.createHTMLDocument(title);
   base = doc.createElement('base');
   base.setAttribute('href', '  \t\r\n   foo  bar     ');
-  doc.head.appendChild(base);
+  doc.head.append(base);
   url = new URL('http://www.example.com');
   set_base_uri(doc, url);
   assert(doc.baseURI === 'http://www.example.com/foo%20%20bar');
