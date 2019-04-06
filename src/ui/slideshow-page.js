@@ -2,7 +2,7 @@ import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
 import refresh_badge from '/src/extension/refresh-badge.js';
 import assert from '/src/lib/assert.js';
-import download_opml_document from '/src/lib/download-opml-document.js';
+import download_xml_document from '/src/lib/download-xml-document.js';
 import * as favicon from '/src/lib/favicon.js';
 import filter_publisher from '/src/lib/filter-publisher.js';
 import format_date from '/src/lib/format-date.js';
@@ -467,12 +467,9 @@ async function options_menu_onclick(event) {
       break;
     case 'menu-option-export':
       const conn = await db.open();
-      const document_title = 'Subscriptions';
-      const opml_document = await export_opml(conn, document_title);
+      const document = await export_opml(conn, 'Subscriptions');
       conn.close();
-
-      const file_name = 'subscriptions.xml';
-      download_opml_document(opml_document, file_name);
+      download_xml_document(document, 'subscriptions.xml');
       break;
     case 'menu-option-header-font':
       break;
