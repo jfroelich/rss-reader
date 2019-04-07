@@ -2,7 +2,7 @@ import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
 import {ConstraintError} from '/src/db/errors.js';
 import assert from '/src/lib/assert.js';
-import {is_assert_error_like} from '/src/lib/assert.js';
+import {is_assert_error} from '/src/lib/assert.js';
 import {better_fetch} from '/src/lib/better-fetch.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as feed_parser from '/src/lib/feed-parser.js';
@@ -168,7 +168,7 @@ async function import_entry_noexcept(args) {
   try {
     new_entry_id = await import_entry(args);
   } catch (error) {
-    if (is_assert_error_like(error)) {
+    if (is_assert_error(error)) {
       throw error;
     } else if (error instanceof ConstraintError) {
       // Ignore

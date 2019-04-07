@@ -2,6 +2,12 @@ import assert from '/src/lib/assert.js';
 import coerce_element from '/src/lib/coerce-element.js';
 import parse_html from '/src/lib/parse-html.js';
 
+// TODO: assert that p still exists to test that coerce does not affect
+// elements it should not affect (surprise side effects)
+// TODO: test that child nodes remain in the expected place, including both
+// elements and text nodes (surprises side effects)
+// TODO: test error cases? what errors? invalid input?
+
 export function coerce_element_test() {
   const input = '<html><head></head><body><p></p><a></a></body></html>';
   const doc = parse_html(input);
@@ -26,12 +32,4 @@ export function coerce_element_test() {
   }
   expected = '<html><head></head><body><p></p><c></c></body></html>';
   assert(doc.documentElement.outerHTML === expected);
-
-  // TODO: assert that p still exists to test that coerce does not affect
-  // elements it shouldn't affect (surprise side effects)
-
-  // TODO: test that child nodes remain in the expected place, including both
-  // elements and text nodes (surprises side effects)
-
-  // TODO: test error cases? what errors? invalid input?
 }

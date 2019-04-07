@@ -1,6 +1,6 @@
 import * as db from '/src/db/db.js';
 import assert from '/src/lib/assert.js';
-import {is_assert_error_like} from '/src/lib/assert.js';
+import {is_assert_error} from '/src/lib/assert.js';
 import {Deadline} from '/src/lib/deadline.js';
 import fade_element from '/src/lib/fade-element.js';
 import * as favicon from '/src/lib/favicon.js';
@@ -101,7 +101,7 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
         conn, iconn, url, this.fetch_feed_timeout, true,
         this.onFeedStored.bind(this));
   } catch (error) {
-    if (is_assert_error_like(error)) {
+    if (is_assert_error(error)) {
       throw error;
     }
 

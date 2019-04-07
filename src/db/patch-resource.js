@@ -40,55 +40,30 @@ function transaction_oncomplete(id, channel, callback, event) {
 function get_request_onsuccess(props, reject, event) {
   const resource = event.target.result;
 
-  // A note about exceptions versus rejection in this function. This function
-  // occurs in a forked context. Throwing here will never settle the outer
-  // promise. The exception will not be automatically translated into a
-  // rejection. Instead, this function needs to be 100% exception free (to avoid
-  // ever leaving the promise unsettled), and instead pass an error to the
-  // reject callback and exit to simulate throwing an exception and mimic the
-  // behavior of a typical rejection due to an exception.
-
+  // NOTE: throwing would be an uncaught exception
   if (!resource) {
     const message = 'No resource found for id ' + props.id;
     reject(new NotFoundError(message));
     return;
   }
 
-  // The next step of patching is validating the transitions specified by the
-  // props parameter. Certain transitions are disallowed, but rather than error
-  // we just noop for caller convenience. Essentially these transitions should
-  // not have been specified and we just ignore them.
-
-  // Treat an attempt to change a resource's read state to same state as a
-  // partial noop. If this was the sole transition this might mean that we
-  // do not write back later. Note this code is implemented for now as a side
-  // effect (todo: easily remedy by cloning props).
-  if (resource.read === props.read) {
+  // Transform props producing noop transitions
+  if (props.read === resource.read) {
     delete props.read;
-    delete props.read_date;
   }
 
   if (props.archived === resource.archived) {
     delete props.archived;
-    delete props.archived_date;
   }
 
   if (props.active === resource.active) {
     delete props.active;
-    delete props.deactivation_date;
-    delete props.deactivation_reason;
   }
 
-  // Next, allow for incomplete specification of transitions by ensuring that
-  // any functionally dependent property values are automatically updated as a
-  // result of specifying other transitions. For example, if changing read
-  // state, also set the read date.
-
+  // Impute missing derived properties
   if (props.read === 1 && !props.read_date) {
-    // Entering into read state should set date
     props.read_date = new Date();
   } else if (props.read === 0) {
-    // Entering into unread state should unset date
     props.read_date = undefined;
   }
 
@@ -107,7 +82,7 @@ function get_request_onsuccess(props, reject, event) {
     }
   }
 
-  // Next apply the transitions
+  // Apply transitions
   const immutable_prop_names = ['id', 'updated_date'];
   let dirtied_property_count = 0;
 
@@ -125,13 +100,9 @@ function get_request_onsuccess(props, reject, event) {
     dirtied_property_count++;
   }
 
-  if (dirtied_property_count < 1) {
-    // temp
-    console.debug('No change to resource detected, not writing, id', props.id);
-    return;
+  if (dirtied_property_count) {
+    filter_empty_properties(resource);
+    resource.updated_date = new Date();
+    event.target.source.put(resource);
   }
-
-  filter_empty_properties(resource);
-  resource.updated_date = new Date();
-  event.target.source.put(resource);
 }

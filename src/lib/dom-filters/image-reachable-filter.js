@@ -1,5 +1,5 @@
 import assert from '/src/lib/assert.js';
-import {is_assert_error_like} from '/src/lib/assert.js';
+import {is_assert_error} from '/src/lib/assert.js';
 import {NetworkError} from '/src/lib/better-fetch.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {fetch_image_element} from '/src/lib/fetch-image-element.js';
@@ -60,7 +60,7 @@ async function process_image(image, timeout) {
   } catch (error) {
     // fetch_image_element can raise assertion errors that we want to be careful
     // not to surpress.
-    if (is_assert_error_like(error)) {
+    if (is_assert_error(error)) {
       throw error;
     }
 

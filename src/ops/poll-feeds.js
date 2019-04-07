@@ -2,7 +2,7 @@ import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
 import show_notification from '/src/show-notification.js';
 import assert from '/src/lib/assert.js';
-import {is_assert_error_like} from '/src/lib/assert.js';
+import {is_assert_error} from '/src/lib/assert.js';
 import {Deadline} from '/src/lib/deadline.js';
 import {import_feed, ImportFeedArgs} from '/src/ops/import-feed.js';
 
@@ -83,7 +83,7 @@ async function poll_feed_noexcept(import_feed_args) {
   try {
     result = await import_feed(import_feed_args);
   } catch (error) {
-    if (is_assert_error_like(error)) {
+    if (is_assert_error(error)) {
       throw error;
     } else {
       console.warn(

@@ -34,9 +34,7 @@ export function append_url_test() {
 
 export function normalize_resource_test() {
   let resource = {};
-
   // test when missing fields
-  // this should run without error
   resource_utils.normalize(resource);
   // should not have somehow introduced values where none existed
   assert(resource.author === undefined);

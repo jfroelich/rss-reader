@@ -1,5 +1,5 @@
 import assert from '/src/lib/assert.js';
-import {is_assert_error_like} from '/src/lib/assert.js';
+import {is_assert_error} from '/src/lib/assert.js';
 import parse_html from '/src/lib/parse-html.js';
 
 // Return a new string consisting of the input string less any html tags. Note
@@ -13,7 +13,7 @@ export default function remove_html(html) {
   try {
     doc = parse_html(html);
   } catch (error) {
-    if (is_assert_error_like(error)) {
+    if (is_assert_error(error)) {
       throw error;
     }
 

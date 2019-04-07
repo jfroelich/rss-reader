@@ -1,5 +1,5 @@
 import assert from '/src/lib/assert.js';
-import {is_assert_error_like} from '/src/lib/assert.js';
+import {is_assert_error} from '/src/lib/assert.js';
 import {AcceptError} from '/src/lib/better-fetch.js';
 import {better_fetch} from '/src/lib/better-fetch.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
@@ -57,7 +57,7 @@ export async function lookup(request) {
   try {
     response = await fetch_root_icon(request);
   } catch (error) {
-    if (is_assert_error_like(error)) {
+    if (is_assert_error(error)) {
       throw error;
     } else {
       // Ignore

@@ -106,7 +106,6 @@ export function find_block_element(doc, block) {
   return block.element;
 }
 
-
 export function adjust_scores(blocks, options) {
   let document_length = options.document_length;
   if (document_length === undefined) {
@@ -299,7 +298,6 @@ function find_and_set_parent(blocks, block, element) {
     }
   }
 }
-
 
 // This module focuses on setting derived properties of blocks in the dataset
 // by analyzing the content of each block.

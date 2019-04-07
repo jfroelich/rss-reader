@@ -1,13 +1,14 @@
 import assert from '/src/lib/assert.js';
 import truncate_html from '/src/lib/truncate-html.js';
 
+// TODO: finish transition from old tests to new tests
+
+
 export function truncate_html_test() {
   const e = '.';
   let input = 'a<p>b</p>c';
   let output = 'a<p>b.</p>';
   assert(truncate_html(input, 2, e) === output);
-
-  // TODO: finish transition from old tests to new tests here
 
   /*
   const input2 = `<html><head><title>new title</title></head><body>${input1}

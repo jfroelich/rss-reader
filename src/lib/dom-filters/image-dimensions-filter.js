@@ -1,5 +1,5 @@
 import assert from '/src/lib/assert.js';
-import {is_assert_error_like} from '/src/lib/assert.js';
+import {is_assert_error} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import {fetch_image_element} from '/src/lib/fetch-image-element.js';
 import get_path_extension from '/src/lib/get-path-extension.js';
@@ -102,7 +102,7 @@ async function process_image(image, timeout) {
     image.setAttribute('width', fetched_image.width);
     image.setAttribute('height', fetched_image.height);
   } catch (error) {
-    if (is_assert_error_like(error)) {
+    if (is_assert_error(error)) {
       throw error;
     } else {
       // Ignore

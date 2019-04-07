@@ -1,5 +1,5 @@
 import assert from '/src/lib/assert.js';
-import {is_assert_error_like} from '/src/lib/assert.js';
+import {is_assert_error} from '/src/lib/assert.js';
 import {Deadline, INDEFINITE} from '/src/lib/deadline.js';
 import * as mime from '/src/lib/mime.js';
 
@@ -46,7 +46,7 @@ export async function better_fetch(url, options = {}) {
       response = await fetch_promise;
     }
   } catch (error) {
-    if (is_assert_error_like(error)) {
+    if (is_assert_error(error)) {
       throw error;
     } else {
       // fetch throws a TypeError when offline (network unreachable), which

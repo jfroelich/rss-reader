@@ -32,9 +32,6 @@ const resource_props = [
   'urls'
 ];
 
-
-// Returns whether the given value represents a valid object identifier in the
-// datbase
 export function is_valid_id(value) {
   return Number.isInteger(value) && value > 0;
 }
@@ -154,7 +151,7 @@ export function validate(resource) {
   assert(resource && typeof resource === 'object');
 
   const now = new Date();
-
+  vassert(resource.type === 'entry' || resource.type === 'feed');
   vassert(
       resource.favicon_url === undefined ||
       typeof resource.favicon_url === 'string');
@@ -172,11 +169,9 @@ export function validate(resource) {
 
   vassert(resource.id === undefined || is_valid_id(resource.id));
   vassert(resource.feed === undefined || is_valid_id(resource.feed));
-
   vassert(
       resource.feed_title === undefined ||
       typeof resource.feed_title === 'string');
-
   vassert(resource.urls === undefined || Array.isArray(resource.urls));
   vassert(
       resource.read === undefined || resource.read === 1 ||
@@ -189,21 +184,15 @@ export function validate(resource) {
   vassert(
       resource.description === undefined ||
       typeof resource.description === 'string');
-
   vassert(
       resource.content === undefined || typeof resource.content === 'string');
-
   vassert(
       resource.deactivation_reason === undefined ||
       typeof resource.deactivation_reason === 'string');
-
   vassert(is_valid_date(resource.archived_date));
   vassert(is_valid_date(resource.read_date));
-
-
   vassert(is_valid_date(resource.deactivation_date));
   vassert(is_date_lte(resource.deactivation_date, now));
-
   vassert(is_valid_date(resource.created_date));
   vassert(is_date_lte(resource.created_date, now));
   vassert(is_valid_date(resource.updated_date));

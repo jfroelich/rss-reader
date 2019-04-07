@@ -1,5 +1,8 @@
 import assert from '/src/lib/assert.js';
 
+// Sets the url as the base url of the document, such that document.baseURI will
+// reflect the url. If overwrite is true then this ignores existing base
+// elements in the document.
 export default function set_base_uri(doc, url, overwrite) {
   assert(doc instanceof Document);
   assert(url instanceof URL);

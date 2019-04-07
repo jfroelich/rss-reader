@@ -3,13 +3,13 @@ import {INDEFINITE} from '/src/lib/deadline.js';
 import * as dom_filters from '/src/lib/dom-filters/dom-filters.js';
 import parse_html from '/src/lib/parse-html.js';
 
+// TODO: implement a simple straightforward test that exercises the normal
+// cases.
+// TODO: implement tests for the abnormal cases
+// TODO: specifically test various threshold parameter values
+
 export function emphasis_filter_test() {
   let input, doc;
-
-  // TODO: implement a simple straightforward test that exercises the normal
-  // cases.
-
-  // TODO: implement tests for the abnormal cases
 
   // Specifically test the nesting filter
   input = '<b><b>b</b></b>';
@@ -23,8 +23,6 @@ export function emphasis_filter_test() {
   dom_filters.emphasis_filter(doc);
   assert(!doc.querySelector('strong'));
   assert(doc.querySelector('b'));
-
-  // TODO: specifically test various threshold parameter values
 }
 
 // Check that the anchor-script-filter removes the anchors that should be
@@ -169,6 +167,7 @@ export function image_lazy_filter_test() {
   assert(src_value === null || src_value === undefined);
 }
 
+// TODO: move to separate module
 export async function image_reachable_filter_test() {
   let input = '<img id="unreachable" src="not-reachable.gif">';
   // TODO: circular dependency?

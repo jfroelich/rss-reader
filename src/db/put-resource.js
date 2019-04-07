@@ -11,18 +11,10 @@ function put_resource_executor(conn, resource, resolve, reject) {
   assert(conn instanceof Connection);
   assert(resource && typeof resource === 'object');
   assert(resource_utils.is_valid_id(resource.id));
-
-  // entries do not require urls at the model layer, but feeds do
-  // TODO: maybe all resources should require a url, but then how do we support
-  // feed xml items without a link?
-  if (resource.type === 'feed') {
-    assert(resource_utils.has_url(resource));
-  }
-
-  // entries must be tied to a parent feed resource
-  if (resource.type === 'entry') {
-    assert(resource.parent);
-  }
+  assert(resource.type === 'feed' || resource.type === 'entry');
+  assert(resource.type === 'entry' || resource_utils.has_url(resource));
+  assert(
+      resource.type === 'feed' || resource_utils.is_valid_id(resource.parent));
 
   resource_utils.normalize(resource);
   resource_utils.sanitize(resource);
