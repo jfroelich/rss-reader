@@ -30,7 +30,7 @@ export function remove_html_test() {
 
   // TODO: Text with an entity that is not kept
 
-  // TODO: test malformed html
+  // TODO: test malformed html that causes error
   // TODO: test text outside of body
   // TODO: whitespace normalization
 }

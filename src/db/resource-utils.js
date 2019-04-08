@@ -112,7 +112,13 @@ export function sanitize(resource, options = {}) {
   if (resource.title) {
     let title = resource.title;
     title = filter_controls(title);
-    title = remove_html(title);
+
+    try {
+      title = remove_html(title);
+    } catch (error) {
+      title = 'Unsafe html';
+    }
+
     title = condense_whitespace(title);
     title = truncate_html(title, max_title_length, '');
     resource.title = title;
@@ -121,7 +127,13 @@ export function sanitize(resource, options = {}) {
   if (resource.description) {
     let desc = resource.description;
     desc = filter_controls(desc);
-    desc = remove_html(desc);
+
+    try {
+      desc = remove_html(desc);
+    } catch (error) {
+      desc = 'Unsafe html';
+    }
+
     desc = condense_whitespace(desc);
     desc = truncate_html(desc, max_description_length, '');
     resource.description = desc;
@@ -130,7 +142,13 @@ export function sanitize(resource, options = {}) {
   if (resource.author) {
     let author = resource.author;
     author = filter_controls(author);
-    author = remove_html(author);
+
+    try {
+      author = remove_html(author);
+    } catch (error) {
+      author = 'Unsafe html';
+    }
+
     author = condense_whitespace(author);
     author = truncate_html(author, max_author_length);
     resource.author = author;
