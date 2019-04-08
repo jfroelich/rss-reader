@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import {image_dimensions_filter} from '/src/import-feed/import-entry/dom-filters/image-dimensions-filter.js';
-import parse_html from '/src/parse-html/parse-html.js';
+import parse_html from '/src/import-feed/import-entry/parse-html.js';
 
 export async function css_offset_props_test() {
   let input, doc, image;

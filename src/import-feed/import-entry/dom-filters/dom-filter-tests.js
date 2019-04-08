@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
 import * as dom_filters from '/src/import-feed/import-entry/dom-filters/dom-filters.js';
 import {INDEFINITE} from '/src/deadline/deadline.js';
-import parse_html from '/src/parse-html/parse-html.js';
+import parse_html from '/src/import-feed/import-entry/parse-html.js';
 
 // TODO: implement a simple straightforward test that exercises the normal
 // cases.

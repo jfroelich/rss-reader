@@ -5,7 +5,7 @@ import {composite_document_filter} from '/src/import-feed/import-entry/dom-filte
 import * as url_sniffer from '/src/import-feed/import-entry/url-sniffer.js';
 import {INDEFINITE} from '/src/deadline/deadline.js';
 import fetch_html from '/src/import-feed/import-entry/fetch-html.js';
-import parse_html from '/src/parse-html/parse-html.js';
+import parse_html from '/src/import-feed/import-entry/parse-html.js';
 import set_base_uri from '/src/import-feed/import-entry/set-base-uri.js';
 
 export function ImportEntryArgs() {

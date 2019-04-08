@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import {color_contrast_filter} from '/src/import-feed/import-entry/dom-filters/color-contrast-filter.js';
-import parse_html from '/src/parse-html/parse-html.js';
+import parse_html from '/src/import-feed/import-entry/parse-html.js';
 
 export function color_contrast_filter_test() {
   // TODO: implement

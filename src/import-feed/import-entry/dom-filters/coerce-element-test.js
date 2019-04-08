@@ -1,6 +1,6 @@
 import assert from '/src/assert.js';
 import coerce_element from '/src/import-feed/import-entry/dom-filters/coerce-element.js';
-import parse_html from '/src/parse-html/parse-html.js';
+import parse_html from '/src/import-feed/import-entry/parse-html.js';
 
 // TODO: assert that p still exists to test that coerce does not affect
 // elements it should not affect (surprise side effects)

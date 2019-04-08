@@ -1,5 +1,5 @@
 import assert from '/src/assert.js';
-import parse_html from '/src/parse-html/parse-html.js';
+import parse_html from '/src/import-feed/import-entry/parse-html.js';
 import unwrap_element from '/src/import-feed/import-entry/dom-filters/unwrap-element.js';
 
 export function unwrap_element_test() {
