@@ -1,9 +1,9 @@
+import assert from '/src/assert.js';
 import archive_resources from '/src/db/archive-resources.js';
 import create_resource from '/src/db/create-resource.js';
 import get_resources from '/src/db/get-resources.js';
 import test_open from '/src/db/test-open.js';
-import assert from '/src/lib/assert.js';
-import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
+import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
 
 // Exercise typical execution of archive-resources
 export default async function archive_resources_test() {

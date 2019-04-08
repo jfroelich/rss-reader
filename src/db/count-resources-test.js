@@ -1,9 +1,9 @@
+import assert from '/src/assert.js';
 import count_resources from '/src/db/count-resources.js';
 import create_resource from '/src/db/create-resource.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 import test_open from '/src/db/test-open.js';
-import assert from '/src/lib/assert.js';
-import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
+import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
 
 export default async function count_resources_test() {
   const db_name = 'count-resources-test';

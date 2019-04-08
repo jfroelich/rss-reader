@@ -1,5 +1,5 @@
 import * as db from '/src/db/db.js';
-import {Deadline} from '/src/lib/deadline.js';
+import {Deadline} from '/src/deadline/deadline.js';
 
 // Refreshes the unread count displayed on the badge in Chrome's toolbar
 export default async function refresh_badge() {

@@ -1,4 +1,4 @@
-import * as color from '/src/lib/color.js';
+import * as color from '/src/color/color.js';
 
 export function rename(old_name, new_name) {
   const value = read_string(old_name);

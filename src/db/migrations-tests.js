@@ -1,7 +1,7 @@
+import assert from '/src/assert.js';
 import * as migrations from '/src/db/migrations.js';
-import assert from '/src/lib/assert.js';
-import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
-import RecordingChannel from '/src/lib/recording-channel.js';
+import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
+import RecordingChannel from '/src/test/recording-channel.js';
 
 export async function migrations_tests_20() {
   let database_name = 'migrations-test-20-database';

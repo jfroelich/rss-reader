@@ -1,8 +1,8 @@
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
-import * as favicon from '/src/lib/favicon.js';
-import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
-import refresh_feed_icons from '/src/ops/refresh-feed-icons.js';
+import * as favicon from '/src/favicon/favicon.js';
+import {poll_feeds, PollFeedsArgs} from '/src/poll-feeds/poll-feeds.js';
+import refresh_feed_icons from '/src/refresh-feed-icons/refresh-feed-icons.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
 const ONE_WEEK_MINUTES = 60 * 24 * 7;

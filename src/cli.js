@@ -1,12 +1,12 @@
 import * as config from '/src/config.js';
 import * as cron from '/src/cron.js';
 import * as db from '/src/db/db.js';
-import {Deadline} from '/src/lib/deadline.js';
-import * as favicon from '/src/lib/favicon.js';
-import {poll_feeds, PollFeedsArgs} from '/src/ops/poll-feeds.js';
-import refresh_feed_icons from '/src/ops/refresh-feed-icons.js';
-import subscribe from '/src/ops/subscribe.js';
-import unsubscribe from '/src/ops/unsubscribe.js';
+import {Deadline} from '/src/deadline/deadline.js';
+import * as favicon from '/src/favicon/favicon.js';
+import {poll_feeds, PollFeedsArgs} from '/src/poll-feeds/poll-feeds.js';
+import refresh_feed_icons from '/src/refresh-feed-icons/refresh-feed-icons.js';
+import subscribe from '/src/subscribe/subscribe.js';
+import unsubscribe from '/src/unsubscribe/unsubscribe.js';
 
 async function archive_resources_command() {
   console.log('Archiving resources...');

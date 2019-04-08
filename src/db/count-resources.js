@@ -1,4 +1,4 @@
-import assert from '/src/lib/assert.js';
+import assert from '/src/assert.js';
 
 export default function count_resources(query) {
   return new Promise((resolve, reject) => {

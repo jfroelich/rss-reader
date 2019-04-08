@@ -1,6 +1,6 @@
+import assert from '/src/assert.js';
 import get_resources from '/src/db/get-resources.js';
 import patch_resource from '/src/db/patch-resource.js';
-import assert from '/src/lib/assert.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 

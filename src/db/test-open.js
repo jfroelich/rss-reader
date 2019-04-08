@@ -1,9 +1,9 @@
+import assert from '/src/assert.js';
 import Connection from '/src/db/connection.js';
 import {default_upgrade_handler, default_version} from '/src/db/open.js';
-import assert from '/src/lib/assert.js';
-import {INDEFINITE} from '/src/lib/deadline.js';
-import {open} from '/src/lib/indexeddb-utils.js';
-import RecordingChannel from '/src/lib/recording-channel.js';
+import {INDEFINITE} from '/src/deadline/deadline.js';
+import {open} from '/src/indexeddb-utils/indexeddb-utils.js';
+import RecordingChannel from '/src/test/recording-channel.js';
 
 // Open a database connection for testing purposes. If an upgrade handler is
 // not specified then this uses the same upgrade handler as db/open

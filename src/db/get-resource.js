@@ -1,6 +1,6 @@
+import assert from '/src/assert.js';
 import Connection from '/src/db/connection.js';
 import * as resource_utils from '/src/db/resource-utils.js';
-import assert from '/src/lib/assert.js';
 
 export default function get_resource(query) {
   return new Promise(get_resource_executor.bind(this, query));

@@ -1,5 +1,5 @@
+import assert from '/src/assert.js';
 import * as resource_utils from '/src/db/resource-utils.js';
-import assert from '/src/lib/assert.js';
 
 export function is_valid_id_test() {
   assert(!resource_utils.is_valid_id(-1));

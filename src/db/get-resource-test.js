@@ -1,8 +1,8 @@
+import assert from '/src/assert.js';
 import create_resource from '/src/db/create-resource.js';
 import get_resource from '/src/db/get-resource.js';
 import test_open from '/src/db/test-open.js';
-import assert from '/src/lib/assert.js';
-import * as indexeddb_utils from '/src/lib/indexeddb-utils.js';
+import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
 
 export default async function get_resource_test() {
   const db_name = 'get-resource-test';
