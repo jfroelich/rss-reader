@@ -1,6 +1,7 @@
 import assert from '/src/assert.js';
-import * as dom_filters from '/src/import-feed/import-entry/dom-filters/dom-filters.js';
 import {INDEFINITE} from '/src/deadline/deadline.js';
+import * as dom_filters from '/src/import-feed/import-entry/dom-filters/dom-filters.js';
+import {image_reachable_filter} from '/src/import-feed/import-entry/dom-filters/image-reachable-filter.js';
 import parse_html from '/src/import-feed/import-entry/parse-html.js';
 
 // TODO: implement a simple straightforward test that exercises the normal
@@ -171,12 +172,13 @@ export function image_lazy_filter_test() {
 export async function image_reachable_filter_test() {
   let input = '<img id="unreachable" src="not-reachable.gif">';
   // TODO: circular dependency?
-  input += '<img class="reachable" src="/src/import-feed/import-entry/dom-filters/basic-image.png">';
+  input +=
+      '<img class="reachable" src="/src/import-feed/import-entry/dom-filters/basic-image.png">';
   let doc = parse_html(input);
 
   assert(doc.querySelector('#unreachable'));
   assert(doc.querySelector('.reachable'));
-  await dom_filters.image_reachable_filter(doc, INDEFINITE);
+  await image_reachable_filter(doc, INDEFINITE);
 
   let image = doc.querySelector('#unreachable');
   assert(!image);
