@@ -1,7 +1,7 @@
 import assert from '/src/assert.js';
 import * as db from '/src/db/db.js';
-import import_opml from '/src/slideshow-page/import-opml.js';
 import * as indexeddb_utils from '/src/indexeddb-utils/indexeddb-utils.js';
+import import_opml from '/src/slideshow-page/import-opml.js';
 
 export default async function import_opml_test() {
   const db_name = 'import-opml-test';
@@ -23,8 +23,8 @@ export default async function import_opml_test() {
   assert(results.length === 1);
   assert(db.is_valid_id(results[0]));
 
-  assert(conn.channel.messages.length === 1);
-  assert(conn.channel.messages[0].type === 'feed-created');
+  assert(conn.channel.messages.length);
+  assert(conn.channel.messages[0].type === 'resource-created');
   assert(conn.channel.messages[0].id === 1);
 
   conn.close();
