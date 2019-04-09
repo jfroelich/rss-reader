@@ -1,8 +1,4 @@
 export default function truncate_html(html_string, position, suffix) {
-  if (typeof html_string !== 'string') {
-    return '';
-  }
-
   if (!Number.isInteger(position)) {
     throw new TypeError('position must be an integer');
   }
