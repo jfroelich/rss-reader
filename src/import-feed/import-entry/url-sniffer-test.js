@@ -54,12 +54,12 @@ export function sniffer_test() {
 
   // test finding of mime type of data uri with explicit binary content type
   input = new URL('data:image/png;base64,junk=');
-  result = url_sniffer.find_mime_type_in_data_url(input);
+  result = url_sniffer.data_uri_find_mime_type(input);
   assert(result === 'image/png');
 
   // test failure to find mime type of data uri defaults to the default
   input = new URL('data:foo');
-  result = url_sniffer.find_mime_type_in_data_url(input);
+  result = url_sniffer.data_uri_find_mime_type(input);
   assert(result === 'text/plain');
 
   // expected output is type text
