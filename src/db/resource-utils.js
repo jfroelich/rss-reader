@@ -169,7 +169,15 @@ export function validate(resource) {
   assert(resource && typeof resource === 'object');
 
   const now = new Date();
-  vassert(resource.type === 'entry' || resource.type === 'feed');
+
+  // TODO: eventually improve this. we have to support undefined to support the
+  // patch-resource use case where there is no delta property for type set, but
+  // validate is called on the delta itself. but in reality all resources should
+  // have a valid type.
+  vassert(
+      resource.type === 'entry' || resource.type === 'feed' ||
+      resource.type === undefined);
+
   vassert(
       resource.favicon_url === undefined ||
       typeof resource.favicon_url === 'string');
