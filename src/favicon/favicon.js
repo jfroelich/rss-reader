@@ -230,7 +230,7 @@ export function compact(conn) {
 // Find and return an entry corresponding to the given url. This does
 // not check if the entry is expired. |conn| is optional and must be either
 // undefined or of type IDBDatabase. |url| is type URL.
-function find_entry(conn, url) {
+export function find_entry(conn, url) {
   return new Promise((resolve, reject) => {
     if (conn) {
       assert(conn instanceof IDBDatabase);
@@ -249,7 +249,7 @@ function find_entry(conn, url) {
 }
 
 // Create or replace an entry in the cache
-function put_entry(conn, entry) {
+export function put_entry(conn, entry) {
   return new Promise((resolve, reject) => {
     if (!conn) {
       resolve();
