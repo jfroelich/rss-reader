@@ -3,7 +3,7 @@ export {default as Connection} from '/src/db/connection.js';
 export {default as count_resources} from '/src/db/count-resources.js';
 export {default as create_resource} from '/src/db/create-resource.js';
 export {default as delete_resource} from '/src/db/delete-resource.js';
-export {ConstraintError, NotFoundError} from '/src/db/errors.js';
+export * as errors from '/src/db/errors.js';
 export {default as get_resource} from '/src/db/get-resource.js';
 export {default as get_resources} from '/src/db/get-resources.js';
 export {default as open} from '/src/db/open.js';

@@ -2,8 +2,8 @@ import assert from '/src/assert.js';
 import {is_assert_error} from '/src/assert.js';
 import * as db from '/src/db/db.js';
 import {Deadline} from '/src/deadline/deadline.js';
-import fade_element from '/src/options-page/fade-element.js';
 import * as favicon from '/src/favicon/favicon.js';
+import fade_element from '/src/options-page/fade-element.js';
 import subscribe from '/src/subscribe/subscribe.js';
 
 export default function SubscriptionForm() {
@@ -68,19 +68,16 @@ SubscriptionForm.prototype.appendMonitorMessage = function(message) {
 };
 
 SubscriptionForm.prototype.onsubmit = async function(event) {
+  // Prevent the form from submitting as we plan to handle it ourselves
   event.preventDefault();
-  assert(this.url_element);
 
-  if (this.subscription_in_progress) {
-    console.debug('Subscription already in progress');
-    return;
-  }
+  // TODO: get this working, nothing actually sets this to true at the moment
+  // if (this.subscription_in_progress) {
+  //  console.debug('Ignoring form submission, subscription already in
+  //  progress'); return;
+  //}
 
-  const value = (this.url_element.value || '').trim();
-  if (!value) {
-    return;
-  }
-
+  const value = this.url_element.value;
   let url = undefined;
   try {
     url = new URL(value);
@@ -88,6 +85,8 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
     console.debug(error);
     return;
   }
+
+  console.debug('Subscribing to', url.href);
 
   this.url_element.value = '';
   this.showMonitor();
@@ -101,11 +100,14 @@ SubscriptionForm.prototype.onsubmit = async function(event) {
         conn, iconn, url, this.fetch_feed_timeout, true,
         this.onFeedStored.bind(this));
   } catch (error) {
+    console.debug(error);
+
     if (is_assert_error(error)) {
       throw error;
     }
 
-    if (error instanceof db.ConstraintError) {
+    if (error instanceof db.errors.ConstraintError) {
+      console.debug('Already subscribed to feed', url.href);
       this.appendMonitorMessage(
           'Already subscribed to feed with similar url ' + url.href);
       this.hideMonitor();

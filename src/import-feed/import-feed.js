@@ -1,11 +1,10 @@
 import assert from '/src/assert.js';
 import {is_assert_error} from '/src/assert.js';
+import {better_fetch} from '/src/better-fetch/better-fetch.js';
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
-import {ConstraintError} from '/src/db/errors.js';
-import * as feed_parser from '/src/import-feed/feed-parser.js';
-import {better_fetch} from '/src/better-fetch/better-fetch.js';
 import {Deadline, INDEFINITE} from '/src/deadline/deadline.js';
+import * as feed_parser from '/src/import-feed/feed-parser.js';
 import {import_entry, ImportEntryArgs} from '/src/import-feed/import-entry/import-entry.js';
 import lookup_feed_favicon from '/src/lookup-feed-favicon/lookup-feed-favicon.js';
 
@@ -55,7 +54,7 @@ export async function import_feed(args) {
     if (existing_feed) {
       const message =
           'Already subscribed to redirected feed url ' + response_url.href;
-      throw new ConstraintError(message);
+      throw new db.errors.ConstraintError(message);
     }
   }
 
@@ -170,7 +169,7 @@ async function import_entry_noexcept(args) {
   } catch (error) {
     if (is_assert_error(error)) {
       throw error;
-    } else if (error instanceof ConstraintError) {
+    } else if (error instanceof db.errors.ConstraintError) {
       // Ignore
     } else {
       // For debugging
@@ -212,7 +211,7 @@ async function validate_feed_is_unique(feed, conn) {
 
   if (existing_feed) {
     const message = 'Already subscribed to feed with url ' + url.href;
-    throw new ConstraintError(message);
+    throw new db.errors.ConstraintError(message);
   }
 }
 

@@ -1,12 +1,12 @@
 import assert from '/src/assert.js';
 import * as db from '/src/db/db.js';
+import {INDEFINITE} from '/src/deadline/deadline.js';
 import * as favicon from '/src/favicon/favicon.js';
 import {composite_document_filter} from '/src/import-feed/import-entry/dom-filters/dom-filters.js';
-import * as url_sniffer from '/src/import-feed/import-entry/url-sniffer.js';
-import {INDEFINITE} from '/src/deadline/deadline.js';
 import fetch_html from '/src/import-feed/import-entry/fetch-html.js';
 import parse_html from '/src/import-feed/import-entry/parse-html.js';
 import set_base_uri from '/src/import-feed/import-entry/set-base-uri.js';
+import * as url_sniffer from '/src/import-feed/import-entry/url-sniffer.js';
 
 export function ImportEntryArgs() {
   this.entry = undefined;
@@ -39,7 +39,7 @@ export async function import_entry(args) {
   if (existing_entry) {
     const message =
         'The entry with url ' + after_rewrite_url.href + ' already exists.';
-    throw new db.ConstraintError(message);
+    throw new db.errors.ConstraintError(message);
   }
 
   // Fetch the entry's full content. Rethrow any errors.
@@ -61,7 +61,7 @@ export async function import_entry(args) {
       if (existing_entry) {
         const message =
             'The entry with url ' + rewritten_url.href + ' already exists.';
-        throw new db.ConstraintError(message);
+        throw new db.errors.ConstraintError(message);
       }
     }
   }
