@@ -15,6 +15,7 @@ export default async function export_opml_test() {
   for (let i = 0; i < 3; i++) {
     const feed = {};
     db.set_url(feed, new URL('a://b.c' + i));
+    feed.type = 'feed';
     resources.push(feed);
   }
 
