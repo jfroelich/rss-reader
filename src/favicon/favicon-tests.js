@@ -102,7 +102,8 @@ export async function favicon_cache_compact_test() {
 
   const find_promises = [];
   for (let i = 0; i < 10; i++) {
-    find_promises.push(favicon.find_entry(conn, 'www.example' + i + '.com'));
+    const url = new URL('http://www.example' + i + '.com');
+    find_promises.push(favicon.find_entry(conn, url));
   }
   const results = await Promise.all(find_promises);
   for (let i = 0; i < 10; i++) {

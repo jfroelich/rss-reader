@@ -205,10 +205,12 @@ function cli_print_tests() {
 }
 
 function handle_test_anchor_click(event) {
+  event.stopPropagation();
   const anchor = event.target;
   const test_name = anchor.getAttribute('test-name');
   const test_function = find_test_by_name(test_name);
   run_timed_test(test_function).catch(console.error);
+  return false;
 }
 
 function populate_test_menu() {
