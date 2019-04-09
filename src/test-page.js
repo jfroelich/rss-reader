@@ -1,36 +1,36 @@
+import * as better_fetch_tests from '/src/better-fetch/better-fetch-tests.js';
 import {color_test} from '/src/color/color-test.js';
 import archive_resources_test from '/src/db/archive-resources-test.js';
 import count_resources_test from '/src/db/count-resources-test.js';
 import create_resource_test from '/src/db/create-resource-test.js';
 import delete_resource_test from '/src/db/delete-resource-test.js';
+import * as filter_unprintables_tests from '/src/db/filter-unprintables-tests.js';
 import get_resource_test from '/src/db/get-resource-test.js';
 import get_resources_test from '/src/db/get-resources-test.js';
 import * as migrations_tests from '/src/db/migrations-tests.js';
 import patch_resource_test from '/src/db/patch-resource-test.js';
 import put_resource_test from '/src/db/put-resource-test.js';
+import {remove_html_test} from '/src/db/remove-html-test.js';
 import * as resource_utils_tests from '/src/db/resource-utils-tests.js';
+import * as truncate_html_tests from '/src/db/truncate-html-tests.js';
 import * as favicon_tests from '/src/favicon/favicon-tests.js';
 import {parse_feed_test} from '/src/import-feed/feed-parser-test.js';
 import coerce_element_test from '/src/import-feed/import-entry/dom-filters/coerce-element-test.js';
 import * as color_contrast_filter_tests from '/src/import-feed/import-entry/dom-filters/color-contrast-filter-test.js';
 import * as dom_filter_tests from '/src/import-feed/import-entry/dom-filters/dom-filter-tests.js';
+import {fetch_image_element_test} from '/src/import-feed/import-entry/dom-filters/fetch-image-element-test.js';
 import * as image_size_filter_tests from '/src/import-feed/import-entry/dom-filters/image-dimensions-filter-tests.js';
 import {legible_text_filter_test} from '/src/import-feed/import-entry/dom-filters/legible-text-filter-test.js';
-import * as import_entry_tests from '/src/import-feed/import-entry/import-entry-tests.js';
-import {sniffer_test} from '/src/import-feed/import-entry/url-sniffer-test.js';
-import * as better_fetch_tests from '/src/better-fetch/better-fetch-tests.js';
+import * as unwrap_element_tests from '/src/import-feed/import-entry/dom-filters/unwrap-element-tests.js';
 import {fetch_html_test} from '/src/import-feed/import-entry/fetch-html-test.js';
-import {fetch_image_element_test} from '/src/import-feed/import-entry/dom-filters/fetch-image-element-test.js';
-import {filter_publisher_test} from '/src/slideshow-page/filter-publisher-test.js';
-import * as filter_unprintables_tests from '/src/db/filter-unprintables-tests.js';
 import get_path_extension_test from '/src/import-feed/import-entry/get-path-extension-test.js';
+import * as import_entry_tests from '/src/import-feed/import-entry/import-entry-tests.js';
+import * as set_base_uri_tests from '/src/import-feed/import-entry/set-base-uri-tests.js';
+import {sniffer_test} from '/src/import-feed/import-entry/url-sniffer-test.js';
 import * as indexeddb_utils_tests from '/src/indexeddb-utils/indexeddb-utils-test.js';
 import {mime_test} from '/src/mime/mime-test.js';
-import {remove_html_test} from '/src/db/remove-html-test.js';
-import * as set_base_uri_tests from '/src/import-feed/import-entry/set-base-uri-tests.js';
-import * as truncate_html_tests from '/src/db/truncate-html-tests.js';
-import * as unwrap_element_tests from '/src/import-feed/import-entry/dom-filters/unwrap-element-tests.js';
 import export_opml_test from '/src/slideshow-page/export-opml-test.js';
+import {filter_publisher_test} from '/src/slideshow-page/filter-publisher-test.js';
 import import_opml_test from '/src/slideshow-page/import-opml-test.js';
 import {subscribe_test} from '/src/subscribe/subscribe-test.js';
 
@@ -204,14 +204,26 @@ function cli_print_tests() {
   register.map(test => test.name).forEach(console.log);
 }
 
-function populate_test_menu() {
-  // TODO: sort the test list alphabetically by test name before render
+function handle_test_anchor_click(event) {
+  const anchor = event.target;
+  const test_name = anchor.getAttribute('test-name');
+  const test_function = find_test_by_name(test_name);
+  run_timed_test(test_function).catch(console.error);
+}
 
-  const menu = document.getElementById('tests');
+function populate_test_menu() {
+  registry.sort();
+
+  const test_list = document.getElementById('tests');
   for (const test of registry) {
-    const option = document.createElement('option');
-    option.value = test.name;
-    option.textContent = test.name.replace(/_/g, '-').toLowerCase();
-    menu.append(option);
+    const anchor = document.createElement('a');
+    anchor.href = '#';
+    anchor.setAttribute('test-name', test.name);
+    anchor.onclick = handle_test_anchor_click;
+    anchor.append(test.name.replace(/_/g, '-').toLowerCase());
+
+    const list_item = document.createElement('li');
+    list_item.append(anchor);
+    test_list.append(list_item);
   }
 }

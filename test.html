@@ -5,14 +5,8 @@
 
   <style>
   #tests {
-    min-width: 200px;
-    min-height: 500px;
-    font-size: 20px;
-  }
-
-  #console {
-    min-width: 600px;
-    min-height: 500px;
+    min-width: 500px;
+    min-height: 300px;
     font-size: 20px;
   }
 
@@ -24,17 +18,6 @@
   </style>
 </head>
 <body>
-<table>
-  <form id="testform">
-    <tr>
-      <td valign="top"><select id="tests" multiple></select></td>
-      <td valign="top">
-        <input type="checkbox" id="parallel"><label for="parallel">Parallel</label><br>
-        <button id="runbutton">Run</button>
-      </td>
-      <td valign="top"><textarea id="console"></textarea></td>
-    </tr>
-  </form>
-</table>
+<ul id="tests"></ul>
 </body>
 </html>
