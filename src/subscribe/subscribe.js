@@ -10,6 +10,7 @@ import show_notification from '/src/show-notification.js';
 export default async function subscribe(
     conn, iconn, url, timeout = INDEFINITE, notify, feed_stored_callback) {
   const feed = {};
+  feed.type = 'feed';
   db.set_url(feed, url);
 
   const args = new ImportFeedArgs();
