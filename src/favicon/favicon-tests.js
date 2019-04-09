@@ -42,7 +42,8 @@ export async function favicon_cache_put_find_test() {
   const entry = new favicon.Entry();
   entry.hostname = 'www.example.com';
   const put_result = await favicon.put_entry(conn, entry);
-  const found_entry = await favicon.find_entry(conn, entry.hostname);
+  const found_entry =
+      await favicon.find_entry(conn, new URL('http://' + entry.hostname));
   assert(found_entry);
   assert(found_entry.hostname === entry.hostname);
   conn.close();
