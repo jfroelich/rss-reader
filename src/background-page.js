@@ -1,7 +1,7 @@
+import {INDEFINITE} from '/lib/deadline.js';
 import * as config from '/src/config.js';
 import * as cron from '/src/cron.js';
 import * as db from '/src/db/db.js';
-import {INDEFINITE} from '/src/deadline/deadline.js';
 import open_view from '/src/open-view.js';
 import refresh_badge from '/src/refresh-badge.js';
 

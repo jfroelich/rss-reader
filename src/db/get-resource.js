@@ -1,4 +1,4 @@
-import assert from '/src/assert.js';
+import assert from '/lib/assert.js';
 import Connection from '/src/db/connection.js';
 import * as resource_utils from '/src/db/resource-utils.js';
 

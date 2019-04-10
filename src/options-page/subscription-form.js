@@ -1,10 +1,10 @@
-import assert from '/src/assert.js';
-import {is_assert_error} from '/src/assert.js';
+import assert from '/lib/assert.js';
+import {is_assert_error} from '/lib/assert.js';
+import {Deadline} from '/lib/deadline.js';
+import fade_element from '/lib/fade-element.js';
+import * as favicon from '/lib/favicon.js';
 import * as db from '/src/db/db.js';
-import {Deadline} from '/src/deadline/deadline.js';
-import * as favicon from '/src/favicon/favicon.js';
-import fade_element from '/src/options-page/fade-element.js';
-import subscribe from '/src/subscribe/subscribe.js';
+import subscribe from '/src/subscribe.js';
 
 export default function SubscriptionForm() {
   // Default to a reasonable amount of time. The user can optionally override

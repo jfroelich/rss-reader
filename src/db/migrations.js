@@ -1,4 +1,4 @@
-import filter_empty_properties from '/src/db/filter-empty-properties.js';
+import filter_empty_properties from '/lib/filter-empty-properties.js';
 
 // The migrations module provides transition functions that handle creating the
 // schema of the database or applying changes to it when the database version

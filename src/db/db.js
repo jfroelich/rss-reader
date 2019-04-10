@@ -10,4 +10,4 @@ export {default as open} from '/src/db/open.js';
 export {default as patch_resource} from '/src/db/patch-resource.js';
 export {default as put_resource} from '/src/db/put-resource.js';
 export {get_url, get_url_string, has_url, is_valid_id, set_url} from '/src/db/resource-utils.js';
-export {default as test_open} from '/src/db/test-open.js';
+export {default as test_open} from '/test/test-open.js';

@@ -1,8 +1,8 @@
-import assert from '/src/assert.js';
-import filter_controls from '/src/db/filter-controls.js';
-import filter_unprintables from '/src/db/filter-unprintables.js';
-import remove_html from '/src/db/remove-html.js';
-import truncate_html from '/src/db/truncate-html.js';
+import assert from '/lib/assert.js';
+import filter_controls from '/lib/filter-controls.js';
+import filter_unprintables from '/lib/filter-unprintables.js';
+import remove_html from '/lib/remove-html.js';
+import truncate_html from '/lib/truncate-html.js';
 
 // Known resource property names
 const resource_props = [
