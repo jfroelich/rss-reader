@@ -1,7 +1,7 @@
 import assert from '/lib/assert.js';
 import * as url_sniffer from '/lib/url-sniffer.js';
 
-export function sniffer_test() {
+export function url_sniffer_test() {
   // Local aliases
   const BINARY_CLASS = url_sniffer.BINARY_CLASS;
   const TEXT_CLASS = url_sniffer.TEXT_CLASS;

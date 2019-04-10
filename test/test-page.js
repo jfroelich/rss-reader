@@ -21,7 +21,6 @@ import * as image_size_filter_tests from '/test/image-dimensions-filter-tests.js
 import * as import_entry_tests from '/test/import-entry-tests.js';
 import import_opml_test from '/test/import-opml-test.js';
 import * as indexeddb_utils_tests from '/test/indexeddb-utils-test.js';
-import {legible_text_filter_test} from '/test/legible-text-filter-test.js';
 import * as migrations_tests from '/test/migrations-tests.js';
 import {mime_test} from '/test/mime-utils-test.js';
 import patch_resource_test from '/test/patch-resource-test.js';
@@ -61,7 +60,6 @@ register_module_tests(indexeddb_utils_tests);
 register_module_tests(image_size_filter_tests);
 register_module_tests(import_entry_tests);
 register_test(import_opml_test);
-register_test(legible_text_filter_test);
 register_module_tests(migrations_tests);
 register_test(mime_test);
 register_module_tests(better_fetch_tests);
