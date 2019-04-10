@@ -1,3 +1,4 @@
+import {parse_opml} from '/lib/parse-opml.js';
 import * as db from '/src/db/db.js';
 
 // Create and store feed objects in the database based on urls extracted from
@@ -5,7 +6,8 @@ import * as db from '/src/db/db.js';
 export default async function import_opml(conn, files) {
   console.log('Importing %d OPML files', files.length);
 
-  // Grab urls from each of the files. Per-file errors are logged not thrown.
+  // Grab urls from each of the files. Per-file errors, including assertion
+  // errors, are logged not thrown.
   const promises = Array.prototype.map.call(
       files, file => file_find_urls(file).catch(console.warn));
   const results = await Promise.all(promises);
@@ -90,33 +92,4 @@ function file_read_text(file) {
     reader.onload = _ => resolve(reader.result);
     reader.onerror = _ => reject(reader.error);
   });
-}
-
-// TODO: move parse-opml to lib
-
-function parse_opml(xml_string) {
-  const parser = new DOMParser();
-  const document = parser.parseFromString(xml_string, 'application/xml');
-  const error = document.querySelector('parsererror');
-  if (error) {
-    const message = condense_whitespace(error.textContent);
-    throw new OPMLParseError(message);
-  }
-
-  // Need to normalize localName when document is xml-flagged
-  const name = document.documentElement.localName.toLowerCase();
-  if (name !== 'opml') {
-    throw new OPMLParseError('Document element is not opml: ' + name);
-  }
-  return document;
-}
-
-class OPMLParseError extends Error {
-  constructor(message = 'OPML parse error') {
-    super(message);
-  }
-}
-
-function condense_whitespace(value) {
-  return value.replace(/\s\s+/g, ' ');
 }
