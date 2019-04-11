@@ -1,11 +1,11 @@
 import assert from '/lib/assert.js';
 import download_xml_document from '/lib/download-xml-document.js';
+import {export_opml, Outline} from '/lib/export-opml.js';
 import * as favicon from '/lib/favicon.js';
 import filter_publisher from '/lib/filter-publisher.js';
 import format_date from '/lib/format-date.js';
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
-import export_opml from '/src/export-opml.js';
 import import_opml from '/src/import-opml.js';
 import {poll_feeds, PollFeedsArgs} from '/src/poll-feeds.js';
 import refresh_badge from '/src/refresh-badge.js';
@@ -461,9 +461,27 @@ async function options_menu_onclick(event) {
       import_opml_prompt();
       break;
     case 'menu-option-export':
+      // Load all feeds from the database
       const conn = await db.open();
-      const document = await export_opml(conn, 'Subscriptions');
+      const resources = await db.get_resources({conn: conn, mode: 'feeds'});
       conn.close();
+
+      // Convert the loaded feeds into outlines
+      const outlines = resources.map(resource => {
+        const outline = new Outline();
+        outline.type = resource.feed_format;
+
+        if (db.has_url(resource)) {
+          outline.xml_url = db.get_url_string(resource);
+        }
+
+        outline.title = resource.title;
+        outline.description = resource.description;
+        outline.html_url = resource.link;
+        return outline;
+      });
+
+      const document = await export_opml(outlines, 'Subscriptions');
       download_xml_document(document, 'subscriptions.xml');
       break;
     case 'menu-option-header-font':
