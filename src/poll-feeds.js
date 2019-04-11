@@ -22,6 +22,8 @@ export function PollFeedsArgs() {
 }
 
 export async function poll_feeds(args) {
+  console.log('Polling feeds...');
+
   // Cancel the run if the last run was too recent
   if (args.recency_period && !args.ignore_recency_check) {
     const stamp = config.read_int('last_poll_timestamp');
@@ -43,25 +45,21 @@ export async function poll_feeds(args) {
       {conn: args.conn, mode: 'active-feeds', title_sort: false});
   console.debug('Loaded %d active feeds for polling', feeds.length);
 
-  // Concurrently process the feed data
+  // Start concurrently polling each feed resource
   const promises = feeds.map(feed => {
-    // Convert the data object loaded from the database into a feed
-    // TODO: i don't think this is needed any more
-    const model_feed = Object.assign({}, feed);
-
-    const import_feed_args = new ImportFeedArgs();
-    import_feed_args.feed = model_feed;
-    import_feed_args.conn = args.conn;
-    import_feed_args.iconn = args.iconn;
-    import_feed_args.rewrite_rules = args.rewrite_rules;
-    import_feed_args.inaccessible_descriptors =
-        args.inaccessible_content_descriptors;
-    import_feed_args.create = false;
-    import_feed_args.fetch_feed_timeout = args.fetch_feed_timeout;
-    import_feed_args.fetch_html_timeout = args.fetch_html_timeout;
-    import_feed_args.feed_stored_callback = undefined;
-    return poll_feed_noexcept(import_feed_args);
+    const ifa = new ImportFeedArgs();
+    ifa.feed = feed;
+    ifa.conn = args.conn;
+    ifa.iconn = args.iconn;
+    ifa.rewrite_rules = args.rewrite_rules;
+    ifa.inaccessible_descriptors = args.inaccessible_content_descriptors;
+    ifa.create = false;
+    ifa.fetch_feed_timeout = args.fetch_feed_timeout;
+    ifa.fetch_html_timeout = args.fetch_html_timeout;
+    ifa.feed_stored_callback = undefined;
+    return poll_feed_noexcept(ifa);
   });
+  // Wait for all concurrent polls to complete
   const import_feed_results = await Promise.all(promises);
 
   // Calculate the total number of entries added across all feeds.
@@ -74,6 +72,7 @@ export async function poll_feeds(args) {
     show_notification('Added ' + entry_add_count_total + ' articles');
   }
 
+  console.log('Poll feeds completed');
   return entry_add_count_total;
 }
 
