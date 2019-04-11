@@ -35,6 +35,8 @@ let current_slide = null;
 let active_transition_count = 0;
 
 async function show_next_slide() {
+  const max_load_count = 6;
+
   if (get_active_transition_count()) {
     return;
   }
@@ -79,19 +81,17 @@ async function show_next_slide() {
   }
 
   if (entries.length) {
-    compact_slides();
+    compact_slides(max_load_count);
   }
 }
 
-function compact_slides() {
+function compact_slides(max_load_count = 6) {
   const current_slide = get_current_slide();
   if (!current_slide) {
     return;
   }
 
   // The maximum number of slides loaded at any one time.
-  // TODO: this should come from configuration setting
-  const max_load_count = 6;
   const container = document.getElementById('slideshow-container');
   let first_slide = container.firstElementChild;
   while (container.childElementCount > max_load_count &&
@@ -162,23 +162,18 @@ async function slide_onclick(event) {
     return true;
   }
 
-  // Only intercept clicks on or within an anchor element. Note that closest
-  // checks not only ancestors but also the element itself.
+  // Only intercept clicks on or within an anchor element
   const anchor = event.target.closest('a');
   if (!anchor) {
     return true;
   }
 
-  // Only intercept if the anchor has an href
   const url_string = anchor.getAttribute('href');
   if (!url_string) {
     return;
   }
 
-  // Begin intercept. Cancel the normal click reaction
   event.preventDefault();
-
-  // Open the link in a new window
   open(url_string, '_blank');
 
   // Find the clicked slide. Start from parent because we know that the anchor
