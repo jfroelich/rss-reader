@@ -6,9 +6,12 @@ import * as resource_utils from '/src/db/resource-utils.js';
 import * as database_utils from '/test/database-utils.js';
 
 export default async function get_resources_test() {
-  const db_name = 'get-resources-test';
-  await indexeddb_utils.remove(db_name);
-  const conn = await database_utils.create_test_database(db_name);
+  const database_name_prefix = 'get-resources-test';
+  await database_utils.remove_databases_for_prefix(database_name_prefix);
+  const database_name =
+      database_utils.create_unique_database_name(database_name_prefix);
+
+  const conn = await database_utils.create_test_database(database_name);
 
   const create_promises = [];
   for (let i = 0; i < 5; i++) {

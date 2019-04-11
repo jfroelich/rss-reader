@@ -5,10 +5,12 @@ import import_opml from '/src/import-opml.js';
 import * as database_utils from '/test/database-utils.js';
 
 export default async function import_opml_test() {
-  const db_name = 'import-opml-test';
-  await indexeddb_utils.remove(db_name);
+  const database_name_prefix = 'import-opml-test';
+  await database_utils.remove_databases_for_prefix(database_name_prefix);
+  const database_name =
+      database_utils.create_unique_database_name(database_name_prefix);
 
-  const conn = await database_utils.create_test_database(db_name);
+  const conn = await database_utils.create_test_database(database_name);
 
   const opml_string = '<opml version="2.0"><body><outline type="feed" ' +
       'xmlUrl="a://b/c"/></body></opml>';
@@ -27,5 +29,5 @@ export default async function import_opml_test() {
   assert(conn.channel.messages[0].id === 1);
 
   conn.close();
-  await indexeddb_utils.remove(db_name);
+  await indexeddb_utils.remove(conn.conn.name);
 }

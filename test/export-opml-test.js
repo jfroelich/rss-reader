@@ -4,13 +4,14 @@ import * as indexeddb_utils from '/lib/indexeddb-utils.js';
 import * as db from '/src/db/db.js';
 import * as database_utils from '/test/database-utils.js';
 
-
 // Exercise the typical usage of export-opml
 export default async function export_opml_test() {
-  const db_name = 'export-opml-test';
-  await indexeddb_utils.remove(db_name);
+  const database_name_prefix = 'export-opml-test';
+  await database_utils.remove_databases_for_prefix(database_name_prefix);
+  const database_name =
+      database_utils.create_unique_database_name(database_name_prefix);
 
-  const conn = await database_utils.create_test_database(db_name);
+  const conn = await database_utils.create_test_database(database_name);
 
   // Insert some test feeds
   let resources = [];

@@ -6,10 +6,14 @@ import subscribe from '/src/subscribe.js';
 import * as database_utils from '/test/database-utils.js';
 
 export async function subscribe_test() {
-  const db_name = 'subscribe-test';
-  await indexeddb_utils.remove(db_name);
+  const database_name_prefix = 'subscribe-test';
+  await database_utils.remove_databases_for_prefix(database_name_prefix);
+  const database_name =
+      database_utils.create_unique_database_name(database_name_prefix);
 
-  const conn = await database_utils.create_test_database(db_name);
+  const conn = await database_utils.create_test_database(database_name);
+
+  // Setup subscribe parameters
 
   const path = '/test/subscribe-test-feed.xml';
   const local_url_string = chrome.extension.getURL(path);
@@ -20,32 +24,39 @@ export async function subscribe_test() {
     callback_called = true;
   };
 
-  // Setup subscribe parameters
+
   let iconn = undefined;
   const fetch_feed_timeout = INDEFINITE;
   const notify = false;
 
   // Rethrow subscribe exceptions just like assertion failures by omitting
   // try/catch.
-  const feed = await subscribe(
+  const resource = await subscribe(
       conn, iconn, url, fetch_feed_timeout, notify, feed_stored_callback);
 
-  // Test the subscription produced the desired result
-  assert(feed && typeof feed === 'object');
-  assert(db.is_valid_id(feed.id));
+  // subscribe should yield a resource object
+  assert(resource && typeof resource === 'object');
 
-  // subscribe should have invoked the callback
+  // the produced resource should have the proper type value
+  assert(resource.type === 'feed');
+
+  // the produced resource should have a well-formed identifier
+  assert(db.is_valid_id(resource.id));
+
+  // subscribe should have invoked the feed-created callback
   assert(callback_called);
 
-  // Length may be 1 or 2 (may have redirected and captured new url)
-  assert(feed.urls.length);
-  assert(feed.urls.includes(url.href));
+  // The created resource should contain one or more urls, including the initial
+  // url input to subscribe
+  assert(resource.urls.length);
+  assert(resource.urls.includes(url.href));
 
-  assert(feed.active === 1);
+  // subscribing to a new feed should create the resource in the active state
+  assert(resource.active === 1);
 
-  // Assert that the subscription dispatched messages
+  // subscribing should have dispatched one or more messages
   assert(conn.channel.messages.length);
 
   conn.close();
-  await indexeddb_utils.remove(db_name);
+  await indexeddb_utils.remove(conn.conn.name);
 }

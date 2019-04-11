@@ -6,10 +6,13 @@ import put_resource from '/src/db/put-resource.js';
 import * as database_utils from '/test/database-utils.js';
 
 export default async function put_resource_test() {
-  const db_name = 'put-resource-test';
-  await indexeddb_utils.remove(db_name);
+  const database_name_prefix = 'put-resource-test';
+  await database_utils.remove_databases_for_prefix(database_name_prefix);
+  const database_name =
+      database_utils.create_unique_database_name(database_name_prefix);
 
-  const conn = await database_utils.create_test_database(db_name);
+
+  const conn = await database_utils.create_test_database(database_name);
 
   const fake_parent_id = 1;
   const id = await create_resource(

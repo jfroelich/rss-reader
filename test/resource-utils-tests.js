@@ -86,7 +86,6 @@ function escape_unicode(string) {
   });
 }
 
-
 export default function sanitize_test() {
   const resource = {};
   let content = 'hello world';
