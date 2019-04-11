@@ -3,6 +3,8 @@ import * as indexeddb_utils from '/lib/indexeddb-utils.js';
 import * as migrations from '/src/db/migrations.js';
 import RecordingChannel from '/test/recording-channel.js';
 
+// TODO: this should access migrations via db, not violate the API surface
+
 export async function migrations_tests_20() {
   let database_name = 'migrations-test-20-database';
   await indexeddb_utils.remove(database_name);

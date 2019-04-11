@@ -2,13 +2,15 @@ import assert from '/lib/assert.js';
 import {export_opml, Outline} from '/lib/export-opml.js';
 import * as indexeddb_utils from '/lib/indexeddb-utils.js';
 import * as db from '/src/db/db.js';
+import * as database_utils from '/test/database-utils.js';
+
 
 // Exercise the typical usage of export-opml
 export default async function export_opml_test() {
   const db_name = 'export-opml-test';
   await indexeddb_utils.remove(db_name);
 
-  const conn = await db.test_open(db_name);
+  const conn = await database_utils.create_test_database(db_name);
 
   // Insert some test feeds
   let resources = [];

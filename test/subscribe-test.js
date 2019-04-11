@@ -3,12 +3,13 @@ import {Deadline, INDEFINITE} from '/lib/deadline.js';
 import * as indexeddb_utils from '/lib/indexeddb-utils.js';
 import * as db from '/src/db/db.js';
 import subscribe from '/src/subscribe.js';
+import * as database_utils from '/test/database-utils.js';
 
 export async function subscribe_test() {
   const db_name = 'subscribe-test';
   await indexeddb_utils.remove(db_name);
 
-  const conn = await db.test_open(db_name);
+  const conn = await database_utils.create_test_database(db_name);
 
   const path = '/test/subscribe-test-feed.xml';
   const local_url_string = chrome.extension.getURL(path);

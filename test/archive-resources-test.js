@@ -3,14 +3,16 @@ import * as indexeddb_utils from '/lib/indexeddb-utils.js';
 import archive_resources from '/src/db/archive-resources.js';
 import create_resource from '/src/db/create-resource.js';
 import get_resources from '/src/db/get-resources.js';
-import test_open from '/test/test-open.js';
+import * as database_utils from '/test/database-utils.js';
 
 // Exercise typical execution of archive-resources
 export default async function archive_resources_test() {
-  const db_name = 'archive-resources-test';
-  await indexeddb_utils.remove(db_name);
+  const database_name_prefix = 'archive-resources-test';
+  await database_utils.remove_databases_for_prefix(database_name_prefix);
+  const database_name =
+      database_utils.create_unique_database_name(database_name_prefix);
 
-  const conn = await test_open(db_name);
+  const conn = await database_utils.create_test_database(database_name);
 
   const create_promises = [];
   for (let i = 0; i < 5; i++) {

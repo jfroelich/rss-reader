@@ -3,12 +3,12 @@ import * as indexeddb_utils from '/lib/indexeddb-utils.js';
 import create_resource from '/src/db/create-resource.js';
 import get_resource from '/src/db/get-resource.js';
 import patch_resource from '/src/db/patch-resource.js';
-import test_open from '/test/test-open.js';
+import * as database_utils from '/test/database-utils.js';
 
 export default async function patch_resource_test() {
   const database_name = 'patch-resource-test';
   await indexeddb_utils.remove(database_name);
-  const conn = await test_open(database_name);
+  const conn = await database_utils.create_test_database(database_name);
 
   const id = await create_resource(conn, {type: 'entry', read: 0});
 

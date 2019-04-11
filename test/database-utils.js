@@ -1,15 +1,46 @@
 import assert from '/lib/assert.js';
 import {INDEFINITE} from '/lib/deadline.js';
+import * as indexeddb_utils from '/lib/indexeddb-utils.js';
 import {open} from '/lib/indexeddb-utils.js';
-import Connection from '/src/db/connection.js';
-import {default_upgrade_handler, default_version} from '/src/db/open.js';
+import * as db from '/src/db/db.js';
 import RecordingChannel from '/test/recording-channel.js';
+
+// A global counter that resides in memory.
+let name_counter = 0;
+let database_names = [];
+
+// Create a unique database name given a prefix
+export function create_unique_database_name(prefix) {
+  assert(typeof prefix === 'string');
+  const name = prefix + '-' + name_counter;
+  name_counter++;
+  database_names.push(name);
+  console.debug('Created database name:', name);
+  return name;
+}
+
+// Find any database names that start with the prefix and remove them. Returns
+// a promise that resolves when all remove operations complete.
+export function remove_databases_for_prefix(prefix) {
+  const previous_names = find_database_full_names(prefix);
+  const promises = previous_names.map(name => {
+    console.debug('Removing database with name', name);
+    return indexeddb_utils.remove(name);
+  });
+  return Promise.all(promises);
+}
+
+// Given a database name prefix, finds the full database names in the list of
+// database names previously created that start with the prefix.
+export function find_database_full_names(prefix) {
+  return database_names.filter(name => name.startsWith(prefix));
+}
 
 // Open a database connection for testing purposes. If an upgrade handler is
 // not specified then this uses the same upgrade handler as db/open
-export default async function test_open(
-    name, version = default_version,
-    upgrade_handler = default_upgrade_handler) {
+export async function create_test_database(
+    name, version = db.default_version,
+    upgrade_handler = db.default_upgrade_handler) {
   // A custom name is required in the test context. We also impose a non-zero
   // length guard just because that is reasonable. This would be caught later
   // by the open call but I like being explicit.
@@ -17,7 +48,7 @@ export default async function test_open(
   // I decided not to in case a test wants to exercise the live channel.
   assert(name && typeof name === 'string');
 
-  const conn = new Connection();
+  const conn = new db.Connection();
 
   // Presumably, all tests use some channel other than the app's default channel
   // to avoid tests having any unexpected side effect on the live app. Note that
