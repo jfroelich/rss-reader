@@ -191,3 +191,19 @@ export async function image_reachable_filter_test() {
   assert(image.hasAttribute('data-reachable-width'));
   assert(image.hasAttribute('data-reachable-height'));
 }
+
+export function condense_tagnames_filter_test() {
+  let input = '<strong>test</strong>';
+  let doc = parse_html(input);
+  assert(doc.querySelector('strong'));
+  dom_filters.condense_tagnames_filter(doc);
+
+  assert(!doc.querySelector('strong'));
+  assert(doc.querySelectorAll('b').length === 1);
+
+  doc = parse_html('<em>1</em><em>2</em>');
+  assert(doc.querySelector('em'));
+  dom_filters.condense_tagnames_filter(doc);
+  assert(!doc.querySelector('em'));
+  assert(doc.querySelectorAll('i').length === 2);
+}
