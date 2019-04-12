@@ -1,19 +1,19 @@
 import assert from '/lib/assert.js';
-import download_xml_document from '/lib/download-xml-document.js';
-import {export_opml, Outline} from '/lib/export-opml.js';
+import downloadXMLDocument from '/lib/download-xml-document.js';
+import { exportOPML, Outline } from '/lib/export-opml.js';
 import * as favicon from '/lib/favicon.js';
-import filter_publisher from '/lib/filter-publisher.js';
-import format_date from '/lib/format-date.js';
+import filterPublisher from '/lib/filter-publisher.js';
+import formatDate from '/lib/format-date.js';
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
-import import_opml from '/src/import-opml.js';
-import {poll_feeds, PollFeedsArgs} from '/src/poll-feeds.js';
-import refresh_badge from '/src/refresh-badge.js';
+import importOPML from '/src/import-opml.js';
+import { pollFeeds, PollFeedsArgs } from '/src/poll-feeds.js';
+import refreshBadge from '/src/refresh-badge.js';
 
-const splash_element = document.getElementById('initial-loading-panel');
-const feeds_container = document.getElementById('feeds-container');
-if (feeds_container) {
-  feeds_container.onclick = feeds_container_onclick;
+const splashElement = document.getElementById('initial-loading-panel');
+const feedsContainer = document.getElementById('feeds-container');
+if (feedsContainer) {
+  feedsContainer.onclick = feedsContainerOnclick;
 } else {
   console.warn('could not find feeds-container');
 }
@@ -22,9 +22,8 @@ if (feeds_container) {
 let transition_duration;
 function init_transition_duration() {
   const default_duration = 0.16;
-  const duration_float = config.read_float('slide_transition_duration');
-  transition_duration =
-      isNaN(duration_float) ? default_duration : duration_float;
+  const duration_float = config.readFloat('slide_transition_duration');
+  transition_duration = isNaN(duration_float) ? default_duration : duration_float;
 }
 init_transition_duration();
 
@@ -47,25 +46,28 @@ async function show_next_slide() {
   }
 
   const conn = await db.open();
-  await mark_slide_read_start(conn, current_slide);
+  await markSlideReadStart(conn, current_slide);
 
   const slide_unread_count = count_unread_slides();
   let entries = [];
   if (slide_unread_count < 3) {
     const mode = 'viewable-entries';
     const offset = slide_unread_count;
-    let limit = undefined;
-    const config_limit = config.read_int('initial_entry_load_limit');
+    let limit;
+    const config_limit = config.readInt('initial_entry_load_limit');
     if (!isNaN(config_limit)) {
       limit = config_limit;
     }
-    entries = await db.get_resources(
-        {conn: conn, mode: mode, offset: offset, limit: limit});
+    entries = await db.getResources(
+      {
+        conn, mode, offset, limit,
+      },
+    );
   }
   conn.close();
 
   for (const entry of entries) {
-    if (!document.querySelector('slide[entry="' + entry.id + '"]')) {
+    if (!document.querySelector(`slide[entry="${entry.id}"]`)) {
       append_slide(entry);
     } else {
       console.debug('Entry already loaded', entry.id);
@@ -94,8 +96,8 @@ function compact_slides(max_load_count = 6) {
   // The maximum number of slides loaded at any one time.
   const container = document.getElementById('slideshow-container');
   let first_slide = container.firstElementChild;
-  while (container.childElementCount > max_load_count &&
-         first_slide !== current_slide) {
+  while (container.childElementCount > max_load_count
+         && first_slide !== current_slide) {
     remove_slide(first_slide);
     first_slide = container.firstElementChild;
   }
@@ -104,7 +106,8 @@ function compact_slides(max_load_count = 6) {
 function show_prev_slide() {
   if (get_active_transition_count()) {
     console.debug(
-        'Transition in progress, canceling navigation to previous slide');
+      'Transition in progress, canceling navigation to previous slide',
+    );
     return;
   }
 
@@ -206,11 +209,11 @@ async function slide_onclick(event) {
   }
 
   // Mark the clicked slide as read. While these conditions are redundant with
-  // the checks within mark_slide_read_start, it avoids opening the connection.
-  if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
-      !slide.hasAttribute('read-pending')) {
+  // the checks within markSlideReadStart, it avoids opening the connection.
+  if (!slide.hasAttribute('stale') && !slide.hasAttribute('read')
+      && !slide.hasAttribute('read-pending')) {
     const conn = await db.open();
-    await mark_slide_read_start(conn, slide);
+    await markSlideReadStart(conn, slide);
     conn.close();
   }
 }
@@ -268,12 +271,12 @@ function hide_no_articles_message() {
 
 // Starts transitioning a slide into the read state. Updates both the view and
 // the database. This resolves before the view is fully updated.
-function mark_slide_read_start(conn, slide) {
+function markSlideReadStart(conn, slide) {
   const entry_id_string = slide.getAttribute('entry');
   const entry_id = parseInt(entry_id_string, 10);
 
   // Exit if prior call still in flight. Callers may naively make concurrent
-  // calls to mark_slide_read_start. This is routine, expected, and not an
+  // calls to markSlideReadStart. This is routine, expected, and not an
   // error.
   if (slide.hasAttribute('read-pending')) {
     return Promise.resolve();
@@ -295,7 +298,7 @@ function mark_slide_read_start(conn, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  return db.patch_resource(conn, {id: entry_id, read: 1});
+  return db.patchResource(conn, { id: entry_id, read: 1 });
 }
 
 function remove_slide(slide) {
@@ -304,7 +307,7 @@ function remove_slide(slide) {
 }
 
 // This should be called once the view acknowledges it has received the message
-// sent to the  by mark_slide_read_start to fully resolve the mark read
+// sent to the  by markSlideReadStart to fully resolve the mark read
 // operation.
 function mark_slide_read_end(slide) {
   if (slide.hasAttribute('read')) {
@@ -334,8 +337,8 @@ async function refresh_button_onclick(event) {
   const args = new PollFeedsArgs();
   args.conn = conn;
   args.iconn = iconn;
-  args.ignore_recency_check = true;
-  await poll_feeds(args);
+  args.ignoreRecencyCheck = true;
+  await pollFeeds(args);
   conn.close();
   iconn.close();
 
@@ -367,8 +370,8 @@ function view_articles_button_onclick(event) {
   reader_button.disabled = true;
 
   // Hide the view-feeds panel.
-  const feeds_container = document.getElementById('feeds-container');
-  feeds_container.style.display = 'none';
+  const feedsContainer = document.getElementById('feeds-container');
+  feedsContainer.style.display = 'none';
 
   // Show the view-articles panel.
   const slideshow_container = document.getElementById('slideshow-container');
@@ -397,8 +400,8 @@ function view_feeds_button_onclick(event) {
   // container, so it must be independently hidden
   hide_no_articles_message();
 
-  const feeds_container = document.getElementById('feeds-container');
-  feeds_container.style.display = 'block';
+  const feedsContainer = document.getElementById('feeds-container');
+  feedsContainer.style.display = 'block';
 }
 
 const toggle_left_panel_button = document.getElementById('main-menu-button');
@@ -433,12 +436,12 @@ function import_opml_prompt() {
   const input = document.createElement('input');
   input.setAttribute('type', 'file');
   input.setAttribute('accept', 'application/xml');
-  input.onchange = async function(event) {
+  input.onchange = async function (event) {
     // For unknown reason we must grab this before the await, otherwise error.
     // This behavior changed sometime around Chrome 72 without notice
-    const files = event.target.files;
+    const { files } = event.target;
     const conn = await db.open();
-    await import_opml(conn, files);
+    await importOPML(conn, files);
     conn.close();
   };
   input.click();
@@ -463,26 +466,26 @@ async function options_menu_onclick(event) {
     case 'menu-option-export':
       // Load all feeds from the database
       const conn = await db.open();
-      const resources = await db.get_resources({conn: conn, mode: 'feeds'});
+      const resources = await db.getResources({ conn, mode: 'feeds' });
       conn.close();
 
       // Convert the loaded feeds into outlines
-      const outlines = resources.map(resource => {
+      const outlines = resources.map((resource) => {
         const outline = new Outline();
         outline.type = resource.feed_format;
 
-        if (db.has_url(resource)) {
-          outline.xml_url = db.get_url_string(resource);
+        if (db.hasURL(resource)) {
+          outline.xmlUrl = db.getURLString(resource);
         }
 
         outline.title = resource.title;
         outline.description = resource.description;
-        outline.html_url = resource.link;
+        outline.htmlUrl = resource.link;
         return outline;
       });
 
-      const document = await export_opml(outlines, 'Subscriptions');
-      download_xml_document(document, 'subscriptions.xml');
+      const document = await exportOPML(outlines, 'Subscriptions');
+      downloadXMLDocument(document, 'subscriptions.xml');
       break;
     case 'menu-option-header-font':
       break;
@@ -497,7 +500,7 @@ async function options_menu_onclick(event) {
 function header_font_menu_init(fonts) {
   const menu = document.getElementById('header-font-menu');
   menu.onchange = header_font_menu_onchange;
-  const current_header_font = config.read_string('header_font_family');
+  const current_header_font = config.readString('header_font_family');
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Header Font';
@@ -517,7 +520,7 @@ function header_font_menu_init(fonts) {
 function body_font_menu_init(fonts) {
   const menu = document.getElementById('body-font-menu');
   menu.onchange = body_font_menu_onchange;
-  const current_body_font = config.read_string('body_font_family');
+  const current_body_font = config.readString('body_font_family');
   const default_option = document.createElement('option');
   default_option.value = '';
   default_option.textContent = 'Body Font';
@@ -536,41 +539,41 @@ function body_font_menu_init(fonts) {
 
 function header_font_menu_onchange(event) {
   const font_name = event.target.value;
-  const old_value = config.read_string('header_font_family');
+  const old_value = config.readString('header_font_family');
   if (font_name) {
-    config.write_string('header_font_family', font_name);
+    config.writeString('header_font_family', font_name);
   } else {
     config.remove('header_font_family');
   }
 
   // HACK: dispatch a fake local change because storage change event listener
   // only fires if change made from other page
-  config.storage_onchange({
+  config.storageOnchange({
     isTrusted: true,
     type: 'storage',
     key: 'header_font_family',
     newValue: font_name,
-    oldValue: old_value
+    oldValue: old_value,
   });
 }
 
 function body_font_menu_onchange(event) {
   const font_name = event.target.value;
-  const old_value = config.read_string('body_font_family');
+  const old_value = config.readString('body_font_family');
   if (font_name) {
-    config.write_string('body_font_family', font_name);
+    config.writeString('body_font_family', font_name);
   } else {
     config.remove('body_font_family');
   }
 
   // HACK: dispatch a fake local change because storage change event listener
   // only fires if change made from other page
-  config.storage_onchange({
+  config.storageOnchange({
     isTrusted: true,
     type: 'storage',
     key: 'body_font_family',
     newValue: font_name,
-    oldValue: old_value
+    oldValue: old_value,
   });
 }
 
@@ -584,8 +587,8 @@ function body_font_menu_onchange(event) {
 function window_onclick(event) {
   const avoided_zone_ids = ['main-menu-button', 'left-panel'];
 
-  if (!avoided_zone_ids.includes(event.target.id) &&
-      !event.target.closest('[id="left-panel"]')) {
+  if (!avoided_zone_ids.includes(event.target.id)
+      && !event.target.closest('[id="left-panel"]')) {
     const left_panel_element = document.getElementById('left-panel');
 
     if (left_panel_element.style.marginLeft === '0px') {
@@ -601,7 +604,7 @@ function leftpanel_init() {
   menu_options.onclick = options_menu_onclick;
 
   // Load fonts from configuration once for both init helpers
-  const fonts = config.read_array('fonts');
+  const fonts = config.readArray('fonts');
   header_font_menu_init(fonts);
   body_font_menu_init(fonts);
 
@@ -633,10 +636,9 @@ async function onmessage(event) {
   }
 
   // Common behavior for type handlers related to updating the badge
-  const badge_types =
-      ['resource-created', 'resource-updated', 'resource-deleted'];
+  const badge_types = ['resource-created', 'resource-updated', 'resource-deleted'];
   if (badge_types.includes(message.type)) {
-    refresh_badge().catch(console.warn);  // intentionally unawaited
+    refreshBadge().catch(console.warn); // intentionally unawaited
   }
 
   if (message.type === 'resource-updated') {
@@ -687,11 +689,11 @@ async function onmessage(event) {
     // logic.
 
     const conn = await db.open();
-    const entries = await db.get_resources({
-      conn: conn,
+    const entries = await db.getResources({
+      conn,
       mode: 'viewable-entries',
       offset: unread_count,
-      limit: undefined
+      limit: undefined,
     });
     conn.close();
 
@@ -701,8 +703,8 @@ async function onmessage(event) {
     return;
   }
 
-  if (message.type === 'resource-deleted' ||
-      message.type === 'resource-archived') {
+  if (message.type === 'resource-deleted'
+      || message.type === 'resource-archived') {
     const slide = find_slide_by_entry_id(message.id);
     if (slide) {
       if (is_current_slide(slide)) {
@@ -741,7 +743,7 @@ function onmessageerror(event) {
 }
 
 function find_slide_by_entry_id(entry_id) {
-  return document.querySelector('slide[entry="' + entry_id + '"]');
+  return document.querySelector(`slide[entry="${entry_id}"]`);
 }
 
 function append_slide(entry) {
@@ -786,9 +788,9 @@ function create_article_title_element(entry) {
 
   // In addition, this relies on using CSS to truncate the title as needed
   // instead of explicitly truncating the value here.
-  let title = entry.title || 'Untitled';
+  const title = entry.title || 'Untitled';
   title_element.setAttribute('title', title);
-  title_element.innerHTML = filter_publisher(title);
+  title_element.innerHTML = filterPublisher(title);
   return title_element;
 }
 
@@ -833,7 +835,7 @@ function create_feed_source_element(entry) {
   buffer.push(entry.author || 'Unknown author');
   if (entry.published_date) {
     buffer.push(' on ');
-    buffer.push(format_date(entry.published_date));
+    buffer.push(formatDate(entry.published_date));
   }
   details.textContent = buffer.join('');
   source_element.append(details);
@@ -899,14 +901,15 @@ function attach_slide(slide) {
 }
 
 function is_valid_transition_duration(transition_duration) {
-  return !isNaN(transition_duration) && isFinite(transition_duration) &&
-      transition_duration >= 0;
+  return !isNaN(transition_duration) && isFinite(transition_duration)
+      && transition_duration >= 0;
 }
 
 function set_transition_duration(input_duration) {
   if (!is_valid_transition_duration(input_duration)) {
     throw new TypeError(
-        'Invalid transition_duration parameter', input_duration);
+      'Invalid transition_duration parameter', input_duration,
+    );
   }
 
   transition_duration = input_duration;
@@ -940,7 +943,7 @@ function count_unread_slides() {
 }
 
 function feeds_container_append_feed(feed) {
-  const feeds_container = document.getElementById('feeds-container');
+  const feedsContainer = document.getElementById('feeds-container');
   const feed_element = document.createElement('div');
   feed_element.id = feed.id;
 
@@ -995,13 +998,13 @@ function feeds_container_append_feed(feed) {
   col.setAttribute('colspan', '2');
 
   let button = document.createElement('button');
-  button.value = '' + feed.id;
+  button.value = `${feed.id}`;
   button.onclick = unsubscribe_button_onclick;
   button.textContent = 'Unsubscribe';
   col.append(button);
 
   button = document.createElement('button');
-  button.value = '' + feed.id;
+  button.value = `${feed.id}`;
   button.onclick = unsubscribe_button_onclick;
   button.textContent = 'Activate';
   if (feed.active === 1) {
@@ -1010,7 +1013,7 @@ function feeds_container_append_feed(feed) {
   col.append(button);
 
   button = document.createElement('button');
-  button.value = '' + feed.id;
+  button.value = `${feed.id}`;
   button.onclick = unsubscribe_button_onclick;
   button.textContent = 'Deactivate';
   if (feed.active !== 1) {
@@ -1022,10 +1025,10 @@ function feeds_container_append_feed(feed) {
   feed_info_element.append(row);
   feed_element.append(feed_info_element);
 
-  feeds_container.append(feed_element);
+  feedsContainer.append(feed_element);
 }
 
-function feeds_container_onclick(event) {
+function feedsContainerOnclick(event) {
   if (event.target.localName === 'div' && event.target.id) {
     toggle_details(event.target);
   }
@@ -1059,8 +1062,10 @@ function onkeydown(event) {
     return;
   }
 
-  const LEFT = 37, RIGHT = 39;
-  const N = 78, P = 80;
+  const LEFT = 37; const
+    RIGHT = 39;
+  const N = 78; const
+    P = 80;
   const SPACE = 32;
   const code = event.keyCode;
 
@@ -1074,21 +1079,23 @@ function onkeydown(event) {
 }
 
 function show_splash() {
-  splash_element.style.display = 'block';
+  splashElement.style.display = 'block';
 }
 
 function hide_splash() {
-  splash_element.style.display = 'none';
+  splashElement.style.display = 'none';
 }
 
 async function load_view() {
   show_splash();
 
   const conn = await db.open();
-  const get_entries_promise = db.get_resources(
-      {conn: conn, mode: 'viewable-entries', offset: 0, limit: 6});
-  const get_feeds_promise =
-      db.get_resources({conn: conn, mode: 'feeds', title_sort: true});
+  const get_entries_promise = db.getResources(
+    {
+      conn, mode: 'viewable-entries', offset: 0, limit: 6,
+    },
+  );
+  const get_feeds_promise = db.getResources({ conn, mode: 'feeds', title_sort: true });
   conn.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)
@@ -1114,7 +1121,7 @@ async function load_view() {
 }
 
 channel_init();
-addEventListener('storage', config.storage_onchange);
+addEventListener('storage', config.storageOnchange);
 addEventListener('keydown', onkeydown);
 document.addEventListener('DOMContentLoaded', config.dom_load_listener);
 

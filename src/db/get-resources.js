@@ -1,6 +1,6 @@
 import assert from '/lib/assert.js';
 
-export default function get_resources(query) {
+export default function getResources(query) {
   return new Promise(get_resources_executor.bind(this, query));
 }
 
@@ -8,7 +8,7 @@ function get_resources_executor(query, resolve, reject) {
   assert(query && typeof query === 'object');
 
   const modes = [
-    'all', 'feeds', 'active-feeds', 'viewable-entries', 'archivable-entries'
+    'all', 'feeds', 'active-feeds', 'viewable-entries', 'archivable-entries',
   ];
   assert(modes.includes(query.mode));
   assert(is_valid_offset(query.offset));
@@ -17,8 +17,7 @@ function get_resources_executor(query, resolve, reject) {
   const resources = [];
 
   const transaction = query.conn.conn.transaction('resources');
-  transaction.oncomplete =
-      transaction_oncomplete.bind(transaction, resources, query, resolve);
+  transaction.oncomplete = transaction_oncomplete.bind(transaction, resources, query, resolve);
   transaction.onerror = event => reject(event.target.error);
 
   const store = transaction.objectStore('resources');
@@ -81,13 +80,13 @@ function resource_matches_query(mode, resource) {
   }
 
   if (mode === 'viewable-entries') {
-    return resource.type === 'entry' && resource.archived === 0 &&
-        resource.read === 0;
+    return resource.type === 'entry' && resource.archived === 0
+        && resource.read === 0;
   }
 
   if (mode === 'archivable-entries') {
-    return resource.type === 'entry' && resource.archived === 0 &&
-        resource.read === 1;
+    return resource.type === 'entry' && resource.archived === 0
+        && resource.read === 1;
   }
 
   if (mode === 'active-feeds') {
@@ -112,13 +111,13 @@ function open_cursor_request(query, store) {
     return index.openCursor('feed');
   }
 
-  if (query.mode === 'viewable-entries' ||
-      query.mode === 'archivable-entries') {
+  if (query.mode === 'viewable-entries'
+      || query.mode === 'archivable-entries') {
     const index = store.index('type');
     return index.openCursor('entry');
   }
 
-  throw new TypeError('Invalid mode ' + query.mode);
+  throw new TypeError(`Invalid mode ${query.mode}`);
 }
 
 function transaction_oncomplete(resources, query, callback, event) {
@@ -136,11 +135,11 @@ function compare_resource_titles(a, b) {
 }
 
 function is_valid_offset(offset) {
-  return offset === null || offset === undefined || offset === NaN ||
-      (Number.isInteger(offset) && offset >= 0);
+  return offset === null || offset === undefined || offset === NaN
+      || (Number.isInteger(offset) && offset >= 0);
 }
 
 function is_valid_limit(limit) {
-  return limit === null || limit === undefined || limit === NaN ||
-      (Number.isInteger(limit) && limit >= 0);
+  return limit === null || limit === undefined || limit === NaN
+      || (Number.isInteger(limit) && limit >= 0);
 }

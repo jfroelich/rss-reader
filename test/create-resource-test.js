@@ -1,50 +1,51 @@
-import assert, {AssertionError} from '/lib/assert.js';
-import * as indexeddb_utils from '/lib/indexeddb-utils.js';
-import create_resource from '/src/db/create-resource.js';
-import get_resource from '/src/db/get-resource.js';
-import * as resource_utils from '/src/db/resource-utils.js';
-import * as database_utils from '/test/database-utils.js';
+import assert, { AssertionError } from '/lib/assert.js';
+import * as indexedDBUtils from '/lib/indexeddb-utils.js';
+import createResource from '/src/db/create-resource.js';
+import getResource from '/src/db/get-resource.js';
+import * as resourceUtils from '/src/db/resource-utils.js';
+import * as databaseUtils from '/test/database-utils.js';
 
 export default async function create_resource_test() {
   const database_name_prefix = 'create-resource-test';
-  await database_utils.remove_databases_for_prefix(database_name_prefix);
-  const database_name =
-      database_utils.create_unique_database_name(database_name_prefix);
+  await databaseUtils.remove_databases_for_prefix(database_name_prefix);
+  const database_name = databaseUtils.create_unique_database_name(database_name_prefix);
 
-  const conn = await database_utils.create_test_database(database_name);
+  const conn = await databaseUtils.create_test_database(database_name);
 
   const resource = {};
   resource.type = 'feed';
   const url = new URL('a://b.c');
-  resource_utils.set_url(resource, url);
+  resourceUtils.setURL(resource, url);
 
-  const id = await create_resource(conn, resource);
-  assert(resource_utils.is_valid_id(id));
+  const id = await createResource(conn, resource);
+  assert(resourceUtils.isValidId(id));
 
-  let match =
-      await get_resource({conn: conn, mode: 'id', id: id, key_only: false});
+  let match = await getResource({
+    conn, mode: 'id', id, key_only: false,
+  });
   assert(match);
 
-  match =
-      await get_resource({conn: conn, mode: 'url', url: url, key_only: true});
+  match = await getResource({
+    conn, mode: 'url', url, key_only: true,
+  });
   assert(match);
 
   // Creating a feed without a url is an error
   delete resource.urls;
   let expected_error;
   try {
-    await create_resource(conn, resource);
+    await createResource(conn, resource);
   } catch (error) {
     expected_error = error;
   }
   assert(expected_error);
 
   // Creating a feed that has an id but is otherwise valid is an error
-  resource_utils.set_url(resource, url);
+  resourceUtils.setURL(resource, url);
   resource.id = id;
   expected_error = undefined;
   try {
-    await create_resource(conn, resource);
+    await createResource(conn, resource);
   } catch (error) {
     expected_error = error;
   }
@@ -54,12 +55,12 @@ export default async function create_resource_test() {
   expected_error = undefined;
   delete resource.id;
   try {
-    await create_resource(conn, resource);
+    await createResource(conn, resource);
   } catch (error) {
     expected_error = error;
   }
   assert(expected_error);
 
   conn.close();
-  await indexeddb_utils.remove(conn.conn.name);
+  await indexedDBUtils.remove(conn.conn.name);
 }

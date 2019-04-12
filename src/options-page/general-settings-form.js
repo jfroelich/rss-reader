@@ -2,7 +2,7 @@ import * as config from '/src/config.js';
 
 export default function GeneralSettingsForm() {}
 
-GeneralSettingsForm.prototype.init = async function(parent) {
+GeneralSettingsForm.prototype.init = async function (parent) {
   const heading = document.createElement('h1');
   heading.textContent = 'General Settings';
   parent.append(heading);
@@ -18,11 +18,11 @@ GeneralSettingsForm.prototype.init = async function(parent) {
   input.setAttribute('type', 'checkbox');
   input.setAttribute('id', 'enable-notifications');
 
-  input.onclick = event => {
-    config.write_boolean('notifications_enabled', event.target.checked);
+  input.onclick = (event) => {
+    config.writeBoolean('notifications_enabled', event.target.checked);
   };
 
-  input.checked = config.read_boolean('notifications_enabled');
+  input.checked = config.readBoolean('notifications_enabled');
 
   let label = document.createTextNode('Enable notifications');
   cell.append(input);
@@ -43,7 +43,7 @@ GeneralSettingsForm.prototype.init = async function(parent) {
   // TODO: this should be using a configuration variable and instead the
   // permission should be permanently defined.
   input.checked = await has_permission('background');
-  input.onclick = event => {
+  input.onclick = (event) => {
     if (event.target.checked) {
       request_permission('background');
     } else {
@@ -52,8 +52,9 @@ GeneralSettingsForm.prototype.init = async function(parent) {
   };
 
   label = document.createTextNode(
-      'Permit this extension to check for updates in the background if ' +
-      'Chrome is configured to allow background processing.');
+    'Permit this extension to check for updates in the background if '
+      + 'Chrome is configured to allow background processing.',
+  );
   cell.append(input);
   cell.append(label);
   row.append(cell);
@@ -67,12 +68,10 @@ GeneralSettingsForm.prototype.init = async function(parent) {
   input.setAttribute('type', 'checkbox');
   input.setAttribute('id', 'enable-idle-check');
 
-  input.checked = config.read_boolean('only_poll_if_idle');
-  input.onclick = event =>
-      config.write_boolean('only_poll_if_idle', event.target.checked);
+  input.checked = config.readBoolean('only_poll_if_idle');
+  input.onclick = event => config.writeBoolean('only_poll_if_idle', event.target.checked);
 
-  label =
-      document.createTextNode('Only check for updates when my device is idle');
+  label = document.createTextNode('Only check for updates when my device is idle');
   cell.append(input);
   cell.append(label);
   row.append(cell);
@@ -83,15 +82,18 @@ GeneralSettingsForm.prototype.init = async function(parent) {
 
 function request_permission(name) {
   return new Promise(
-      resolve => chrome.permissions.request({permissions: [name]}, resolve));
+    resolve => chrome.permissions.request({ permissions: [name] }, resolve),
+  );
 }
 
 function remove_permission(name) {
   return new Promise(
-      resolve => chrome.permissions.remove({permissions: [name]}, resolve));
+    resolve => chrome.permissions.remove({ permissions: [name] }, resolve),
+  );
 }
 
 function has_permission(name) {
   return new Promise(
-      resolve => chrome.permissions.contains({permissions: [name]}, resolve));
+    resolve => chrome.permissions.contains({ permissions: [name] }, resolve),
+  );
 }

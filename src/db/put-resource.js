@@ -1,30 +1,30 @@
 import assert from '/lib/assert.js';
-import filter_empty_properties from '/lib/filter-empty-properties.js';
+import filterEmptyProperties from '/lib/filter-empty-properties.js';
 import Connection from '/src/db/connection.js';
-import * as resource_utils from '/src/db/resource-utils.js';
+import * as resourceUtils from '/src/db/resource-utils.js';
 
-export default function put_resource(conn, resource) {
+export default function putResource(conn, resource) {
   return new Promise(put_resource_executor.bind(this, conn, resource));
 }
 
 function put_resource_executor(conn, resource, resolve, reject) {
   assert(conn instanceof Connection);
   assert(resource && typeof resource === 'object');
-  assert(resource_utils.is_valid_id(resource.id));
+  assert(resourceUtils.isValidId(resource.id));
   assert(resource.type === 'feed' || resource.type === 'entry');
-  assert(resource.type === 'entry' || resource_utils.has_url(resource));
+  assert(resource.type === 'entry' || resourceUtils.hasURL(resource));
   assert(
-      resource.type === 'feed' || resource_utils.is_valid_id(resource.parent));
+    resource.type === 'feed' || resourceUtils.isValidId(resource.parent),
+  );
 
-  resource_utils.normalize(resource);
-  resource_utils.sanitize(resource);
-  resource_utils.validate(resource);
-  filter_empty_properties(resource);
+  resourceUtils.normalize(resource);
+  resourceUtils.sanitize(resource);
+  resourceUtils.validate(resource);
+  filterEmptyProperties(resource);
   resource.updated_date = new Date();
 
   const transaction = conn.conn.transaction('resources', 'readwrite');
-  transaction.oncomplete =
-      transaction_oncomplete.bind(transaction, resource, conn.channel, resolve);
+  transaction.oncomplete = transaction_oncomplete.bind(transaction, resource, conn.channel, resolve);
   transaction.onerror = event => reject(event.target.error);
 
   const resources_store = transaction.objectStore('resources');
@@ -33,7 +33,7 @@ function put_resource_executor(conn, resource, resolve, reject) {
 
 function transaction_oncomplete(resource, channel, callback, event) {
   if (channel) {
-    channel.postMessage({type: 'resource-updated', id: resource.id});
+    channel.postMessage({ type: 'resource-updated', id: resource.id });
   }
   callback(resource);
 }

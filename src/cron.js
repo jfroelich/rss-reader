@@ -1,34 +1,34 @@
 import * as favicon from '/lib/favicon.js';
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
-import {poll_feeds, PollFeedsArgs} from '/src/poll-feeds.js';
-import refresh_feed_icons from '/src/refresh-feed-icons.js';
+import { pollFeeds, PollFeedsArgs } from '/src/poll-feeds.js';
+import refreshFeedIcons from '/src/refresh-feed-icons.js';
 
 const HALF_DAY_MINUTES = 60 * 12;
 const ONE_WEEK_MINUTES = 60 * 24 * 7;
 const ONE_HOUR_MINUTES = 60;
 const FORTNIGHT_MINUTES = ONE_WEEK_MINUTES * 2;
 
-const deprecated_alarms = [
+const deprecatedAlarmNames = [
   'remove-entries-missing-urls', 'remove-untyped-objects',
   'remove-orphaned-entries', 'test-install-binding-alarms',
-  'db-remove-orphaned-entries', 'cleanup-refresh-badge-lock'
+  'db-remove-orphaned-entries', 'cleanup-refresh-badge-lock',
 ];
 
 const alarms = [
-  {name: 'archive', period: HALF_DAY_MINUTES},
-  {name: 'poll', period: ONE_HOUR_MINUTES},
-  {name: 'refresh-feed-icons', period: FORTNIGHT_MINUTES},
-  {name: 'compact-favicon-db', period: ONE_WEEK_MINUTES}
+  { name: 'archive', period: HALF_DAY_MINUTES },
+  { name: 'poll', period: ONE_HOUR_MINUTES },
+  { name: 'refresh-feed-icons', period: FORTNIGHT_MINUTES },
+  { name: 'compact-favicon-db', period: ONE_WEEK_MINUTES },
 ];
 
-export function query_idle_state(seconds) {
+export function queryIdleState(seconds) {
   return new Promise(resolve => chrome.idle.queryState(seconds, resolve));
 }
 
-export function create_alarms() {
+export function createAlarms() {
   for (const alarm of alarms) {
-    create_alarm(alarm.name, {periodInMinutes: alarm.period});
+    create_alarm(alarm.name, { periodInMinutes: alarm.period });
   }
 }
 
@@ -37,16 +37,16 @@ export function create_alarm(name, options) {
 }
 
 export function remove_alarm(name, callback) {
-  return new Promise(resolve => {
-    chrome.alarms.clear(name, function(cleared) {
-      resolve({name: name, cleared: cleared});
+  return new Promise((resolve) => {
+    chrome.alarms.clear(name, (cleared) => {
+      resolve({ name, cleared });
     });
   });
 }
 
 export function update_alarms(prev_version_string) {
   const promises = [];
-  for (const name of deprecated_alarms) {
+  for (const name of deprecatedAlarmNames) {
     promises.push(remove_alarm(name));
   }
   return Promise.all(promises);
@@ -54,18 +54,18 @@ export function update_alarms(prev_version_string) {
 
 export async function alarm_listener(alarm) {
   console.debug('Alarm wokeup:', alarm.name);
-  config.write_string('last_alarm', alarm.name);
+  config.writeString('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
     const conn = await db.open();
-    await db.archive_resources(conn);
+    await db.archiveResources(conn);
     conn.close();
   } else if (alarm.name === 'poll') {
-    await handle_alarm_poll();
+    await handleAlarmPoll();
   } else if (alarm.name === 'refresh-feed-icons') {
     const proms = [db.open(), favicon.open()];
     const [conn, iconn] = await Promise.all(proms);
-    await refresh_feed_icons(conn, iconn);
+    await refreshFeedIcons(conn, iconn);
     conn.close();
     iconn.close();
   } else if (alarm.name === 'compact-favicon-db') {
@@ -77,28 +77,26 @@ export async function alarm_listener(alarm) {
   }
 }
 
-async function handle_alarm_poll() {
-  const idle_poll_secs = config.read_int('idle_poll_secs');
-  if (Number.isInteger(idle_poll_secs) && idle_poll_secs > 0 &&
-      config.read_boolean('only_poll_if_idle')) {
-    const idle_states = ['locked', 'idle'];
-    const idle_state = await query_idle_state(idle_poll_secs);
-    if (!idle_states.includes(idle_state)) {
-      console.debug(
-          'Canceling poll-feeds alarm as not idle for %d seconds',
-          idle_poll_secs);
+async function handleAlarmPoll() {
+  const idlePollSeconds = config.readInt('idle_poll_secs');
+  if (Number.isInteger(idlePollSeconds) && idlePollSeconds > 0
+      && config.readBoolean('only_poll_if_idle')) {
+    const idleStates = ['locked', 'idle'];
+    const idleState = await queryIdleState(idlePollSeconds);
+    if (!idleStates.includes(idleState)) {
+      console.debug('Canceling poll-feeds alarm as not idle for %d seconds', idlePollSeconds);
       return;
     }
   }
 
   const promises = [db.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(promises);
-  const poll_args = new PollFeedsArgs();
-  poll_args.conn = conn;
-  poll_args.iconn = iconn;
-  poll_args.ignore_recency_check = false;
-  poll_args.notify = true;
-  await poll_feeds(poll_args);
+  const pollArgs = new PollFeedsArgs();
+  pollArgs.conn = conn;
+  pollArgs.iconn = iconn;
+  pollArgs.ignoreRecencyCheck = false;
+  pollArgs.notify = true;
+  await pollFeeds(pollArgs);
   conn.close();
   iconn.close();
 }

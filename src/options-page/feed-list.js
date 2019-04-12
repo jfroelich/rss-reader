@@ -3,7 +3,7 @@ import * as db from '/src/db/db.js';
 import unsubscribe from '/src/unsubscribe.js';
 
 export default function FeedList() {
-  this.list_element = undefined;
+  this.listElement = undefined;
   this.no_feeds_element = undefined;
 
   // Optional callback caller can specify that is called every time a feed
@@ -15,15 +15,14 @@ export default function FeedList() {
   this.deactivate_callback = undefined;
 }
 
-FeedList.prototype.init = async function(parent) {
+FeedList.prototype.init = async function (parent) {
   const conn = await db.open();
-  const feeds =
-      await db.get_resources({conn: conn, mode: 'feeds', title_sort: true});
+  const feeds = await db.getResources({ conn, mode: 'feeds', title_sort: true });
   conn.close();
 
-  const list_element = document.createElement('ul');
-  this.list_element = list_element;
-  list_element.setAttribute('id', 'feedlist');
+  const listElement = document.createElement('ul');
+  this.listElement = listElement;
+  listElement.setAttribute('id', 'feedlist');
 
   for (let feed of feeds) {
     // Specialize generic data object as feed object
@@ -43,16 +42,16 @@ FeedList.prototype.init = async function(parent) {
 
   if (!feeds.length) {
     no_feeds_element.style.display = 'block';
-    list_element.style.display = 'none';
+    listElement.style.display = 'none';
   }
 
-  parent.append(list_element);
+  parent.append(listElement);
   parent.append(no_feeds_element);
 };
 
-FeedList.prototype.appendFeed = function(feed) {
+FeedList.prototype.appendFeed = function (feed) {
   assert(feed && typeof feed === 'object');
-  assert(this.list_element);
+  assert(this.listElement);
 
   const item_element = document.createElement('li');
   item_element.setAttribute('sort-key', feed.title);
@@ -78,27 +77,27 @@ FeedList.prototype.appendFeed = function(feed) {
   }
 
   const title_element = document.createElement('span');
-  const feed_title = feed.title || db.get_url_string(feed);
+  const feed_title = feed.title || db.getURLString(feed);
   // Title is automatically truncated via CSS so just produce the full value
   title_element.textContent = feed_title;
   item_element.append(title_element);
 
   // Append the feed into the proper position in the feed list, using the same
-  // sorting order as the database would use when loading data in get_resources
+  // sorting order as the database would use when loading data in getResources
   const normal_title = feed_title.toLowerCase();
   let inserted = false;
-  for (const child_node of (this.list_element.childNodes)) {
+  for (const child_node of (this.listElement.childNodes)) {
     const key_string = child_node.getAttribute('sort-key') || '';
 
     if (indexedDB.cmp(normal_title, key_string.toLowerCase()) < 1) {
-      this.list_element.insertBefore(item_element, child_node);
+      this.listElement.insertBefore(item_element, child_node);
       inserted = true;
       break;
     }
   }
 
   if (!inserted) {
-    this.list_element.append(item_element);
+    this.listElement.append(item_element);
   }
 
   if (this.onappend_callback) {
@@ -106,25 +105,28 @@ FeedList.prototype.appendFeed = function(feed) {
   }
 };
 
-FeedList.prototype.count = function() {
-  return this.list_element.childElementCount;
+FeedList.prototype.count = function () {
+  return this.listElement.childElementCount;
 };
 
 // TODO: refactor as list click handler instead of per item
-FeedList.prototype.itemOnclick = async function(event) {
+FeedList.prototype.itemOnclick = async function (event) {
   const item_element = event.currentTarget;
   const feed_id = parseInt(item_element.getAttribute('feed'), 10);
 
   const conn = await db.open();
-  let feed = await db.get_resource(
-      {conn: conn, mode: 'id', id: feed_id, key_only: false});
+  let feed = await db.getResource(
+    {
+      conn, mode: 'id', id: feed_id, key_only: false,
+    },
+  );
   conn.close();
 
   // TODO: i don't think this is needed anymore
   feed = Object.assign({}, feed);
 
   const details_title_element = document.getElementById('details-title');
-  details_title_element.textContent = feed.title || db.get_url_string(feed);
+  details_title_element.textContent = feed.title || db.getURLString(feed);
 
   const details_favicon_element = document.getElementById('details-favicon');
   if (feed.favicon_url) {
@@ -134,28 +136,27 @@ FeedList.prototype.itemOnclick = async function(event) {
     details_favicon_element.removeAttribute('src');
   }
 
-  const details_desc_element =
-      document.getElementById('details-feed-description');
+  const details_desc_element = document.getElementById('details-feed-description');
   details_desc_element.textContent = feed.description || '';
 
   const feed_url_element = document.getElementById('details-feed-url');
-  feed_url_element.textContent = db.get_url_string(feed);
+  feed_url_element.textContent = db.getURLString(feed);
 
   const feed_link_element = document.getElementById('details-feed-link');
   feed_link_element.textContent = feed.link || '';
 
   const unsubscribe_button = document.getElementById('details-unsubscribe');
-  unsubscribe_button.value = '' + feed.id;
+  unsubscribe_button.value = `${feed.id}`;
   unsubscribe_button.onclick = this.unsubscribeButtonOnclick.bind(this);
 
   const activate_button = document.getElementById('details-activate');
-  activate_button.value = '' + feed.id;
-  activate_button.disabled = feed.active === 1 ? true : false;
+  activate_button.value = `${feed.id}`;
+  activate_button.disabled = feed.active === 1;
   activate_button.onclick = this.activateOnclick.bind(this);
 
   const deactivate_button = document.getElementById('details-deactivate');
-  deactivate_button.value = '' + feed.id;
-  deactivate_button.disabled = feed.active !== 1 ? true : false;
+  deactivate_button.value = `${feed.id}`;
+  deactivate_button.disabled = feed.active !== 1;
   deactivate_button.onclick = this.deactivateOnclick.bind(this);
 
   if (this.onclick_callback) {
@@ -163,7 +164,7 @@ FeedList.prototype.itemOnclick = async function(event) {
   }
 };
 
-FeedList.prototype.unsubscribeButtonOnclick = async function(event) {
+FeedList.prototype.unsubscribeButtonOnclick = async function (event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const conn = await db.open();
@@ -177,15 +178,15 @@ FeedList.prototype.unsubscribeButtonOnclick = async function(event) {
   }
 };
 
-FeedList.prototype.removeFeedById = function(feed_id) {
-  const item_element = this.list_element.querySelector(`li[feed="${feed_id}"]`);
+FeedList.prototype.removeFeedById = function (feed_id) {
+  const item_element = this.listElement.querySelector(`li[feed="${feed_id}"]`);
   assert(item_element);
 
   item_element.removeEventListener('click', this.itemOnclick);
   item_element.remove();
 
-  if (!this.list_element.childElementCount) {
-    this.list_element.style.display = 'none';
+  if (!this.listElement.childElementCount) {
+    this.listElement.style.display = 'none';
     this.no_feeds_element.style.display = 'block';
   }
 
@@ -197,16 +198,15 @@ FeedList.prototype.removeFeedById = function(feed_id) {
 // TODO: handling the event here may be wrong, it should be done in the
 // channel message handler. However, I am not sure how much longer the options
 // page is sticking around so defering this change
-FeedList.prototype.activateOnclick = async function(event) {
+FeedList.prototype.activateOnclick = async function (event) {
   const feed_id = parseInt(event.target.value, 10);
 
   const conn = await db.open();
-  await db.patch_resource(conn, {id: feed_id, active: 1});
+  await db.patchResource(conn, { id: feed_id, active: 1 });
   conn.close();
 
   // Mark the corresponding feed element loaded in the view as active
-  const item_element =
-      this.list_element.querySelector('li[feed="' + feed_id + '"]');
+  const item_element = this.listElement.querySelector(`li[feed="${feed_id}"]`);
 
   // It may not be loaded (e.g. it may be removed)
   if (item_element) {
@@ -218,17 +218,16 @@ FeedList.prototype.activateOnclick = async function(event) {
   }
 };
 
-FeedList.prototype.deactivateOnclick = async function(event) {
+FeedList.prototype.deactivateOnclick = async function (event) {
   const feed_id = parseInt(event.target.value, 10);
   const conn = await db.open();
-  const props = {id: feed_id, active: 0, deactivation_reason: 'manual'};
-  await db.patch_resource(conn, props);
+  const props = { id: feed_id, active: 0, deactivation_reason: 'manual' };
+  await db.patchResource(conn, props);
   conn.close();
 
   // TODO: this should be done in the channel message handler instead of here
   // Deactivate the corresponding element in the view
-  const item_element =
-      this.list_element.querySelector('li[feed="' + feed_id + '"]');
+  const item_element = this.listElement.querySelector(`li[feed="${feed_id}"]`);
   if (item_element) {
     item_element.setAttribute('inactive', 'true');
   }

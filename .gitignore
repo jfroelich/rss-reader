@@ -11,5 +11,6 @@ experimental/
 # node stuff
 node_modules/
 .eslintrc.json
+.jshintrc
 package-lock.json
 package.json

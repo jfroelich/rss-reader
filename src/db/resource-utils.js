@@ -1,11 +1,10 @@
 import assert from '/lib/assert.js';
-import filter_controls from '/lib/filter-controls.js';
-import filter_unprintables from '/lib/filter-unprintables.js';
-import remove_html from '/lib/remove-html.js';
-import truncate_html from '/lib/truncate-html.js';
+import filterControls from '/lib/filter-controls.js';
+import filterUnprintables from '/lib/filter-unprintables.js';
+import removeHTML from '/lib/remove-html.js';
+import truncateHTML from '/lib/truncate-html.js';
 
-// Known resource property names
-const resource_props = [
+const knownResourcePropertyNames = [
   'active',
   'archived_date',
   'archived',
@@ -29,10 +28,10 @@ const resource_props = [
   'title',
   'type',
   'updated_date',
-  'urls'
+  'urls',
 ];
 
-export function is_valid_id(value) {
+export function isValidId(value) {
   return Number.isInteger(value) && value > 0;
 }
 
@@ -40,7 +39,7 @@ export function is_valid_id(value) {
 // the resource. Returns whether appended. This accepts a url object instead
 // of a string to ensure the url is well-formed, absolute, and canonical,
 // although the url is recorded in string form in the resource's urls list.
-export function set_url(resource, url) {
+export function setURL(resource, url) {
   const url_string = url.href;
   if (resource.urls) {
     if (resource.urls.includes(url_string)) {
@@ -55,22 +54,22 @@ export function set_url(resource, url) {
   return true;
 }
 
-export function has_url(resource) {
+export function hasURL(resource) {
   return resource.urls && resource.urls.length;
 }
 
 // Returns the last url in the resource's list of urls as a url string. Throws
 // an error if the resource object is not a resource or has no urls.
-export function get_url_string(resource) {
-  assert(has_url(resource));
+export function getURLString(resource) {
+  assert(hasURL(resource));
   return resource.urls[resource.urls.length - 1];
 }
 
 // Returns the last url in the resource's url list as a URL object. Throws an
 // error if the resource is invalid or if the resource has no urls or if the
 // url is malformed.
-export function get_url(resource) {
-  return new URL(get_url_string(resource));
+export function getURL(resource) {
+  return new URL(getURLString(resource));
 }
 
 // Mutate the input resource object such that its properties are normalized. For
@@ -96,72 +95,70 @@ export function normalize(resource) {
 
 export function sanitize(resource, options = {}) {
   for (const prop in resource) {
-    if (!resource_props.includes(prop)) {
+    if (!knownResourcePropertyNames.includes(prop)) {
       console.warn('Unknown resource property not sanitized:', prop);
     }
   }
 
-  const max_title_length =
-      isNaN(options.max_title_length) ? 1024 : options.max_title_length;
-  const max_description_length = isNaN(options.max_description_length) ?
-      10240 :
-      options.max_description_length;
-  const max_author_length =
-      isNaN(options.max_author_length) ? 200 : options.max_author_length;
+  const maxTitleLength = isNaN(options.maxTitleLength) ? 1024 : options.maxTitleLength;
+  const maxDescriptionLength = isNaN(options.maxDescriptionLength)
+    ? 10240
+    : options.maxDescriptionLength;
+  const max_author_length = isNaN(options.max_author_length) ? 200 : options.max_author_length;
 
   if (resource.title) {
-    let title = resource.title;
-    title = filter_controls(title);
+    let { title } = resource;
+    title = filterControls(title);
 
     try {
-      title = remove_html(title);
+      title = removeHTML(title);
     } catch (error) {
       title = 'Unsafe html';
     }
 
-    title = condense_whitespace(title);
-    title = truncate_html(title, max_title_length, '');
+    title = condenseWhitespace(title);
+    title = truncateHTML(title, maxTitleLength, '');
     resource.title = title;
   }
 
   if (resource.description) {
     let desc = resource.description;
-    desc = filter_controls(desc);
+    desc = filterControls(desc);
 
     try {
-      desc = remove_html(desc);
+      desc = removeHTML(desc);
     } catch (error) {
       desc = 'Unsafe html';
     }
 
-    desc = condense_whitespace(desc);
-    desc = truncate_html(desc, max_description_length, '');
+    desc = condenseWhitespace(desc);
+    desc = truncateHTML(desc, maxDescriptionLength, '');
     resource.description = desc;
   }
 
   if (resource.author) {
-    let author = resource.author;
-    author = filter_controls(author);
+    let { author } = resource;
+    author = filterControls(author);
 
     try {
-      author = remove_html(author);
+      author = removeHTML(author);
     } catch (error) {
       author = 'Unsafe html';
     }
 
-    author = condense_whitespace(author);
-    author = truncate_html(author, max_author_length);
+    author = condenseWhitespace(author);
+    author = truncateHTML(author, max_author_length);
     resource.author = author;
   }
 
   if (resource.content) {
-    let content = resource.content;
-    content = filter_unprintables(content);
+    let { content } = resource;
+    content = filterUnprintables(content);
     resource.content = content;
   }
 }
 
-function condense_whitespace(value) {
+function condenseWhitespace(value) {
   return value.replace(/\s\s+/g, ' ');
 }
 
@@ -175,74 +172,84 @@ export function validate(resource) {
   // validate is called on the delta itself. but in reality all resources should
   // have a valid type.
   vassert(
-      resource.type === 'entry' || resource.type === 'feed' ||
-      resource.type === undefined);
+    resource.type === 'entry' || resource.type === 'feed'
+      || resource.type === undefined,
+  );
 
   vassert(
-      resource.favicon_url === undefined ||
-      typeof resource.favicon_url === 'string');
+    resource.favicon_url === undefined
+      || typeof resource.favicon_url === 'string',
+  );
 
   vassert(
-      resource.active === undefined || resource.active === 1 ||
-      resource.active === 0);
+    resource.active === undefined || resource.active === 1
+      || resource.active === 0,
+  );
 
   const formats = ['rss', 'feed', 'rdf'];
   vassert(
-      resource.feed_format === undefined ||
-      formats.includes(resource.feed_format));
+    resource.feed_format === undefined
+      || formats.includes(resource.feed_format),
+  );
 
   vassert(resource.link === undefined || typeof resource.link === 'string');
 
-  vassert(resource.id === undefined || is_valid_id(resource.id));
-  vassert(resource.feed === undefined || is_valid_id(resource.feed));
+  vassert(resource.id === undefined || isValidId(resource.id));
+  vassert(resource.feed === undefined || isValidId(resource.feed));
   vassert(
-      resource.feed_title === undefined ||
-      typeof resource.feed_title === 'string');
+    resource.feed_title === undefined
+      || typeof resource.feed_title === 'string',
+  );
   vassert(resource.urls === undefined || Array.isArray(resource.urls));
   vassert(
-      resource.read === undefined || resource.read === 1 ||
-      resource.read === 0);
+    resource.read === undefined || resource.read === 1
+      || resource.read === 0,
+  );
   vassert(
-      resource.archived === undefined || resource.archived === 1 ||
-      resource.archived === 0);
+    resource.archived === undefined || resource.archived === 1
+      || resource.archived === 0,
+  );
   vassert(resource.author === undefined || typeof resource.author === 'string');
   vassert(resource.title === undefined || typeof resource.title === 'string');
   vassert(
-      resource.description === undefined ||
-      typeof resource.description === 'string');
+    resource.description === undefined
+      || typeof resource.description === 'string',
+  );
   vassert(
-      resource.content === undefined || typeof resource.content === 'string');
+    resource.content === undefined || typeof resource.content === 'string',
+  );
   vassert(
-      resource.deactivation_reason === undefined ||
-      typeof resource.deactivation_reason === 'string');
-  vassert(is_valid_date(resource.archived_date));
-  vassert(is_valid_date(resource.read_date));
-  vassert(is_valid_date(resource.deactivation_date));
-  vassert(is_date_lte(resource.deactivation_date, now));
-  vassert(is_valid_date(resource.created_date));
-  vassert(is_date_lte(resource.created_date, now));
-  vassert(is_valid_date(resource.updated_date));
-  vassert(is_date_lte(resource.updated_date, now));
-  vassert(is_date_lte(resource.created_date, resource.updated_date));
-  vassert(is_valid_date(resource.published_date));
-  vassert(is_date_lte(resource.published_date, now));
+    resource.deactivation_reason === undefined
+      || typeof resource.deactivation_reason === 'string',
+  );
+  vassert(isValidDate(resource.archived_date));
+  vassert(isValidDate(resource.read_date));
+  vassert(isValidDate(resource.deactivation_date));
+  vassert(isDateLTE(resource.deactivation_date, now));
+  vassert(isValidDate(resource.created_date));
+  vassert(isDateLTE(resource.created_date, now));
+  vassert(isValidDate(resource.updated_date));
+  vassert(isDateLTE(resource.updated_date, now));
+  vassert(isDateLTE(resource.created_date, resource.updated_date));
+  vassert(isValidDate(resource.published_date));
+  vassert(isDateLTE(resource.published_date, now));
 
   if (resource.enclosure) {
     vassert(typeof resource.enclosure === 'object');
-    const url = resource.enclosure.url;
+    const { url } = resource.enclosure;
     vassert(url === undefined || url === null || typeof url === 'string');
     const len = resource.enclosure.enclosure_length;
     vassert(len === undefined || len === null || typeof len === 'string');
-    const type = resource.enclosure.type;
+    const { type } = resource.enclosure;
     vassert(type === undefined || type === null || typeof type === 'string');
   }
 }
 
-function is_valid_date(value) {
+function isValidDate(value) {
   return value === undefined || !isNaN(value.getTime());
 }
 
-function is_date_lte(date1, date2) {
+function isDateLTE(date1, date2) {
   return date1 === undefined || date2 === undefined || date1 <= date2;
 }
 

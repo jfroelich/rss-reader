@@ -1,17 +1,16 @@
 import assert from '/lib/assert.js';
-import {Deadline, INDEFINITE} from '/lib/deadline.js';
-import * as indexeddb_utils from '/lib/indexeddb-utils.js';
+import { Deadline, INDEFINITE } from '/lib/deadline.js';
+import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 import * as db from '/src/db/db.js';
 import subscribe from '/src/subscribe.js';
-import * as database_utils from '/test/database-utils.js';
+import * as databaseUtils from '/test/database-utils.js';
 
 export async function subscribe_test() {
   const database_name_prefix = 'subscribe-test';
-  await database_utils.remove_databases_for_prefix(database_name_prefix);
-  const database_name =
-      database_utils.create_unique_database_name(database_name_prefix);
+  await databaseUtils.remove_databases_for_prefix(database_name_prefix);
+  const database_name =      databaseUtils.create_unique_database_name(database_name_prefix);
 
-  const conn = await database_utils.create_test_database(database_name);
+  const conn = await databaseUtils.create_test_database(database_name);
 
   // Setup subscribe parameters
 
@@ -20,19 +19,20 @@ export async function subscribe_test() {
   const url = new URL(local_url_string);
 
   let callback_called = false;
-  const feed_stored_callback = function(feed) {
+  const feed_stored_callback = function (feed) {
     callback_called = true;
   };
 
 
-  let iconn = undefined;
-  const fetch_feed_timeout = INDEFINITE;
+  const iconn;
+  const fetchFeedTimeout = INDEFINITE;
   const notify = false;
 
   // Rethrow subscribe exceptions just like assertion failures by omitting
   // try/catch.
   const resource = await subscribe(
-      conn, iconn, url, fetch_feed_timeout, notify, feed_stored_callback);
+    conn, iconn, url, fetchFeedTimeout, notify, feed_stored_callback
+);
 
   // subscribe should yield a resource object
   assert(resource && typeof resource === 'object');
@@ -41,7 +41,7 @@ export async function subscribe_test() {
   assert(resource.type === 'feed');
 
   // the produced resource should have a well-formed identifier
-  assert(db.is_valid_id(resource.id));
+  assert(db.isValidId(resource.id));
 
   // subscribe should have invoked the feed-created callback
   assert(callback_called);
@@ -58,5 +58,5 @@ export async function subscribe_test() {
   assert(conn.channel.messages.length);
 
   conn.close();
-  await indexeddb_utils.remove(conn.conn.name);
+  await indexedDBUtils.remove(conn.conn.name);
 }

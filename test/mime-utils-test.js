@@ -3,7 +3,7 @@ import * as mime from '/lib/mime-utils.js';
 
 export function mime_test() {
   const a = assert;
-  const pct = mime.parse_content_type;
+  const pct = mime.parseContentType;
 
   // constants tests
   // (compensate for lack of static assertions in js)
@@ -67,14 +67,14 @@ export function mime_test() {
   // for now just document this case
   a(pct('text/html;;charset=UTF-8') === 'text/html');
 
-  // is_valid tests
-  a(mime.is_valid('text/html'));
-  a(mime.is_valid('text/xml'));
-  a(!mime.is_valid(false));
-  a(!mime.is_valid(true));
-  a(!mime.is_valid(-4321));
-  a(!mime.is_valid('asdf'));
-  a(!mime.is_valid('a b c'));
-  a(!mime.is_valid('a b c / 123'));
-  a(!mime.is_valid('text\\xml'));
+  // isValid tests
+  a(mime.isValid('text/html'));
+  a(mime.isValid('text/xml'));
+  a(!mime.isValid(false));
+  a(!mime.isValid(true));
+  a(!mime.isValid(-4321));
+  a(!mime.isValid('asdf'));
+  a(!mime.isValid('a b c'));
+  a(!mime.isValid('a b c / 123'));
+  a(!mime.isValid('text\\xml'));
 }

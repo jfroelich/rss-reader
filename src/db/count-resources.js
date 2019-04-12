@@ -1,6 +1,6 @@
 import assert from '/lib/assert.js';
 
-export default function count_resources(query) {
+export default function countResources(query) {
   return new Promise((resolve, reject) => {
     assert(query && typeof query === 'object');
 

@@ -2,7 +2,7 @@ import * as config from '/src/config.js';
 
 export default function DisplaySettingsForm() {}
 
-DisplaySettingsForm.prototype.init = function(parent) {
+DisplaySettingsForm.prototype.init = function (parent) {
   // TODO: setting class on every td is redundant, much simpler to specify
   // "table td" rule in CSS
 
@@ -17,7 +17,7 @@ DisplaySettingsForm.prototype.init = function(parent) {
   let row = document.createElement('tr');
   let cell = document.createElement('td');
   cell.setAttribute('class', 'options-text');
-  let label = document.createTextNode('Margins:');
+  const label = document.createTextNode('Margins:');
   cell.append(label);
   row.append(cell);
 
@@ -30,7 +30,7 @@ DisplaySettingsForm.prototype.init = function(parent) {
   input.setAttribute('step', '1');
   input.onchange = this.entryMarginSliderOnchange.bind(this);
 
-  const current_entry_margin = config.read_int('padding', 0);
+  const current_entry_margin = config.readInt('padding', 0);
   if (!isNaN(current_entry_margin)) {
     input.value = current_entry_margin;
   }
@@ -51,13 +51,13 @@ DisplaySettingsForm.prototype.init = function(parent) {
   background_image_menu.setAttribute('id', 'entry-background-image');
   background_image_menu.onchange = this.backgroundImageOnChange.bind(this);
 
-  let option = document.createElement('option');
+  const option = document.createElement('option');
   option.value = '';
   option.textContent = 'Use background color';
   background_image_menu.append(option);
 
-  const current_background_image_path = config.read_string('bg_image');
-  const background_images = config.read_array('background_images');
+  const current_background_image_path = config.readString('bg_image');
+  const background_images = config.readArray('background_images');
   for (const background_image_path of background_images) {
     const option = document.createElement('option');
     option.value = background_image_path;
@@ -81,7 +81,7 @@ DisplaySettingsForm.prototype.init = function(parent) {
   input.setAttribute('type', 'color');
   input.oninput = this.entryBackgroundColorOninput.bind(this);
 
-  const background_color = config.read_string('bg_color');
+  const background_color = config.readString('bg_color');
   if (background_color) {
     input.value = background_color;
   }
@@ -107,7 +107,7 @@ DisplaySettingsForm.prototype.init = function(parent) {
 
   input.onchange = this.headerFontSizeOnchange.bind(this);
 
-  const header_font_size = config.read_int('header_font_size');
+  const header_font_size = config.readInt('header_font_size');
   if (!isNaN(header_font_size)) {
     input.value = header_font_size;
   }
@@ -131,7 +131,7 @@ DisplaySettingsForm.prototype.init = function(parent) {
   input.onchange = this.bodyFontSizeOnchange.bind(this);
 
 
-  const body_font_size = config.read_int('body_font_size');
+  const body_font_size = config.readInt('body_font_size');
   if (!isNaN(body_font_size)) {
     input.value = body_font_size;
   }
@@ -147,7 +147,7 @@ DisplaySettingsForm.prototype.init = function(parent) {
   input.setAttribute('id', 'justify-text');
   input.style.width = '20px';
   input.onchange = this.justifyTextOnchange.bind(this);
-  input.checked = config.read_boolean('justify_text');
+  input.checked = config.readBoolean('justify_text');
 
   cell.append(input);
   cell.append('Justify text');
@@ -169,7 +169,7 @@ DisplaySettingsForm.prototype.init = function(parent) {
 
   input.oninput = this.bodyLineHeightOninput.bind(this);
 
-  const body_line_height = config.read_int('body_line_height');
+  const body_line_height = config.readInt('body_line_height');
   if (!isNaN(body_line_height)) {
     input.value = body_line_height;
   }
@@ -188,7 +188,7 @@ DisplaySettingsForm.prototype.init = function(parent) {
   select.onchange = this.columnCountOnchange.bind(this);
 
   const column_count_options = [1, 2, 3];
-  const current_column_count = config.read_int('column_count');
+  const current_column_count = config.readInt('column_count');
   for (const column_count of column_count_options) {
     const option = document.createElement('option');
     option.value = column_count;
@@ -203,68 +203,68 @@ DisplaySettingsForm.prototype.init = function(parent) {
   parent.append(table);
 };
 
-DisplaySettingsForm.prototype.entryMarginSliderOnchange = function(event) {
+DisplaySettingsForm.prototype.entryMarginSliderOnchange = function (event) {
   const margin = event.target.value;
   if (margin) {
-    config.write_string('padding', margin);
+    config.writeString('padding', margin);
   } else {
     config.remove('padding');
   }
 };
 
-DisplaySettingsForm.prototype.backgroundImageOnChange = function(event) {
+DisplaySettingsForm.prototype.backgroundImageOnChange = function (event) {
   const path = event.target.value;
   if (path) {
-    config.write_string('bg_image', path);
+    config.writeString('bg_image', path);
   } else {
     config.remove('bg_image');
   }
 };
 
-DisplaySettingsForm.prototype.entryBackgroundColorOninput = function(event) {
+DisplaySettingsForm.prototype.entryBackgroundColorOninput = function (event) {
   const color = event.target.value;
   if (color) {
-    config.write_string('bg_color', color);
+    config.writeString('bg_color', color);
   } else {
     config.remove('bg_color');
   }
 };
 
-DisplaySettingsForm.prototype.headerFontSizeOnchange = function(event) {
+DisplaySettingsForm.prototype.headerFontSizeOnchange = function (event) {
   const size = event.target.value;
   if (size) {
-    config.write_string('header_font_size', size);
+    config.writeString('header_font_size', size);
   } else {
     config.remove('header_font_size');
   }
 };
 
-DisplaySettingsForm.prototype.bodyFontSizeOnchange = function(event) {
+DisplaySettingsForm.prototype.bodyFontSizeOnchange = function (event) {
   const size = event.target.value;
   if (size) {
-    config.write_string('body_font_size', size);
+    config.writeString('body_font_size', size);
   } else {
     config.remove('body_font_size');
   }
 };
 
-DisplaySettingsForm.prototype.justifyTextOnchange = function(event) {
-  config.write_boolean('justify_text', event.target.checked);
+DisplaySettingsForm.prototype.justifyTextOnchange = function (event) {
+  config.writeBoolean('justify_text', event.target.checked);
 };
 
-DisplaySettingsForm.prototype.bodyLineHeightOninput = function(event) {
+DisplaySettingsForm.prototype.bodyLineHeightOninput = function (event) {
   const height = event.target.value;
   if (height) {
-    config.write_string('body_line_height', height);
+    config.writeString('body_line_height', height);
   } else {
     config.remove('body_line_height');
   }
 };
 
-DisplaySettingsForm.prototype.columnCountOnchange = function(event) {
+DisplaySettingsForm.prototype.columnCountOnchange = function (event) {
   const count = event.target.value;
   if (count) {
-    config.write_string('column_count', count);
+    config.writeString('column_count', count);
   } else {
     config.remove('column_count');
   }

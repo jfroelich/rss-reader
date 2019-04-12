@@ -1,10 +1,10 @@
 import assert from '/lib/assert.js';
-import {Deadline} from '/lib/deadline.js';
-import * as indexeddb_utils from '/lib/indexeddb-utils.js';
+import { Deadline } from '/lib/deadline.js';
+import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 import Connection from '/src/db/connection.js';
 import * as migrations from '/src/db/migrations.js';
 
-export const default_name = 'reader';
+export const defaultName = 'reader';
 export const default_version = 35;
 export const default_channel_name = 'reader';
 export const default_timeout = new Deadline(5000);
@@ -18,13 +18,14 @@ export default async function open(timeout = default_timeout) {
   const conn = new Connection();
   const channel = new BroadcastChannel(default_channel_name);
 
-  const upgrade_handler = event => {
+  const upgrade_handler = (event) => {
     default_upgrade_handler(channel, event);
   };
 
   conn.channel = channel;
-  conn.conn = await indexeddb_utils.open(
-      default_name, default_version, upgrade_handler, timeout);
+  conn.conn = await indexedDBUtils.open(
+    defaultName, default_version, upgrade_handler, timeout,
+  );
   return conn;
 }
 

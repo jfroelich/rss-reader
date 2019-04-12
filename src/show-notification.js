@@ -1,10 +1,10 @@
 import * as config from '/src/config.js';
-import open_view from '/src/open-view.js';
+import openView from '/src/open-view.js';
 
-const default_icon = chrome.extension.getURL('/images/rss_icon_trans.gif');
+const defaultIcon = chrome.extension.getURL('/images/rss_icon_trans.gif');
 
-export default function show_notification(message = '', icon = default_icon) {
-  const enabled = config.read_boolean('notifications_enabled');
+export default function showNotification(message = '', icon = defaultIcon) {
+  const enabled = config.readBoolean('notifications_enabled');
   if (!enabled) {
     return;
   }
@@ -12,8 +12,8 @@ export default function show_notification(message = '', icon = default_icon) {
   const title = 'RSS Reader';
 
   // Instantiating a notification shows it
-  const notification = new Notification(title, {body: message, icon: icon});
-  notification.addEventListener('click', event => {
+  const notification = new Notification(title, { body: message, icon });
+  notification.addEventListener('click', (event) => {
     // Work around a strange issue in older Chrome
     try {
       const hwnd = window.open();
@@ -23,7 +23,7 @@ export default function show_notification(message = '', icon = default_icon) {
       return;
     }
 
-    const reuse_newtab = config.read_boolean('reuse_newtab');
-    open_view(reuse_newtab).catch(console.warn);
+    const reuse_newtab = config.readBoolean('reuse_newtab');
+    openView(reuse_newtab).catch(console.warn);
   });
 }

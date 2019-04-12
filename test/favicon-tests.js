@@ -1,8 +1,8 @@
 import assert from '/lib/assert.js';
-import {NetworkError} from '/lib/better-fetch.js';
-import {Deadline, INDEFINITE} from '/lib/deadline.js';
+import { NetworkError } from '/lib/better-fetch.js';
+import { Deadline, INDEFINITE } from '/lib/deadline.js';
 import * as favicon from '/lib/favicon.js';
-import * as indexeddb_utils from '/lib/indexeddb-utils.js';
+import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 
 // This is a very specific test that ensures favicon lookup functionality
 // matches browser functionality for the domain oracle.com. oracle.com for
@@ -10,7 +10,7 @@ import * as indexeddb_utils from '/lib/indexeddb-utils.js';
 // cause of failure for lookups.
 export async function favicon_oracle_test() {
   const db_name = favicon_oracle_test.name;
-  await indexeddb_utils.remove(db_name);
+  await indexedDBUtils.remove(db_name);
   const conn = await favicon.open(db_name);
 
   const url = new URL('https://www.oracle.com');
@@ -23,43 +23,42 @@ export async function favicon_oracle_test() {
   const expected = 'https://www.oracle.com/favicon.ico';
   assert(result_url_string === expected);
   conn.close();
-  await indexeddb_utils.remove(db_name);
+  await indexedDBUtils.remove(db_name);
 }
 
 export async function favicon_cache_open_test() {
   const db_name = favicon_cache_open_test.name;
-  await indexeddb_utils.remove(db_name);
+  await indexedDBUtils.remove(db_name);
   const conn = await favicon.open(db_name);
   assert(typeof conn === 'object');
   assert(typeof conn.close === 'function');
   conn.close();
-  await indexeddb_utils.remove(db_name);
+  await indexedDBUtils.remove(db_name);
 }
 
 export async function favicon_cache_put_find_test() {
-  await indexeddb_utils.remove(favicon_cache_put_find_test.name);
+  await indexedDBUtils.remove(favicon_cache_put_find_test.name);
   const conn = await favicon.open(favicon_cache_put_find_test.name);
   const entry = new favicon.Entry();
   entry.hostname = 'www.example.com';
-  const put_result = await favicon.put_entry(conn, entry);
-  const found_entry =
-      await favicon.find_entry(conn, new URL('http://' + entry.hostname));
+  const put_result = await favicon.putEntry(conn, entry);
+  const found_entry = await favicon.findEntry(conn, new URL(`http://${entry.hostname}`));
   assert(found_entry);
   assert(found_entry.hostname === entry.hostname);
   conn.close();
-  await indexeddb_utils.remove(favicon_cache_put_find_test.name);
+  await indexedDBUtils.remove(favicon_cache_put_find_test.name);
 }
 
 export async function favicon_cache_clear_test() {
-  await indexeddb_utils.remove(favicon_cache_clear_test.name);
+  await indexedDBUtils.remove(favicon_cache_clear_test.name);
   const conn = await favicon.open(favicon_cache_clear_test.name);
 
   const num_inserted = 3;
   const create_promises = [];
   for (let i = 0; i < num_inserted; i++) {
     const entry = new favicon.Entry();
-    entry.hostname = 'www.example' + i + '.com';
-    create_promises.push(favicon.put_entry(conn, entry));
+    entry.hostname = `www.example${i}.com`;
+    create_promises.push(favicon.putEntry(conn, entry));
   }
   await Promise.all(create_promises);
 
@@ -70,14 +69,14 @@ export async function favicon_cache_clear_test() {
   assert(post_count === 0);
 
   conn.close();
-  await indexeddb_utils.remove(favicon_cache_clear_test.name);
+  await indexedDBUtils.remove(favicon_cache_clear_test.name);
 }
 
 // Insert a mix of expired and non-expired entries. Then run compact and check
 // the expired entries are gone and the non-expired entries remain.
 export async function favicon_cache_compact_test() {
   const db_name = favicon_cache_compact_test.name;
-  await indexeddb_utils.remove(db_name);
+  await indexedDBUtils.remove(db_name);
   const conn = await favicon.open(db_name);
 
   const six_months = 1000 * 60 * 60 * 24 * 31 * 6;
@@ -85,7 +84,7 @@ export async function favicon_cache_compact_test() {
   const create_promises = [];
   for (let i = 0; i < 10; i++) {
     const entry = new favicon.Entry();
-    entry.hostname = 'www.example' + i + '.com';
+    entry.hostname = `www.example${i}.com`;
 
     const now = new Date();
     if ((i % 2) === 0) {
@@ -94,7 +93,7 @@ export async function favicon_cache_compact_test() {
       entry.expires = new Date(now.getTime() + six_months);
     }
 
-    const promise = favicon.put_entry(conn, entry);
+    const promise = favicon.putEntry(conn, entry);
     create_promises.push(promise);
   }
 
@@ -103,8 +102,8 @@ export async function favicon_cache_compact_test() {
 
   const find_promises = [];
   for (let i = 0; i < 10; i++) {
-    const url = new URL('http://www.example' + i + '.com');
-    find_promises.push(favicon.find_entry(conn, url));
+    const url = new URL(`http://www.example${i}.com`);
+    find_promises.push(favicon.findEntry(conn, url));
   }
   const results = await Promise.all(find_promises);
   for (let i = 0; i < 10; i++) {
@@ -112,7 +111,7 @@ export async function favicon_cache_compact_test() {
   }
 
   conn.close();
-  await indexeddb_utils.remove(db_name);
+  await indexedDBUtils.remove(db_name);
 }
 
 // This is not part of the built in api. It would exist only for test purposes.
@@ -136,24 +135,24 @@ export async function fetch_image_test() {
   let url = new URL(url_string);
 
   // Test using explicit indefiniteness
-  let options = {timeout: INDEFINITE};
-  let response = await favicon.fetch_image(url, options);
+  let options = { timeout: INDEFINITE };
+  let response = await favicon.fetchImage(url, options);
   assert(response);
 
   // Test with an explicit definite timeout that should never happen
   // in test context
-  options = {timeout: new Deadline(100000)};
-  response = await favicon.fetch_image(url, options);
+  options = { timeout: new Deadline(100000) };
+  response = await favicon.fetchImage(url, options);
   assert(response);
 
   // Test against a non-existent image
   path = '/src/lib/i-do-not-exist.png';
   url_string = resolve_extension_path(path);
   url = new URL(url_string);
-  options = undefined;  // reset for isolation, presumably indefinite default
+  options = undefined; // reset for isolation, presumably indefinite default
   let error404;
   try {
-    response = await favicon.fetch_image(url, options);
+    response = await favicon.fetchImage(url, options);
   } catch (error) {
     error404 = error;
   }

@@ -1,24 +1,24 @@
 import assert from '/lib/assert.js';
-import * as indexeddb_utils from '/lib/indexeddb-utils.js';
-import archive_resources from '/src/db/archive-resources.js';
-import create_resource from '/src/db/create-resource.js';
-import get_resources from '/src/db/get-resources.js';
-import * as database_utils from '/test/database-utils.js';
+import * as indexedDBUtils from '/lib/indexeddb-utils.js';
+import archiveResources from '/src/db/archive-resources.js';
+import createResource from '/src/db/create-resource.js';
+import getResources from '/src/db/get-resources.js';
+import * as databaseUtils from '/test/database-utils.js';
 
 // Exercise typical execution of archive-resources
-export default async function archive_resources_test() {
+export default async function archiveResourcesTest() {
   const database_name_prefix = 'archive-resources-test';
-  await database_utils.remove_databases_for_prefix(database_name_prefix);
-  const database_name =
-      database_utils.create_unique_database_name(database_name_prefix);
+  await databaseUtils.remove_databases_for_prefix(database_name_prefix);
+  const database_name = databaseUtils.create_unique_database_name(database_name_prefix);
 
-  const conn = await database_utils.create_test_database(database_name);
+  const conn = await databaseUtils.create_test_database(database_name);
 
   const create_promises = [];
   for (let i = 0; i < 5; i++) {
-    const resource =
-        {title: 'title ' + i, content: 'foo', read: 1, type: 'entry'};
-    create_promises.push(create_resource(conn, resource));
+    const resource = {
+      title: `title ${i}`, content: 'foo', read: 1, type: 'entry',
+    };
+    create_promises.push(createResource(conn, resource));
   }
 
   const ids = await Promise.all(create_promises);
@@ -26,9 +26,9 @@ export default async function archive_resources_test() {
   // pseudo advance clock so that entries expire
   await new Promise(resolve => setTimeout(resolve, 50));
   const max_age = 1;
-  await archive_resources(conn, max_age);
+  await archiveResources(conn, max_age);
 
-  const resources = await get_resources({conn: conn, mode: 'all'});
+  const resources = await getResources({ conn, mode: 'all' });
   assert(resources.length === 5);
 
   for (const resource of resources) {
@@ -41,5 +41,5 @@ export default async function archive_resources_test() {
   // TODO: test running a second time and verifying nothing happens
 
   conn.close();
-  await indexeddb_utils.remove(conn.conn.name);
+  await indexedDBUtils.remove(conn.conn.name);
 }

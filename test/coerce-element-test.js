@@ -1,6 +1,6 @@
 import assert from '/lib/assert.js';
-import coerce_element from '/lib/coerce-element.js';
-import parse_html from '/lib/parse-html.js';
+import coerceElement from '/lib/coerce-element.js';
+import parseHTML from '/lib/parse-html.js';
 
 // TODO: assert that p still exists to test that coerce does not affect
 // elements it should not affect (surprise side effects)
@@ -10,12 +10,12 @@ import parse_html from '/lib/parse-html.js';
 
 export default function coerce_element_test() {
   const input = '<html><head></head><body><p></p><a></a></body></html>';
-  const doc = parse_html(input);
+  const doc = parseHTML(input);
 
   // Replace the as with bs
   const anchors = doc.querySelectorAll('a');
   for (const a of anchors) {
-    coerce_element(a, 'b');
+    coerceElement(a, 'b');
   }
 
   // Assert that a was replaced with b and that no extra junk was inserted
@@ -28,7 +28,7 @@ export default function coerce_element_test() {
   // fictional elements, as c is not a standard element.
   const bolds = doc.querySelectorAll('b');
   for (const b of bolds) {
-    coerce_element(b, 'c');
+    coerceElement(b, 'c');
   }
   expected = '<html><head></head><body><p></p><c></c></body></html>';
   assert(doc.documentElement.outerHTML === expected);

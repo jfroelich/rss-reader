@@ -1,24 +1,23 @@
 import assert from '/lib/assert.js';
-import * as indexeddb_utils from '/lib/indexeddb-utils.js';
+import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 import * as migrations from '/src/db/migrations.js';
 import RecordingChannel from '/test/recording-channel.js';
 
 // TODO: this should access migrations via db, not violate the API surface
 
 export async function migrations_tests_20() {
-  let database_name = 'migrations-test-20-database';
-  await indexeddb_utils.remove(database_name);
+  const database_name = 'migrations-test-20-database';
+  await indexedDBUtils.remove(database_name);
 
   const channel = new RecordingChannel();
-  let version = 20;
-  let timeout = undefined;
+  const version = 20;
+  const timeout;
 
-  const handler = event => {
+  const handler = (event) => {
     migrations.migrate20(event, channel);
   };
 
-  const conn =
-      await indexeddb_utils.open(database_name, version, handler, timeout);
+  const conn =      await indexedDBUtils.open(database_name, version, handler, timeout);
 
   // The specified version is expected to be the actual version
   assert(conn.version === version);
@@ -37,15 +36,15 @@ export async function migrations_tests_20() {
 
   conn.close();
 
-  await indexeddb_utils.remove(database_name);
+  await indexedDBUtils.remove(database_name);
 }
 
 // Verify that migrating to 23 drops the title index on the feed store
 export async function migrations_tests_23() {
   const database_name = 'migrations-tests-23';
-  await indexeddb_utils.remove(database_name);
+  await indexedDBUtils.remove(database_name);
 
-  const handler = event => {
+  const handler = (event) => {
     migrations.migrate20(event);
     migrations.migrate21(event);
     migrations.migrate22(event);
@@ -54,7 +53,7 @@ export async function migrations_tests_23() {
 
   // It should not contain title index initially, because the index is no longer
   // created, because the migration function was modified
-  let conn = await indexeddb_utils.open(database_name, 20, handler);
+  let conn = await indexedDBUtils.open(database_name, 20, handler);
   let transaction = conn.transaction('feed');
   let store = transaction.objectStore('feed');
   assert(!store.indexNames.contains('title'));
@@ -68,23 +67,23 @@ export async function migrations_tests_23() {
   // migration checks for the presence of the index. Therefore, this test is
   // not only testing that the index is gone, it is also just exercising the
   // migration and testing that it runs without error.
-  conn = await indexeddb_utils.open(database_name, 23, handler);
+  conn = await indexedDBUtils.open(database_name, 23, handler);
   transaction = conn.transaction('feed');
   store = transaction.objectStore('feed');
   assert(!store.indexNames.contains('title'));
   transaction.abort();
   conn.close();
 
-  await indexeddb_utils.remove(database_name);
+  await indexedDBUtils.remove(database_name);
 }
 
 export async function migrations_tests_30() {
   const database_name = 'migrations-tests-30';
-  await indexeddb_utils.remove(database_name);
+  await indexedDBUtils.remove(database_name);
 
   let channel;
 
-  const handler = event => {
+  const handler = (event) => {
     migrations.migrate20(event, channel);
     migrations.migrate21(event, channel);
     migrations.migrate22(event, channel);
@@ -98,47 +97,47 @@ export async function migrations_tests_30() {
     migrations.migrate30(event, channel);
   };
 
-  let conn = await indexeddb_utils.open(database_name, 29, handler);
+  const conn = await indexedDBUtils.open(database_name, 29, handler);
 
   // insert a test feed
   let id = await new Promise((resolve, reject) => {
-    let id = undefined;
+    let id;
     const transaction = conn.transaction('feed', 'readwrite');
     transaction.oncomplete = event => resolve(id);
     transaction.onerror = event => reject(event.target.error);
 
     const store = transaction.objectStore('feed');
-    const request = store.put({title: 'test feed created in version 29'});
+    const request = store.put({ title: 'test feed created in version 29' });
     request.onsuccess = event => id = request.result;
   });
 
   // insert a test entry
   id = await new Promise((resolve, reject) => {
-    let id = undefined;
+    let id;
     const transaction = conn.transaction('entry', 'readwrite');
     transaction.oncomplete = event => resolve(id);
     transaction.onerror = event => reject(event.target.error);
 
     const store = transaction.objectStore('entry');
-    const request = store.put({title: 'test entry created in version 29'});
+    const request = store.put({ title: 'test entry created in version 29' });
     request.onsuccess = event => id = request.result;
   });
 
   conn.close();
 
-  let conn30 = await indexeddb_utils.open(database_name, 30, handler);
+  const conn30 = await indexedDBUtils.open(database_name, 30, handler);
 
   // TODO: confirm the feed and entry were copied over
 
   conn30.close();
-  await indexeddb_utils.remove(conn30.name);
+  await indexedDBUtils.remove(conn30.name);
 }
 
 export async function migrations_tests_31() {
   const database_name = 'migrations-tests-31';
-  await indexeddb_utils.remove(database_name);
+  await indexedDBUtils.remove(database_name);
 
-  const handler = event => {
+  const handler = (event) => {
     migrations.migrate20(event);
     migrations.migrate21(event);
     migrations.migrate22(event);
@@ -153,7 +152,7 @@ export async function migrations_tests_31() {
     migrations.migrate31(event);
   };
 
-  let conn = await indexeddb_utils.open(database_name, 30, handler);
+  let conn = await indexedDBUtils.open(database_name, 30, handler);
 
   // insert a test feed with a property we expect to be modified
   await new Promise((resolve, reject) => {
@@ -161,12 +160,12 @@ export async function migrations_tests_31() {
     transaction.oncomplete = resolve;
     transaction.onerror = event => reject(event.target.error);
     const store = transaction.objectStore('feeds');
-    const request = store.put({dateUpdated: new Date()});
+    const request = store.put({ dateUpdated: new Date() });
   });
 
   conn.close();
 
-  conn = await indexeddb_utils.open(database_name, 31, handler);
+  conn = await indexedDBUtils.open(database_name, 31, handler);
 
   // Verify the entry store has some of the appropriate indices (we can infer
   // that if a few worked the rest worked). Create a temporary transaction and
@@ -180,7 +179,7 @@ export async function migrations_tests_31() {
 
   // Read back the feed that underwent migration. We only inserted 1 so we
   // cheat and just grab feed with id 1
-  let modified_feed = await new Promise((resolve, reject) => {
+  const modified_feed = await new Promise((resolve, reject) => {
     const transaction = conn.transaction('feeds');
     const store = transaction.objectStore('feeds');
     const request = store.get(1);
@@ -195,14 +194,14 @@ export async function migrations_tests_31() {
   assert(modified_feed.date_updated);
   assert(!modified_feed.dateUpdated);
 
-  await indexeddb_utils.remove(database_name);
+  await indexedDBUtils.remove(database_name);
 }
 
 export async function migrations_tests_32() {
   const database_name = 'migrations-tests-32';
-  await indexeddb_utils.remove(database_name);
+  await indexedDBUtils.remove(database_name);
 
-  const handler = event => {
+  const handler = (event) => {
     migrations.migrate20(event);
     migrations.migrate21(event);
     migrations.migrate22(event);
@@ -218,7 +217,7 @@ export async function migrations_tests_32() {
     migrations.migrate32(event);
   };
 
-  let conn = await indexeddb_utils.open(database_name, 31, handler);
+  let conn = await indexedDBUtils.open(database_name, 31, handler);
 
   const date_updated = new Date();
 
@@ -228,12 +227,12 @@ export async function migrations_tests_32() {
     transaction.oncomplete = resolve;
     transaction.onerror = event => reject(event.target.error);
     const store = transaction.objectStore('feeds');
-    const request = store.put({date_updated: date_updated});
+    const request = store.put({ date_updated: date_updated });
   });
 
   conn.close();
 
-  conn = await indexeddb_utils.open(database_name, 32, handler);
+  conn = await indexedDBUtils.open(database_name, 32, handler);
 
   // Verify the entry store has some of the appropriate indices (we can infer
   // that if a few worked the rest worked). Create a temporary transaction and
@@ -244,7 +243,7 @@ export async function migrations_tests_32() {
   assert(entry_store.indexNames.contains('feed-published-date'));
   transaction.abort();
 
-  let modified_feed = await new Promise((resolve, reject) => {
+  const modified_feed = await new Promise((resolve, reject) => {
     const transaction = conn.transaction('feeds');
     const store = transaction.objectStore('feeds');
     const request = store.get(1);
@@ -259,14 +258,14 @@ export async function migrations_tests_32() {
   assert(!modified_feed.date_updated);
   assert(modified_feed.updated_date);
 
-  await indexeddb_utils.remove(database_name);
+  await indexedDBUtils.remove(database_name);
 }
 
 export async function migrations_tests_33() {
   const database_name = 'migrations-tests-33';
-  await indexeddb_utils.remove(database_name);
+  await indexedDBUtils.remove(database_name);
 
-  const handler = event => {
+  const handler = (event) => {
     migrations.migrate20(event);
     migrations.migrate21(event);
     migrations.migrate22(event);
@@ -283,7 +282,7 @@ export async function migrations_tests_33() {
     migrations.migrate33(event);
   };
 
-  let conn = await indexeddb_utils.open(database_name, 32, handler);
+  let conn = await indexedDBUtils.open(database_name, 32, handler);
 
   let transaction = conn.transaction('entries');
   let entries_store = transaction.objectStore('entries');
@@ -293,7 +292,7 @@ export async function migrations_tests_33() {
 
   conn.close();
 
-  conn = await indexeddb_utils.open(database_name, 33, handler);
+  conn = await indexedDBUtils.open(database_name, 33, handler);
 
   transaction = conn.transaction('entries');
   entries_store = transaction.objectStore('entries');
@@ -314,5 +313,5 @@ export async function migrations_tests_33() {
   assert(expected_error instanceof DOMException);
 
   conn.close();
-  await indexeddb_utils.remove(database_name);
+  await indexedDBUtils.remove(database_name);
 }

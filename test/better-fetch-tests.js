@@ -1,7 +1,7 @@
 import assert from '/lib/assert.js';
-import {better_fetch} from '/lib/better-fetch.js';
-import {NetworkError} from '/lib/better-fetch.js';
-import {AcceptError} from '/lib/better-fetch.js';
+import { betterFetch } from '/lib/better-fetch.js';
+import { NetworkError } from '/lib/better-fetch.js';
+import { AcceptError } from '/lib/better-fetch.js';
 
 export async function better_fetch_ordinary_test() {
   // Exercise an ordinary case of the function on a local file and assert that
@@ -9,7 +9,7 @@ export async function better_fetch_ordinary_test() {
   const path = '/test/better-fetch-test.html';
   const url_string = chrome.extension.getURL(path);
   const url = new URL(url_string);
-  const response = await better_fetch(url);
+  const response = await betterFetch(url);
 
   const full_text = await response.text();
   assert(full_text === 'Hello World\n', full_text);
@@ -25,7 +25,7 @@ export async function better_fetch_good_type_test() {
   const options = {};
   options.types = ['text/html'];
 
-  const response = await better_fetch(url, options);
+  const response = await betterFetch(url, options);
 }
 
 // Verify that fetching with a response type constraint that does not allow for
@@ -41,7 +41,7 @@ export async function better_fetch_bad_type_test() {
   let response;
   let fetch_error;
   try {
-    response = await better_fetch(url, options);
+    response = await betterFetch(url, options);
   } catch (error) {
     fetch_error = error;
   }
@@ -60,7 +60,7 @@ export async function better_fetch_local_404_test() {
   let fetch_error;
 
   try {
-    response = await better_fetch(url);
+    response = await betterFetch(url);
   } catch (error) {
     fetch_error = error;
   }

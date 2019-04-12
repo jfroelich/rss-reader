@@ -1,10 +1,10 @@
 import assert from '/lib/assert.js';
 import * as config from '/src/config.js';
-import {rewrite_url} from '/src/import-entry.js';
+import { rewrite_url } from '/src/import-entry.js';
 
 // Exercise the rewrite-url helper
 export async function rewrite_tests() {
-  const rules = config.get_rewrite_rules();
+  const rules = config.getRewriteRules();
 
   let a = new URL('https://www.google.com');
   let b = rewrite_url(a, rules);
@@ -23,5 +23,5 @@ export async function rewrite_tests() {
   a = new URL('https://news.google.com/news/url');
   a.searchParams.set('url', 'https://techcrunch.com/foo?ncid=2');
   b = rewrite_url(a, rules);
-  assert(b.href === 'https://techcrunch.com/foo', 'cyclical ' + b.href);
+  assert(b.href === 'https://techcrunch.com/foo', `cyclical ${b.href}`);
 }

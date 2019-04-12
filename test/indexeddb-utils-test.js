@@ -1,26 +1,27 @@
 import assert from '/lib/assert.js';
-import {open, remove} from '/lib/indexeddb-utils.js';
+import { open, remove } from '/lib/indexeddb-utils.js';
 
 // Exercise a prototypical open, close, delete sequence. No errors should occur.
-export async function indexeddb_utils_basic_test() {
-  const conn = await open(indexeddb_utils_basic_test.name);
+export async function indexedDBUtils_basic_test() {
+  const conn = await open(indexedDBUtils_basic_test.name);
   conn.close();
-  await remove(indexeddb_utils_basic_test.name);
+  await remove(indexedDBUtils_basic_test.name);
 }
 
 // Assert that my understanding of old version is correct
-export async function indexeddb_utils_old_version_test() {
-  let old_version = undefined;
-  let new_version = undefined;
+export async function indexedDBUtils_old_version_test() {
+  let old_version;
+  let new_version;
 
-  const initial_handler = event => {
+  const initial_handler = (event) => {
     old_version = event.oldVersion;
     new_version = event.target.result.version;
   };
 
   // Call without a version
   const conn = await open(
-      indexeddb_utils_old_version_test.name, undefined, initial_handler);
+    indexedDBUtils_old_version_test.name, undefined, initial_handler
+);
   conn.close();
 
   // When creating the database for the first time, the old version will be 0
@@ -30,13 +31,13 @@ export async function indexeddb_utils_old_version_test() {
   // the new version will be 1
   assert(new_version === 1);
 
-  await remove(indexeddb_utils_old_version_test.name);
+  await remove(indexedDBUtils_old_version_test.name);
 }
 
 // Calling open without a name should fail
-export async function indexeddb_utils_unnamed_test() {
+export async function indexedDBUtils_unnamed_test() {
   // to be really clear, the name param is not set
-  let undefined_name = undefined;
+  const undefined_name;
   let conn;
   let expected_error;
   try {
@@ -61,12 +62,12 @@ export async function indexeddb_utils_unnamed_test() {
 }
 
 // does open behave as expected when given a kind of bad version
-export async function indexeddb_utils_bad_version_test() {
+export async function indexedDBUtils_bad_version_test() {
   let expected_error;
   let conn;
 
   // indexedDB expects version to be positive integer. let's use a bad one.
-  let bad_version = -1;
+  const bad_version = -1;
 
   try {
     conn = await open(bad_version_test.name, bad_version);
@@ -88,23 +89,24 @@ export async function indexeddb_utils_bad_version_test() {
 }
 
 // Verify how indexedDB stores function objects
-export async function indexeddb_utils_function_object_test() {
+export async function indexedDBUtils_function_object_test() {
   // Really simple schema generator for test, never expects version change other
   // than the initial one
-  const upgrade_handler = function(event) {
+  const upgrade_handler = function (event) {
     const db = event.target.result;
-    db.createObjectStore('objects', {keyPath: 'id', autoIncrement: true});
+    db.createObjectStore('objects', { keyPath: 'id', autoIncrement: true });
   };
 
   // Create a really basic database with an object store
   const conn = await open(
-      'indexeddb-utils-function-object-test', undefined, upgrade_handler);
+    'indexeddb-utils-function-object-test', undefined, upgrade_handler
+);
 
   // Define a class with a method
   function Foo() {
     this.a = 1;
   }
-  Foo.prototype.bar = function() {
+  Foo.prototype.bar = function () {
     this.a++;
   };
 
@@ -112,7 +114,7 @@ export async function indexeddb_utils_function_object_test() {
   const pp = new Promise((resolve, reject) => {
     try {
       const txn = conn.transaction('objects', 'readwrite');
-      txn.onerror = event => {
+      txn.onerror = (event) => {
         reject(event.target.error);
       };
 
@@ -120,7 +122,7 @@ export async function indexeddb_utils_function_object_test() {
 
       const obj = new Foo();
       const request = store.put(obj);
-      request.onsuccess = _ => {
+      request.onsuccess = (_) => {
         resolve();
       };
     } catch (error) {

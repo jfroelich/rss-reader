@@ -1,31 +1,32 @@
-import {INDEFINITE} from '/lib/deadline.js';
+import { INDEFINITE } from '/lib/deadline.js';
 import * as db from '/src/db/db.js';
-import {import_feed, ImportFeedArgs} from '/src/import-feed.js';
-import show_notification from '/src/show-notification.js';
+import { importFeed, ImportFeedArgs } from '/src/import-feed.js';
+import showNotification from '/src/show-notification.js';
 
 // Subscribes to a feed. Imports the feed and its entries into the database.
 // Throws an error if already subscribed or if something goes wrong. This
 // resolves when both the feed and the entries are fully imported. The callback
 // is invoked with the feed once it is stored, earlier.
 export default async function subscribe(
-    conn, iconn, url, timeout = INDEFINITE, notify, feed_stored_callback) {
+  conn, iconn, url, timeout = INDEFINITE, notify, feed_stored_callback,
+) {
   const resource = {};
   resource.type = 'feed';
-  db.set_url(resource, url);
+  db.setURL(resource, url);
 
   const args = new ImportFeedArgs();
   args.conn = conn;
   args.iconn = iconn;
   args.feed = resource;
   args.create = true;
-  args.fetch_feed_timeout = timeout;
+  args.fetchFeedTimeout = timeout;
   args.feed_stored_callback = feed_stored_callback;
 
-  await import_feed(args);
+  await importFeed(args);
 
   if (notify) {
-    const feed_title = resource.title || db.get_url(resource);
-    show_notification('Subscribed to ' + feed_title, resource.favicon_url);
+    const feed_title = resource.title || db.getURL(resource);
+    showNotification(`Subscribed to ${feed_title}`, resource.favicon_url);
   }
 
   return resource;

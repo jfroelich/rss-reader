@@ -1,40 +1,40 @@
 import assert from '/lib/assert.js';
 import Connection from '/src/db/connection.js';
-import * as resource_utils from '/src/db/resource-utils.js';
+import * as resourceUtils from '/src/db/resource-utils.js';
 
 // TODO: support deleting enclosures?
 
 // Deletes a resource and its immediate children. Note that grandchildren are
 // completely ignored (e.g. after this, grand child resources now have a parent
 // id property value that contains an outdated id value).
-export default function delete_resource(conn, id, reason) {
-  return new Promise(delete_resource_executor.bind(this, conn, id, reason));
+export default function deleteResource(conn, id, reason) {
+  return new Promise(deleteResourceExecutor.bind(this, conn, id, reason));
 }
 
-function delete_resource_executor(conn, id, reason, resolve, reject) {
-  assert(resource_utils.is_valid_id(id));
+function deleteResourceExecutor(conn, id, reason, resolve, reject) {
+  assert(resourceUtils.isValidId(id));
 
-  const dependent_ids = [];
+  const dependentIds = [];
 
   const transaction = conn.conn.transaction('resources', 'readwrite');
   transaction.onerror = event => reject(event.target.error);
-  transaction.oncomplete = transaction_oncomplete.bind(
-      transaction, id, reason, dependent_ids, conn.channel, resolve);
+  transaction.oncomplete = transactionOncomplete.bind(
+    transaction, id, reason, dependentIds, conn.channel, resolve,
+  );
 
-  const resources_store = transaction.objectStore('resources');
-  resources_store.delete(id);
+  const resourcesStore = transaction.objectStore('resources');
+  resourcesStore.delete(id);
 
-  const cursor_request = resources_store.openCursor();
-  cursor_request.onsuccess =
-      cursor_request_onsuccess.bind(cursor_request, id, dependent_ids);
+  const cursorRequest = resourcesStore.openCursor();
+  cursorRequest.onsuccess = cursorRequestOnsuccess.bind(cursorRequest, id, dependentIds);
 }
 
-function cursor_request_onsuccess(id, dependent_ids, event) {
+function cursorRequestOnsuccess(id, dependentIds, event) {
   const cursor = event.target.result;
   if (cursor) {
     const resource = cursor.value;
     if (resource.parent === id) {
-      dependent_ids.push(resource.id);
+      dependentIds.push(resource.id);
       cursor.delete();
     }
 
@@ -42,16 +42,18 @@ function cursor_request_onsuccess(id, dependent_ids, event) {
   }
 }
 
-function transaction_oncomplete(
-    id, reason, dependent_ids, channel, callback, event) {
+function transactionOncomplete(id, reason, dependentIds, channel, callback, event) {
   if (channel) {
-    channel.postMessage({type: 'resource-deleted', id: id, reason: reason});
+    channel.postMessage({ type: 'resource-deleted', id, reason });
 
-    for (const dep_id of dependent_ids) {
+    for (const dep_id of dependentIds) {
       channel.postMessage(
-          {type: 'resource-deleted', id: dep_id, reason: reason, parent: id});
+        {
+          type: 'resource-deleted', id: dep_id, reason, parent: id,
+        },
+      );
     }
   }
 
-  callback(dependent_ids);
+  callback(dependentIds);
 }

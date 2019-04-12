@@ -1,9 +1,9 @@
-import {INDEFINITE} from '/lib/deadline.js';
+import { INDEFINITE } from '/lib/deadline.js';
 import * as config from '/src/config.js';
 import * as cron from '/src/cron.js';
 import * as db from '/src/db/db.js';
-import open_view from '/src/open-view.js';
-import refresh_badge from '/src/refresh-badge.js';
+import openView from '/src/open-view.js';
+import refreshBadge from '/src/refresh-badge.js';
 
 function add_install_listener(listener) {
   return chrome.runtime.onInstalled.addListener(listener);
@@ -23,31 +23,31 @@ function add_badge_listener(listener) {
 
 // Open a channel with a lifetime equal to the background page lifetime.
 const channel = new BroadcastChannel('reader');
-channel.onmessage = function(event) {
+channel.onmessage = function (event) {
   // Ensure the badge is refreshed when an entry changes and only the background
   // page is loaded
   const types = ['resource-created', 'resource-updated', 'resource-deleted'];
   if (event.isTrusted && event.data && types.includes(event.data.type)) {
-    refresh_badge().catch(console.warn);
+    refreshBadge().catch(console.warn);
   }
 };
 
 // TODO: re-inline the listener here
 add_alarm_listener(cron.alarm_listener);
 
-add_startup_listener(event => {
-  refresh_badge().catch(console.warn);
+add_startup_listener((event) => {
+  refreshBadge().catch(console.warn);
 });
 
-add_install_listener(function(event) {
+add_install_listener((event) => {
   if (event.reason === 'install') {
     config.init(event);
   } else {
-    config.handle_update(event);
+    config.handleUpdate(event);
   }
 });
 
-add_install_listener(async function(event) {
+add_install_listener(async (event) => {
   if (event.reason === 'install') {
     // This is one of the earliest, if not the earliest, calls to open the
     // database once the extension is installed or updated, so we want to
@@ -59,9 +59,9 @@ add_install_listener(async function(event) {
   }
 });
 
-add_install_listener(event => {
+add_install_listener((event) => {
   if (event.reason === 'install') {
-    cron.create_alarms();
+    cron.createAlarms();
   } else {
     cron.update_alarms(event.previousVersion).catch(console.warn);
   }
@@ -71,9 +71,9 @@ add_install_listener(event => {
 // we only need to do this on install, reloading the extension from Chrome's
 // extensions page triggers an update event where for some reason the badge
 // text is unset.
-add_install_listener(_ => refresh_badge().catch(console.warn));
+add_install_listener(_ => refreshBadge().catch(console.warn));
 
-add_badge_listener(event => {
-  const reuse_newtab = config.read_boolean('reuse_newtab');
-  open_view(reuse_newtab).catch(console.warn)
+add_badge_listener((event) => {
+  const reuse_newtab = config.readBoolean('reuse_newtab');
+  openView(reuse_newtab).catch(console.warn);
 });

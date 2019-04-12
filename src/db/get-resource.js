@@ -1,8 +1,8 @@
 import assert from '/lib/assert.js';
 import Connection from '/src/db/connection.js';
-import * as resource_utils from '/src/db/resource-utils.js';
+import * as resourceUtils from '/src/db/resource-utils.js';
 
-export default function get_resource(query) {
+export default function getResource(query) {
   return new Promise(get_resource_executor.bind(this, query));
 }
 
@@ -11,7 +11,7 @@ function get_resource_executor(query, resolve, reject) {
   assert(query.mode === 'id' || query.mode === 'url');
 
   if (query.mode === 'id') {
-    assert(resource_utils.is_valid_id(query.id));
+    assert(resourceUtils.isValidId(query.id));
     assert(!query.key_only);
   } else if (query.mode === 'url') {
     assert(query.url instanceof URL);
@@ -24,7 +24,7 @@ function get_resource_executor(query, resolve, reject) {
   let request;
   if (query.mode === 'url') {
     const index = resources_store.index('urls');
-    const href = query.url.href;
+    const { href } = query.url;
     request = query.key_only ? index.getKey(href) : index.get(href);
   } else if (query.mode === 'id') {
     request = resources_store.get(query.id);
@@ -34,12 +34,12 @@ function get_resource_executor(query, resolve, reject) {
 }
 
 function request_onsuccess(query, callback, event) {
-  const result = event.target.result;
+  const { result } = event.target;
 
   if (typeof result !== 'undefined') {
     if (query.key_only) {
       // key only match
-      callback({id: event.target.result});
+      callback({ id: event.target.result });
     } else {
       // full match
       callback(event.target.result);

@@ -1,17 +1,17 @@
-import {Deadline} from '/lib/deadline.js';
+import { Deadline } from '/lib/deadline.js';
 import * as favicon from '/lib/favicon.js';
 import * as config from '/src/config.js';
 import * as cron from '/src/cron.js';
 import * as db from '/src/db/db.js';
-import {poll_feeds, PollFeedsArgs} from '/src/poll-feeds.js';
-import refresh_feed_icons from '/src/refresh-feed-icons.js';
+import { pollFeeds, PollFeedsArgs } from '/src/poll-feeds.js';
+import refreshFeedIcons from '/src/refresh-feed-icons.js';
 import subscribe from '/src/subscribe.js';
 import unsubscribe from '/src/unsubscribe.js';
 
 async function archive_resources_command() {
   console.log('Archiving resources...');
   const conn = await db.open();
-  const resource_ids = await db.archive_resources(conn);
+  const resource_ids = await db.archiveResources(conn);
   conn.close();
   console.debug('Archived %d resources', resource_ids.length);
 }
@@ -44,7 +44,7 @@ async function compact_favicons_command() {
 
 function create_alarms_command() {
   console.log('Creating alarms...');
-  cron.create_alarms();
+  cron.createAlarms();
   console.log('Created alarms');
 }
 
@@ -72,9 +72,9 @@ async function poll_feeds_command() {
 
   // The user is expressing explicit intent to poll, so disregard whenever the
   // last poll ran.
-  args.ignore_recency_check = true;
+  args.ignoreRecencyCheck = true;
 
-  await poll_feeds(args);
+  await pollFeeds(args);
   conn.close();
   iconn.close();
 
@@ -100,18 +100,19 @@ async function refresh_favicons_command() {
   console.log('Refreshing favicons for feeds...');
   const proms = [db.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(proms);
-  const update_results = await refresh_feed_icons(conn, iconn);
+  const update_results = await refreshFeedIcons(conn, iconn);
   conn.close();
   iconn.close();
   console.log(
-      'Completed refreshing favicons (%d inspected)', update_results.length);
+    'Completed refreshing favicons (%d inspected)', update_results.length,
+  );
 }
 
 // Add a new font to the registered font list
 function register_font_command(new_font_name) {
   console.log('Registering font', new_font_name);
 
-  const fonts = config.read_array('fonts');
+  const fonts = config.readArray('fonts');
 
   const normal_new_name = new_font_name.toLowerCase();
 
@@ -119,14 +120,15 @@ function register_font_command(new_font_name) {
     const normal_existing_name = existing_font_name.toLowerCase();
     if (normal_existing_name === normal_new_name) {
       console.warn(
-          'Failed to register font %s. A similar font already exists.',
-          new_font_name);
+        'Failed to register font %s. A similar font already exists.',
+        new_font_name,
+      );
       return;
     }
   }
 
   fonts.push(new_font_name);
-  config.write_array('fonts', fonts);
+  config.writeArray('fonts', fonts);
   console.log('Registered font', new_font_name);
 }
 
@@ -137,7 +139,7 @@ async function subscribe_command(url_string) {
   const timeout = new Deadline(3000);
   const notify = true;
 
-  const callback = feed => {
+  const callback = (feed) => {
     console.debug('Stored new feed, now storing entries...');
   };
 
@@ -147,7 +149,7 @@ async function subscribe_command(url_string) {
   conn.close();
   iconn.close();
 
-  console.log('Subscribed to feed', db.get_url_string(feed));
+  console.log('Subscribed to feed', db.getURLString(feed));
 }
 
 async function unsubscribe_command(url_string) {
@@ -159,8 +161,11 @@ async function unsubscribe_command(url_string) {
 
   // unsubscribe does not check whether the feed actually exists, but we want
   // to know if that is the case in order to provide more information.
-  const feed = await db.get_resource(
-      {conn: conn, mode: 'url', url: url, key_only: true});
+  const feed = await db.getResource(
+    {
+      conn, mode: 'url', url, key_only: true,
+    },
+  );
   if (feed) {
     await unsubscribe(conn, feed.id);
 
@@ -178,14 +183,14 @@ async function unsubscribe_command(url_string) {
 }
 
 const commands = {};
-commands.archive_resources = archive_resources_command;
+commands.archiveResources = archive_resources_command;
 commands.clear_alarms = clear_alarms_command;
 commands.clear_favicons = clear_favicons_command;
 commands.compact_favicons = compact_favicons_command;
-commands.create_alarms = create_alarms_command;
+commands.createAlarms = create_alarms_command;
 commands.install_fonts = register_font_command;
 commands.lookup_favicon = lookup_favicon_command;
-commands.poll_feeds = poll_feeds_command;
+commands.pollFeeds = poll_feeds_command;
 commands.print_alarms = print_alarms_command;
 commands.refresh_favicons = refresh_favicons_command;
 commands.subscribe = subscribe_command;

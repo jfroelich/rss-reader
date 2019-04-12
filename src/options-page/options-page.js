@@ -4,23 +4,23 @@ import FeedList from '/src/options-page/feed-list.js';
 import GeneralSettingsForm from '/src/options-page/general-settings-form.js';
 import NavMenu from '/src/options-page/nav-menu.js';
 import SubscriptionForm from '/src/options-page/subscription-form.js';
-import refresh_badge from '/src/refresh-badge.js';
+import refreshBadge from '/src/refresh-badge.js';
 
 let current_section;
 
 const nav_menu = new NavMenu();
 nav_menu.init();
-nav_menu.onclick = function(item) {
+nav_menu.onclick = function (item) {
   section_show(item);
 };
 
 const feed_list = new FeedList();
 feed_list.init(document.getElementById('section-subscriptions'));
-feed_list.onappend_callback = function(feed) {
+feed_list.onappend_callback = function (feed) {
   feed_count_update();
 };
 
-feed_list.onclick_callback = function(event) {
+feed_list.onclick_callback = function (event) {
   section_show_by_id('mi-feed-details');
   // For longer feed lists, details will be out of view, so we need to scroll
   // back to the top
@@ -28,16 +28,13 @@ feed_list.onclick_callback = function(event) {
 };
 
 feed_list.onremove_callback = feed_id => feed_count_update();
-feed_list.unsubscribe_callback = feed_id =>
-    section_show_by_id('subs-list-section');
-feed_list.activate_callback = feed_id =>
-    section_show_by_id('subs-list-section');
-feed_list.deactivate_callback = feed_id =>
-    section_show_by_id('subs-list-section');
+feed_list.unsubscribe_callback = feed_id => section_show_by_id('subs-list-section');
+feed_list.activate_callback = feed_id => section_show_by_id('subs-list-section');
+feed_list.deactivate_callback = feed_id => section_show_by_id('subs-list-section');
 
 const subscription_form = new SubscriptionForm();
 subscription_form.init(document.getElementById('section-add-subscription'));
-subscription_form.onsubscribe = function(feed) {
+subscription_form.onsubscribe = function (feed) {
   feed_list.appendFeed(feed);
   section_show_by_id('subs-list-section');
 };
@@ -52,7 +49,7 @@ const about = new About();
 about.init(document.getElementById('about'));
 
 const channel = new BroadcastChannel('reader');
-channel.onmessage = function(event) {
+channel.onmessage = function (event) {
   if (!event.isTrusted) {
     return;
   }
@@ -62,20 +59,20 @@ channel.onmessage = function(event) {
     return;
   }
 
-  const type = message.type;
+  const { type } = message;
 
   if (type === 'resource-created') {
-    refresh_badge().catch(console.warn);
+    refreshBadge().catch(console.warn);
   } else if (type === 'resource-updated') {
-    refresh_badge().catch(console.warn);
+    refreshBadge().catch(console.warn);
   } else if (type === 'resource-deleted') {
-    refresh_badge().catch(console.warn);
+    refreshBadge().catch(console.warn);
   } else {
     console.warn('Unknown message type', type);
   }
 };
 
-channel.onmessageerror = function(event) {
+channel.onmessageerror = function (event) {
   console.warn(event);
 };
 
@@ -109,7 +106,7 @@ function section_show_by_id(id) {
 function feed_count_update() {
   const count = feed_list.count();
   const element = document.getElementById('subscription-count');
-  element.textContent = ' ' + (count > 50 ? '(50+)' : `(${count})`);
+  element.textContent = ` ${count > 50 ? '(50+)' : `(${count})`}`;
 }
 
 section_show_by_id('subs-list-section');

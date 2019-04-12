@@ -3,35 +3,36 @@ import * as color from '/lib/color.js';
 
 export function color_test() {
   // Check the named colors are valid
-  assert(color.is_valid(color.BLACK));
-  assert(color.is_valid(color.WHITE));
-  assert(color.is_valid(color.TRANSPARENT));
+  assert(color.isValid(color.BLACK));
+  assert(color.isValid(color.WHITE));
+  assert(color.isValid(color.TRANSPARENT));
 
   // exercise basic packing
-  let r = 0, b = 0, g = 0, a = 0;
+  let r = 0; let b = 0; let g = 0; let
+    a = 0;
   let value = color.pack(r, g, b, a);
 
   // pack should have produced a valid color
-  assert(color.is_valid(value));
+  assert(color.isValid(value));
 
   // unpacking a component should produce a valid component and be lossless
-  r = color.get_red(value);
+  r = color.getRed(value);
   assert(r === 0);
-  assert(color.is_valid_component(r));
+  assert(color.isValidComponent(r));
 
   // non-zero values should also work
   r = 100, b = 50, g = 30, a = 10;
   value = color.pack(r, g, b, a);
-  assert(color.is_valid(value));
+  assert(color.isValid(value));
 
   // unpacking of non-zero values should be lossless and produce valid
   // components
-  assert(color.get_red(value) === r);
-  assert(color.get_blue(value) === b);
-  assert(color.get_green(value) === g);
-  assert(color.is_valid_component(color.get_red(value)));
-  assert(color.is_valid_component(color.get_blue(value)));
-  assert(color.is_valid_component(color.get_green(value)));
+  assert(color.getRed(value) === r);
+  assert(color.getBlue(value) === b);
+  assert(color.getGreen(value) === g);
+  assert(color.isValidComponent(color.getRed(value)));
+  assert(color.isValidComponent(color.getBlue(value)));
+  assert(color.isValidComponent(color.getGreen(value)));
 
   // TODO: test lerp
   // TODO: test blend

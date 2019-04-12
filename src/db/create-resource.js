@@ -1,21 +1,21 @@
 import assert from '/lib/assert.js';
-import filter_empty_properties from '/lib/filter-empty-properties.js';
-import * as resource_utils from '/src/db/resource-utils.js';
+import filterEmptyProperties from '/lib/filter-empty-properties.js';
+import * as resourceUtils from '/src/db/resource-utils.js';
 
 // TODO: support new resource type "enclosure" that is child of type entry
 
-export default function create_resource(conn, resource) {
-  return new Promise(create_resource_executor.bind(this, conn, resource));
+export default function createResource(conn, resource) {
+  return new Promise(createResourceExecutor.bind(null, conn, resource));
 }
 
-function create_resource_executor(conn, resource, resolve, reject) {
+function createResourceExecutor(conn, resource, resolve, reject) {
   assert(resource && typeof resource === 'object');
   assert(resource.id === undefined);
   assert(resource.type === 'feed' || resource.type === 'entry');
 
   // The model requires that that all feeds have a location, but entries are not
   // required to have a url
-  assert(resource.type === 'entry' || resource_utils.has_url(resource));
+  assert(resource.type === 'entry' || resourceUtils.hasURL(resource));
 
   // Feeds are by default active when created unless explicitly inactive
   if (resource.type === 'feed' && resource.active === undefined) {
@@ -33,26 +33,25 @@ function create_resource_executor(conn, resource, resolve, reject) {
   resource.created_date = new Date();
   resource.updated_date = undefined;
 
-  resource_utils.normalize(resource);
-  resource_utils.sanitize(resource);
-  resource_utils.validate(resource);
-  filter_empty_properties(resource);
+  resourceUtils.normalize(resource);
+  resourceUtils.sanitize(resource);
+  resourceUtils.validate(resource);
+  filterEmptyProperties(resource);
 
   console.debug('Creating resource', resource);
 
   const transaction = conn.conn.transaction('resources', 'readwrite');
-  transaction.oncomplete =
-      transaction_oncomplete.bind(transaction, resource, conn.channel, resolve);
+  transaction.oncomplete = transactionOncomplete.bind(transaction, resource, conn.channel, resolve);
   transaction.onerror = event => reject(event.target.error);
 
-  const resources_store = transaction.objectStore('resources');
-  const put_request = resources_store.put(resource);
+  const resourcesStore = transaction.objectStore('resources');
+  const put_request = resourcesStore.put(resource);
   put_request.onsuccess = event => resource.id = put_request.result;
 }
 
-function transaction_oncomplete(resource, channel, callback, event) {
+function transactionOncomplete(resource, channel, callback, event) {
   if (channel) {
-    channel.postMessage({type: 'resource-created', id: resource.id});
+    channel.postMessage({ type: 'resource-created', id: resource.id });
   }
   callback(resource.id);
 }

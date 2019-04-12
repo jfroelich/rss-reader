@@ -1,10 +1,10 @@
 import assert from '/lib/assert.js';
-import filter_empty_properties from '/lib/filter-empty-properties.js';
+import filterEmptyProperties from '/lib/filter-empty-properties.js';
 import Connection from '/src/db/connection.js';
-import {NotFoundError} from '/src/db/errors.js';
-import * as resource_utils from '/src/db/resource-utils.js';
+import { NotFoundError } from '/src/db/errors.js';
+import * as resourceUtils from '/src/db/resource-utils.js';
 
-export default function patch_resource(conn, props) {
+export default function patchResource(conn, props) {
   return new Promise(patch_resource_executor.bind(this, conn, props));
 }
 
@@ -12,26 +12,24 @@ function patch_resource_executor(conn, props, resolve, reject) {
   assert(conn instanceof Connection);
   assert(conn.conn instanceof IDBDatabase);
   assert(props && typeof props === 'object');
-  assert(resource_utils.is_valid_id(props.id));
+  assert(resourceUtils.isValidId(props.id));
 
-  resource_utils.normalize(props);
-  resource_utils.sanitize(props);
-  resource_utils.validate(props);
+  resourceUtils.normalize(props);
+  resourceUtils.sanitize(props);
+  resourceUtils.validate(props);
 
   const transaction = conn.conn.transaction('resources', 'readwrite');
-  transaction.oncomplete =
-      transaction_oncomplete.bind(transaction, props.id, conn.channel, resolve);
+  transaction.oncomplete = transaction_oncomplete.bind(transaction, props.id, conn.channel, resolve);
   transaction.onerror = event => reject(event.target.error);
 
   const resources_store = transaction.objectStore('resources');
   const get_request = resources_store.get(props.id);
-  get_request.onsuccess =
-      get_request_onsuccess.bind(get_request, props, reject);
+  get_request.onsuccess = get_request_onsuccess.bind(get_request, props, reject);
 }
 
 function transaction_oncomplete(id, channel, callback, event) {
   if (channel) {
-    channel.postMessage({type: 'resource-updated', id: id});
+    channel.postMessage({ type: 'resource-updated', id });
   }
 
   callback();
@@ -42,7 +40,7 @@ function get_request_onsuccess(props, reject, event) {
 
   // NOTE: throwing would be an uncaught exception
   if (!resource) {
-    const message = 'No resource found for id ' + props.id;
+    const message = `No resource found for id ${props.id}`;
     reject(new NotFoundError(message));
     return;
   }
@@ -76,10 +74,8 @@ function get_request_onsuccess(props, reject, event) {
   if (props.active === 1) {
     delete props.deactivation_date;
     delete props.deactivation_reason;
-  } else {
-    if (!props.deactivation_date) {
-      props.deactivation_date = new Date();
-    }
+  } else if (!props.deactivation_date) {
+    props.deactivation_date = new Date();
   }
 
   // Apply transitions
@@ -101,7 +97,7 @@ function get_request_onsuccess(props, reject, event) {
   }
 
   if (dirtied_property_count) {
-    filter_empty_properties(resource);
+    filterEmptyProperties(resource);
     resource.updated_date = new Date();
     event.target.source.put(resource);
   }
