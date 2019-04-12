@@ -1,5 +1,5 @@
 import assert from '/lib/assert.js';
-import { image_dimensions_filter } from '/lib/dom-filters/image-dimensions-filter.js';
+import { imageDimensionsFilter } from '/lib/dom-filters/image-dimensions-filter.js';
 import parseHTML from '/lib/parse-html.js';
 
 export async function css_offset_props_test() {
@@ -7,7 +7,7 @@ export async function css_offset_props_test() {
     image;
   input = '<img style="width: 1px; height: 1px;">';
   doc = parseHTML(input);
-  await image_dimensions_filter(doc);
+  await imageDimensionsFilter(doc);
   image = doc.querySelector('img');
 
   // It is very poorly documented, but there are in fact different behaviors
@@ -45,7 +45,7 @@ export async function css_offset_props_test() {
   input = '<html><head><style>img{ width: 1px; height: 1px; }</style></head>'
       + '<body><img></body></html>';
   doc = parseHTML(input);
-  await image_dimensions_filter(doc);
+  await imageDimensionsFilter(doc);
   image = doc.querySelector('img');
   assert(image.width === 0);
   assert(image.height === 0);
@@ -79,13 +79,13 @@ export async function image_dimensions_filter_css_test() {
 
   input = '<img style="width: 1px; height: 1px;">';
   doc = parseHTML(input);
-  await image_dimensions_filter(doc);
+  await imageDimensionsFilter(doc);
   image = doc.querySelector('img');
   console.debug(image.outerHTML);
 
   input = '<img style="width: 100%; height: 100%;">';
   doc = parseHTML(input);
-  await image_dimensions_filter(doc);
+  await imageDimensionsFilter(doc);
   image = doc.querySelector('img');
   console.debug(image.outerHTML);
 }
@@ -95,7 +95,7 @@ export async function image_dimensions_filter_css_test() {
 export async function image_dimensions_filter_test() {
   const input = '<img src="/test/basic-image.png">';
   const doc = parseHTML(input);
-  await image_dimensions_filter(doc);
+  await imageDimensionsFilter(doc);
   const image = doc.querySelector('img');
   assert(image.width === 16);
   assert(image.height === 12);
@@ -106,7 +106,7 @@ export async function image_dimensions_filter_404_test() {
   const input = '<img src="i-am-a-missing-image-example.gif">';
   const doc = parseHTML(input);
   // This should not throw
-  await image_dimensions_filter(doc);
+  await imageDimensionsFilter(doc);
   // The properties for the image should not be initialized.
   const image = doc.querySelector('img');
   assert(image.width === 0);
@@ -118,14 +118,14 @@ export async function image_dimensions_filter_text_only_test() {
   const input = 'no images here';
   const doc = parseHTML(input);
   // should not throw
-  await image_dimensions_filter(doc);
+  await imageDimensionsFilter(doc);
 }
 
 export async function image_dimensions_filter_sourceless_test() {
   const input = '<img title="missing src">';
   const doc = parseHTML(input);
   // This should not throw
-  await image_dimensions_filter(doc);
+  await imageDimensionsFilter(doc);
   // Properties should not be initialized
   const image = doc.querySelector('img');
   assert(image.width === 0);

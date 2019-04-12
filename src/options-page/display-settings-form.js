@@ -2,7 +2,7 @@ import * as config from '/src/config.js';
 
 export default function DisplaySettingsForm() {}
 
-DisplaySettingsForm.prototype.init = function (parent) {
+DisplaySettingsForm.prototype.init = function displaySettingsFormInit(parent) {
   // TODO: setting class on every td is redundant, much simpler to specify
   // "table td" rule in CSS
 
@@ -30,9 +30,9 @@ DisplaySettingsForm.prototype.init = function (parent) {
   input.setAttribute('step', '1');
   input.onchange = this.entryMarginSliderOnchange.bind(this);
 
-  const current_entry_margin = config.readInt('padding', 0);
-  if (!isNaN(current_entry_margin)) {
-    input.value = current_entry_margin;
+  const currentEntryMargin = config.readInt('padding', 0);
+  if (!isNaN(currentEntryMargin)) {
+    input.value = currentEntryMargin;
   }
 
   cell.append(input);
@@ -47,25 +47,25 @@ DisplaySettingsForm.prototype.init = function (parent) {
   row.append(cell);
 
   cell = document.createElement('td');
-  const background_image_menu = document.createElement('select');
-  background_image_menu.setAttribute('id', 'entry-background-image');
-  background_image_menu.onchange = this.backgroundImageOnChange.bind(this);
+  const backgroundImageSelect = document.createElement('select');
+  backgroundImageSelect.setAttribute('id', 'entry-background-image');
+  backgroundImageSelect.onchange = this.backgroundImageOnChange.bind(this);
 
   const option = document.createElement('option');
   option.value = '';
   option.textContent = 'Use background color';
-  background_image_menu.append(option);
+  backgroundImageSelect.append(option);
 
-  const current_background_image_path = config.readString('bg_image');
-  const background_images = config.readArray('background_images');
-  for (const background_image_path of background_images) {
+  const currentBackgroundImagePath = config.readString('bg_image');
+  const backgroundImagePaths = config.readArray('background_images');
+  for (const backgroundImagePath of backgroundImagePaths) {
     const option = document.createElement('option');
-    option.value = background_image_path;
-    option.textContent = background_image_path;
-    option.selected = current_background_image_path === background_image_path;
-    background_image_menu.append(option);
+    option.value = backgroundImagePath;
+    option.textContent = backgroundImagePath;
+    option.selected = currentBackgroundImagePath === backgroundImagePath;
+    backgroundImageSelect.append(option);
   }
-  cell.append(background_image_menu);
+  cell.append(backgroundImageSelect);
   row.append(cell);
   table.append(row);
 
@@ -81,9 +81,9 @@ DisplaySettingsForm.prototype.init = function (parent) {
   input.setAttribute('type', 'color');
   input.oninput = this.entryBackgroundColorOninput.bind(this);
 
-  const background_color = config.readString('bg_color');
-  if (background_color) {
-    input.value = background_color;
+  const backgroundColor = config.readString('bg_color');
+  if (backgroundColor) {
+    input.value = backgroundColor;
   }
 
   cell.append(input);
@@ -107,9 +107,9 @@ DisplaySettingsForm.prototype.init = function (parent) {
 
   input.onchange = this.headerFontSizeOnchange.bind(this);
 
-  const header_font_size = config.readInt('header_font_size');
-  if (!isNaN(header_font_size)) {
-    input.value = header_font_size;
+  const headerFontSize = config.readInt('header_font_size');
+  if (!isNaN(headerFontSize)) {
+    input.value = headerFontSize;
   }
   cell.append(input);
   row.append(cell);
@@ -127,13 +127,11 @@ DisplaySettingsForm.prototype.init = function (parent) {
   input.setAttribute('min', '0');
   input.setAttribute('max', '200');
   input.setAttribute('step', '1');
-
   input.onchange = this.bodyFontSizeOnchange.bind(this);
 
-
-  const body_font_size = config.readInt('body_font_size');
-  if (!isNaN(body_font_size)) {
-    input.value = body_font_size;
+  const bodyFontSize = config.readInt('body_font_size');
+  if (!isNaN(bodyFontSize)) {
+    input.value = bodyFontSize;
   }
   cell.append(input);
   row.append(cell);
@@ -169,9 +167,9 @@ DisplaySettingsForm.prototype.init = function (parent) {
 
   input.oninput = this.bodyLineHeightOninput.bind(this);
 
-  const body_line_height = config.readInt('body_line_height');
-  if (!isNaN(body_line_height)) {
-    input.value = body_line_height;
+  const bodyLineHeight = config.readInt('body_line_height');
+  if (!isNaN(bodyLineHeight)) {
+    input.value = bodyLineHeight;
   }
   cell.append(input);
   row.append(cell);
@@ -187,12 +185,12 @@ DisplaySettingsForm.prototype.init = function (parent) {
   select.setAttribute('id', 'column-count');
   select.onchange = this.columnCountOnchange.bind(this);
 
-  const column_count_options = [1, 2, 3];
-  const current_column_count = config.readInt('column_count');
-  for (const column_count of column_count_options) {
+  const columnCountOptions = [1, 2, 3];
+  const currentColumnCount = config.readInt('column_count');
+  for (const column_count of columnCountOptions) {
     const option = document.createElement('option');
     option.value = column_count;
-    option.selected = column_count === current_column_count;
+    option.selected = column_count === currentColumnCount;
     option.textContent = column_count;
     select.append(option);
   }
@@ -203,7 +201,7 @@ DisplaySettingsForm.prototype.init = function (parent) {
   parent.append(table);
 };
 
-DisplaySettingsForm.prototype.entryMarginSliderOnchange = function (event) {
+DisplaySettingsForm.prototype.entryMarginSliderOnchange = function displaySettingsFormEntryMarginOnchange(event) {
   const margin = event.target.value;
   if (margin) {
     config.writeString('padding', margin);

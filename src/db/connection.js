@@ -4,7 +4,7 @@ export default function Connection() {
   this.channel = undefined;
 }
 
-Connection.prototype.close = function () {
+Connection.prototype.close = function connectionOnclose() {
   this.conn.close();
 
   // Treat channel as optional

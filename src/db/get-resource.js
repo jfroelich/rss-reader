@@ -3,16 +3,16 @@ import Connection from '/src/db/connection.js';
 import * as resourceUtils from '/src/db/resource-utils.js';
 
 export default function getResource(query) {
-  return new Promise(get_resource_executor.bind(this, query));
+  return new Promise(getResourceExecutor.bind(this, query));
 }
 
-function get_resource_executor(query, resolve, reject) {
+function getResourceExecutor(query, resolve, reject) {
   assert(query.conn instanceof Connection);
   assert(query.mode === 'id' || query.mode === 'url');
 
   if (query.mode === 'id') {
     assert(resourceUtils.isValidId(query.id));
-    assert(!query.key_only);
+    assert(!query.keyOnly);
   } else if (query.mode === 'url') {
     assert(query.url instanceof URL);
   }
@@ -20,24 +20,24 @@ function get_resource_executor(query, resolve, reject) {
   const transaction = query.conn.conn.transaction('resources');
   transaction.onerror = event => reject(event.target.error);
 
-  const resources_store = transaction.objectStore('resources');
+  const resourcesStore = transaction.objectStore('resources');
   let request;
   if (query.mode === 'url') {
-    const index = resources_store.index('urls');
+    const index = resourcesStore.index('urls');
     const { href } = query.url;
-    request = query.key_only ? index.getKey(href) : index.get(href);
+    request = query.keyOnly ? index.getKey(href) : index.get(href);
   } else if (query.mode === 'id') {
-    request = resources_store.get(query.id);
+    request = resourcesStore.get(query.id);
   }
 
-  request.onsuccess = request_onsuccess.bind(request, query, resolve);
+  request.onsuccess = requestOnsuccess.bind(request, query, resolve);
 }
 
-function request_onsuccess(query, callback, event) {
+function requestOnsuccess(query, callback, event) {
   const { result } = event.target;
 
   if (typeof result !== 'undefined') {
-    if (query.key_only) {
+    if (query.keyOnly) {
       // key only match
       callback({ id: event.target.result });
     } else {

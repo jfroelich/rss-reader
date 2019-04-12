@@ -8,25 +8,29 @@ import refreshFeedIcons from '/src/refresh-feed-icons.js';
 import subscribe from '/src/subscribe.js';
 import unsubscribe from '/src/unsubscribe.js';
 
-async function archive_resources_command() {
-  console.log('Archiving resources...');
-  const conn = await db.open();
-  const resource_ids = await db.archiveResources(conn);
-  conn.close();
-  console.debug('Archived %d resources', resource_ids.length);
-}
-
-async function clear_alarms_command() {
-  console.log('Clearing alarms...');
-  const cleared = await clear_alarms();
-  console.log('Cleared alarms (cleared=%s)', cleared);
-}
-
-function clear_alarms() {
+function clearAlarms() {
   return new Promise(resolve => chrome.alarms.clearAll(resolve));
 }
 
-async function clear_favicons_command() {
+function getAllAlarms() {
+  return new Promise(resolve => chrome.alarms.getAll(resolve));
+}
+
+async function archiveResourcesCommand() {
+  console.log('Archiving resources...');
+  const conn = await db.open();
+  const resourceIds = await db.archiveResources(conn);
+  conn.close();
+  console.debug('Archived %d resources', resourceIds.length);
+}
+
+async function clearAlarmsCommand() {
+  console.log('Clearing alarms...');
+  const cleared = await clearAlarms();
+  console.log('Cleared alarms (cleared=%s)', cleared);
+}
+
+async function clearFaviconsCommand() {
   console.log('Clearing favicon cache...');
   const conn = await favicon.open();
   await favicon.clear(conn);
@@ -34,7 +38,7 @@ async function clear_favicons_command() {
   console.log('Cleared favicon cache');
 }
 
-async function compact_favicons_command() {
+async function compactFaviconsCommand() {
   console.log('Compacting favicon cache...');
   const conn = await favicon.open();
   await favicon.compact(conn);
@@ -42,25 +46,28 @@ async function compact_favicons_command() {
   console.log('Compacted favicon cache');
 }
 
-function create_alarms_command() {
+function createAlarmsCommand() {
   console.log('Creating alarms...');
   cron.createAlarms();
   console.log('Created alarms');
 }
 
-async function lookup_favicon_command(url_string, cached) {
-  console.log('Looking up favicon for url', url_string);
+async function lookupFaviconCommand(urlString, cached) {
+  console.log('Looking up favicon for url', urlString);
 
   const request = new favicon.LookupRequest();
   request.conn = cached ? await favicon.open() : undefined;
-  request.url = new URL(url_string);
+  request.url = new URL(urlString);
   const result = await favicon.lookup(request);
-  request.conn && request.conn.close();
+
+  if (request.conn) {
+    request.conn.close();
+  }
 
   console.log('Lookup result:', result ? result.href : null);
 }
 
-async function poll_feeds_command() {
+async function pollFeedsCommand() {
   console.log('Polling feeds...');
 
   const proms = [db.open(), favicon.open()];
@@ -81,10 +88,10 @@ async function poll_feeds_command() {
   console.log('Poll completed');
 }
 
-async function print_alarms_command() {
+async function printAlarmsCommand() {
   console.group('Enumerating alarms...');
 
-  const alarms = await get_all_alarms();
+  const alarms = await getAllAlarms();
   for (const alarm of alarms) {
     console.log('Alarm:', alarm.name);
   }
@@ -92,56 +99,47 @@ async function print_alarms_command() {
   console.groupEnd();
 }
 
-function get_all_alarms() {
-  return new Promise(resolve => chrome.alarms.getAll(resolve));
-}
-
-async function refresh_favicons_command() {
+async function refreshFaviconsCommand() {
   console.log('Refreshing favicons for feeds...');
   const proms = [db.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(proms);
-  const update_results = await refreshFeedIcons(conn, iconn);
+  const updateResults = await refreshFeedIcons(conn, iconn);
   conn.close();
   iconn.close();
-  console.log(
-    'Completed refreshing favicons (%d inspected)', update_results.length,
-  );
+  console.log('Completed refreshing favicons (%d inspected)', updateResults.length);
 }
 
 // Add a new font to the registered font list
-function register_font_command(new_font_name) {
-  console.log('Registering font', new_font_name);
+function registerFontCommand(newFontName) {
+  console.log('Registering font', newFontName);
 
   const fonts = config.readArray('fonts');
 
-  const normal_new_name = new_font_name.toLowerCase();
+  const normalizedNewFontName = newFontName.toLowerCase();
 
-  for (const existing_font_name of fonts) {
-    const normal_existing_name = existing_font_name.toLowerCase();
-    if (normal_existing_name === normal_new_name) {
-      console.warn(
-        'Failed to register font %s. A similar font already exists.',
-        new_font_name,
-      );
+  for (const existingFontName of fonts) {
+    const normalizedExistingFontName = existingFontName.toLowerCase();
+    if (normalizedExistingFontName === normalizedNewFontName) {
+      console.warn('Failed to register font %s. A similar font already exists.', newFontName);
       return;
     }
   }
 
-  fonts.push(new_font_name);
+  fonts.push(newFontName);
   config.writeArray('fonts', fonts);
-  console.log('Registered font', new_font_name);
+  console.log('Registered font', newFontName);
 }
 
-async function subscribe_command(url_string) {
-  console.log('Subscribing to url %s ...', url_string);
+async function subscribeCommand(urlString) {
+  console.log('Subscribing to url %s ...', urlString);
 
-  const url = new URL(url_string);
+  const url = new URL(urlString);
   const timeout = new Deadline(3000);
   const notify = true;
 
-  const callback = (feed) => {
+  function callback() {
     console.debug('Stored new feed, now storing entries...');
-  };
+  }
 
   const proms = [db.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(proms);
@@ -152,20 +150,19 @@ async function subscribe_command(url_string) {
   console.log('Subscribed to feed', db.getURLString(feed));
 }
 
-async function unsubscribe_command(url_string) {
-  console.log('Unsubscribing from', url_string);
+async function unsubscribeCommand(urlString) {
+  console.log('Unsubscribing from', urlString);
 
-  const url = new URL(url_string);
+  const url = new URL(urlString);
 
   const conn = await db.open();
 
   // unsubscribe does not check whether the feed actually exists, but we want
   // to know if that is the case in order to provide more information.
-  const feed = await db.getResource(
-    {
-      conn, mode: 'url', url, key_only: true,
-    },
-  );
+  const feed = await db.getResource({
+    conn, mode: 'url', url, keyOnly: true,
+  });
+
   if (feed) {
     await unsubscribe(conn, feed.id);
 
@@ -183,18 +180,18 @@ async function unsubscribe_command(url_string) {
 }
 
 const commands = {};
-commands.archiveResources = archive_resources_command;
-commands.clear_alarms = clear_alarms_command;
-commands.clear_favicons = clear_favicons_command;
-commands.compact_favicons = compact_favicons_command;
-commands.createAlarms = create_alarms_command;
-commands.install_fonts = register_font_command;
-commands.lookup_favicon = lookup_favicon_command;
-commands.pollFeeds = poll_feeds_command;
-commands.print_alarms = print_alarms_command;
-commands.refresh_favicons = refresh_favicons_command;
-commands.subscribe = subscribe_command;
-commands.unsubscribe = unsubscribe_command;
+commands.archiveResources = archiveResourcesCommand;
+commands.clearAlarms = clearAlarmsCommand;
+commands.clearFavicons = clearFaviconsCommand;
+commands.compactFavicons = compactFaviconsCommand;
+commands.createAlarms = createAlarmsCommand;
+commands.installFonts = registerFontCommand;
+commands.lookupFavicon = lookupFaviconCommand;
+commands.pollFeeds = pollFeedsCommand;
+commands.printAlarms = printAlarmsCommand;
+commands.refreshFavicons = refreshFaviconsCommand;
+commands.subscribe = subscribeCommand;
+commands.unsubscribe = unsubscribeCommand;
 
 if (typeof window === 'object') {
   window.cli = commands;

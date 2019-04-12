@@ -8,7 +8,7 @@ import showNotification from '/src/show-notification.js';
 // resolves when both the feed and the entries are fully imported. The callback
 // is invoked with the feed once it is stored, earlier.
 export default async function subscribe(
-  conn, iconn, url, timeout = INDEFINITE, notify, feed_stored_callback,
+  conn, iconn, url, timeout = INDEFINITE, notify, feedStoredCallback,
 ) {
   const resource = {};
   resource.type = 'feed';
@@ -20,13 +20,13 @@ export default async function subscribe(
   args.feed = resource;
   args.create = true;
   args.fetchFeedTimeout = timeout;
-  args.feed_stored_callback = feed_stored_callback;
+  args.feedStoredCallback = feedStoredCallback;
 
   await importFeed(args);
 
   if (notify) {
-    const feed_title = resource.title || db.getURL(resource);
-    showNotification(`Subscribed to ${feed_title}`, resource.favicon_url);
+    const feedTitle = resource.title || db.getURL(resource);
+    showNotification(`Subscribed to ${feedTitle}`, resource.favicon_url);
   }
 
   return resource;

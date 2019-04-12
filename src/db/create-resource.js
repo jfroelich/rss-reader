@@ -45,8 +45,8 @@ function createResourceExecutor(conn, resource, resolve, reject) {
   transaction.onerror = event => reject(event.target.error);
 
   const resourcesStore = transaction.objectStore('resources');
-  const put_request = resourcesStore.put(resource);
-  put_request.onsuccess = event => resource.id = put_request.result;
+  const putRequest = resourcesStore.put(resource);
+  putRequest.onsuccess = event => resource.id = putRequest.result;
 }
 
 function transactionOncomplete(resource, channel, callback, event) {

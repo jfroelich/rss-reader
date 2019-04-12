@@ -3,7 +3,7 @@ import lookupFeedFavicon from '/src/lookup-feed-favicon.js';
 
 export default async function refreshFeedIcons(conn, iconn) {
   const feeds = await db.getResources(
-    { conn, mode: 'active-feeds', title_sort: false },
+    { conn, mode: 'active-feeds', titleSort: false },
   );
   const promises = [];
   for (const feed of feeds) {

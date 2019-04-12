@@ -8,15 +8,15 @@ import showNotification from '/src/show-notification.js';
 
 export function PollFeedsArgs() {
   this.ignoreRecencyCheck = false;
-  this.recency_period = 5 * 60 * 1000;
+  this.recencyPeriod = 5 * 60 * 1000;
   this.fetchFeedTimeout = new Deadline(5000);
   this.fetchHTMLTimeout = new Deadline(5000);
-  this.fetch_image_timeout = new Deadline(3000);
+  this.fetchImageTimeout = new Deadline(3000);
   this.deactivation_threshold = 10;
   this.notify = true;
   this.conn = undefined;
   this.iconn = undefined;
-  this.rewrite_rules = config.getRewriteRules();
+  this.rewriteRules = config.getRewriteRules();
   this.inaccessible_content_descriptors = config.getInaccessibleContentDescriptors();
 }
 
@@ -24,14 +24,14 @@ export async function pollFeeds(args) {
   console.log('Polling feeds...');
 
   // Cancel the run if the last run was too recent
-  if (args.recency_period && !args.ignoreRecencyCheck) {
+  if (args.recencyPeriod && !args.ignoreRecencyCheck) {
     const stamp = config.readInt('last_poll_timestamp');
     if (!isNaN(stamp)) {
       const now = new Date();
       const stamp_date = new Date(stamp);
       const millis_elapsed = now - stamp_date;
       assert(millis_elapsed >= 0);
-      if (millis_elapsed < args.recency_period) {
+      if (millis_elapsed < args.recencyPeriod) {
         console.debug('Polled too recently', millis_elapsed);
         return 0;
       }
@@ -41,7 +41,7 @@ export async function pollFeeds(args) {
   localStorage.last_poll_timestamp = `${Date.now()}`;
 
   const feeds = await db.getResources(
-    { conn: args.conn, mode: 'active-feeds', title_sort: false },
+    { conn: args.conn, mode: 'active-feeds', titleSort: false },
   );
   console.debug('Loaded %d active feeds for polling', feeds.length);
 
@@ -51,12 +51,12 @@ export async function pollFeeds(args) {
     ifa.feed = feed;
     ifa.conn = args.conn;
     ifa.iconn = args.iconn;
-    ifa.rewrite_rules = args.rewrite_rules;
-    ifa.inaccessible_descriptors = args.inaccessible_content_descriptors;
+    ifa.rewriteRules = args.rewriteRules;
+    ifa.inaccessibleContentDescriptors = args.inaccessible_content_descriptors;
     ifa.create = false;
     ifa.fetchFeedTimeout = args.fetchFeedTimeout;
     ifa.fetchHTMLTimeout = args.fetchHTMLTimeout;
-    ifa.feed_stored_callback = undefined;
+    ifa.feedStoredCallback = undefined;
     return poll_feed_noexcept(ifa);
   });
   // Wait for all concurrent polls to complete
@@ -64,8 +64,8 @@ export async function pollFeeds(args) {
 
   // Calculate the total number of entries added across all feeds.
   let entry_add_count_total = 0;
-  for (const entry_add_count of import_feed_results) {
-    entry_add_count_total += entry_add_count;
+  for (const entryAddCount of import_feed_results) {
+    entry_add_count_total += entryAddCount;
   }
 
   if (args.notify && entry_add_count_total > 0) {
@@ -93,5 +93,5 @@ async function poll_feed_noexcept(import_feed_args) {
     }
   }
 
-  return result.entry_add_count;
+  return result.entryAddCount;
 }

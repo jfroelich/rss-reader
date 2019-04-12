@@ -5,31 +5,29 @@ import Connection from '/src/db/connection.js';
 import * as migrations from '/src/db/migrations.js';
 
 export const defaultName = 'reader';
-export const default_version = 35;
-export const default_channel_name = 'reader';
-export const default_timeout = new Deadline(5000);
+export const defaultVersion = 35;
+export const defaultChannelName = 'reader';
+export const defaultTimeout = new Deadline(5000);
 
 // Asynchronously connect to the app's indexedDB database
 // @param timeout {Deadline} optional
 // @return {Promise} a promise that resolves to a connection {Connection}
-export default async function open(timeout = default_timeout) {
+export default async function open(timeout = defaultTimeout) {
   assert(timeout instanceof Deadline);
 
   const conn = new Connection();
-  const channel = new BroadcastChannel(default_channel_name);
+  const channel = new BroadcastChannel(defaultChannelName);
 
-  const upgrade_handler = (event) => {
-    default_upgrade_handler(channel, event);
-  };
+  function upgradeNeededHandler(event) {
+    defaultUpgradeNeededHandler(channel, event);
+  }
 
   conn.channel = channel;
-  conn.conn = await indexedDBUtils.open(
-    defaultName, default_version, upgrade_handler, timeout,
-  );
+  conn.conn = await indexedDBUtils.open(defaultName, defaultVersion, upgradeNeededHandler, timeout);
   return conn;
 }
 
-export function default_upgrade_handler(channel, event) {
+export function defaultUpgradeNeededHandler(channel, event) {
   migrations.migrate20(event, channel);
   migrations.migrate21(event, channel);
   migrations.migrate22(event, channel);

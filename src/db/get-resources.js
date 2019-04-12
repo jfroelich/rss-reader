@@ -1,40 +1,40 @@
 import assert from '/lib/assert.js';
 
 export default function getResources(query) {
-  return new Promise(get_resources_executor.bind(this, query));
+  return new Promise(getResourcesExecutor.bind(this, query));
 }
 
-function get_resources_executor(query, resolve, reject) {
+function getResourcesExecutor(query, resolve, reject) {
   assert(query && typeof query === 'object');
 
   const modes = [
     'all', 'feeds', 'active-feeds', 'viewable-entries', 'archivable-entries',
   ];
   assert(modes.includes(query.mode));
-  assert(is_valid_offset(query.offset));
-  assert(is_valid_limit(query.limit));
+  assert(isValidOffset(query.offset));
+  assert(isValidLimit(query.limit));
 
   const resources = [];
 
   const transaction = query.conn.conn.transaction('resources');
-  transaction.oncomplete = transaction_oncomplete.bind(transaction, resources, query, resolve);
+  transaction.oncomplete = transactionOncomplete.bind(transaction, resources, query, resolve);
   transaction.onerror = event => reject(event.target.error);
 
   const store = transaction.objectStore('resources');
 
-  const request = open_cursor_request(query, store);
+  const request = openCursorRequest(query, store);
 
   const context = {};
   context.mode = query.mode;
-  context.skip_count = 0;
+  context.skipCount = 0;
   context.resources = resources;
   context.offset = query.offset;
   context.limit = query.limit;
 
-  request.onsuccess = request_onsuccess.bind(request, context);
+  request.onsuccess = requestOnsuccess.bind(request, context);
 }
 
-function request_onsuccess(context, event) {
+function requestOnsuccess(context, event) {
   const cursor = event.target.result;
   if (!cursor) {
     return;
@@ -44,14 +44,14 @@ function request_onsuccess(context, event) {
 
   // If the resource does not match the query then skip past it entirely. This
   // does not contribute to the offset calculation.
-  if (!resource_matches_query(context.mode, resource)) {
+  if (!resourceMatchesQuery(context.mode, resource)) {
     cursor.continue();
     return;
   }
 
   // Keep advancing until we reached offset
-  if (context.offset > 0 && context.skip_count < context.offset) {
-    context.skip_count++;
+  if (context.offset > 0 && context.skipCount < context.offset) {
+    context.skipCount++;
     cursor.continue();
     return;
   }
@@ -70,7 +70,7 @@ function request_onsuccess(context, event) {
   }
 }
 
-function resource_matches_query(mode, resource) {
+function resourceMatchesQuery(mode, resource) {
   if (mode === 'all') {
     return true;
   }
@@ -96,7 +96,7 @@ function resource_matches_query(mode, resource) {
   return false;
 }
 
-function open_cursor_request(query, store) {
+function openCursorRequest(query, store) {
   if (query.mode === 'all') {
     return store.openCursor();
   }
@@ -120,26 +120,26 @@ function open_cursor_request(query, store) {
   throw new TypeError(`Invalid mode ${query.mode}`);
 }
 
-function transaction_oncomplete(resources, query, callback, event) {
-  if (query.title_sort) {
-    resources.sort(compare_resource_titles);
+function transactionOncomplete(resources, query, callback, event) {
+  if (query.titleSort) {
+    resources.sort(compareResourceTitles);
   }
 
   callback(resources);
 }
 
-function compare_resource_titles(a, b) {
+function compareResourceTitles(a, b) {
   const s1 = a.title ? a.title.toLowerCase() : '';
   const s2 = b.title ? b.title.toLowerCase() : '';
   return indexedDB.cmp(s1, s2);
 }
 
-function is_valid_offset(offset) {
+function isValidOffset(offset) {
   return offset === null || offset === undefined || offset === NaN
       || (Number.isInteger(offset) && offset >= 0);
 }
 
-function is_valid_limit(limit) {
+function isValidLimit(limit) {
   return limit === null || limit === undefined || limit === NaN
       || (Number.isInteger(limit) && limit >= 0);
 }

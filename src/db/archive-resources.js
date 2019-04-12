@@ -4,9 +4,9 @@ import patchResource from '/src/db/patch-resource.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
-export default async function archiveResources(conn, max_age = TWO_DAYS_MS) {
-  assert(max_age >= 0);
-  const current_date = new Date();
+export default async function archiveResources(conn, maxAge = TWO_DAYS_MS) {
+  assert(maxAge >= 0);
+  const currentDate = new Date();
   const query = {
     conn,
     mode: 'archivable-entries',
@@ -18,8 +18,8 @@ export default async function archiveResources(conn, max_age = TWO_DAYS_MS) {
 
   while (resources.length) {
     for (const resource of resources) {
-      if (resource.created_date && (current_date - resource.created_date > max_age)) {
-        const delta_transitions = {
+      if (resource.created_date && (currentDate - resource.created_date > maxAge)) {
+        const deltaTransitions = {
           id: resource.id,
           title: undefined,
           author: undefined,
@@ -29,7 +29,7 @@ export default async function archiveResources(conn, max_age = TWO_DAYS_MS) {
           feed_title: undefined,
           archived: 1,
         };
-        await patchResource(conn, delta_transitions);
+        await patchResource(conn, deltaTransitions);
       }
     }
 

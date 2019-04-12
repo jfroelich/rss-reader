@@ -11,63 +11,72 @@ export default function SubscriptionForm() {
   // this. Use Deadline(0) or undefined to not impose a time limit.
   this.fetchFeedTimeout = new Deadline(8000);
 
-  this.url_element = undefined;
-  this.monitor_element = undefined;
+  this.urlElement = undefined;
+  this.monitorElement = undefined;
   // Optional callback that is invoked with the subscribed feed, prior to all
   // entries being imported.
   this.onsubscribe = undefined;
 }
 
-SubscriptionForm.prototype.init = function (parent) {
+async function subscriptionFormHideMonitor() {
+  assert(this.monitorElement);
+  const durationSeconds = 2;
+  const delaySeconds = 1;
+  await fadeElement(this.monitorElement, durationSeconds, delaySeconds);
+  this.monitorElement.remove();
+  this.monitorElement = undefined;
+}
+
+SubscriptionForm.prototype.init = function subscriptionFormInit(parent) {
   const heading = document.createElement('h1');
   heading.textContent = 'Add a subscription';
   parent.append(heading);
 
-  const form_element = document.createElement('form');
-  form_element.id = 'subscription-form';
+  const formElement = document.createElement('form');
+  formElement.id = 'subscription-form';
 
-  const url_element = document.createElement('input');
-  url_element.setAttribute('type', 'search');
-  url_element.setAttribute('id', 'subscribe-url');
-  url_element.setAttribute('placeholder', 'http://example.com/feed.rss');
-  url_element.setAttribute('required', '');
-  form_element.append(url_element);
+  const urlElement = document.createElement('input');
+  urlElement.setAttribute('type', 'search');
+  urlElement.setAttribute('id', 'subscribe-url');
+  urlElement.setAttribute('placeholder', 'http://example.com/feed.rss');
+  urlElement.setAttribute('required', '');
+  formElement.append(urlElement);
 
-  this.url_element = url_element;
+  this.urlElement = urlElement;
 
-  const submit_button = document.createElement('input');
-  submit_button.setAttribute('type', 'submit');
-  submit_button.setAttribute('value', 'Subscribe');
-  form_element.append(submit_button);
+  const submitButton = document.createElement('input');
+  submitButton.setAttribute('type', 'submit');
+  submitButton.setAttribute('value', 'Subscribe');
+  formElement.append(submitButton);
 
-  form_element.onsubmit = this.onsubmit.bind(this);
+  formElement.onsubmit = this.onsubmit.bind(this);
 
-  parent.append(form_element);
+  parent.append(formElement);
 };
 
 SubscriptionForm.prototype.showMonitor = function () {
-  const monitor_element = document.createElement('div');
-  this.monitor_element = monitor_element;
+  const monitorElement = document.createElement('div');
+  this.monitorElement = monitorElement;
 
-  monitor_element.setAttribute('id', 'submon');
-  monitor_element.style.opacity = '1';
+  monitorElement.setAttribute('id', 'submon');
+  monitorElement.style.opacity = '1';
 
-  const progress_element = document.createElement('progress');
-  progress_element.textContent = 'Working...';
-  monitor_element.append(progress_element);
+  const subscriptionProgressElement = document.createElement('progress');
+  subscriptionProgressElement.textContent = 'Working...';
+  monitorElement.append(subscriptionProgressElement);
 
-  document.body.append(monitor_element);
+  document.body.append(monitorElement);
 };
 
-SubscriptionForm.prototype.appendMonitorMessage = function (message) {
-  assert(this.monitor_element);
+SubscriptionForm.prototype.appendMonitorMessage = function subscriptionFormAppendMonitorMessage(message) {
+  assert(this.monitorElement);
 
-  const message_element = document.createElement('p');
-  message_element.textContent = message;
-  this.monitor_element.append(message_element);
+  const messageElement = document.createElement('p');
+  messageElement.textContent = message;
+  this.monitorElement.append(messageElement);
 };
 
-SubscriptionForm.prototype.onsubmit = async function (event) {
+SubscriptionForm.prototype.onsubmit = async function subscriptionFormOnsubmit(event) {
   // Prevent the form from submitting as we plan to handle it ourselves
   event.preventDefault();
 
@@ -77,7 +86,7 @@ SubscriptionForm.prototype.onsubmit = async function (event) {
   //  progress'); return;
   // }
 
-  const { value } = this.url_element;
+  const { value } = this.urlElement;
   let url;
   try {
     url = new URL(value);
@@ -88,7 +97,7 @@ SubscriptionForm.prototype.onsubmit = async function (event) {
 
   console.debug('Subscribing to', url.href);
 
-  this.url_element.value = '';
+  this.urlElement.value = '';
   this.showMonitor();
   this.appendMonitorMessage(`Subscribing to ${url.href}`);
 
@@ -123,7 +132,7 @@ SubscriptionForm.prototype.onsubmit = async function (event) {
   }
 };
 
-SubscriptionForm.prototype.onFeedStored = function (feed) {
+SubscriptionForm.prototype.onFeedStored = function subscriptionFormOnFeedStored(feed) {
   this.appendMonitorMessage(`Subscribed to ${db.getURLString(feed)}`);
   this.hideMonitor();
   if (this.onsubscribe) {
@@ -131,11 +140,5 @@ SubscriptionForm.prototype.onFeedStored = function (feed) {
   }
 };
 
-SubscriptionForm.prototype.hideMonitor = async function () {
-  assert(this.monitor_element);
-  const duration_secs = 2; const
-    delay_secs = 1;
-  await fadeElement(this.monitor_element, duration_secs, delay_secs);
-  this.monitor_element.remove();
-  this.monitor_element = undefined;
-};
+
+SubscriptionForm.prototype.hideMonitor = subscriptionFormHideMonitor;

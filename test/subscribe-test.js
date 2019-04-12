@@ -19,7 +19,7 @@ export async function subscribe_test() {
   const url = new URL(local_url_string);
 
   let callback_called = false;
-  const feed_stored_callback = function (feed) {
+  const feedStoredCallback = function (feed) {
     callback_called = true;
   };
 
@@ -31,7 +31,7 @@ export async function subscribe_test() {
   // Rethrow subscribe exceptions just like assertion failures by omitting
   // try/catch.
   const resource = await subscribe(
-    conn, iconn, url, fetchFeedTimeout, notify, feed_stored_callback
+    conn, iconn, url, fetchFeedTimeout, notify, feedStoredCallback
 );
 
   // subscribe should yield a resource object

@@ -6,44 +6,44 @@ import NavMenu from '/src/options-page/nav-menu.js';
 import SubscriptionForm from '/src/options-page/subscription-form.js';
 import refreshBadge from '/src/refresh-badge.js';
 
-let current_section;
+let currentSection;
 
-const nav_menu = new NavMenu();
-nav_menu.init();
-nav_menu.onclick = function (item) {
-  section_show(item);
+const navMenu = new NavMenu();
+navMenu.init();
+navMenu.onclick = function navMenuOnclick(item) {
+  showSection(item);
 };
 
-const feed_list = new FeedList();
-feed_list.init(document.getElementById('section-subscriptions'));
-feed_list.onappend_callback = function (feed) {
-  feed_count_update();
+const feedList = new FeedList();
+feedList.init(document.getElementById('section-subscriptions'));
+feedList.onappendCallback = function feedListOnappendCallback() {
+  feedCountUpdate();
 };
 
-feed_list.onclick_callback = function (event) {
-  section_show_by_id('mi-feed-details');
+feedList.onclickCallback = function feedListOnclickCallback() {
+  showSectionByElementId('mi-feed-details');
   // For longer feed lists, details will be out of view, so we need to scroll
   // back to the top
   scrollTo(0, 0);
 };
 
-feed_list.onremove_callback = feed_id => feed_count_update();
-feed_list.unsubscribe_callback = feed_id => section_show_by_id('subs-list-section');
-feed_list.activate_callback = feed_id => section_show_by_id('subs-list-section');
-feed_list.deactivate_callback = feed_id => section_show_by_id('subs-list-section');
+feedList.onremoveCallback = feedId => feedCountUpdate();
+feedList.unsubscribeCallback = feedId => showSectionByElementId('subs-list-section');
+feedList.activateCallback = feedId => showSectionByElementId('subs-list-section');
+feedList.deactivateCallback = feedId => showSectionByElementId('subs-list-section');
 
-const subscription_form = new SubscriptionForm();
-subscription_form.init(document.getElementById('section-add-subscription'));
-subscription_form.onsubscribe = function (feed) {
-  feed_list.appendFeed(feed);
-  section_show_by_id('subs-list-section');
+const subscriptionForm = new SubscriptionForm();
+subscriptionForm.init(document.getElementById('section-add-subscription'));
+subscriptionForm.onsubscribe = function subscriptionFormOnsubscribe(feed) {
+  feedList.appendFeed(feed);
+  showSectionByElementId('subs-list-section');
 };
 
-const display_settings_form = new DisplaySettingsForm();
-display_settings_form.init(document.getElementById('section-display-settings'));
+const displaySettingsForm = new DisplaySettingsForm();
+displaySettingsForm.init(document.getElementById('section-display-settings'));
 
-const general_settings_form = new GeneralSettingsForm();
-general_settings_form.init(document.getElementById('section-general-settings'));
+const generalSettingsForm = new GeneralSettingsForm();
+generalSettingsForm.init(document.getElementById('section-general-settings'));
 
 const about = new About();
 about.init(document.getElementById('about'));
@@ -76,37 +76,37 @@ channel.onmessageerror = function (event) {
   console.warn(event);
 };
 
-function section_show(menu_item_element) {
-  if (menu_item_element && menu_item_element !== nav_menu.current_item) {
-    if (nav_menu.current_item) {
-      nav_menu.current_item.classList.remove('navigation-item-selected');
+function showSection(menuItemElement) {
+  if (menuItemElement && menuItemElement !== navMenu.currentItem) {
+    if (navMenu.currentItem) {
+      navMenu.currentItem.classList.remove('navigation-item-selected');
     }
-    if (current_section) {
-      current_section.style.display = 'none';
+    if (currentSection) {
+      currentSection.style.display = 'none';
     }
-    menu_item_element.classList.add('navigation-item-selected');
-    const section_id = menu_item_element.getAttribute('section');
-    const section_element = document.getElementById(section_id);
+    menuItemElement.classList.add('navigation-item-selected');
+    const sectionId = menuItemElement.getAttribute('section');
+    const sectionElement = document.getElementById(sectionId);
 
-    if (!section_element) {
-      console.error('No section element found with id', section_id);
+    if (!sectionElement) {
+      console.error('No section element found with id', sectionId);
       return;
     }
 
-    section_element.style.display = 'block';
-    nav_menu.current_item = menu_item_element;
-    current_section = section_element;
+    sectionElement.style.display = 'block';
+    navMenu.currentItem = menuItemElement;
+    currentSection = sectionElement;
   }
 }
 
-function section_show_by_id(id) {
-  section_show(document.getElementById(id));
+function showSectionByElementId(id) {
+  showSection(document.getElementById(id));
 }
 
-function feed_count_update() {
-  const count = feed_list.count();
+function feedCountUpdate() {
+  const count = feedList.count();
   const element = document.getElementById('subscription-count');
   element.textContent = ` ${count > 50 ? '(50+)' : `(${count})`}`;
 }
 
-section_show_by_id('subs-list-section');
+showSectionByElementId('subs-list-section');

@@ -22,11 +22,11 @@ export default function lookupFeedFavicon(feed, iconn, timeout = INDEFINITE) {
 
   // Build the lookup url, preferring the feed's link, and falling back to the
   // origin of the feed xml file's location.
-  let lookup_url;
+  let lookupURL;
   if (feed.link) {
-    lookup_url = new URL(feed.link);
+    lookupURL = new URL(feed.link);
   } else if (db.hasURL(feed)) {
-    lookup_url = new URL(db.getURL(feed).origin);
+    lookupURL = new URL(db.getURL(feed).origin);
   } else {
     const error = new Error('Cannot build lookup url for feed');
     return Promise.reject(error);
@@ -34,7 +34,7 @@ export default function lookupFeedFavicon(feed, iconn, timeout = INDEFINITE) {
 
   const request = new LookupRequest();
   request.conn = iconn;
-  request.url = lookup_url;
+  request.url = lookupURL;
   request.timeout = timeout;
   return lookup(request);
 }

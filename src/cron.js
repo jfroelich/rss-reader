@@ -28,15 +28,15 @@ export function queryIdleState(seconds) {
 
 export function createAlarms() {
   for (const alarm of alarms) {
-    create_alarm(alarm.name, { periodInMinutes: alarm.period });
+    createAlarm(alarm.name, { periodInMinutes: alarm.period });
   }
 }
 
-export function create_alarm(name, options) {
+export function createAlarm(name, options) {
   return chrome.alarms.create(name, options);
 }
 
-export function remove_alarm(name, callback) {
+export function removeAlarm(name, callback) {
   return new Promise((resolve) => {
     chrome.alarms.clear(name, (cleared) => {
       resolve({ name, cleared });
@@ -44,15 +44,15 @@ export function remove_alarm(name, callback) {
   });
 }
 
-export function update_alarms(prev_version_string) {
+export function updateAlarms() {
   const promises = [];
   for (const name of deprecatedAlarmNames) {
-    promises.push(remove_alarm(name));
+    promises.push(removeAlarm(name));
   }
   return Promise.all(promises);
 }
 
-export async function alarm_listener(alarm) {
+export async function alarmListener(alarm) {
   console.debug('Alarm wokeup:', alarm.name);
   config.writeString('last_alarm', alarm.name);
 

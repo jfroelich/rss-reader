@@ -1,6 +1,6 @@
 export default function About() {}
 
-About.prototype.init = function (parent) {
+About.prototype.init = function aboutInit(parent) {
   const heading = document.createElement('h1');
   heading.append('About');
   parent.append(heading);
@@ -44,7 +44,6 @@ About.prototype.init = function (parent) {
 
   p = document.createElement('p');
   p.setAttribute('class', 'option-text');
-  p.textContent = 'See the LICENSE file on GitHub for license, eula, '
-      + 'privacy policy, and attributions.';
+  p.textContent = 'See the LICENSE file on GitHub for license, eula, privacy policy, and attributions.';
   parent.append(p);
 };

@@ -333,11 +333,11 @@ export function storageOnchange(event) {
 }
 
 // Initialize the dom with css settings from config.
-export function dom_load_listener() {
+export function domLoadListener() {
   const sheet = document.styleSheets[0];
-  sheet.addRule('.entry', page_style_entry_rule_create());
-  sheet.addRule('.entry .entry-title', page_style_title_rule_create());
-  sheet.addRule('.entry .entry-content', page_style_content_rule_create());
+  sheet.addRule('.entry', pageStyleCreateEntryRule());
+  sheet.addRule('.entry .entry-title', pageStyleCreateTitleRule());
+  sheet.addRule('.entry .entry-content', pageStyleCreateContentRule());
 
   const padding = readInt('padding');
   if (!isNaN(padding)) {
@@ -345,60 +345,60 @@ export function dom_load_listener() {
   }
 }
 
-function page_style_entry_rule_create() {
+function pageStyleCreateEntryRule() {
   const buffer = [];
 
   const path = readString('bg_image');
-  const color = readString('bg_color');
+  const backgroundColor = readString('bg_color');
 
   if (path) {
     buffer.push(`background: url("/images/${path}");`);
-  } else if (color) {
-    buffer.push(`background: ${color};`);
+  } else if (backgroundColor) {
+    buffer.push(`background: ${backgroundColor};`);
   }
 
   return buffer.join('');
 }
 
-function page_style_title_rule_create(sheet) {
+function pageStyleCreateTitleRule(sheet) {
   const buffer = [];
-  const font_size = readInt('header_font_size');
-  if (!isNaN(font_size)) {
-    buffer.push(`font-size: ${font_size}px;`);
+  const fontSize = readInt('header_font_size');
+  if (!isNaN(fontSize)) {
+    buffer.push(`font-size: ${fontSize}px;`);
   }
 
-  const font_family = readString('header_font_family');
-  if (font_family) {
-    buffer.push(`font-family: ${font_family};`);
+  const fontFamily = readString('header_font_family');
+  if (fontFamily) {
+    buffer.push(`font-family: ${fontFamily};`);
   }
 
   return buffer.join('');
 }
 
-function page_style_content_rule_create(sheet) {
+function pageStyleCreateContentRule(sheet) {
   const buffer = [];
-  const font_size = readInt('body_font_size');
-  if (!isNaN(font_size)) {
-    buffer.push(`font-size: ${font_size}px;`);
+  const fontSize = readInt('body_font_size');
+  if (!isNaN(fontSize)) {
+    buffer.push(`font-size: ${fontSize}px;`);
   }
 
   if (readBoolean('justify_text')) {
     buffer.push('text-align: justify;');
   }
 
-  const font_family = readString('body_font_family');
-  if (font_family) {
-    buffer.push(`font-family: ${font_family};`);
+  const fontFamily = readString('body_font_family');
+  if (fontFamily) {
+    buffer.push(`font-family: ${fontFamily};`);
   }
 
-  const line_height = readInt('body_line_height');
-  if (!isNaN(line_height)) {
-    buffer.push(`line-height: ${line_height}px;`);
+  const lineHeight = readInt('body_line_height');
+  if (!isNaN(lineHeight)) {
+    buffer.push(`line-height: ${lineHeight}px;`);
   }
 
-  const column_count = readInt('column_count');
-  if (column_count === 2 || column_count === 3) {
-    buffer.push(`column-count: ${column_count};`);
+  const columnCount = readInt('column_count');
+  if (columnCount === 2 || columnCount === 3) {
+    buffer.push(`column-count: ${columnCount};`);
     buffer.push('column-gap: 30px;');
     buffer.push('column-rule: 1px outset #aaaaaa;');
   }

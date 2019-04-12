@@ -9,9 +9,9 @@ export default function countResources(query) {
     assert(query.type === 'entry');
 
     const transaction = query.conn.conn.transaction('resources');
-    const resources_store = transaction.objectStore('resources');
-    const type_read_index = resources_store.index('type-read');
-    const request = type_read_index.count(['entry', 0]);
+    const resourcesStore = transaction.objectStore('resources');
+    const typeReadIndex = resourcesStore.index('type-read');
+    const request = typeReadIndex.count(['entry', 0]);
     request.onsuccess = _ => resolve(request.result);
     request.onerror = _ => reject(request.error);
   });

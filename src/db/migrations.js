@@ -115,7 +115,7 @@ export function migrate24(event, channel) {
   }
 
   // Set the active property for existing feeds to true
-  const feed_ids = [];
+  const feedIds = [];
   const { transaction } = event.target;
   const feedStore = transaction.objectStore('feed');
   const request = feedStore.getAll();
@@ -123,7 +123,7 @@ export function migrate24(event, channel) {
   request.onsuccess = function (event) {
     const feeds = event.target.result;
     for (const feed of feeds) {
-      feed_ids.push(feed.id);
+      feedIds.push(feed.id);
       feed.active = true;
       feed.dateUpdated = new Date();
       store.put(feed);
@@ -133,7 +133,7 @@ export function migrate24(event, channel) {
   // Notify listeners of each updated feed
   if (channel) {
     transaction.addEventListener('complete', (event) => {
-      for (const id of feed_ids) {
+      for (const id of feedIds) {
         channel.postMessage({ type: 'feed-updated', id });
       }
     });
@@ -172,7 +172,7 @@ export function migrate26(event, channel) {
   // being upgraded, not when it is being created. If there are existing
   // entries, then ensure that all entries have a datePublished value.
   if (event.oldVersion) {
-    const entry_ids = [];
+    const entryIds = [];
 
     const request = entryStore.openCursor();
     request.onerror = _ => console.error(request.error);
@@ -191,7 +191,7 @@ export function migrate26(event, channel) {
 
     if (channel) {
       transaction.addEventListener('complete', (event) => {
-        for (const id of entry_ids) {
+        for (const id of entryIds) {
           channel.postMessage({ type: 'resource-updated', id });
         }
       });
@@ -216,9 +216,9 @@ export function migrate27(event, channel) {
   const { transaction } = event.target;
   const entryStore = transaction.objectStore('entry');
 
-  const index_name = 'readState-datePublished';
-  const index_path = ['readState', 'datePublished'];
-  entryStore.createIndex(index_name, index_path);
+  const indexName = 'readState-datePublished';
+  const indexPath = ['readState', 'datePublished'];
+  entryStore.createIndex(indexName, indexPath);
 }
 
 export function migrate28(event, channel) {
@@ -228,9 +228,9 @@ export function migrate28(event, channel) {
 
   const { transaction } = event.target;
   const entryStore = transaction.objectStore('entry');
-  const index_name = 'feed-datePublished';
-  const index_path = ['feed', 'datePublished'];
-  entryStore.createIndex(index_name, index_path);
+  const indexName = 'feed-datePublished';
+  const indexPath = ['feed', 'datePublished'];
+  entryStore.createIndex(indexName, indexPath);
 }
 
 export function migrate29(event, channel) {
@@ -240,9 +240,9 @@ export function migrate29(event, channel) {
 
   const { transaction } = event.target;
   const entryStore = transaction.objectStore('entry');
-  const index_name = 'feed-readState-datePublished';
-  const index_path = ['feed', 'readState', 'datePublished'];
-  entryStore.createIndex(index_name, index_path);
+  const indexName = 'feed-readState-datePublished';
+  const indexPath = ['feed', 'readState', 'datePublished'];
+  entryStore.createIndex(indexName, indexPath);
 }
 
 export function migrate30(event, channel) {
@@ -298,9 +298,9 @@ export function migrate30(event, channel) {
 
   // Copy over the feeds then delete the old store
   if (db.objectStoreNames.contains('feed')) {
-    const old_feed_store = transaction.objectStore('feed');
-    const feed_request = old_feed_store.openCursor();
-    feed_request.onsuccess = (event) => {
+    const oldFeedStore = transaction.objectStore('feed');
+    const feedCursorRequest = oldFeedStore.openCursor();
+    feedCursorRequest.onsuccess = (event) => {
       const cursor = event.target.result;
       if (cursor) {
         feedStore.put(cursor.value);
@@ -315,9 +315,9 @@ export function migrate30(event, channel) {
 
   // Copy over the entries then delete the old store
   if (db.objectStoreNames.contains('entry')) {
-    const old_entry_store = transaction.objectStore('entry');
-    const entry_request = old_entry_store.openCursor();
-    entry_request.onsuccess = (event) => {
+    const oldEntryStore = transaction.objectStore('entry');
+    const entryCursorRequest = oldEntryStore.openCursor();
+    entryCursorRequest.onsuccess = (event) => {
       const cursor = event.target.result;
       if (cursor) {
         entryStore.put(cursor.value);
@@ -385,8 +385,8 @@ export function migrate31(event, channel) {
 
   // snake_case each feed object's properties
   const feedStore = transaction.objectStore('feeds');
-  const feed_cursor_request = feedStore.openCursor();
-  feed_cursor_request.onsuccess = (event) => {
+  const feedCursorRequest = feedStore.openCursor();
+  feedCursorRequest.onsuccess = (event) => {
     const cursor = event.target.result;
     if (!cursor) {
       return;
@@ -419,8 +419,8 @@ export function migrate31(event, channel) {
   };
 
   // Next, replace each entry object with its proper snake case
-  const entry_cursor_request = entryStore.openCursor();
-  entry_cursor_request.onsuccess = (event) => {
+  const entryCursorRequest = entryStore.openCursor();
+  entryCursorRequest.onsuccess = (event) => {
     const cursor = event.target.result;
     if (!cursor) {
       return;
@@ -504,8 +504,8 @@ export function migrate32(event, channel) {
 
   // Update existing feeds
   const feedStore = transaction.objectStore('feeds');
-  const feed_cursor_request = feedStore.openCursor();
-  feed_cursor_request.onsuccess = (event) => {
+  const feedCursorRequest = feedStore.openCursor();
+  feedCursorRequest.onsuccess = (event) => {
     const cursor = event.target.result;
     if (!cursor) {
       return;
@@ -538,8 +538,8 @@ export function migrate32(event, channel) {
   };
 
   // Update existing entries
-  const entry_cursor_request = entryStore.openCursor();
-  entry_cursor_request.onsuccess = (event) => {
+  const entryCursorRequest = entryStore.openCursor();
+  entryCursorRequest.onsuccess = (event) => {
     const cursor = event.target.result;
     if (!cursor) {
       return;
@@ -584,10 +584,10 @@ export function migrate33(event, channel) {
   // when upgrading to a version less than 33.
 
   const { transaction } = event.target;
-  const entries_store = transaction.objectStore('entries');
+  const entriesStore = transaction.objectStore('entries');
 
-  if (entries_store.indexNames.contains('feed')) {
-    entries_store.deleteIndex('feed');
+  if (entriesStore.indexNames.contains('feed')) {
+    entriesStore.deleteIndex('feed');
   }
 }
 
@@ -602,41 +602,41 @@ export function migrate34(event, channel) {
   }
 
   const { transaction } = event.target;
-  const feeds_store = transaction.objectStore('feeds');
-  const feeds_cursor = feeds_store.openCursor();
-  const feed_ids = [];
-  feeds_cursor.onsuccess = (event) => {
+  const feedsStore = transaction.objectStore('feeds');
+  const feedsCursorRequest = feedsStore.openCursor();
+  const feedIds = [];
+  feedsCursorRequest.onsuccess = (event) => {
     const cursor = event.target.result;
     if (cursor) {
       const feed = cursor.value;
-      feed_ids.push(feed.id);
+      feedIds.push(feed.id);
       delete feed.magic;
-      feeds_store.put(feed);
+      feedsStore.put(feed);
       cursor.continue();
     }
   };
 
-  const entries_store = transaction.objectStore('entries');
-  const entries_cursor = entries_store.openCursor();
-  const entry_ids = [];
-  entries_cursor.onsuccess = (event) => {
+  const entriesStore = transaction.objectStore('entries');
+  const entriesCursorRequest = entriesStore.openCursor();
+  const entryIds = [];
+  entriesCursorRequest.onsuccess = (event) => {
     const cursor = event.target.result;
     if (cursor) {
       const entry = cursor.value;
-      entry_ids.push(entry.id);
+      entryIds.push(entry.id);
       delete entry.magic;
-      entries_store.put(entry);
+      entriesStore.put(entry);
       cursor.continue();
     }
   };
 
   if (channel) {
     transaction.addEventListener('complete', (event) => {
-      for (const id of feed_ids) {
+      for (const id of feedIds) {
         channel.postMessage({ type: 'feed-updated', id });
       }
 
-      for (const id of entry_ids) {
+      for (const id of entryIds) {
         channel.postMessage({ type: 'resource-updated', id });
       }
     });
@@ -657,20 +657,20 @@ export function migrate35(event, channel) {
   }
 
   // Create the resources store and appropriate indices
-  const resources_store = connection.createObjectStore(
+  const resourcesStore = connection.createObjectStore(
     'resources', { keyPath: 'id', autoIncrement: true },
   );
-  resources_store.createIndex('urls', 'urls', { multiEntry: true, unique: true });
+  resourcesStore.createIndex('urls', 'urls', { multiEntry: true, unique: true });
 
   // Each resource object gets a type so ops can quickly find all feeds or
   // query only entries
-  resources_store.createIndex('type', 'type');
+  resourcesStore.createIndex('type', 'type');
 
-  resources_store.createIndex('type-read', ['type', 'read']);
+  resourcesStore.createIndex('type-read', ['type', 'read']);
 
-  const feeds_store = transaction.objectStore('feeds');
-  const feeds_store_cursor_request = feeds_store.openCursor();
-  feeds_store_cursor_request.onsuccess = (event) => {
+  const feedsStore = transaction.objectStore('feeds');
+  const feedsStoreCursorRequest = feedsStore.openCursor();
+  feedsStoreCursorRequest.onsuccess = (event) => {
     const cursor = event.target.result;
     if (cursor) {
       const feed = cursor.value;
@@ -688,16 +688,16 @@ export function migrate35(event, channel) {
       // introduce resource type
       feed.type = 'feed';
 
-      resources_store.put(feed);
+      resourcesStore.put(feed);
       cursor.continue();
     } else {
       connection.deleteObjectStore('feeds');
     }
   };
 
-  const entries_store = transaction.objectStore('entries');
-  const entries_store_cursor_request = entries_store.openCursor();
-  entries_store_cursor_request.onsuccess = (event) => {
+  const entriesStore = transaction.objectStore('entries');
+  const entriesStoreCursorRequest = entriesStore.openCursor();
+  entriesStoreCursorRequest.onsuccess = (event) => {
     const cursor = event.target.result;
     if (cursor) {
       const entry = cursor.value;
@@ -719,7 +719,7 @@ export function migrate35(event, channel) {
       entry.read = entry.read_state;
       delete entry.read_state;
 
-      resources_store.put(entry);
+      resourcesStore.put(entry);
       cursor.continue();
     } else {
       connection.deleteObjectStore('entries');

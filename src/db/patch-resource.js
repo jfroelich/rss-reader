@@ -5,10 +5,10 @@ import { NotFoundError } from '/src/db/errors.js';
 import * as resourceUtils from '/src/db/resource-utils.js';
 
 export default function patchResource(conn, props) {
-  return new Promise(patch_resource_executor.bind(this, conn, props));
+  return new Promise(patchResourceExecutor.bind(this, conn, props));
 }
 
-function patch_resource_executor(conn, props, resolve, reject) {
+function patchResourceExecutor(conn, props, resolve, reject) {
   assert(conn instanceof Connection);
   assert(conn.conn instanceof IDBDatabase);
   assert(props && typeof props === 'object');
@@ -19,15 +19,15 @@ function patch_resource_executor(conn, props, resolve, reject) {
   resourceUtils.validate(props);
 
   const transaction = conn.conn.transaction('resources', 'readwrite');
-  transaction.oncomplete = transaction_oncomplete.bind(transaction, props.id, conn.channel, resolve);
+  transaction.oncomplete = transactionOncomplete.bind(transaction, props.id, conn.channel, resolve);
   transaction.onerror = event => reject(event.target.error);
 
-  const resources_store = transaction.objectStore('resources');
-  const get_request = resources_store.get(props.id);
-  get_request.onsuccess = get_request_onsuccess.bind(get_request, props, reject);
+  const resourcesStore = transaction.objectStore('resources');
+  const getRequest = resourcesStore.get(props.id);
+  getRequest.onsuccess = getRequestOnsuccess.bind(getRequest, props, reject);
 }
 
-function transaction_oncomplete(id, channel, callback, event) {
+function transactionOncomplete(id, channel, callback, event) {
   if (channel) {
     channel.postMessage({ type: 'resource-updated', id });
   }
@@ -35,7 +35,7 @@ function transaction_oncomplete(id, channel, callback, event) {
   callback();
 }
 
-function get_request_onsuccess(props, reject, event) {
+function getRequestOnsuccess(props, reject, event) {
   const resource = event.target.result;
 
   // NOTE: throwing would be an uncaught exception
@@ -79,11 +79,11 @@ function get_request_onsuccess(props, reject, event) {
   }
 
   // Apply transitions
-  const immutable_prop_names = ['id', 'updated_date'];
-  let dirtied_property_count = 0;
+  const immutablePropertyNames = ['id', 'updated_date'];
+  let dirtiedPropertyCount = 0;
 
   for (const prop in props) {
-    if (immutable_prop_names.includes(prop)) {
+    if (immutablePropertyNames.includes(prop)) {
       continue;
     }
 
@@ -93,10 +93,10 @@ function get_request_onsuccess(props, reject, event) {
     } else {
       resource[prop] = value;
     }
-    dirtied_property_count++;
+    dirtiedPropertyCount++;
   }
 
-  if (dirtied_property_count) {
+  if (dirtiedPropertyCount) {
     filterEmptyProperties(resource);
     resource.updated_date = new Date();
     event.target.source.put(resource);

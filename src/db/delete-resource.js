@@ -1,5 +1,4 @@
 import assert from '/lib/assert.js';
-import Connection from '/src/db/connection.js';
 import * as resourceUtils from '/src/db/resource-utils.js';
 
 // TODO: support deleting enclosures?
@@ -46,10 +45,10 @@ function transactionOncomplete(id, reason, dependentIds, channel, callback, even
   if (channel) {
     channel.postMessage({ type: 'resource-deleted', id, reason });
 
-    for (const dep_id of dependentIds) {
+    for (const dependentId of dependentIds) {
       channel.postMessage(
         {
-          type: 'resource-deleted', id: dep_id, reason, parent: id,
+          type: 'resource-deleted', id: dependentId, reason, parent: id,
         },
       );
     }

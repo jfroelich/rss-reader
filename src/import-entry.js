@@ -1,4 +1,3 @@
-import assert from '/lib/assert.js';
 import { INDEFINITE } from '/lib/deadline.js';
 import { compositeDocumentFilter } from '/lib/dom-filters/dom-filters.js';
 import * as favicon from '/lib/favicon.js';
@@ -13,8 +12,8 @@ export function ImportEntryArgs() {
   this.feed = undefined;
   this.conn = undefined;
   this.iconn = undefined;
-  this.rewrite_rules = [];
-  this.inaccessible_descriptors = [];
+  this.rewriteRules = [];
+  this.inaccessibleContentDescriptors = [];
   this.fetchHTMLTimeout = INDEFINITE;
 }
 
@@ -28,42 +27,43 @@ export async function importEntry(args) {
 
   // Rewrite the entry's url. This is always done before processing, so there
   // no need to check whether the original url exists in the database.
-  const original_url = db.getURL(entry);
-  const rewritten_url = rewrite_url(original_url, args.rewrite_rules);
-  db.setURL(entry, rewritten_url);
+  const originalURL = db.getURL(entry);
+  const rewrittenURL = rewriteURL(originalURL, args.rewriteRules);
+  db.setURL(entry, rewrittenURL);
 
   // Check if the entry with the possibly rewritten url already exists
-  const after_rewrite_url = db.getURL(entry);
-  const existing_entry = await db.getResource({
-    conn: args.conn, mode: 'url', url: after_rewrite_url, key_only: true,
+  const afterRewriteURL = db.getURL(entry);
+  const existingEntry = await db.getResource({
+    conn: args.conn, mode: 'url', url: afterRewriteURL, keyOnly: true,
   });
-  if (existing_entry) {
-    const message = `The entry with url ${after_rewrite_url.href} already exists.`;
+
+  if (existingEntry) {
+    const message = `The entry with url ${afterRewriteURL.href} already exists.`;
     throw new db.errors.ConstraintError(message);
   }
 
   // Fetch the entry's full content. Rethrow any errors.
-  const fetch_url = db.getURL(entry);
-  const response = await fetch_entry_html(
-    fetch_url, args.fetchHTMLTimeout, args.inaccessible_descriptors,
+  const fetchURL = db.getURL(entry);
+  const response = await fetchEntryHTML(
+    fetchURL, args.fetchHTMLTimeout, args.inaccessibleContentDescriptors,
   );
 
   // Handle redirection
   if (response) {
-    const response_url = new URL(response.url);
-    if (fetch_url.href !== response_url.href) {
-      db.setURL(entry, response_url);
+    const responseURL = new URL(response.url);
+    if (fetchURL.href !== responseURL.href) {
+      db.setURL(entry, responseURL);
 
-      const rewritten_url = rewrite_url(response_url, args.rewrite_rules);
-      db.setURL(entry, rewritten_url);
+      const rewrittenURL = rewriteURL(responseURL, args.rewriteRules);
+      db.setURL(entry, rewrittenURL);
 
-      const existing_entry = db.getResource(
+      const existingEntry = db.getResource(
         {
-          conn: args.conn, mode: 'url', url: rewritten_url, key_only: true,
+          conn: args.conn, mode: 'url', url: rewrittenURL, keyOnly: true,
         },
       );
-      if (existing_entry) {
-        const message = `The entry with url ${rewritten_url.href} already exists.`;
+      if (existingEntry) {
+        const message = `The entry with url ${rewrittenURL.href} already exists.`;
         throw new db.errors.ConstraintError(message);
       }
     }
@@ -74,8 +74,8 @@ export async function importEntry(args) {
   // favicon lookup the ability to inspect the document header.
   let doc;
   if (response) {
-    const full_text = await response.text();
-    doc = parseHTML(full_text);
+    const fullText = await response.text();
+    doc = parseHTML(fullText);
   } else {
     doc = parseHTML(entry.content || '');
   }
@@ -88,16 +88,16 @@ export async function importEntry(args) {
   if (args.iconn) {
     // Only provide if doc came from remote. If it came from feed-xml then it
     // will not have embedded favicon link.
-    const lookup_doc = response ? doc : undefined;
-    await set_entry_favicon(entry, args.iconn, lookup_doc);
+    const lookupDocument = response ? doc : undefined;
+    await setEntryFavicon(entry, args.iconn, lookupDocument);
   }
 
   // If title was not present in the feed xml, try and pull it from fetched
   // content
   if (!entry.title && response && doc) {
-    const title_element = doc.querySelector('html > head > title');
-    if (title_element) {
-      entry.title = title_element.textContent.trim();
+    const titleElement = doc.querySelector('html > head > title');
+    if (titleElement) {
+      entry.title = titleElement.textContent.trim();
     }
   }
 
@@ -105,46 +105,46 @@ export async function importEntry(args) {
   entry.content = doc.documentElement.outerHTML;
 
   entry.type = 'entry';
-  return await db.createResource(args.conn, entry);
+  return db.createResource(args.conn, entry);
 }
 
-async function set_entry_favicon(entry, conn, doc) {
+async function setEntryFavicon(entry, conn, doc) {
   const request = new favicon.LookupRequest();
   request.url = db.getURL(entry);
   request.conn = conn;
   request.document = doc;
-  const icon_url = await favicon.lookup(request);
-  if (icon_url) {
-    entry.favicon_url = icon_url.href;
+  const iconURL = await favicon.lookup(request);
+  if (iconURL) {
+    entry.favicon_url = iconURL.href;
   }
 }
 
-function fetch_entry_html(url, timeout, inaccessible_descriptors) {
+function fetchEntryHTML(url, timeout, inaccessibleContentDescriptors) {
   if (!['http:', 'https:'].includes(url.protocol)) {
     return;
   }
 
-  const sniff_class = urlSniffer.classify(url);
-  if (sniff_class === urlSniffer.BINARY_CLASS) {
+  const sniffedResourceClass = urlSniffer.classify(url);
+  if (sniffedResourceClass === urlSniffer.BINARY_CLASS) {
     return;
   }
 
   // Avoid fetching if url matches one of the descriptors
-  for (const desc of inaccessible_descriptors) {
+  for (const desc of inaccessibleContentDescriptors) {
     if (desc.pattern && desc.pattern.test(url.hostname)) {
       return;
     }
   }
 
-  const fetch_options = {};
-  fetch_options.timeout = timeout;
+  const fetchOptions = {};
+  fetchOptions.timeout = timeout;
   // allow for text/plain as web page mime type
-  fetch_options.allowText = true;
+  fetchOptions.allowText = true;
 
-  return fetchHTML(url, fetch_options);
+  return fetchHTML(url, fetchOptions);
 }
 
-export function rewrite_url(url, rules) {
+export function rewriteURL(url, rules) {
   let prev = url;
   let next = url;
   for (const rule of rules) {

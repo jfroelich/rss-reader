@@ -2,7 +2,7 @@ import * as config from '/src/config.js';
 
 export default function GeneralSettingsForm() {}
 
-GeneralSettingsForm.prototype.init = async function (parent) {
+GeneralSettingsForm.prototype.init = async function generalSettingsFormInit(parent) {
   const heading = document.createElement('h1');
   heading.textContent = 'General Settings';
   parent.append(heading);
@@ -18,7 +18,7 @@ GeneralSettingsForm.prototype.init = async function (parent) {
   input.setAttribute('type', 'checkbox');
   input.setAttribute('id', 'enable-notifications');
 
-  input.onclick = (event) => {
+  input.onclick = function inputOnclick(event) {
     config.writeBoolean('notifications_enabled', event.target.checked);
   };
 
@@ -42,19 +42,16 @@ GeneralSettingsForm.prototype.init = async function (parent) {
   // manifest, so it is addable and removable
   // TODO: this should be using a configuration variable and instead the
   // permission should be permanently defined.
-  input.checked = await has_permission('background');
+  input.checked = await hasPermission('background');
   input.onclick = (event) => {
     if (event.target.checked) {
-      request_permission('background');
+      requestPermission('background');
     } else {
-      remove_permission('background');
+      removePermission('background');
     }
   };
 
-  label = document.createTextNode(
-    'Permit this extension to check for updates in the background if '
-      + 'Chrome is configured to allow background processing.',
-  );
+  label = document.createTextNode('Permit this extension to check for updates in the background if Chrome is configured to allow background processing.');
   cell.append(input);
   cell.append(label);
   row.append(cell);
@@ -80,19 +77,19 @@ GeneralSettingsForm.prototype.init = async function (parent) {
   parent.append(table);
 };
 
-function request_permission(name) {
+function requestPermission(name) {
   return new Promise(
     resolve => chrome.permissions.request({ permissions: [name] }, resolve),
   );
 }
 
-function remove_permission(name) {
+function removePermission(name) {
   return new Promise(
     resolve => chrome.permissions.remove({ permissions: [name] }, resolve),
   );
 }
 
-function has_permission(name) {
+function hasPermission(name) {
   return new Promise(
     resolve => chrome.permissions.contains({ permissions: [name] }, resolve),
   );

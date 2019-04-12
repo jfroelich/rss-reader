@@ -40,15 +40,15 @@ export function isValidId(value) {
 // of a string to ensure the url is well-formed, absolute, and canonical,
 // although the url is recorded in string form in the resource's urls list.
 export function setURL(resource, url) {
-  const url_string = url.href;
+  const urlString = url.href;
   if (resource.urls) {
-    if (resource.urls.includes(url_string)) {
+    if (resource.urls.includes(urlString)) {
       return false;
     }
 
-    resource.urls.push(url_string);
+    resource.urls.push(urlString);
   } else {
-    resource.urls = [url_string];
+    resource.urls = [urlString];
   }
 
   return true;
@@ -104,7 +104,7 @@ export function sanitize(resource, options = {}) {
   const maxDescriptionLength = isNaN(options.maxDescriptionLength)
     ? 10240
     : options.maxDescriptionLength;
-  const max_author_length = isNaN(options.max_author_length) ? 200 : options.max_author_length;
+  const maxAuthorLength = isNaN(options.maxAuthorLength) ? 200 : options.maxAuthorLength;
 
   if (resource.title) {
     let { title } = resource;
@@ -147,7 +147,7 @@ export function sanitize(resource, options = {}) {
     }
 
     author = condenseWhitespace(author);
-    author = truncateHTML(author, max_author_length);
+    author = truncateHTML(author, maxAuthorLength);
     resource.author = author;
   }
 

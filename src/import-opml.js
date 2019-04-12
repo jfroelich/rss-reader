@@ -8,7 +8,7 @@ export default async function importOPML(conn, files) {
 
   // Grab urls from each of the files. Per-file errors, including assertion
   // errors, are logged not thrown.
-  const promises = Array.prototype.map.call(files, file => file_find_urls(file).catch(console.warn));
+  const promises = Array.prototype.map.call(files, file => findURLsInFile(file).catch(console.warn));
   const results = await Promise.all(promises);
 
   // Flatten results into a simple array of urls
@@ -50,13 +50,13 @@ export default async function importOPML(conn, files) {
 
 // Return an array of outline urls (as URL objects) from OPML outline elements
 // found in the plaintext representation of the given file
-async function file_find_urls(file) {
-  return find_outline_urls(parseOPML(await file_read_text(file)));
+async function findURLsInFile(file) {
+  return findOutlineURLs(parseOPML(await readFileFullTextAsync(file)));
 }
 
 // Return an array of outline urls (as URL objects) from outlines found in an
 // OPML document
-function find_outline_urls(doc) {
+function findOutlineURLs(doc) {
   // Assume the document is semi-well-formed. As a compromise between a deep
   // strict validation and no validation at all, use the CSS restricted-parent
   // selector syntax. We also do some filtering of outlines here up front to
@@ -67,15 +67,15 @@ function find_outline_urls(doc) {
   // Although I've never seen it in the wild, apparently OPML outline elements
   // can represent non-feed data. Use this pattern to restrict the outlines
   // considered to those properly configured.
-  const type_pattern = /^\s*(rss|rdf|feed)\s*$/i;
+  const feedFormatPattern = /^\s*(rss|rdf|feed)\s*$/i;
 
   const urls = [];
   for (const outline of outlines) {
     const type = outline.getAttribute('type');
-    if (type_pattern.test(type)) {
-      const xml_url_value = outline.getAttribute('xmlUrl');
+    if (feedFormatPattern.test(type)) {
+      const xmlUrlAttributeValue = outline.getAttribute('xmlUrl');
       try {
-        urls.push(new URL(xml_url_value));
+        urls.push(new URL(xmlUrlAttributeValue));
       } catch (error) {
         // Ignore the error, skip the url
       }
@@ -85,7 +85,7 @@ function find_outline_urls(doc) {
   return urls;
 }
 
-function file_read_text(file) {
+function readFileFullTextAsync(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsText(file);

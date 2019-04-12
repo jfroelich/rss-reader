@@ -27,8 +27,8 @@ function put_resource_executor(conn, resource, resolve, reject) {
   transaction.oncomplete = transaction_oncomplete.bind(transaction, resource, conn.channel, resolve);
   transaction.onerror = event => reject(event.target.error);
 
-  const resources_store = transaction.objectStore('resources');
-  resources_store.put(resource);
+  const resourcesStore = transaction.objectStore('resources');
+  resourcesStore.put(resource);
 }
 
 function transaction_oncomplete(resource, channel, callback, event) {

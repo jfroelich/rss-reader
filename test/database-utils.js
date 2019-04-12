@@ -39,8 +39,8 @@ export function find_database_full_names(prefix) {
 // Open a database connection for testing purposes. If an upgrade handler is
 // not specified then this uses the same upgrade handler as db/open
 export async function create_test_database(
-  name, version = db.default_version,
-  upgrade_handler = db.default_upgrade_handler,
+  name, version = db.defaultVersion,
+  upgrade_handler = db.defaultUpgradeNeededHandler,
 ) {
   // A custom name is required in the test context. We also impose a non-zero
   // length guard just because that is reasonable. This would be caught later

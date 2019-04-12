@@ -11,52 +11,52 @@ import { pollFeeds, PollFeedsArgs } from '/src/poll-feeds.js';
 import refreshBadge from '/src/refresh-badge.js';
 
 const splashElement = document.getElementById('initial-loading-panel');
-const feedsContainer = document.getElementById('feeds-container');
-if (feedsContainer) {
-  feedsContainer.onclick = feedsContainerOnclick;
+const feedsContainerElement = document.getElementById('feeds-container');
+if (feedsContainerElement) {
+  feedsContainerElement.onclick = feedsContainerOnclick;
 } else {
   console.warn('could not find feeds-container');
 }
 
 // Slide animation speed (smaller is faster), floating point
-let transition_duration;
-function init_transition_duration() {
-  const default_duration = 0.16;
-  const duration_float = config.readFloat('slide_transition_duration');
-  transition_duration = isNaN(duration_float) ? default_duration : duration_float;
+let transitionDuration;
+function initTransitionDuration() {
+  const defaultDuration = 0.16;
+  const durationFloat = config.readFloat('slide_transition_duration');
+  transitionDuration = isNaN(durationFloat) ? defaultDuration : durationFloat;
 }
-init_transition_duration();
+initTransitionDuration();
 
 let channel;
-let refresh_in_progress = false;
-const no_articles_element = document.getElementById('no-entries-message');
-let current_slide = null;
-let active_transition_count = 0;
+let refreshInProgress = false;
+const noArticlesElement = document.getElementById('no-entries-message');
+let currentSlide = null;
+let activeTransitionCount = 0;
 
-async function show_next_slide() {
-  const max_load_count = 6;
+async function showNextSlide() {
+  const maxLoadCount = 6;
 
-  if (get_active_transition_count()) {
+  if (getActiveTransitionCount()) {
     return;
   }
 
-  const current_slide = get_current_slide();
-  if (!current_slide) {
+  const currentSlide = getCurrentSlide();
+  if (!currentSlide) {
     return;
   }
 
   const conn = await db.open();
-  await markSlideReadStart(conn, current_slide);
+  await markSlideReadStart(conn, currentSlide);
 
-  const slide_unread_count = count_unread_slides();
+  const slideUnreadCount = countUnreadSlides();
   let entries = [];
-  if (slide_unread_count < 3) {
+  if (slideUnreadCount < 3) {
     const mode = 'viewable-entries';
-    const offset = slide_unread_count;
+    const offset = slideUnreadCount;
     let limit;
-    const config_limit = config.readInt('initial_entry_load_limit');
-    if (!isNaN(config_limit)) {
-      limit = config_limit;
+    const configLimit = config.readInt('initial_entry_load_limit');
+    if (!isNaN(configLimit)) {
+      limit = configLimit;
     }
     entries = await db.getResources(
       {
@@ -68,97 +68,96 @@ async function show_next_slide() {
 
   for (const entry of entries) {
     if (!document.querySelector(`slide[entry="${entry.id}"]`)) {
-      append_slide(entry);
+      appendSlide(entry);
     } else {
       console.debug('Entry already loaded', entry.id);
     }
   }
 
-  const next_slide = current_slide.nextElementSibling;
-  if (next_slide) {
-    increment_active_transition_count();
-    current_slide.style.left = '-100%';
-    next_slide.style.left = '0';
-    set_current_slide(next_slide);
+  const nextSlide = currentSlide.nextElementSibling;
+  if (nextSlide) {
+    incrementActiveTransitionCount();
+    currentSlide.style.left = '-100%';
+    nextSlide.style.left = '0';
+    setCurrentSlide(nextSlide);
   }
 
   if (entries.length) {
-    compact_slides(max_load_count);
+    compactSlides(maxLoadCount);
   }
 }
 
-function compact_slides(max_load_count = 6) {
-  const current_slide = get_current_slide();
-  if (!current_slide) {
+function compactSlides(maxLoadCount = 6) {
+  const currentSlide = getCurrentSlide();
+  if (!currentSlide) {
     return;
   }
 
   // The maximum number of slides loaded at any one time.
   const container = document.getElementById('slideshow-container');
-  let first_slide = container.firstElementChild;
-  while (container.childElementCount > max_load_count
-         && first_slide !== current_slide) {
-    remove_slide(first_slide);
-    first_slide = container.firstElementChild;
+  let firstSlide = container.firstElementChild;
+  while (container.childElementCount > maxLoadCount && firstSlide !== currentSlide) {
+    removeSlide(firstSlide);
+    firstSlide = container.firstElementChild;
   }
 }
 
-function show_prev_slide() {
-  if (get_active_transition_count()) {
+function showPreviousSlide() {
+  if (getActiveTransitionCount()) {
     console.debug(
       'Transition in progress, canceling navigation to previous slide',
     );
     return;
   }
 
-  const current_slide = get_current_slide();
-  if (!current_slide) {
+  const currentSlide = getCurrentSlide();
+  if (!currentSlide) {
     return;
   }
 
-  const previous_slide = current_slide.previousElementSibling;
-  if (!previous_slide) {
+  const previousSlide = currentSlide.previousElementSibling;
+  if (!previousSlide) {
     return;
   }
 
-  increment_active_transition_count();
-  current_slide.style.left = '100%';
-  previous_slide.style.left = '0';
-  set_current_slide(previous_slide);
+  incrementActiveTransitionCount();
+  currentSlide.style.left = '100%';
+  previousSlide.style.left = '0';
+  setCurrentSlide(previousSlide);
 }
 
-function get_current_slide() {
-  return current_slide;
+function getCurrentSlide() {
+  return currentSlide;
 }
 
-function set_current_slide(slide_element) {
-  current_slide = slide_element;
+function setCurrentSlide(slideElement) {
+  currentSlide = slideElement;
 }
 
-function is_current_slide(slide_element) {
-  return slide_element === current_slide;
+function isCurrentSlide(slideElement) {
+  return slideElement === currentSlide;
 }
 
-function get_active_transition_count() {
-  return active_transition_count;
+function getActiveTransitionCount() {
+  return activeTransitionCount;
 }
 
-function set_active_transition_count(count) {
-  active_transition_count = count;
+function setActiveTransitionCount(count) {
+  activeTransitionCount = count;
 }
 
-function increment_active_transition_count() {
-  active_transition_count++;
+function incrementActiveTransitionCount() {
+  activeTransitionCount++;
 }
 
-// Do not allow transition to negative
-function decrement_active_transition_count() {
-  if (active_transition_count > 0) {
-    active_transition_count--;
+function decrementActiveTransitionCount() {
+  // Do not allow transition to negative
+  if (activeTransitionCount > 0) {
+    activeTransitionCount--;
   }
 }
 
-async function slide_onclick(event) {
+async function slideOnclick(event) {
   // Only intercept left clicks
   const LEFT_MOUSE_BUTTON_CODE = 1;
   if (event.which !== LEFT_MOUSE_BUTTON_CODE) {
@@ -171,13 +170,13 @@ async function slide_onclick(event) {
     return true;
   }
 
-  const url_string = anchor.getAttribute('href');
-  if (!url_string) {
+  const urlString = anchor.getAttribute('href');
+  if (!urlString) {
     return;
   }
 
   event.preventDefault();
-  open(url_string, '_blank');
+  open(urlString, '_blank');
 
   // Find the clicked slide. Start from parent because we know that the anchor
   // itself is not a slide. We know that a slide will always be found
@@ -186,11 +185,11 @@ async function slide_onclick(event) {
   // If the click was on the article title, mark as read always. If not then
   // it depends on whether url is similar.
   if (!anchor.matches('.entry-title')) {
-    const entry_url = find_slide_url(slide);
-    if (entry_url) {
-      let clicked_url;
+    const entryURL = findSlideURL(slide);
+    if (entryURL) {
+      let clickedURL;
       try {
-        clicked_url = new URL(url_string);
+        clickedURL = new URL(urlString);
       } catch (error) {
         // if there is a problem with the url itself, no point in trying to
         // mark as read
@@ -198,10 +197,10 @@ async function slide_onclick(event) {
         return;
       }
 
-      if (clicked_url) {
+      if (clickedURL) {
         // If the click was on a link that does not look like it points to the
         // article, then do not mark as read
-        if (!are_similar_urls(entry_url, clicked_url)) {
+        if (!urlsAreSimilar(entryURL, clickedURL)) {
           return;
         }
       }
@@ -220,8 +219,8 @@ async function slide_onclick(event) {
 
 // Return whether both urls point to the same entry
 // TODO: make this stricter. This should be checking path
-function are_similar_urls(entry_url, clicked_url) {
-  return entry_url.origin === clicked_url.origin;
+function urlsAreSimilar(entryURL, clickedURL) {
+  return entryURL.origin === clickedURL.origin;
 }
 
 // Find the entry url of the slide. This is a hackish solution to the problem
@@ -232,25 +231,25 @@ function are_similar_urls(entry_url, clicked_url) {
 // it is feels better to defer this cost until now, rather than some upfront
 // cost like storing the href as a slide attribute or per anchor or calculating
 // some upfront per-anchor attribute as an apriori signal.
-function find_slide_url(slide) {
-  const title_anchor = slide.querySelector('a.entry-title');
+function findSlideURL(slide) {
+  const titleAnchor = slide.querySelector('a.entry-title');
   // Should never happen. I suppose it might depend on how a slide without a
   // url is constructed in html. We cannot rely on those other implementations
   // here because we pretend not to know how those implementations work.
-  if (!title_anchor) {
+  if (!titleAnchor) {
     return;
   }
 
-  const entry_url = title_anchor.getAttribute('href');
+  const entryURL = titleAnchor.getAttribute('href');
   // Can happen, as the view makes no assumptions about whether articles have
   // urls (only the model imposes that constraint)
-  if (!entry_url) {
+  if (!entryURL) {
     return;
   }
 
-  let entry_url_object;
+  let entryURLObject;
   try {
-    entry_url_object = new URL(entry_url);
+    entryURLObject = new URL(entryURL);
   } catch (error) {
     // If there is an entry title with an href value, it should pretty much
     // always be valid. But we are in a context where we cannot throw the error
@@ -258,22 +257,22 @@ function find_slide_url(slide) {
     console.warn(error);
   }
 
-  return entry_url_object;
+  return entryURLObject;
 }
 
-function show_no_articles_message() {
-  no_articles_element.style.display = 'block';
+function showNoArticlesMessage() {
+  noArticlesElement.style.display = 'block';
 }
 
-function hide_no_articles_message() {
-  no_articles_element.style.display = 'none';
+function hideNoArticlesMessage() {
+  noArticlesElement.style.display = 'none';
 }
 
 // Starts transitioning a slide into the read state. Updates both the view and
 // the database. This resolves before the view is fully updated.
 function markSlideReadStart(conn, slide) {
-  const entry_id_string = slide.getAttribute('entry');
-  const entry_id = parseInt(entry_id_string, 10);
+  const entryIdString = slide.getAttribute('entry');
+  const entryId = parseInt(entryIdString, 10);
 
   // Exit if prior call still in flight. Callers may naively make concurrent
   // calls to markSlideReadStart. This is routine, expected, and not an
@@ -298,18 +297,18 @@ function markSlideReadStart(conn, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  return db.patchResource(conn, { id: entry_id, read: 1 });
+  return db.patchResource(conn, { id: entryId, read: 1 });
 }
 
-function remove_slide(slide) {
+function removeSlide(slide) {
   slide.remove();
-  slide.removeEventListener('click', slide_onclick);
+  slide.removeEventListener('click', slideOnclick);
 }
 
 // This should be called once the view acknowledges it has received the message
 // sent to the  by markSlideReadStart to fully resolve the mark read
 // operation.
-function mark_slide_read_end(slide) {
+function markSlideReadEnd(slide) {
   if (slide.hasAttribute('read')) {
     console.warn('Called mark-slide-read-end on an already read slide?', slide);
     return;
@@ -322,15 +321,15 @@ function mark_slide_read_end(slide) {
   slide.removeAttribute('read-pending');
 }
 
-async function refresh_button_onclick(event) {
+async function refreshButtonOnclick(event) {
   event.preventDefault();
 
-  if (refresh_in_progress) {
+  if (refreshInProgress) {
     console.debug('Ignoring click event because refresh in progress');
     return;
   }
 
-  refresh_in_progress = true;
+  refreshInProgress = true;
 
   const promises = [db.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(promises);
@@ -342,101 +341,101 @@ async function refresh_button_onclick(event) {
   conn.close();
   iconn.close();
 
-  refresh_in_progress = false;
+  refreshInProgress = false;
 }
 
-function toggle_left_pannel_button_onclick(event) {
-  const menu_options = document.getElementById('left-panel');
-  if (menu_options.style.marginLeft === '0px') {
-    options_menu_hide();
-  } else if (menu_options.style.marginLeft === '') {
-    options_menu_show();
+function toggleLeftPanelButtonOnclick(event) {
+  const menuOptions = document.getElementById('left-panel');
+  if (menuOptions.style.marginLeft === '0px') {
+    hideOptionsMenu();
+  } else if (menuOptions.style.marginLeft === '') {
+    showOptionsMenu();
   } else {
-    options_menu_show();
+    showOptionsMenu();
   }
 }
 
-function view_articles_button_onclick(event) {
+function viewArticlesButtonOnclick(event) {
   // First toggle button states.
 
   // We are switching to the view-articles state. The view-feeds button may
   // have been disabled. Ensure it is enabled.
-  const feeds_button = document.getElementById('feeds-button');
-  feeds_button.disabled = false;
+  const feedsButton = document.getElementById('feeds-button');
+  feedsButton.disabled = false;
 
   // We are switch to the view-articles state. Disable the view-articles button
   // in the new state.
-  const reader_button = document.getElementById('reader-button');
-  reader_button.disabled = true;
+  const readerButton = document.getElementById('reader-button');
+  readerButton.disabled = true;
 
   // Hide the view-feeds panel.
-  const feedsContainer = document.getElementById('feeds-container');
-  feedsContainer.style.display = 'none';
+  const feedsContainerElement = document.getElementById('feeds-container');
+  feedsContainerElement.style.display = 'none';
 
   // Show the view-articles panel.
-  const slideshow_container = document.getElementById('slideshow-container');
-  slideshow_container.style.display = 'block';
+  const slideshowContainerElement = document.getElementById('slideshow-container');
+  slideshowContainerElement.style.display = 'block';
 
   // The visibility of the no-articles-to-display message is independent of
   // the slideshow-container. It must be manually made visible again if there
   // are no articles.
-  const num_slides = slideshow_container.childElementCount;
-  if (!num_slides) {
-    show_no_articles_message();
+  const slideCount = slideshowContainerElement.childElementCount;
+  if (!slideCount) {
+    showNoArticlesMessage();
   }
 }
 
-function view_feeds_button_onclick(event) {
-  const feeds_button = document.getElementById('feeds-button');
-  feeds_button.disabled = true;
+function viewFeedsButtonOnclick(event) {
+  const feedsButton = document.getElementById('feeds-button');
+  feedsButton.disabled = true;
 
-  const reader_button = document.getElementById('reader-button');
-  reader_button.disabled = false;
+  const readerButton = document.getElementById('reader-button');
+  readerButton.disabled = false;
 
-  const slideshow_container = document.getElementById('slideshow-container');
-  slideshow_container.style.display = 'none';
+  const slideshowContainerElement = document.getElementById('slideshow-container');
+  slideshowContainerElement.style.display = 'none';
 
   // The 'no articles to display' message is not contained within the slideshow
   // container, so it must be independently hidden
-  hide_no_articles_message();
+  hideNoArticlesMessage();
 
-  const feedsContainer = document.getElementById('feeds-container');
-  feedsContainer.style.display = 'block';
+  const feedsContainerElement = document.getElementById('feeds-container');
+  feedsContainerElement.style.display = 'block';
 }
 
-const toggle_left_panel_button = document.getElementById('main-menu-button');
-toggle_left_panel_button.onclick = toggle_left_pannel_button_onclick;
+const toggleLeftPanelButton = document.getElementById('main-menu-button');
+toggleLeftPanelButton.onclick = toggleLeftPanelButtonOnclick;
 
-const refresh_button = document.getElementById('refresh');
-refresh_button.onclick = refresh_button_onclick;
+const refreshButton = document.getElementById('refresh');
+refreshButton.onclick = refreshButtonOnclick;
 
-const feeds_button = document.getElementById('feeds-button');
-feeds_button.onclick = view_feeds_button_onclick;
+const feedsButton = document.getElementById('feeds-button');
+feedsButton.onclick = viewFeedsButtonOnclick;
 
-const reader_button = document.getElementById('reader-button');
-reader_button.onclick = view_articles_button_onclick;
+const readerButton = document.getElementById('reader-button');
+readerButton.onclick = viewArticlesButtonOnclick;
 
-function options_menu_show() {
-  const menu_options = document.getElementById('left-panel');
-  menu_options.style.marginLeft = '0';
-  menu_options.style.boxShadow = '2px 0px 10px 2px #8e8e8e';
+function showOptionsMenu() {
+  const menuOptions = document.getElementById('left-panel');
+  menuOptions.style.marginLeft = '0';
+  menuOptions.style.boxShadow = '2px 0px 10px 2px #8e8e8e';
 }
 
-function options_menu_hide() {
-  const menu_options = document.getElementById('left-panel');
-  menu_options.style.marginLeft = '-320px';
+function hideOptionsMenu() {
+  const menuOptions = document.getElementById('left-panel');
+  menuOptions.style.marginLeft = '-320px';
 
   // TODO: do I just delete the prop? How to set back to initial or whatever?
   // Is it by setting to 'none' or 'initial' or 'inherit' or something like
   // that?
-  menu_options.style.boxShadow = '';
+  menuOptions.style.boxShadow = '';
 }
 
-function import_opml_prompt() {
+function importOPMLPrompt() {
   const input = document.createElement('input');
   input.setAttribute('type', 'file');
   input.setAttribute('accept', 'application/xml');
-  input.onchange = async function (event) {
+  input.onchange = async function inputOnchange(event) {
     // For unknown reason we must grab this before the await, otherwise error.
     // This behavior changed sometime around Chrome 72 without notice
     const { files } = event.target;
@@ -450,7 +449,7 @@ function import_opml_prompt() {
 // TODO: handling all clicks and then forwarding them to click handler seems
 // dumb. I should be ignoring clicks on such buttons. Let them continue
 // propagation. The buttons should instead have their own handlers.
-async function options_menu_onclick(event) {
+async function optionsMenuOnclick(event) {
   const option = event.target;
   if (option.localName !== 'li') {
     return;
@@ -461,7 +460,7 @@ async function options_menu_onclick(event) {
       alert('Not yet implemented, subscribe using options page');
       break;
     case 'menu-option-import':
-      import_opml_prompt();
+      importOPMLPrompt();
       break;
     case 'menu-option-export':
       // Load all feeds from the database
@@ -497,51 +496,51 @@ async function options_menu_onclick(event) {
   }
 }
 
-function header_font_menu_init(fonts) {
+function headerFontMenuInit(fonts) {
   const menu = document.getElementById('header-font-menu');
-  menu.onchange = header_font_menu_onchange;
-  const current_header_font = config.readString('header_font_family');
-  const default_option = document.createElement('option');
-  default_option.value = '';
-  default_option.textContent = 'Header Font';
-  menu.append(default_option);
+  menu.onchange = headerFontMenuOnchange;
+  const currentHeaderFontName = config.readString('header_font_family');
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Header Font';
+  menu.append(defaultOption);
 
-  for (const font_name of fonts) {
+  for (const fontName of fonts) {
     const option = document.createElement('option');
-    option.value = font_name;
-    option.textContent = font_name;
-    if (font_name === current_header_font) {
+    option.value = fontName;
+    option.textContent = fontName;
+    if (fontName === currentHeaderFontName) {
       option.selected = true;
     }
     menu.append(option);
   }
 }
 
-function body_font_menu_init(fonts) {
+function bodyFontMenuInit(fonts) {
   const menu = document.getElementById('body-font-menu');
-  menu.onchange = body_font_menu_onchange;
-  const current_body_font = config.readString('body_font_family');
-  const default_option = document.createElement('option');
-  default_option.value = '';
-  default_option.textContent = 'Body Font';
-  menu.append(default_option);
+  menu.onchange = bodyFontMenuOnchange;
+  const currentBodyFont = config.readString('body_font_family');
+  const defaultOption = document.createElement('option');
+  defaultOption.value = '';
+  defaultOption.textContent = 'Body Font';
+  menu.append(defaultOption);
 
-  for (const font_name of fonts) {
+  for (const fontName of fonts) {
     const option = document.createElement('option');
-    option.value = font_name;
-    option.textContent = font_name;
-    if (font_name === current_body_font) {
+    option.value = fontName;
+    option.textContent = fontName;
+    if (fontName === currentBodyFont) {
       option.selected = true;
     }
     menu.append(option);
   }
 }
 
-function header_font_menu_onchange(event) {
-  const font_name = event.target.value;
-  const old_value = config.readString('header_font_family');
-  if (font_name) {
-    config.writeString('header_font_family', font_name);
+function headerFontMenuOnchange(event) {
+  const fontName = event.target.value;
+  const oldValue = config.readString('header_font_family');
+  if (fontName) {
+    config.writeString('header_font_family', fontName);
   } else {
     config.remove('header_font_family');
   }
@@ -552,16 +551,16 @@ function header_font_menu_onchange(event) {
     isTrusted: true,
     type: 'storage',
     key: 'header_font_family',
-    newValue: font_name,
-    oldValue: old_value,
+    newValue: fontName,
+    oldValue,
   });
 }
 
-function body_font_menu_onchange(event) {
-  const font_name = event.target.value;
-  const old_value = config.readString('body_font_family');
-  if (font_name) {
-    config.writeString('body_font_family', font_name);
+function bodyFontMenuOnchange(event) {
+  const fontName = event.target.value;
+  const oldValue = config.readString('body_font_family');
+  if (fontName) {
+    config.writeString('body_font_family', fontName);
   } else {
     config.remove('body_font_family');
   }
@@ -572,8 +571,8 @@ function body_font_menu_onchange(event) {
     isTrusted: true,
     type: 'storage',
     key: 'body_font_family',
-    newValue: font_name,
-    oldValue: old_value,
+    newValue: fontName,
+    oldValue,
   });
 }
 
@@ -584,37 +583,37 @@ function body_font_menu_onchange(event) {
 // Clicks on the main menu are ignored because that is considered a part of the
 // menu structure. Clicks on the left panel are ignored because that should not
 // cause the left panel to hide.
-function window_onclick(event) {
-  const avoided_zone_ids = ['main-menu-button', 'left-panel'];
+function windowOnclick(event) {
+  const avoidedZoneIds = ['main-menu-button', 'left-panel'];
 
-  if (!avoided_zone_ids.includes(event.target.id)
+  if (!avoidedZoneIds.includes(event.target.id)
       && !event.target.closest('[id="left-panel"]')) {
-    const left_panel_element = document.getElementById('left-panel');
+    const leftPanelElement = document.getElementById('left-panel');
 
-    if (left_panel_element.style.marginLeft === '0px') {
-      options_menu_hide();
+    if (leftPanelElement.style.marginLeft === '0px') {
+      hideOptionsMenu();
     }
   }
 
   return true;
 }
 
-function leftpanel_init() {
-  const menu_options = document.getElementById('left-panel');
-  menu_options.onclick = options_menu_onclick;
+function initLeftPanel() {
+  const menuOptions = document.getElementById('left-panel');
+  menuOptions.onclick = optionsMenuOnclick;
 
   // Load fonts from configuration once for both init helpers
   const fonts = config.readArray('fonts');
-  header_font_menu_init(fonts);
-  body_font_menu_init(fonts);
+  headerFontMenuInit(fonts);
+  bodyFontMenuInit(fonts);
 
-  addEventListener('click', window_onclick);
+  addEventListener('click', windowOnclick);
 }
 
 // Initialize things on module load
-leftpanel_init();
+initLeftPanel();
 
-function channel_init() {
+function initChannel() {
   if (channel) {
     throw new Error('channel already initialized');
   }
@@ -636,8 +635,8 @@ async function onmessage(event) {
   }
 
   // Common behavior for type handlers related to updating the badge
-  const badge_types = ['resource-created', 'resource-updated', 'resource-deleted'];
-  if (badge_types.includes(message.type)) {
+  const badgeMessageTypes = ['resource-created', 'resource-updated', 'resource-deleted'];
+  if (badgeMessageTypes.includes(message.type)) {
     refreshBadge().catch(console.warn); // intentionally unawaited
   }
 
@@ -645,9 +644,9 @@ async function onmessage(event) {
     // If the update event represents a transition from unread to unread, it may
     // relate to a slide presently loaded that needs to be updated.
     if (message.read) {
-      const slide = find_slide_by_entry_id(message.id);
+      const slide = findSlideByEntryId(message.id);
       if (slide) {
-        mark_slide_read_end(slide);
+        markSlideReadEnd(slide);
       }
     }
 
@@ -661,10 +660,10 @@ async function onmessage(event) {
     // Determine whether new articles should be loaded as a result of new
     // articles being added to the database.
     // TODO: this should come from config
-    const max_unread_before_suppress_load = 3;
-    const unread_count = count_unread_slides();
+    const maxUnreadSlideCountBeforeSuppressLoading = 3;
+    const unreadSlideCount = countUnreadSlides();
     // If there are already enough unread articles loaded, do nothing.
-    if (unread_count > max_unread_before_suppress_load) {
+    if (unreadSlideCount > maxUnreadSlideCountBeforeSuppressLoading) {
       return;
     }
 
@@ -692,26 +691,25 @@ async function onmessage(event) {
     const entries = await db.getResources({
       conn,
       mode: 'viewable-entries',
-      offset: unread_count,
+      offset: unreadSlideCount,
       limit: undefined,
     });
     conn.close();
 
     for (const entry of entries) {
-      append_slide(entry);
+      appendSlide(entry);
     }
     return;
   }
 
-  if (message.type === 'resource-deleted'
-      || message.type === 'resource-archived') {
-    const slide = find_slide_by_entry_id(message.id);
+  if (message.type === 'resource-deleted' || message.type === 'resource-archived') {
+    const slide = findSlideByEntryId(message.id);
     if (slide) {
-      if (is_current_slide(slide)) {
+      if (isCurrentSlide(slide)) {
         // TODO: set to empty string instead?
         slide.setAttribute('stale', 'true');
       } else {
-        remove_slide(slide);
+        removeSlide(slide);
       }
     }
     return;
@@ -742,20 +740,20 @@ function onmessageerror(event) {
   console.warn(event);
 }
 
-function find_slide_by_entry_id(entry_id) {
-  return document.querySelector(`slide[entry="${entry_id}"]`);
+function findSlideByEntryId(entryId) {
+  return document.querySelector(`slide[entry="${entryId}"]`);
 }
 
-function append_slide(entry) {
+function appendSlide(entry) {
   // Now that we know there will be at least one visible article, ensure the
   // no articles message is hidden
-  hide_no_articles_message();
+  hideNoArticlesMessage();
 
-  const slide = create_slide(entry);
-  attach_slide(slide);
+  const slide = createSlide(entry);
+  attachSlide(slide);
 }
 
-function create_slide(entry) {
+function createSlide(entry) {
   assert(Array.isArray(entry.urls));
   assert(entry.urls.length > 0);
 
@@ -764,20 +762,20 @@ function create_slide(entry) {
   slide.setAttribute('feed', entry.feed);
   slide.setAttribute('class', 'entry');
 
-  const slide_pad_wrap = document.createElement('div');
-  slide_pad_wrap.className = 'slide-padding-wrapper';
-  slide_pad_wrap.append(create_article_title_element(entry));
-  slide_pad_wrap.append(create_article_content_element(entry));
-  slide_pad_wrap.append(create_feed_source_element(entry));
-  slide.append(slide_pad_wrap);
+  const slidePaddingWrapperElement = document.createElement('div');
+  slidePaddingWrapperElement.className = 'slide-padding-wrapper';
+  slidePaddingWrapperElement.append(createArticleTitleElement(entry));
+  slidePaddingWrapperElement.append(createArticleContentElement(entry));
+  slidePaddingWrapperElement.append(createFeedSourceElement(entry));
+  slide.append(slidePaddingWrapperElement);
   return slide;
 }
 
-function create_article_title_element(entry) {
-  const title_element = document.createElement('a');
-  title_element.setAttribute('href', entry.urls[entry.urls.length - 1]);
-  title_element.setAttribute('class', 'entry-title');
-  title_element.setAttribute('rel', 'noreferrer');
+function createArticleTitleElement(entry) {
+  const titleElement = document.createElement('a');
+  titleElement.setAttribute('href', entry.urls[entry.urls.length - 1]);
+  titleElement.setAttribute('class', 'entry-title');
+  titleElement.setAttribute('rel', 'noreferrer');
 
   // NOTE: title is a dom string and therefore may contain html tags and
   // entities. When an entry is saved into the database, its title is
@@ -789,38 +787,37 @@ function create_article_title_element(entry) {
   // In addition, this relies on using CSS to truncate the title as needed
   // instead of explicitly truncating the value here.
   const title = entry.title || 'Untitled';
-  title_element.setAttribute('title', title);
-  title_element.innerHTML = filterPublisher(title);
-  return title_element;
+  titleElement.setAttribute('title', title);
+  titleElement.innerHTML = filterPublisher(title);
+  return titleElement;
 }
 
-function create_article_content_element(entry) {
-  const content_element = document.createElement('span');
-  content_element.setAttribute('class', 'entry-content');
-  // <html><body> is implicitly stripped
-  content_element.innerHTML = entry.content;
-  return content_element;
+function createArticleContentElement(entry) {
+  const contentElement = document.createElement('span');
+  contentElement.setAttribute('class', 'entry-content');
+  contentElement.innerHTML = entry.content;
+  return contentElement;
 }
 
-function create_feed_source_element(entry) {
-  const source_element = document.createElement('span');
-  source_element.setAttribute('class', 'entry-source');
+function createFeedSourceElement(entry) {
+  const sourceElement = document.createElement('span');
+  sourceElement.setAttribute('class', 'entry-source');
 
   if (entry.favicon_url) {
-    let favicon_url;
+    let faviconURL;
     try {
-      favicon_url = new URL(entry.favicon_url);
+      faviconURL = new URL(entry.favicon_url);
     } catch (error) {
     }
 
-    if (!favicon_url || favicon_url.protocol === 'chrome-extension:') {
+    if (!faviconURL || faviconURL.protocol === 'chrome-extension:') {
       console.debug('Bad favicon url', entry.favicon_url);
     } else {
       const favicon_element = document.createElement('img');
       favicon_element.setAttribute('src', entry.favicon_url);
       favicon_element.setAttribute('width', '16');
       favicon_element.setAttribute('height', '16');
-      source_element.append(favicon_element);
+      sourceElement.append(favicon_element);
     }
   }
 
@@ -838,24 +835,24 @@ function create_feed_source_element(entry) {
     buffer.push(formatDate(entry.published_date));
   }
   details.textContent = buffer.join('');
-  source_element.append(details);
-  return source_element;
+  sourceElement.append(details);
+  return sourceElement;
 }
 
-// TODO: this helper should probably be inlined into append_slide once I work
+// TODO: this helper should probably be inlined into appendSlide once I work
 // out the API better. One of the main things I want to do is resolve the
 // mismatch between the function name, append-slide, and its main parameter,
 // a database entry object. I think the solution is to separate
 // entry-to-element and append-element. This module should ultimately focus
 // only on appending, not creation and coercion.
-function attach_slide(slide) {
+function attachSlide(slide) {
   const container = document.getElementById('slideshow-container');
 
   // Defer binding event listener until appending here, not earlier when
   // creating the element. We are not sure a slide will be used until it is
   // appended, and want to avoid attaching listeners to unused detached
   // elements.
-  slide.addEventListener('click', slide_onclick);
+  slide.addEventListener('click', slideOnclick);
 
   // In order for scrolling to react to keyboard shortcuts such as pressing
   // the down arrow key, the element must be focused, and in order to focus an
@@ -876,9 +873,9 @@ function attach_slide(slide) {
   // slide must be focused. But calling element.focus() while a transition is
   // active, such as what happens when a slide is moved, interrupts the
   // transition. Therefore, schedule focus for when the transition completes.
-  slide.addEventListener('webkitTransitionEnd', transition_onend);
+  slide.addEventListener('webkitTransitionEnd', transitionOnend);
 
-  // The value of the transition_duration variable is defined external to this
+  // The value of the transitionDuration variable is defined external to this
   // function, because it is mutable by other functions.
 
   // Define the animation effect that will occur when moving the slide. Slides
@@ -887,36 +884,36 @@ function attach_slide(slide) {
   // to have the transition only apply to a slide when it is in a certain
   // state. If set via css then this causes an undesirable immediate
   // transition on the first slide.
-  slide.style.transition = `left ${transition_duration}s ease-in-out`;
+  slide.style.transition = `left ${transitionDuration}s ease-in-out`;
 
   // Initialize the current slide if needed
-  if (!get_current_slide()) {
+  if (!getCurrentSlide()) {
     // TODO: is this right? I think it is because there is no transition for
     // first slide, so there is no focus call. But maybe not needed?
     slide.focus();
-    set_current_slide(slide);
+    setCurrentSlide(slide);
   }
 
   container.append(slide);
 }
 
-function is_valid_transition_duration(transition_duration) {
-  return !isNaN(transition_duration) && isFinite(transition_duration)
-      && transition_duration >= 0;
+function isValidTransitionDuration(transitionDuration) {
+  return !isNaN(transitionDuration) && isFinite(transitionDuration)
+      && transitionDuration >= 0;
 }
 
-function set_transition_duration(input_duration) {
-  if (!is_valid_transition_duration(input_duration)) {
+function setTransitionDuration(input_duration) {
+  if (!isValidTransitionDuration(input_duration)) {
     throw new TypeError(
-      'Invalid transition_duration parameter', input_duration,
+      'Invalid transitionDuration parameter', input_duration,
     );
   }
 
-  transition_duration = input_duration;
+  transitionDuration = input_duration;
 }
 
 // Handle the end of a transition. Should not be called directly.
-function transition_onend(event) {
+function transitionOnend(event) {
   // The slide that the transition occured upon (event.target) is not
   // guaranteed to be equal to the current slide. We want to affect the
   // current slide. We fire off two transitions per animation, one for the
@@ -926,36 +923,43 @@ function transition_onend(event) {
   // where after both transitions complete, the new slide (which is the
   // current slide at this point) is now focused. Therefore we ignore
   // event.target and directly affect the current slide only.
-  const slide = get_current_slide();
+  const slide = getCurrentSlide();
   slide.focus();
 
   // There may be more than one transition effect occurring at the moment.
   // Inform others via global state that this transition completed.
-  decrement_active_transition_count();
+  decrementActiveTransitionCount();
 }
 
+function activateButtonOnclick() {
+  throw new Error('Not yet implemented');
+}
+
+function deactivateButtonOnclick() {
+  throw new Error('Not yet implemented');
+}
 
 // Returns the number of unread slide elements present in the view
-function count_unread_slides() {
+function countUnreadSlides() {
   const selector = 'slide:not([read]):not([read-pending])';
   const slides = document.body.querySelectorAll(selector);
   return slides.length;
 }
 
-function feeds_container_append_feed(feed) {
-  const feedsContainer = document.getElementById('feeds-container');
-  const feed_element = document.createElement('div');
-  feed_element.id = feed.id;
+function feedsContainerAppendFeed(feed) {
+  const feedsContainerElement = document.getElementById('feeds-container');
+  const feedElement = document.createElement('div');
+  feedElement.id = feed.id;
 
   if (feed.active !== 1) {
-    feed_element.setAttribute('inactive', 'true');
+    feedElement.setAttribute('inactive', 'true');
   }
 
-  const title_element = document.createElement('span');
-  title_element.textContent = feed.title;
-  feed_element.append(title_element);
+  const titleElement = document.createElement('span');
+  titleElement.textContent = feed.title;
+  feedElement.append(titleElement);
 
-  const feed_info_element = document.createElement('table');
+  const feedInfoElement = document.createElement('table');
 
   let row = document.createElement('tr');
   let col = document.createElement('td');
@@ -964,7 +968,7 @@ function feeds_container_append_feed(feed) {
   col = document.createElement('td');
   col.textContent = feed.description || 'No description';
   row.append(col);
-  feed_info_element.append(row);
+  feedInfoElement.append(row);
 
   row = document.createElement('tr');
   col = document.createElement('td');
@@ -973,7 +977,7 @@ function feeds_container_append_feed(feed) {
   col = document.createElement('td');
   col.textContent = feed.link || 'Not specified';
   row.append(col);
-  feed_info_element.append(row);
+  feedInfoElement.append(row);
 
   row = document.createElement('tr');
   col = document.createElement('td');
@@ -982,7 +986,7 @@ function feeds_container_append_feed(feed) {
   col = document.createElement('td');
   col.textContent = feed.favicon_url || 'Unknown';
   row.append(col);
-  feed_info_element.append(row);
+  feedInfoElement.append(row);
 
   row = document.createElement('tr');
   col = document.createElement('td');
@@ -991,7 +995,7 @@ function feeds_container_append_feed(feed) {
   col = document.createElement('td');
   col.textContent = feed.urls[feed.urls.length - 1];
   row.append(col);
-  feed_info_element.append(row);
+  feedInfoElement.append(row);
 
   row = document.createElement('tr');
   col = document.createElement('td');
@@ -999,13 +1003,13 @@ function feeds_container_append_feed(feed) {
 
   let button = document.createElement('button');
   button.value = `${feed.id}`;
-  button.onclick = unsubscribe_button_onclick;
+  button.onclick = deactivateButtonOnclick;
   button.textContent = 'Unsubscribe';
   col.append(button);
 
   button = document.createElement('button');
   button.value = `${feed.id}`;
-  button.onclick = unsubscribe_button_onclick;
+  button.onclick = activateButtonOnclick;
   button.textContent = 'Activate';
   if (feed.active === 1) {
     button.disabled = 'true';
@@ -1014,7 +1018,7 @@ function feeds_container_append_feed(feed) {
 
   button = document.createElement('button');
   button.value = `${feed.id}`;
-  button.onclick = unsubscribe_button_onclick;
+  button.onclick = deactivateButtonOnclick;
   button.textContent = 'Deactivate';
   if (feed.active !== 1) {
     button.disabled = 'true';
@@ -1022,43 +1026,39 @@ function feeds_container_append_feed(feed) {
   col.append(button);
 
   row.append(col);
-  feed_info_element.append(row);
-  feed_element.append(feed_info_element);
+  feedInfoElement.append(row);
+  feedElement.append(feedInfoElement);
 
-  feedsContainer.append(feed_element);
+  feedsContainerElement.append(feedElement);
 }
 
 function feedsContainerOnclick(event) {
   if (event.target.localName === 'div' && event.target.id) {
-    toggle_details(event.target);
+    toggleFeedDetails(event.target);
   }
 }
 
-function toggle_details(feed_element) {
-  const table = feed_element.querySelector('table');
-  if (feed_element.hasAttribute('expanded')) {
-    feed_element.removeAttribute('expanded');
-    feed_element.style.width = '200px';
-    feed_element.style.height = '200px';
-    feed_element.style.cursor = 'zoom-in';
+function toggleFeedDetails(feedElement) {
+  const table = feedElement.querySelector('table');
+  if (feedElement.hasAttribute('expanded')) {
+    feedElement.removeAttribute('expanded');
+    feedElement.style.width = '200px';
+    feedElement.style.height = '200px';
+    feedElement.style.cursor = 'zoom-in';
     table.style.display = 'none';
   } else {
-    feed_element.setAttribute('expanded', 'true');
-    feed_element.style.width = '100%';
-    feed_element.style.height = 'auto';
-    feed_element.style.cursor = 'zoom-out';
+    feedElement.setAttribute('expanded', 'true');
+    feedElement.style.width = '100%';
+    feedElement.style.height = 'auto';
+    feedElement.style.cursor = 'zoom-out';
     table.style.display = 'block';
   }
 }
 
-function unsubscribe_button_onclick(event) {
-  console.warn('Unsubscribe (not yet implemented)', event.target);
-}
-
 function onkeydown(event) {
   // Ignore edit intent
-  const target_name = event.target.localName;
-  if (target_name === 'input' || target_name === 'textarea') {
+  const targetName = event.target.localName;
+  if (targetName === 'input' || targetName === 'textarea') {
     return;
   }
 
@@ -1071,58 +1071,58 @@ function onkeydown(event) {
 
   if (code === RIGHT || code === N || code === SPACE) {
     event.preventDefault();
-    show_next_slide();
+    showNextSlide();
   } else if (code === LEFT || code === P) {
     event.preventDefault();
-    show_prev_slide();
+    showPreviousSlide();
   }
 }
 
-function show_splash() {
+function showSplashElement() {
   splashElement.style.display = 'block';
 }
 
-function hide_splash() {
+function hideSplashElement() {
   splashElement.style.display = 'none';
 }
 
-async function load_view() {
-  show_splash();
+async function initializeSlideshowPage() {
+  showSplashElement();
 
   const conn = await db.open();
-  const get_entries_promise = db.getResources(
+  const getEntriesPromise = db.getResources(
     {
       conn, mode: 'viewable-entries', offset: 0, limit: 6,
     },
   );
-  const get_feeds_promise = db.getResources({ conn, mode: 'feeds', title_sort: true });
+  const getFeedsPromise = db.getResources({ conn, mode: 'feeds', titleSort: true });
   conn.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)
-  const entries = await get_entries_promise;
+  const entries = await getEntriesPromise;
 
   if (!entries.length) {
-    show_no_articles_message();
+    showNoArticlesMessage();
   }
 
   for (const entry of entries) {
-    append_slide(entry);
+    appendSlide(entry);
   }
 
   // Hide the splash before feeds may have loaded. We start in the entries
   // 'tab' so the fact that feeds are not yet loaded should not matter.
   // NOTE: technically user can switch to feeds view before this completes.
-  hide_splash();
+  hideSplashElement();
 
-  const feeds = await get_feeds_promise;
+  const feeds = await getFeedsPromise;
   for (const feed of feeds) {
-    feeds_container_append_feed(feed);
+    feedsContainerAppendFeed(feed);
   }
 }
 
-channel_init();
+initChannel();
 addEventListener('storage', config.storageOnchange);
 addEventListener('keydown', onkeydown);
-document.addEventListener('DOMContentLoaded', config.dom_load_listener);
+document.addEventListener('DOMContentLoaded', config.domLoadListener);
 
-load_view().catch(console.error);
+initializeSlideshowPage().catch(console.error);

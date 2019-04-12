@@ -21,12 +21,12 @@ export default async function create_resource_test() {
   assert(resourceUtils.isValidId(id));
 
   let match = await getResource({
-    conn, mode: 'id', id, key_only: false,
+    conn, mode: 'id', id, keyOnly: false,
   });
   assert(match);
 
   match = await getResource({
-    conn, mode: 'url', url, key_only: true,
+    conn, mode: 'url', url, keyOnly: true,
   });
   assert(match);
 
