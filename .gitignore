@@ -7,3 +7,9 @@ experimental/
 
 # internal documentation methods should be ignored
 *.txt
+
+# node stuff
+node_modules/
+.eslintrc.json
+package-lock.json
+package.json
