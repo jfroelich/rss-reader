@@ -1,7 +1,13 @@
 import assert from '/lib/assert.js';
 import removeHTML from '/lib/remove-html.js';
 
-export function remove_html_test() {
+// TODO: Text with an entity that is not kept
+
+// TODO: test malformed html that causes error
+// TODO: test text outside of body
+// TODO: whitespace normalization
+
+export default function () {
   // No html tags or entities undergoes no change
   let input = 'some text without html';
   let output = removeHTML(input);
@@ -27,10 +33,4 @@ export function remove_html_test() {
   input = 'before&copy;after';
   output = removeHTML(input);
   assert(output === 'before©after');
-
-  // TODO: Text with an entity that is not kept
-
-  // TODO: test malformed html that causes error
-  // TODO: test text outside of body
-  // TODO: whitespace normalization
 }

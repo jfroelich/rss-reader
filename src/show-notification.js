@@ -13,7 +13,7 @@ export default function showNotification(message = '', icon = defaultIcon) {
 
   // Instantiating a notification shows it
   const notification = new Notification(title, { body: message, icon });
-  notification.addEventListener('click', (event) => {
+  notification.addEventListener('click', () => {
     // Work around a strange issue in older Chrome
     try {
       const hwnd = window.open();
@@ -23,7 +23,7 @@ export default function showNotification(message = '', icon = defaultIcon) {
       return;
     }
 
-    const reuse_newtab = config.readBoolean('reuse_newtab');
-    openView(reuse_newtab).catch(console.warn);
+    const reuseNewtab = config.readBoolean('reuse_newtab');
+    openView(reuseNewtab).catch(console.warn);
   });
 }

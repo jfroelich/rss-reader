@@ -1,47 +1,44 @@
 import assert from '/lib/assert.js';
 import { INDEFINITE } from '/lib/deadline.js';
-import * as indexedDBUtils from '/lib/indexeddb-utils.js';
-import { open } from '/lib/indexeddb-utils.js';
+import { open, remove } from '/lib/indexeddb-utils.js';
 import * as db from '/src/db/db.js';
 import RecordingChannel from '/test/recording-channel.js';
 
 // A global counter that resides in memory.
-let name_counter = 0;
-const database_names = [];
+let nameCounter = 0;
+const databaseNames = [];
 
 // Create a unique database name given a prefix
-export function create_unique_database_name(prefix) {
+export function createUniqueDatabaseName(prefix) {
   assert(typeof prefix === 'string');
-  const name = `${prefix}-${name_counter}`;
-  name_counter++;
-  database_names.push(name);
+  const name = `${prefix}-${nameCounter}`;
+  nameCounter += 1;
+  databaseNames.push(name);
   console.debug('Created database name:', name);
   return name;
 }
 
 // Find any database names that start with the prefix and remove them. Returns
 // a promise that resolves when all remove operations complete.
-export function remove_databases_for_prefix(prefix) {
-  const previous_names = find_database_full_names(prefix);
-  const promises = previous_names.map((name) => {
+export function removeDatbasesForPrefix(prefix) {
+  const previousNames = findDatabaseFullNames(prefix);
+  const promises = previousNames.map((name) => {
     console.debug('Removing database with name', name);
-    return indexedDBUtils.remove(name);
+    return remove(name);
   });
   return Promise.all(promises);
 }
 
 // Given a database name prefix, finds the full database names in the list of
 // database names previously created that start with the prefix.
-export function find_database_full_names(prefix) {
-  return database_names.filter(name => name.startsWith(prefix));
+export function findDatabaseFullNames(prefix) {
+  return databaseNames.filter(name => name.startsWith(prefix));
 }
 
 // Open a database connection for testing purposes. If an upgrade handler is
 // not specified then this uses the same upgrade handler as db/open
-export async function create_test_database(
-  name, version = db.defaultVersion,
-  upgrade_handler = db.defaultUpgradeNeededHandler,
-) {
+export async function createTestDatabase(name, version = db.defaultVersion,
+  upgrade_handler = db.defaultUpgradeNeededHandler) {
   // A custom name is required in the test context. We also impose a non-zero
   // length guard just because that is reasonable. This would be caught later
   // by the open call but I like being explicit.
@@ -66,13 +63,13 @@ export async function create_test_database(
   // Wrap the handler instead of using bind so as to maintain the current
   // context of the handler function in the case it is bound to something other
   // than the default context.
-  const handler_wrapper = (event) => {
+  const handlerWrapperFunction = (event) => {
     // channel comes first as an artifact of prior implementation that used
     // bind to create a partial. we no longer use bind, but keeping it this way
     // in case we revert to bind. just note the awkward parameter order.
     upgrade_handler(conn.channel, event);
   };
 
-  conn.conn = await open(name, version, handler_wrapper, timeout);
+  conn.conn = await open(name, version, handlerWrapperFunction, timeout);
   return conn;
 }

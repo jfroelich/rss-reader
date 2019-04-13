@@ -11,7 +11,7 @@ export default async function archiveResources(conn, maxAge = TWO_DAYS_MS) {
     conn,
     mode: 'archivable-entries',
     offset: 0,
-    limit: 100,
+    limit: 100
   };
 
   let resources = await getResources(query);
@@ -27,8 +27,9 @@ export default async function archiveResources(conn, maxAge = TWO_DAYS_MS) {
           content: undefined,
           favicon_url: undefined,
           feed_title: undefined,
-          archived: 1,
+          archived: 1
         };
+        // eslint-disable-next-line no-await-in-loop
         await patchResource(conn, deltaTransitions);
       }
     }
@@ -36,6 +37,7 @@ export default async function archiveResources(conn, maxAge = TWO_DAYS_MS) {
     // Only load more if we read up to the limit last time
     if (resources.length === query.limit) {
       query.offset += query.limit;
+      // eslint-disable-next-line no-await-in-loop
       resources = await getResources(query);
     } else {
       resources = [];

@@ -3,7 +3,7 @@ import * as config from '/src/config.js';
 import { rewriteURL } from '/src/import-entry.js';
 
 // Exercise the rewrite-url helper
-export async function rewrite_tests() {
+export default async function importEntryTests() {
   const rules = config.getRewriteRules();
 
   let a = new URL('https://www.google.com');

@@ -1,5 +1,4 @@
-import assert from '/lib/assert.js';
-import { isAssertError } from '/lib/assert.js';
+import assert, { isAssertError } from '/lib/assert.js';
 import { betterFetch } from '/lib/better-fetch.js';
 import { Deadline, INDEFINITE } from '/lib/deadline.js';
 import * as feedParser from '/lib/feed-parser.js';
@@ -49,11 +48,10 @@ export async function importFeed(args) {
 
   // Check if redirected
   if (args.create && fetchURL.href !== responseURL.href) {
-    const existingFeed = await db.getResource(
-      {
-        conn: args.conn, mode: 'url', url: responseURL, keyOnly: true,
-      },
-    );
+    const existingFeed = await db.getResource({
+      conn: args.conn, mode: 'url', url: responseURL, keyOnly: true
+    });
+
     if (existingFeed) {
       const message = `Already subscribed to redirected feed url ${responseURL.href}`;
       throw new db.errors.ConstraintError(message);
@@ -138,22 +136,21 @@ function importEntries(entries, args) {
 
     // TODO: decouple from config. In the interim I am loading from config here
     // in order to decouple import-empty from config.
-    iea.filter_options = {};
-    iea.filter_options.contrast_matte = config.readInt('contrast_default_matte');
-    iea.filter_options.contrast_ratio = config.readFloat('min_contrast_ratio');
+    iea.filterOptions = {};
+    iea.filterOptions.contrast_matte = config.readInt('contrast_default_matte');
+    iea.filterOptions.contrast_ratio = config.readFloat('min_contrast_ratio');
     // TODO: read from config (temporarily hardcoded due to a bug)
-    iea.filter_options.set_image_sizes_timeout = new Deadline(7000);
+    iea.filterOptions.set_image_sizes_timeout = new Deadline(7000);
     // TODO: read from config (temporarily hardcoded due to a bug)
-    iea.filter_options.set_image_dimensions_timeout = new Deadline(7000);
-    iea.filter_options.table_scan_max_rows = config.readInt('table_scan_max_rows');
+    iea.filterOptions.setImageDimensionsTimeout = new Deadline(7000);
+    iea.filterOptions.tableScanMaxRows = config.readInt('table_scan_max_rows');
 
     const emphasisMaxLength = config.readInt('emphasis_max_length');
     if (!isNaN(emphasisMaxLength)) {
-      iea.filter_options.emphasisMaxLength = emphasisMaxLength;
+      iea.filterOptions.emphasisMaxLength = emphasisMaxLength;
     }
 
-    iea.filter_options.empty_frame_body_message = 'Unable to display document because it uses HTML frames';
-
+    iea.filterOptions.empty_frame_body_message = 'Unable to display document because it uses HTML frames';
 
     return importEntryNoexcept(iea);
   });
@@ -205,11 +202,9 @@ function updateModelFeedFromParsedFeed(feed, parsedFeed) {
 async function validateFeedIsUnique(feed, conn) {
   const url = db.getURL(feed);
 
-  const existingFeed = await db.getResource(
-    {
-      conn, mode: 'url', url, keyOnly: true,
-    },
-  );
+  const existingFeed = await db.getResource({
+    conn, mode: 'url', url, keyOnly: true
+  });
 
   if (existingFeed) {
     const message = `Already subscribed to feed with url ${url.href}`;

@@ -1,3 +1,3 @@
-export async function fetch_image_element_test() {
+export default async function fetchImageElementTest() {
   // TODO: implement me
 }

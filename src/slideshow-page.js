@@ -60,7 +60,7 @@ async function showNextSlide() {
     }
     entries = await db.getResources(
       {
-        conn, mode, offset, limit,
+        conn, mode, offset, limit
       },
     );
   }
@@ -142,18 +142,14 @@ function getActiveTransitionCount() {
   return activeTransitionCount;
 }
 
-function setActiveTransitionCount(count) {
-  activeTransitionCount = count;
-}
-
 function incrementActiveTransitionCount() {
-  activeTransitionCount++;
+  activeTransitionCount += 1;
 }
 
 function decrementActiveTransitionCount() {
   // Do not allow transition to negative
   if (activeTransitionCount > 0) {
-    activeTransitionCount--;
+    activeTransitionCount -= 1;
   }
 }
 
@@ -172,7 +168,7 @@ async function slideOnclick(event) {
 
   const urlString = anchor.getAttribute('href');
   if (!urlString) {
-    return;
+    return true;
   }
 
   event.preventDefault();
@@ -194,14 +190,14 @@ async function slideOnclick(event) {
         // if there is a problem with the url itself, no point in trying to
         // mark as read
         console.warn(error);
-        return;
+        return true;
       }
 
       if (clickedURL) {
         // If the click was on a link that does not look like it points to the
         // article, then do not mark as read
         if (!urlsAreSimilar(entryURL, clickedURL)) {
-          return;
+          return true;
         }
       }
     }
@@ -209,12 +205,14 @@ async function slideOnclick(event) {
 
   // Mark the clicked slide as read. While these conditions are redundant with
   // the checks within markSlideReadStart, it avoids opening the connection.
-  if (!slide.hasAttribute('stale') && !slide.hasAttribute('read')
-      && !slide.hasAttribute('read-pending')) {
+  if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
+      !slide.hasAttribute('read-pending')) {
     const conn = await db.open();
     await markSlideReadStart(conn, slide);
     conn.close();
   }
+
+  return false;
 }
 
 // Return whether both urls point to the same entry
@@ -237,14 +235,14 @@ function findSlideURL(slide) {
   // url is constructed in html. We cannot rely on those other implementations
   // here because we pretend not to know how those implementations work.
   if (!titleAnchor) {
-    return;
+    return undefined;
   }
 
   const entryURL = titleAnchor.getAttribute('href');
   // Can happen, as the view makes no assumptions about whether articles have
   // urls (only the model imposes that constraint)
   if (!entryURL) {
-    return;
+    return undefined;
   }
 
   let entryURLObject;
@@ -344,7 +342,7 @@ async function refreshButtonOnclick(event) {
   refreshInProgress = false;
 }
 
-function toggleLeftPanelButtonOnclick(event) {
+function toggleLeftPanelButtonOnclick() {
   const menuOptions = document.getElementById('left-panel');
   if (menuOptions.style.marginLeft === '0px') {
     hideOptionsMenu();
@@ -355,7 +353,7 @@ function toggleLeftPanelButtonOnclick(event) {
   }
 }
 
-function viewArticlesButtonOnclick(event) {
+function viewArticlesButtonOnclick() {
   // First toggle button states.
 
   // We are switching to the view-articles state. The view-feeds button may
@@ -385,7 +383,7 @@ function viewArticlesButtonOnclick(event) {
   }
 }
 
-function viewFeedsButtonOnclick(event) {
+function viewFeedsButtonOnclick() {
   const feedsButton = document.getElementById('feeds-button');
   feedsButton.disabled = true;
 
@@ -446,6 +444,31 @@ function importOPMLPrompt() {
   input.click();
 }
 
+async function handleExportButtonClick() {
+  // Load all feeds from the database
+  const conn = await db.open();
+  const resources = await db.getResources({ conn, mode: 'feeds' });
+  conn.close();
+
+  // Convert the loaded feeds into outlines
+  const outlines = resources.map((resource) => {
+    const outline = new Outline();
+    outline.type = resource.feed_format;
+
+    if (db.hasURL(resource)) {
+      outline.xmlUrl = db.getURLString(resource);
+    }
+
+    outline.title = resource.title;
+    outline.description = resource.description;
+    outline.htmlUrl = resource.link;
+    return outline;
+  });
+
+  const document = await exportOPML(outlines, 'Subscriptions');
+  downloadXMLDocument(document, 'subscriptions.xml');
+}
+
 // TODO: handling all clicks and then forwarding them to click handler seems
 // dumb. I should be ignoring clicks on such buttons. Let them continue
 // propagation. The buttons should instead have their own handlers.
@@ -457,34 +480,13 @@ async function optionsMenuOnclick(event) {
 
   switch (option.id) {
     case 'menu-option-subscribe':
-      alert('Not yet implemented, subscribe using options page');
+      console.warn('Subscribe not yet implemented. Use options page instead.');
       break;
     case 'menu-option-import':
       importOPMLPrompt();
       break;
     case 'menu-option-export':
-      // Load all feeds from the database
-      const conn = await db.open();
-      const resources = await db.getResources({ conn, mode: 'feeds' });
-      conn.close();
-
-      // Convert the loaded feeds into outlines
-      const outlines = resources.map((resource) => {
-        const outline = new Outline();
-        outline.type = resource.feed_format;
-
-        if (db.hasURL(resource)) {
-          outline.xmlUrl = db.getURLString(resource);
-        }
-
-        outline.title = resource.title;
-        outline.description = resource.description;
-        outline.htmlUrl = resource.link;
-        return outline;
-      });
-
-      const document = await exportOPML(outlines, 'Subscriptions');
-      downloadXMLDocument(document, 'subscriptions.xml');
+      handleExportButtonClick().catch(console.warn);
       break;
     case 'menu-option-header-font':
       break;
@@ -552,7 +554,7 @@ function headerFontMenuOnchange(event) {
     type: 'storage',
     key: 'header_font_family',
     newValue: fontName,
-    oldValue,
+    oldValue
   });
 }
 
@@ -572,7 +574,7 @@ function bodyFontMenuOnchange(event) {
     type: 'storage',
     key: 'body_font_family',
     newValue: fontName,
-    oldValue,
+    oldValue
   });
 }
 
@@ -586,8 +588,8 @@ function bodyFontMenuOnchange(event) {
 function windowOnclick(event) {
   const avoidedZoneIds = ['main-menu-button', 'left-panel'];
 
-  if (!avoidedZoneIds.includes(event.target.id)
-      && !event.target.closest('[id="left-panel"]')) {
+  if (!avoidedZoneIds.includes(event.target.id) &&
+      !event.target.closest('[id="left-panel"]')) {
     const leftPanelElement = document.getElementById('left-panel');
 
     if (leftPanelElement.style.marginLeft === '0px') {
@@ -692,7 +694,7 @@ async function onmessage(event) {
       conn,
       mode: 'viewable-entries',
       offset: unreadSlideCount,
-      limit: undefined,
+      limit: undefined
     });
     conn.close();
 
@@ -808,16 +810,17 @@ function createFeedSourceElement(entry) {
     try {
       faviconURL = new URL(entry.favicon_url);
     } catch (error) {
+      // ignore
     }
 
     if (!faviconURL || faviconURL.protocol === 'chrome-extension:') {
       console.debug('Bad favicon url', entry.favicon_url);
     } else {
-      const favicon_element = document.createElement('img');
-      favicon_element.setAttribute('src', entry.favicon_url);
-      favicon_element.setAttribute('width', '16');
-      favicon_element.setAttribute('height', '16');
-      sourceElement.append(favicon_element);
+      const faviconElement = document.createElement('img');
+      faviconElement.setAttribute('src', entry.favicon_url);
+      faviconElement.setAttribute('width', '16');
+      faviconElement.setAttribute('height', '16');
+      sourceElement.append(faviconElement);
     }
   }
 
@@ -897,23 +900,8 @@ function attachSlide(slide) {
   container.append(slide);
 }
 
-function isValidTransitionDuration(transitionDuration) {
-  return !isNaN(transitionDuration) && isFinite(transitionDuration)
-      && transitionDuration >= 0;
-}
-
-function setTransitionDuration(input_duration) {
-  if (!isValidTransitionDuration(input_duration)) {
-    throw new TypeError(
-      'Invalid transitionDuration parameter', input_duration,
-    );
-  }
-
-  transitionDuration = input_duration;
-}
-
 // Handle the end of a transition. Should not be called directly.
-function transitionOnend(event) {
+function transitionOnend() {
   // The slide that the transition occured upon (event.target) is not
   // guaranteed to be equal to the current slide. We want to affect the
   // current slide. We fire off two transitions per animation, one for the
@@ -1092,7 +1080,7 @@ async function initializeSlideshowPage() {
   const conn = await db.open();
   const getEntriesPromise = db.getResources(
     {
-      conn, mode: 'viewable-entries', offset: 0, limit: 6,
+      conn, mode: 'viewable-entries', offset: 0, limit: 6
     },
   );
   const getFeedsPromise = db.getResources({ conn, mode: 'feeds', titleSort: true });

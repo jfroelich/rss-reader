@@ -12,14 +12,14 @@ const FORTNIGHT_MINUTES = ONE_WEEK_MINUTES * 2;
 const deprecatedAlarmNames = [
   'remove-entries-missing-urls', 'remove-untyped-objects',
   'remove-orphaned-entries', 'test-install-binding-alarms',
-  'db-remove-orphaned-entries', 'cleanup-refresh-badge-lock',
+  'db-remove-orphaned-entries', 'cleanup-refresh-badge-lock'
 ];
 
 const alarms = [
   { name: 'archive', period: HALF_DAY_MINUTES },
   { name: 'poll', period: ONE_HOUR_MINUTES },
   { name: 'refresh-feed-icons', period: FORTNIGHT_MINUTES },
-  { name: 'compact-favicon-db', period: ONE_WEEK_MINUTES },
+  { name: 'compact-favicon-db', period: ONE_WEEK_MINUTES }
 ];
 
 export function queryIdleState(seconds) {
@@ -36,7 +36,7 @@ export function createAlarm(name, options) {
   return chrome.alarms.create(name, options);
 }
 
-export function removeAlarm(name, callback) {
+export function removeAlarm(name) {
   return new Promise((resolve) => {
     chrome.alarms.clear(name, (cleared) => {
       resolve({ name, cleared });
@@ -79,8 +79,8 @@ export async function alarmListener(alarm) {
 
 async function handleAlarmPoll() {
   const idlePollSeconds = config.readInt('idle_poll_secs');
-  if (Number.isInteger(idlePollSeconds) && idlePollSeconds > 0
-      && config.readBoolean('only_poll_if_idle')) {
+  if (Number.isInteger(idlePollSeconds) && idlePollSeconds > 0 &&
+      config.readBoolean('only_poll_if_idle')) {
     const idleStates = ['locked', 'idle'];
     const idleState = await queryIdleState(idlePollSeconds);
     if (!idleStates.includes(idleState)) {

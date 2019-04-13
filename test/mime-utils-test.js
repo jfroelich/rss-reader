@@ -1,7 +1,7 @@
 import assert from '/lib/assert.js';
 import * as mime from '/lib/mime-utils.js';
 
-export function mime_test() {
+export default function mimeUtilsTest() {
   const a = assert;
   const pct = mime.parseContentType;
 
@@ -26,11 +26,11 @@ export function mime_test() {
   a(!pct('a'));
 
   // long input
-  let long_string = '';
-  for (let i = 0; i < 100; i++) {
-    long_string += 'abc';
+  let longString = '';
+  for (let i = 0; i < 100; i += 1) {
+    longString += 'abc';
   }
-  a(!pct(long_string));
+  a(!pct(longString));
 
   // case normalization
   a(pct('TEXT/HTML') === 'text/html');

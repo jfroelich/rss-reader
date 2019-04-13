@@ -2,7 +2,7 @@ import * as config from '/src/config.js';
 
 export default function DisplaySettingsForm() {}
 
-DisplaySettingsForm.prototype.init = function displaySettingsFormInit(parent) {
+DisplaySettingsForm.prototype.init = function (parent) {
   // TODO: setting class on every td is redundant, much simpler to specify
   // "table td" rule in CSS
 
@@ -187,11 +187,11 @@ DisplaySettingsForm.prototype.init = function displaySettingsFormInit(parent) {
 
   const columnCountOptions = [1, 2, 3];
   const currentColumnCount = config.readInt('column_count');
-  for (const column_count of columnCountOptions) {
+  for (const columnCount of columnCountOptions) {
     const option = document.createElement('option');
-    option.value = column_count;
-    option.selected = column_count === currentColumnCount;
-    option.textContent = column_count;
+    option.value = columnCount;
+    option.selected = columnCount === currentColumnCount;
+    option.textContent = columnCount;
     select.append(option);
   }
   cell.append(select);
@@ -201,7 +201,7 @@ DisplaySettingsForm.prototype.init = function displaySettingsFormInit(parent) {
   parent.append(table);
 };
 
-DisplaySettingsForm.prototype.entryMarginSliderOnchange = function displaySettingsFormEntryMarginOnchange(event) {
+DisplaySettingsForm.prototype.entryMarginSliderOnchange = function (event) {
   const margin = event.target.value;
   if (margin) {
     config.writeString('padding', margin);

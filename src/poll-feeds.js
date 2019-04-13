@@ -1,5 +1,4 @@
-import assert from '/lib/assert.js';
-import { isAssertError } from '/lib/assert.js';
+import assert, { isAssertError } from '/lib/assert.js';
 import { Deadline } from '/lib/deadline.js';
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
@@ -28,11 +27,11 @@ export async function pollFeeds(args) {
     const stamp = config.readInt('last_poll_timestamp');
     if (!isNaN(stamp)) {
       const now = new Date();
-      const stamp_date = new Date(stamp);
-      const millis_elapsed = now - stamp_date;
-      assert(millis_elapsed >= 0);
-      if (millis_elapsed < args.recencyPeriod) {
-        console.debug('Polled too recently', millis_elapsed);
+      const stampDate = new Date(stamp);
+      const millisElapsed = now - stampDate;
+      assert(millisElapsed >= 0);
+      if (millisElapsed < args.recencyPeriod) {
+        console.debug('Polled too recently', millisElapsed);
         return 0;
       }
     }
@@ -57,38 +56,35 @@ export async function pollFeeds(args) {
     ifa.fetchFeedTimeout = args.fetchFeedTimeout;
     ifa.fetchHTMLTimeout = args.fetchHTMLTimeout;
     ifa.feedStoredCallback = undefined;
-    return poll_feed_noexcept(ifa);
+    return pollFeedNoexcept(ifa);
   });
   // Wait for all concurrent polls to complete
-  const import_feed_results = await Promise.all(promises);
+  const importFeedResults = await Promise.all(promises);
 
   // Calculate the total number of entries added across all feeds.
-  let entry_add_count_total = 0;
-  for (const entryAddCount of import_feed_results) {
-    entry_add_count_total += entryAddCount;
+  let entryAddCountTotal = 0;
+  for (const entryAddCount of importFeedResults) {
+    entryAddCountTotal += entryAddCount;
   }
 
-  if (args.notify && entry_add_count_total > 0) {
-    showNotification(`Added ${entry_add_count_total} articles`);
+  if (args.notify && entryAddCountTotal > 0) {
+    showNotification(`Added ${entryAddCountTotal} articles`);
   }
 
   console.log('Poll feeds completed');
-  return entry_add_count_total;
+  return entryAddCountTotal;
 }
 
 // Wrap the call to import-feed, trap all errors except assertion errors.
-async function poll_feed_noexcept(import_feed_args) {
+async function pollFeedNoexcept(importFeedArgs) {
   let result;
   try {
-    result = await importFeed(import_feed_args);
+    result = await importFeed(importFeedArgs);
   } catch (error) {
     if (isAssertError(error)) {
       throw error;
     } else {
-      console.warn(
-        'Error polling feed', db.getURLString(import_feed_args.feed),
-        error,
-      );
+      console.warn('Error polling feed', db.getURLString(importFeedArgs.feed), error);
       return 0;
     }
   }

@@ -1,6 +1,6 @@
 export default function About() {}
 
-About.prototype.init = function aboutInit(parent) {
+About.prototype.init = function (parent) {
   const heading = document.createElement('h1');
   heading.append('About');
   parent.append(heading);

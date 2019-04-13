@@ -7,9 +7,8 @@ import showNotification from '/src/show-notification.js';
 // Throws an error if already subscribed or if something goes wrong. This
 // resolves when both the feed and the entries are fully imported. The callback
 // is invoked with the feed once it is stored, earlier.
-export default async function subscribe(
-  conn, iconn, url, timeout = INDEFINITE, notify, feedStoredCallback,
-) {
+export default async function subscribe(conn, iconn, url, timeout = INDEFINITE, notify,
+  feedStoredCallback) {
   const resource = {};
   resource.type = 'feed';
   db.setURL(resource, url);

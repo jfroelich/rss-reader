@@ -1,13 +1,13 @@
 import assert from '/lib/assert.js';
 import filterPublisher from '/lib/filter-publisher.js';
 
-export function filter_publisher_test() {
+export default function filterPublisherTest() {
   const pairs = [];
 
   // normal use
   pairs.push({
     input: 'Hello World Hello World - Big News Org',
-    output: 'Hello World Hello World',
+    output: 'Hello World Hello World'
   });
 
   // title without delimiter
@@ -21,17 +21,17 @@ export function filter_publisher_test() {
   // double delimiter
   pairs.push({
     input: 'Hello - World Hello abcd - World',
-    output: 'Hello - World Hello abcd',
+    output: 'Hello - World Hello abcd'
   });
   // mixed double delimiter
   pairs.push({
     input: 'Hello : World Hello abcd - World',
-    output: 'Hello : World Hello abcd',
+    output: 'Hello : World Hello abcd'
   });
   // short title
   pairs.push({
     input: 'Hello World - Big News Org',
-    output: 'Hello World - Big News Org',
+    output: 'Hello World - Big News Org'
   });
   // even shorter title
   pairs.push({ input: 'a - Big News Org', output: 'a - Big News Org' });
@@ -39,25 +39,25 @@ export function filter_publisher_test() {
   // short title long publisher
   pairs.push({
     input: 'a - BigNewsOrgBigNewsOrgBigNewsOrg',
-    output: 'a - BigNewsOrgBigNewsOrgBigNewsOrg',
+    output: 'a - BigNewsOrgBigNewsOrgBigNewsOrg'
   });
 
   // short title long publisher multiword
   pairs.push({
     input: 'a - BBBBBBBig NNNNNNNews OOOOOOOrg',
-    output: 'a - BBBBBBBig NNNNNNNews OOOOOOOrg',
+    output: 'a - BBBBBBBig NNNNNNNews OOOOOOOrg'
   });
 
   // long title short publisher
   pairs.push({
     input: 'AAAAAAAAAAAAAABBBBBBBBBBCCCCCCCCCCCCCCC - D',
-    output: 'AAAAAAAAAAAAAABBBBBBBBBBCCCCCCCCCCCCCCC - D',
+    output: 'AAAAAAAAAAAAAABBBBBBBBBBCCCCCCCCCCCCCCC - D'
   });
 
   // too many words after delim
   pairs.push({
     input: 'Hello World Hello World - Too Many Words In Tail Found',
-    output: 'Hello World Hello World - Too Many Words In Tail Found',
+    output: 'Hello World Hello World - Too Many Words In Tail Found'
   });
 
   for (const { input, output } of pairs) {

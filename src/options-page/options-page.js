@@ -27,10 +27,10 @@ feedList.onclickCallback = function feedListOnclickCallback() {
   scrollTo(0, 0);
 };
 
-feedList.onremoveCallback = feedId => feedCountUpdate();
-feedList.unsubscribeCallback = feedId => showSectionByElementId('subs-list-section');
-feedList.activateCallback = feedId => showSectionByElementId('subs-list-section');
-feedList.deactivateCallback = feedId => showSectionByElementId('subs-list-section');
+feedList.onremoveCallback = () => feedCountUpdate();
+feedList.unsubscribeCallback = () => showSectionByElementId('subs-list-section');
+feedList.activateCallback = () => showSectionByElementId('subs-list-section');
+feedList.deactivateCallback = () => showSectionByElementId('subs-list-section');
 
 const subscriptionForm = new SubscriptionForm();
 subscriptionForm.init(document.getElementById('section-add-subscription'));

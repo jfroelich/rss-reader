@@ -7,26 +7,26 @@ import * as databaseUtils from '/test/database-utils.js';
 
 // Exercise typical execution of archive-resources
 export default async function archiveResourcesTest() {
-  const database_name_prefix = 'archive-resources-test';
-  await databaseUtils.remove_databases_for_prefix(database_name_prefix);
-  const database_name = databaseUtils.create_unique_database_name(database_name_prefix);
+  const databaseNamePrefix = 'archive-resources-test';
+  await databaseUtils.removeDatbasesForPrefix(databaseNamePrefix);
+  const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
 
-  const conn = await databaseUtils.create_test_database(database_name);
+  const conn = await databaseUtils.createTestDatabase(databaseName);
 
-  const create_promises = [];
-  for (let i = 0; i < 5; i++) {
+  const createPromises = [];
+  for (let i = 0; i < 5; i += 1) {
     const resource = {
-      title: `title ${i}`, content: 'foo', read: 1, type: 'entry',
+      title: `title ${i}`, content: 'foo', read: 1, type: 'entry'
     };
-    create_promises.push(createResource(conn, resource));
+    createPromises.push(createResource(conn, resource));
   }
 
-  const ids = await Promise.all(create_promises);
+  const ids = await Promise.all(createPromises);
 
   // pseudo advance clock so that entries expire
   await new Promise(resolve => setTimeout(resolve, 50));
-  const max_age = 1;
-  await archiveResources(conn, max_age);
+  const maxAge = 1;
+  await archiveResources(conn, maxAge);
 
   const resources = await getResources({ conn, mode: 'all' });
   assert(resources.length === 5);

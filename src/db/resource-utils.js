@@ -28,7 +28,7 @@ const knownResourcePropertyNames = [
   'title',
   'type',
   'updated_date',
-  'urls',
+  'urls'
 ];
 
 export function isValidId(value) {
@@ -101,9 +101,8 @@ export function sanitize(resource, options = {}) {
   }
 
   const maxTitleLength = isNaN(options.maxTitleLength) ? 1024 : options.maxTitleLength;
-  const maxDescriptionLength = isNaN(options.maxDescriptionLength)
-    ? 10240
-    : options.maxDescriptionLength;
+  const maxDescriptionLength = isNaN(options.maxDescriptionLength) ?
+    10240 : options.maxDescriptionLength;
   const maxAuthorLength = isNaN(options.maxAuthorLength) ? 200 : options.maxAuthorLength;
 
   if (resource.title) {
@@ -164,64 +163,30 @@ function condenseWhitespace(value) {
 
 export function validate(resource) {
   assert(resource && typeof resource === 'object');
-
   const now = new Date();
 
   // TODO: eventually improve this. we have to support undefined to support the
   // patch-resource use case where there is no delta property for type set, but
   // validate is called on the delta itself. but in reality all resources should
   // have a valid type.
-  vassert(
-    resource.type === 'entry' || resource.type === 'feed'
-      || resource.type === undefined,
-  );
-
-  vassert(
-    resource.favicon_url === undefined
-      || typeof resource.favicon_url === 'string',
-  );
-
-  vassert(
-    resource.active === undefined || resource.active === 1
-      || resource.active === 0,
-  );
-
+  vassert(resource.type === 'entry' || resource.type === 'feed' || resource.type === undefined);
+  vassert(resource.favicon_url === undefined || typeof resource.favicon_url === 'string');
+  vassert(resource.active === undefined || resource.active === 1 || resource.active === 0);
   const formats = ['rss', 'feed', 'rdf'];
-  vassert(
-    resource.feed_format === undefined
-      || formats.includes(resource.feed_format),
-  );
-
+  vassert(resource.feed_format === undefined || formats.includes(resource.feed_format));
   vassert(resource.link === undefined || typeof resource.link === 'string');
-
   vassert(resource.id === undefined || isValidId(resource.id));
   vassert(resource.feed === undefined || isValidId(resource.feed));
-  vassert(
-    resource.feed_title === undefined
-      || typeof resource.feed_title === 'string',
-  );
+  vassert(resource.feed_title === undefined || typeof resource.feed_title === 'string');
   vassert(resource.urls === undefined || Array.isArray(resource.urls));
-  vassert(
-    resource.read === undefined || resource.read === 1
-      || resource.read === 0,
-  );
-  vassert(
-    resource.archived === undefined || resource.archived === 1
-      || resource.archived === 0,
-  );
+  vassert(resource.read === undefined || resource.read === 1 || resource.read === 0);
+  vassert(resource.archived === undefined || resource.archived === 1 || resource.archived === 0);
   vassert(resource.author === undefined || typeof resource.author === 'string');
   vassert(resource.title === undefined || typeof resource.title === 'string');
-  vassert(
-    resource.description === undefined
-      || typeof resource.description === 'string',
-  );
-  vassert(
-    resource.content === undefined || typeof resource.content === 'string',
-  );
-  vassert(
-    resource.deactivation_reason === undefined
-      || typeof resource.deactivation_reason === 'string',
-  );
+  vassert(resource.description === undefined || typeof resource.description === 'string');
+  vassert(resource.content === undefined || typeof resource.content === 'string');
+  vassert(resource.deactivation_reason === undefined ||
+    typeof resource.deactivation_reason === 'string');
   vassert(isValidDate(resource.archived_date));
   vassert(isValidDate(resource.read_date));
   vassert(isValidDate(resource.deactivation_date));
@@ -238,8 +203,9 @@ export function validate(resource) {
     vassert(typeof resource.enclosure === 'object');
     const { url } = resource.enclosure;
     vassert(url === undefined || url === null || typeof url === 'string');
-    const len = resource.enclosure.enclosure_length;
-    vassert(len === undefined || len === null || typeof len === 'string');
+    const { enclosure_length: enclosureLength } = resource.enclosure;
+    vassert(enclosureLength === undefined || enclosureLength === null ||
+      typeof enclosureLength === 'string');
     const { type } = resource.enclosure;
     vassert(type === undefined || type === null || typeof type === 'string');
   }

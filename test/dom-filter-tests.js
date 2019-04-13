@@ -9,9 +9,9 @@ import parseHTML from '/lib/parse-html.js';
 // TODO: implement tests for the abnormal cases
 // TODO: specifically test various threshold parameter values
 
-export function emphasis_filter_test() {
-  let input; let
-    doc;
+export function emphasisFilterTest() {
+  let input;
+  let doc;
 
   // Specifically test the nesting filter
   input = '<b><b>b</b></b>';
@@ -29,9 +29,9 @@ export function emphasis_filter_test() {
 
 // Check that the anchor-script-filter removes the anchors that should be
 // removed and retains the anchors that should be retained.
-export function anchor_script_filter_test() {
-  let input; let
-    doc;
+export function anchorScriptFilterTest() {
+  let input;
+  let doc;
 
   // A non-href non-javascript anchor should not be affected
   input = '<a>test</a>';
@@ -76,7 +76,7 @@ export function anchor_script_filter_test() {
   assert(doc.querySelector('a'));
 }
 
-export function attribute_empty_filter_test() {
+export function attributeEmptyFilterTest() {
   // Simple empty non-boolean attribute in body
   let input = '<html><head></head><body><a name="">test</a></body></html>';
   let doc = parseHTML(input);
@@ -131,7 +131,7 @@ export function attribute_empty_filter_test() {
   assert(doc.documentElement.outerHTML === output);
 }
 
-export function image_lazy_filter_test() {
+export function imageLazyFilterTest() {
   // Exercise the ordinary case of a substitution
   let input = '<img id="test" data-src="test.gif">';
   let doc = parseHTML(input);
@@ -146,7 +146,7 @@ export function image_lazy_filter_test() {
   domFilters.imageLazyFilter(doc);
   image = doc.querySelector('#test');
   assert(image);
-  assert(image.getAttribute('src') == 'before.gif');
+  assert(image.getAttribute('src') === 'before.gif');
 
   // An image with an unrecognized attribute shouldn't affect src, only those
   // explicit listed attribute names are candidates
@@ -155,8 +155,8 @@ export function image_lazy_filter_test() {
   domFilters.imageLazyFilter(doc);
   image = doc.querySelector('#test');
   assert(image);
-  let src_value = image.getAttribute('src');
-  assert(src_value === null || src_value === undefined);
+  let srcValue = image.getAttribute('src');
+  assert(srcValue === null || srcValue === undefined);
 
   // An image with a valid candidate that looks lazy, but the candidate has a
   // bad value, should leave the source as is
@@ -165,12 +165,12 @@ export function image_lazy_filter_test() {
   domFilters.imageLazyFilter(doc);
   image = doc.querySelector('#test');
   assert(image);
-  src_value = image.getAttribute('src');
-  assert(src_value === null || src_value === undefined);
+  srcValue = image.getAttribute('src');
+  assert(srcValue === null || srcValue === undefined);
 }
 
 // TODO: move to separate module
-export async function image_reachable_filter_test() {
+export async function imageReachableFilterTest() {
   let input = '<img id="unreachable" src="not-reachable.gif">';
   // TODO: circular dependency?
   input += '<img class="reachable" src="/test/basic-image.png">';
@@ -190,7 +190,7 @@ export async function image_reachable_filter_test() {
   assert(image.hasAttribute('data-reachable-height'));
 }
 
-export function condense_tagnames_filter_test() {
+export function condenseTagnamesFilterTest() {
   const input = '<strong>test</strong>';
   let doc = parseHTML(input);
   assert(doc.querySelector('strong'));

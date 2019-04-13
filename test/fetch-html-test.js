@@ -1,11 +1,11 @@
-import assert from '/lib/assert.js';
-import fetchHTML from '/lib/fetch-html.js';
+// import assert from '/lib/assert.js';
+// import fetchHTML from '/lib/fetch-html.js';
 
 // TODO: run on a local resource
 // TODO: cannot accept param
 // TODO: assert something, do not just log
 
-export async function fetch_html_test() {
+export default async function fetchHTMLTest() {
   // let url_string = undefined;
   // let timeout = undefined;
   // const request_url = new URL(url_string);

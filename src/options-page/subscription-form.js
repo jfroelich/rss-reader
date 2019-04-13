@@ -1,5 +1,4 @@
-import assert from '/lib/assert.js';
-import { isAssertError } from '/lib/assert.js';
+import assert, { isAssertError } from '/lib/assert.js';
 import { Deadline } from '/lib/deadline.js';
 import fadeElement from '/lib/fade-element.js';
 import * as favicon from '/lib/favicon.js';
@@ -68,7 +67,7 @@ SubscriptionForm.prototype.showMonitor = function () {
   document.body.append(monitorElement);
 };
 
-SubscriptionForm.prototype.appendMonitorMessage = function subscriptionFormAppendMonitorMessage(message) {
+SubscriptionForm.prototype.appendMonitorMessage = function (message) {
   assert(this.monitorElement);
 
   const messageElement = document.createElement('p');
@@ -76,7 +75,7 @@ SubscriptionForm.prototype.appendMonitorMessage = function subscriptionFormAppen
   this.monitorElement.append(messageElement);
 };
 
-SubscriptionForm.prototype.onsubmit = async function subscriptionFormOnsubmit(event) {
+SubscriptionForm.prototype.onsubmit = async function (event) {
   // Prevent the form from submitting as we plan to handle it ourselves
   event.preventDefault();
 
@@ -132,13 +131,12 @@ SubscriptionForm.prototype.onsubmit = async function subscriptionFormOnsubmit(ev
   }
 };
 
-SubscriptionForm.prototype.onFeedStored = function subscriptionFormOnFeedStored(feed) {
+SubscriptionForm.prototype.onFeedStored = function (feed) {
   this.appendMonitorMessage(`Subscribed to ${db.getURLString(feed)}`);
   this.hideMonitor();
   if (this.onsubscribe) {
     this.onsubscribe(feed);
   }
 };
-
 
 SubscriptionForm.prototype.hideMonitor = subscriptionFormHideMonitor;

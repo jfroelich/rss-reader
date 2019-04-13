@@ -1,38 +1,36 @@
 import assert from '/lib/assert.js';
-import { Deadline, INDEFINITE } from '/lib/deadline.js';
+import { INDEFINITE } from '/lib/deadline.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 import * as db from '/src/db/db.js';
 import subscribe from '/src/subscribe.js';
 import * as databaseUtils from '/test/database-utils.js';
 
-export async function subscribe_test() {
-  const database_name_prefix = 'subscribe-test';
-  await databaseUtils.remove_databases_for_prefix(database_name_prefix);
-  const database_name =      databaseUtils.create_unique_database_name(database_name_prefix);
+export default async function () {
+  const databaseNamePrefix = 'subscribe-test';
+  await databaseUtils.removeDatbasesForPrefix(databaseNamePrefix);
+  const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
 
-  const conn = await databaseUtils.create_test_database(database_name);
+  const conn = await databaseUtils.createTestDatabase(databaseName);
 
   // Setup subscribe parameters
 
   const path = '/test/subscribe-test-feed.xml';
-  const local_url_string = chrome.extension.getURL(path);
-  const url = new URL(local_url_string);
+  const localURLString = chrome.extension.getURL(path);
+  const url = new URL(localURLString);
 
-  let callback_called = false;
-  const feedStoredCallback = function (feed) {
-    callback_called = true;
-  };
+  let callbackCalled = false;
 
+  function feedStoredCallback() {
+    callbackCalled = true;
+  }
 
-  const iconn;
+  let iconn;
   const fetchFeedTimeout = INDEFINITE;
   const notify = false;
 
   // Rethrow subscribe exceptions just like assertion failures by omitting
   // try/catch.
-  const resource = await subscribe(
-    conn, iconn, url, fetchFeedTimeout, notify, feedStoredCallback
-);
+  const resource = await subscribe(conn, iconn, url, fetchFeedTimeout, notify, feedStoredCallback);
 
   // subscribe should yield a resource object
   assert(resource && typeof resource === 'object');
@@ -44,7 +42,7 @@ export async function subscribe_test() {
   assert(db.isValidId(resource.id));
 
   // subscribe should have invoked the feed-created callback
-  assert(callback_called);
+  assert(callbackCalled);
 
   // The created resource should contain one or more urls, including the initial
   // url input to subscribe

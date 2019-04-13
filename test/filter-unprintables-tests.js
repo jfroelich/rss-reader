@@ -1,8 +1,8 @@
 import assert from '/lib/assert.js';
 import filterUnprintables from '/lib/filter-unprintables.js';
 
-export function filter_unprintables_test() {
-  for (let i = 0; i < 9; i++) {
+export default function filterUnprintablesTest() {
+  for (let i = 0; i < 9; i += 1) {
     assert(filterUnprintables(String.fromCharCode(i)).length === 0);
   }
 
@@ -12,8 +12,8 @@ export function filter_unprintables_test() {
   assert(filterUnprintables('\f').length === 1); // 12
   assert(filterUnprintables('\r').length === 1); // 13
 
-  const space_code = ' '.charCodeAt(0);
-  for (let i = 14; i < space_code; i++) {
+  const spaceCode = ' '.charCodeAt(0);
+  for (let i = 14; i < spaceCode; i += 1) {
     assert(filterUnprintables(String.fromCharCode(i)).length === 0);
   }
 

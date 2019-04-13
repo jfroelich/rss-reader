@@ -1,7 +1,7 @@
 import assert from '/lib/assert.js';
 import getPathExtension from '/lib/get-path-extension.js';
 
-export default function get_path_extension_test() {
+export default function getPathExtensionTest() {
   // Exercise the normal case
   let result = getPathExtension('/b.html');
   assert(result === 'html', `result: ${result}`);

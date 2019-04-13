@@ -1,7 +1,7 @@
 import assert from '/lib/assert.js';
 import * as color from '/lib/color.js';
 
-export function color_test() {
+export default function colorTest() {
   // Check the named colors are valid
   assert(color.isValid(color.BLACK));
   assert(color.isValid(color.WHITE));
@@ -21,7 +21,10 @@ export function color_test() {
   assert(color.isValidComponent(r));
 
   // non-zero values should also work
-  r = 100, b = 50, g = 30, a = 10;
+  r = 100;
+  b = 50;
+  g = 30;
+  a = 10;
   value = color.pack(r, g, b, a);
   assert(color.isValid(value));
 

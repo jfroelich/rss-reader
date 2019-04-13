@@ -2,48 +2,47 @@ import assert from '/lib/assert.js';
 import { open, remove } from '/lib/indexeddb-utils.js';
 
 // Exercise a prototypical open, close, delete sequence. No errors should occur.
-export async function indexedDBUtils_basic_test() {
-  const conn = await open(indexedDBUtils_basic_test.name);
+export async function indexedDBUtilsBasicTest() {
+  const conn = await open(indexedDBUtilsBasicTest.name);
   conn.close();
-  await remove(indexedDBUtils_basic_test.name);
+  await remove(indexedDBUtilsBasicTest.name);
 }
 
 // Assert that my understanding of old version is correct
-export async function indexedDBUtils_old_version_test() {
-  let old_version;
-  let new_version;
+export async function indexedDBUtilsOldVersionTest() {
+  let oldVersion;
+  let newVersion;
 
-  const initial_handler = (event) => {
-    old_version = event.oldVersion;
-    new_version = event.target.result.version;
+  const initialHandler = (event) => {
+    // eslint-disable-next-line prefer-destructuring
+    oldVersion = event.oldVersion;
+    newVersion = event.target.result.version;
   };
 
   // Call without a version
-  const conn = await open(
-    indexedDBUtils_old_version_test.name, undefined, initial_handler
-);
+  const conn = await open(indexedDBUtilsOldVersionTest.name, undefined, initialHandler);
   conn.close();
 
   // When creating the database for the first time, the old version will be 0
-  assert(old_version === 0);
+  assert(oldVersion === 0);
 
   // When creating the database for the first time without specifying a version,
   // the new version will be 1
-  assert(new_version === 1);
+  assert(newVersion === 1);
 
-  await remove(indexedDBUtils_old_version_test.name);
+  await remove(indexedDBUtilsOldVersionTest.name);
 }
 
 // Calling open without a name should fail
-export async function indexedDBUtils_unnamed_test() {
+export async function indexedDBUtilsUnnamedTest() {
   // to be really clear, the name param is not set
-  const undefined_name;
+  let undefinedName;
   let conn;
-  let expected_error;
+  let expectedError;
   try {
-    conn = await open(undefined_name);
+    conn = await open(undefinedName);
   } catch (error) {
-    expected_error = error;
+    expectedError = error;
   } finally {
     // try to release resources even in the unexpected case
     if (conn) {
@@ -58,21 +57,21 @@ export async function indexedDBUtils_unnamed_test() {
 
   // open should have produced some kind of error. do not care what kind of
   // error, just that it exists.
-  assert(expected_error);
+  assert(expectedError);
 }
 
 // does open behave as expected when given a kind of bad version
-export async function indexedDBUtils_bad_version_test() {
-  let expected_error;
+export async function indexedDBUtilsBadVersionTest() {
+  let expectedError;
   let conn;
 
   // indexedDB expects version to be positive integer. let's use a bad one.
-  const bad_version = -1;
+  const badVersion = -1;
 
   try {
-    conn = await open(bad_version_test.name, bad_version);
+    conn = await open(indexedDBUtilsBadVersionTest.name, badVersion);
   } catch (error) {
-    expected_error = error;
+    expectedError = error;
   } finally {
     if (conn) {
       conn.close();
@@ -85,29 +84,29 @@ export async function indexedDBUtils_bad_version_test() {
   // long' value range." TypeError is a descendant of Error. I want to be a bit
   // more specific than defined object, but less specific that a particular kind
   // of error, in an (possibly futile) attempt to stay agnostic.
-  assert(expected_error instanceof Error);
+  assert(expectedError instanceof Error);
 }
 
 // Verify how indexedDB stores function objects
-export async function indexedDBUtils_function_object_test() {
+export async function indexedDBUtilsFunctionObjectTest() {
   // Really simple schema generator for test, never expects version change other
   // than the initial one
-  const upgrade_handler = function (event) {
+  const upgradeHandler = function (event) {
     const db = event.target.result;
     db.createObjectStore('objects', { keyPath: 'id', autoIncrement: true });
   };
 
   // Create a really basic database with an object store
   const conn = await open(
-    'indexeddb-utils-function-object-test', undefined, upgrade_handler
-);
+    'indexeddb-utils-function-object-test', undefined, upgradeHandler
+  );
 
   // Define a class with a method
   function Foo() {
     this.a = 1;
   }
   Foo.prototype.bar = function () {
-    this.a++;
+    this.a += 1;
   };
 
   // Store a function object
@@ -122,7 +121,7 @@ export async function indexedDBUtils_function_object_test() {
 
       const obj = new Foo();
       const request = store.put(obj);
-      request.onsuccess = (_) => {
+      request.onsuccess = () => {
         resolve();
       };
     } catch (error) {
@@ -143,14 +142,13 @@ export async function indexedDBUtils_function_object_test() {
     const txn = conn.transaction('objects');
     const store = txn.objectStore('objects');
     const request = store.get(1);
-    request.onsuccess = _ => resolve(request.result);
-    request.onerror = _ => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
   });
 
   // Getting should not produce an error
-  let robj;
   try {
-    robj = await gp;
+    await gp;
   } catch (error) {
     console.warn(error);
     assert(false, error.message);

@@ -27,7 +27,7 @@ function patchResourceExecutor(conn, props, resolve, reject) {
   getRequest.onsuccess = getRequestOnsuccess.bind(getRequest, props, reject);
 }
 
-function transactionOncomplete(id, channel, callback, event) {
+function transactionOncomplete(id, channel, callback) {
   if (channel) {
     channel.postMessage({ type: 'resource-updated', id });
   }
@@ -93,7 +93,7 @@ function getRequestOnsuccess(props, reject, event) {
     } else {
       resource[prop] = value;
     }
-    dirtiedPropertyCount++;
+    dirtiedPropertyCount += 1;
   }
 
   if (dirtiedPropertyCount) {

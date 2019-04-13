@@ -2,7 +2,7 @@ import * as config from '/src/config.js';
 
 export default function GeneralSettingsForm() {}
 
-GeneralSettingsForm.prototype.init = async function generalSettingsFormInit(parent) {
+GeneralSettingsForm.prototype.init = async function (parent) {
   const heading = document.createElement('h1');
   heading.textContent = 'General Settings';
   parent.append(heading);
@@ -78,19 +78,13 @@ GeneralSettingsForm.prototype.init = async function generalSettingsFormInit(pare
 };
 
 function requestPermission(name) {
-  return new Promise(
-    resolve => chrome.permissions.request({ permissions: [name] }, resolve),
-  );
+  return new Promise(resolve => chrome.permissions.request({ permissions: [name] }, resolve));
 }
 
 function removePermission(name) {
-  return new Promise(
-    resolve => chrome.permissions.remove({ permissions: [name] }, resolve),
-  );
+  return new Promise(resolve => chrome.permissions.remove({ permissions: [name] }, resolve));
 }
 
 function hasPermission(name) {
-  return new Promise(
-    resolve => chrome.permissions.contains({ permissions: [name] }, resolve),
-  );
+  return new Promise(resolve => chrome.permissions.contains({ permissions: [name] }, resolve));
 }

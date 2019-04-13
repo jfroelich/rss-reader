@@ -4,18 +4,17 @@ import * as db from '/src/db/db.js';
 import importOPML from '/src/import-opml.js';
 import * as databaseUtils from '/test/database-utils.js';
 
-export default async function import_opml_test() {
-  const database_name_prefix = 'import-opml-test';
-  await databaseUtils.remove_databases_for_prefix(database_name_prefix);
-  const database_name = databaseUtils.create_unique_database_name(database_name_prefix);
+export default async function importOPMLTest() {
+  const databaseNamePrefix = 'import-opml-test';
+  await databaseUtils.removeDatbasesForPrefix(databaseNamePrefix);
+  const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
 
-  const conn = await databaseUtils.create_test_database(database_name);
+  const conn = await databaseUtils.createTestDatabase(databaseName);
 
-  const opml_string = '<opml version="2.0"><body><outline type="feed" '
-      + 'xmlUrl="a://b/c"/></body></opml>';
+  const opmlString = '<opml version="2.0"><body><outline type="feed" xmlUrl="a://b/c"/></body></opml>';
 
   // Mimic a File by creating a Blob, as File implements the Blob interface
-  const file = new Blob([opml_string], { type: 'application/xml' });
+  const file = new Blob([opmlString], { type: 'application/xml' });
   file.name = 'file.xml';
 
   const results = await importOPML(conn, [file]);

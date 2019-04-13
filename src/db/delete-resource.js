@@ -41,16 +41,14 @@ function cursorRequestOnsuccess(id, dependentIds, event) {
   }
 }
 
-function transactionOncomplete(id, reason, dependentIds, channel, callback, event) {
+function transactionOncomplete(id, reason, dependentIds, channel, callback) {
   if (channel) {
     channel.postMessage({ type: 'resource-deleted', id, reason });
 
     for (const dependentId of dependentIds) {
-      channel.postMessage(
-        {
-          type: 'resource-deleted', id: dependentId, reason, parent: id,
-        },
-      );
+      channel.postMessage({
+        type: 'resource-deleted', id: dependentId, reason, parent: id
+      });
     }
   }
 

@@ -4,7 +4,7 @@ export default function NavMenu() {
 }
 
 // TODO: use single listener on the menu itself
-NavMenu.prototype.init = function navMenuInit() {
+NavMenu.prototype.init = function () {
   const menuItems = document.querySelectorAll('#navigation-menu li');
   for (const item of menuItems) {
     item.onclick = this.itemOnclick.bind(this);
@@ -14,6 +14,6 @@ NavMenu.prototype.init = function navMenuInit() {
 // The listener is attached to the item, but that may not be what triggered
 // the click event of event.target, so use currentTarget to get the element
 // where the listener is attached
-NavMenu.prototype.itemOnclick = function navMenuItemOnclick(event) {
+NavMenu.prototype.itemOnclick = function (event) {
   this.onclick(event.currentTarget);
 };

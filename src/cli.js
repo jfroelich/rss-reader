@@ -160,7 +160,7 @@ async function unsubscribeCommand(urlString) {
   // unsubscribe does not check whether the feed actually exists, but we want
   // to know if that is the case in order to provide more information.
   const feed = await db.getResource({
-    conn, mode: 'url', url, keyOnly: true,
+    conn, mode: 'url', url, keyOnly: true
   });
 
   if (feed) {

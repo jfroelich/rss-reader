@@ -34,7 +34,7 @@ export async function importEntry(args) {
   // Check if the entry with the possibly rewritten url already exists
   const afterRewriteURL = db.getURL(entry);
   const existingEntry = await db.getResource({
-    conn: args.conn, mode: 'url', url: afterRewriteURL, keyOnly: true,
+    conn: args.conn, mode: 'url', url: afterRewriteURL, keyOnly: true
   });
 
   if (existingEntry) {
@@ -44,9 +44,8 @@ export async function importEntry(args) {
 
   // Fetch the entry's full content. Rethrow any errors.
   const fetchURL = db.getURL(entry);
-  const response = await fetchEntryHTML(
-    fetchURL, args.fetchHTMLTimeout, args.inaccessibleContentDescriptors,
-  );
+  const response = await fetchEntryHTML(fetchURL, args.fetchHTMLTimeout,
+    args.inaccessibleContentDescriptors);
 
   // Handle redirection
   if (response) {
@@ -59,7 +58,7 @@ export async function importEntry(args) {
 
       const existingEntry = db.getResource(
         {
-          conn: args.conn, mode: 'url', url: rewrittenURL, keyOnly: true,
+          conn: args.conn, mode: 'url', url: rewrittenURL, keyOnly: true
         },
       );
       if (existingEntry) {
@@ -101,7 +100,7 @@ export async function importEntry(args) {
     }
   }
 
-  await compositeDocumentFilter(doc, args.filter_options);
+  await compositeDocumentFilter(doc, args.filterOptions);
   entry.content = doc.documentElement.outerHTML;
 
   entry.type = 'entry';
@@ -121,18 +120,18 @@ async function setEntryFavicon(entry, conn, doc) {
 
 function fetchEntryHTML(url, timeout, inaccessibleContentDescriptors) {
   if (!['http:', 'https:'].includes(url.protocol)) {
-    return;
+    return undefined;
   }
 
   const sniffedResourceClass = urlSniffer.classify(url);
   if (sniffedResourceClass === urlSniffer.BINARY_CLASS) {
-    return;
+    return undefined;
   }
 
   // Avoid fetching if url matches one of the descriptors
   for (const desc of inaccessibleContentDescriptors) {
     if (desc.pattern && desc.pattern.test(url.hostname)) {
-      return;
+      return undefined;
     }
   }
 

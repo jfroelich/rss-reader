@@ -1,7 +1,7 @@
 import assert from '/lib/assert.js';
 import * as resourceUtils from '/src/db/resource-utils.js';
 
-export function is_valid_id_test() {
+export function isValidIdTest() {
   assert(!resourceUtils.isValidId(-1));
   assert(!resourceUtils.isValidId(0));
   assert(!resourceUtils.isValidId('hello'));
@@ -11,7 +11,7 @@ export function is_valid_id_test() {
   assert(resourceUtils.isValidId(123456789));
 }
 
-export function append_url_test() {
+export function appendURLTest() {
   // Append a url
   const resource = {};
   let appended = resourceUtils.setURL(resource, new URL('a://b.c1'));
@@ -32,7 +32,7 @@ export function append_url_test() {
   assert(resource.urls.length === 2);
 }
 
-export function normalize_resource_test() {
+export function normalizeResourceTest() {
   let resource = {};
   // test when missing fields
   resourceUtils.normalize(resource);
@@ -43,13 +43,13 @@ export function normalize_resource_test() {
 
   // wrong property type should raise error
   resource.author = 1234;
-  let expected_error;
+  let expectedError;
   try {
     resourceUtils.normalize(resource);
   } catch (error) {
-    expected_error = error;
+    expectedError = error;
   }
-  assert(expected_error instanceof Error);
+  assert(expectedError instanceof Error);
 
   // test basic strings where no change expected
   resource = {};
@@ -72,19 +72,19 @@ export function normalize_resource_test() {
   assert('Å' === '\u00c5'); // normalized
   resource.author = '\u212b';
   resourceUtils.normalize(resource);
-  assert(resource.author === '\u00c5', escape_unicode(resource.author));
+  assert(resource.author === '\u00c5', escapeUnicodeString(resource.author));
 
   // test idempotency
   resourceUtils.normalize(resource);
-  assert(resource.author === '\u00c5', escape_unicode(resource.author));
+  assert(resource.author === '\u00c5', escapeUnicodeString(resource.author));
 }
 
 // https://stackoverflow.com/questions/21014476
-function escape_unicode(string) {
+function escapeUnicodeString(string) {
   return string.replace(/[^\0-~]/g, ch => `\\u${(`000${ch.charCodeAt(0).toString(16)}`).slice(-4)}`);
 }
 
-export default function sanitize_test() {
+export default function sanitizeTest() {
   const resource = {};
   let content = 'hello world';
   resource.content = content;

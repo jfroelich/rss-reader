@@ -8,7 +8,7 @@ function getResourcesExecutor(query, resolve, reject) {
   assert(query && typeof query === 'object');
 
   const modes = [
-    'all', 'feeds', 'active-feeds', 'viewable-entries', 'archivable-entries',
+    'all', 'feeds', 'active-feeds', 'viewable-entries', 'archivable-entries'
   ];
   assert(modes.includes(query.mode));
   assert(isValidOffset(query.offset));
@@ -51,7 +51,7 @@ function requestOnsuccess(context, event) {
 
   // Keep advancing until we reached offset
   if (context.offset > 0 && context.skipCount < context.offset) {
-    context.skipCount++;
+    context.skipCount += 1;
     cursor.continue();
     return;
   }
@@ -80,13 +80,13 @@ function resourceMatchesQuery(mode, resource) {
   }
 
   if (mode === 'viewable-entries') {
-    return resource.type === 'entry' && resource.archived === 0
-        && resource.read === 0;
+    return resource.type === 'entry' && resource.archived === 0 &&
+        resource.read === 0;
   }
 
   if (mode === 'archivable-entries') {
-    return resource.type === 'entry' && resource.archived === 0
-        && resource.read === 1;
+    return resource.type === 'entry' && resource.archived === 0 &&
+        resource.read === 1;
   }
 
   if (mode === 'active-feeds') {
@@ -111,8 +111,8 @@ function openCursorRequest(query, store) {
     return index.openCursor('feed');
   }
 
-  if (query.mode === 'viewable-entries'
-      || query.mode === 'archivable-entries') {
+  if (query.mode === 'viewable-entries' ||
+      query.mode === 'archivable-entries') {
     const index = store.index('type');
     return index.openCursor('entry');
   }
@@ -120,7 +120,7 @@ function openCursorRequest(query, store) {
   throw new TypeError(`Invalid mode ${query.mode}`);
 }
 
-function transactionOncomplete(resources, query, callback, event) {
+function transactionOncomplete(resources, query, callback) {
   if (query.titleSort) {
     resources.sort(compareResourceTitles);
   }
@@ -135,11 +135,11 @@ function compareResourceTitles(a, b) {
 }
 
 function isValidOffset(offset) {
-  return offset === null || offset === undefined || offset === NaN
-      || (Number.isInteger(offset) && offset >= 0);
+  return offset === null || offset === undefined || isNaN(offset) ||
+      (Number.isInteger(offset) && offset >= 0);
 }
 
 function isValidLimit(limit) {
-  return limit === null || limit === undefined || limit === NaN
-      || (Number.isInteger(limit) && limit >= 0);
+  return limit === null || limit === undefined || isNaN(limit) ||
+      (Number.isInteger(limit) && limit >= 0);
 }

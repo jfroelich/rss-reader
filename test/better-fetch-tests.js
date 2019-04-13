@@ -1,69 +1,65 @@
 import assert from '/lib/assert.js';
-import { betterFetch } from '/lib/better-fetch.js';
-import { NetworkError } from '/lib/better-fetch.js';
-import { AcceptError } from '/lib/better-fetch.js';
+import { AcceptError, betterFetch, NetworkError } from '/lib/better-fetch.js';
 
-export async function better_fetch_ordinary_test() {
+export async function betterFetchOrdinaryTest() {
   // Exercise an ordinary case of the function on a local file and assert that
   // it basically runs without error.
   const path = '/test/better-fetch-test.html';
-  const url_string = chrome.extension.getURL(path);
-  const url = new URL(url_string);
+  const urlString = chrome.extension.getURL(path);
+  const url = new URL(urlString);
   const response = await betterFetch(url);
 
-  const full_text = await response.text();
-  assert(full_text === 'Hello World\n', full_text);
+  const fullText = await response.text();
+  assert(fullText === 'Hello World\n', fullText);
 }
 
 // Verify that fetching a file of a particular type along with a response type
 // constraint on that type succeeds
-export async function better_fetch_good_type_test() {
+export async function betterFetchGoodTypeTest() {
   const path = '/test/better-fetch-test.html';
-  const url_string = chrome.extension.getURL(path);
-  const url = new URL(url_string);
+  const urlString = chrome.extension.getURL(path);
+  const url = new URL(urlString);
 
   const options = {};
   options.types = ['text/html'];
 
-  const response = await betterFetch(url, options);
+  await betterFetch(url, options);
 }
 
 // Verify that fetching with a response type constraint that does not allow for
 // the given type produces the expected error
-export async function better_fetch_bad_type_test() {
+export async function betterFetchBadTypeTest() {
   const path = '/test/better-fetch-test.html';
-  const url_string = chrome.extension.getURL(path);
-  const url = new URL(url_string);
+  const urlString = chrome.extension.getURL(path);
+  const url = new URL(urlString);
 
   const options = {};
   options.types = ['text/plain'];
 
-  let response;
-  let fetch_error;
+  let fetchError;
   try {
-    response = await betterFetch(url, options);
+    await betterFetch(url, options);
   } catch (error) {
-    fetch_error = error;
+    fetchError = error;
   }
 
-  assert(fetch_error instanceof AcceptError);
+  assert(fetchError instanceof AcceptError);
 }
 
 // Verify that fetching a local file that does not exist produces a network
 // error
-export async function better_fetch_local_404_test() {
+export async function betterFetchLocal404Test() {
   const path = '/src/lib/this-file-does-not-exist.html';
-  const url_string = chrome.extension.getURL(path);
-  const url = new URL(url_string);
+  const urlString = chrome.extension.getURL(path);
+  const url = new URL(urlString);
 
-  let response;
-  let fetch_error;
+  let fetchError;
 
   try {
-    response = await betterFetch(url);
+    await betterFetch(url);
   } catch (error) {
-    fetch_error = error;
+    fetchError = error;
   }
 
-  assert(fetch_error instanceof NetworkError);
+  assert(fetchError instanceof NetworkError);
 }

@@ -39,7 +39,7 @@ import filterEmptyProperties from '/lib/filter-empty-properties.js';
 // is being created
 
 // Migrate the database from any previous version to 20
-export function migrate20(event, channel) {
+export function migrate20(event) {
   if (event.oldVersion) {
     return;
   }
@@ -64,12 +64,16 @@ export function migrate20(event, channel) {
 }
 
 // TODO: deprecate, no longer care about entry.magic
-export function migrate21(event, channel) {}
+export function migrate21() {
+  // deprecated
+}
 
 // TODO: deprecate, no longer care about feed.magic
-export function migrate22(event, channel) {}
+export function migrate22() {
+  // deprecated
+}
 
-export function migrate23(event, channel) {
+export function migrate23(event) {
   // This migration only applies to databases that exist
   if (!event.oldVersion) {
     return;
@@ -119,20 +123,20 @@ export function migrate24(event, channel) {
   const { transaction } = event.target;
   const feedStore = transaction.objectStore('feed');
   const request = feedStore.getAll();
-  request.onerror = _ => console.error(request.error);
+  request.onerror = () => console.error(request.error);
   request.onsuccess = function (event) {
     const feeds = event.target.result;
     for (const feed of feeds) {
       feedIds.push(feed.id);
       feed.active = true;
       feed.dateUpdated = new Date();
-      store.put(feed);
+      feedStore.put(feed);
     }
   };
 
   // Notify listeners of each updated feed
   if (channel) {
-    transaction.addEventListener('complete', (event) => {
+    transaction.addEventListener('complete', () => {
       for (const id of feedIds) {
         channel.postMessage({ type: 'feed-updated', id });
       }
@@ -140,7 +144,7 @@ export function migrate24(event, channel) {
   }
 }
 
-export function migrate25(event, channel) {
+export function migrate25(event) {
   // This applies regardless of whether there is an old version
 
   if (event.oldVersion > 24) {
@@ -175,8 +179,8 @@ export function migrate26(event, channel) {
     const entryIds = [];
 
     const request = entryStore.openCursor();
-    request.onerror = _ => console.error(request.error);
-    request.onsuccess = (event) => {
+    request.onerror = () => console.error(request.error);
+    request.onsuccess = () => {
       const cursor = request.result;
       if (cursor) {
         const entry = cursor.value;
@@ -190,7 +194,7 @@ export function migrate26(event, channel) {
     };
 
     if (channel) {
-      transaction.addEventListener('complete', (event) => {
+      transaction.addEventListener('complete', () => {
         for (const id of entryIds) {
           channel.postMessage({ type: 'resource-updated', id });
         }
@@ -206,7 +210,7 @@ export function migrate26(event, channel) {
 // Handle upgrade to 27 from all prior versions. This version
 // adds a new index for use in the reader-page view.
 // TODO: now that reader-view is no longer in use this index should be removed
-export function migrate27(event, channel) {
+export function migrate27(event) {
   // This migration applies to all prior versions but not to versions that
   // are 27 or greater
   if (event.oldVersion > 26) {
@@ -221,7 +225,7 @@ export function migrate27(event, channel) {
   entryStore.createIndex(indexName, indexPath);
 }
 
-export function migrate28(event, channel) {
+export function migrate28(event) {
   if (event.oldVersion > 27) {
     return;
   }
@@ -233,7 +237,7 @@ export function migrate28(event, channel) {
   entryStore.createIndex(indexName, indexPath);
 }
 
-export function migrate29(event, channel) {
+export function migrate29(event) {
   if (event.oldVersion > 28) {
     return;
   }
@@ -245,7 +249,7 @@ export function migrate29(event, channel) {
   entryStore.createIndex(indexName, indexPath);
 }
 
-export function migrate30(event, channel) {
+export function migrate30(event) {
   if (event.oldVersion > 29) {
     return;
   }
@@ -330,7 +334,7 @@ export function migrate30(event, channel) {
 }
 
 // Use snake_case instead of camelCase for object properties
-export function migrate31(event, channel) {
+export function migrate31(event) {
   if (event.oldVersion > 30) {
     return;
   }
@@ -464,7 +468,7 @@ export function migrate31(event, channel) {
   };
 }
 
-export function migrate32(event, channel) {
+export function migrate32(event) {
   const connection = event.target.result;
   if (connection.version < 32) {
     return;
@@ -567,7 +571,7 @@ export function migrate32(event, channel) {
   };
 }
 
-export function migrate33(event, channel) {
+export function migrate33(event) {
   const connection = event.target.result;
   if (connection.version < 33) {
     return;
@@ -631,7 +635,7 @@ export function migrate34(event, channel) {
   };
 
   if (channel) {
-    transaction.addEventListener('complete', (event) => {
+    transaction.addEventListener('complete', () => {
       for (const id of feedIds) {
         channel.postMessage({ type: 'feed-updated', id });
       }
@@ -644,7 +648,7 @@ export function migrate34(event, channel) {
 }
 
 // Switch from feeds and entries stores to a single resources store
-export function migrate35(event, channel) {
+export function migrate35(event) {
   const connection = event.target.result;
   const { transaction } = event.target;
 
@@ -657,15 +661,13 @@ export function migrate35(event, channel) {
   }
 
   // Create the resources store and appropriate indices
-  const resourcesStore = connection.createObjectStore(
-    'resources', { keyPath: 'id', autoIncrement: true },
-  );
+  const resourcesStore = connection.createObjectStore('resources',
+    { keyPath: 'id', autoIncrement: true });
   resourcesStore.createIndex('urls', 'urls', { multiEntry: true, unique: true });
 
   // Each resource object gets a type so ops can quickly find all feeds or
   // query only entries
   resourcesStore.createIndex('type', 'type');
-
   resourcesStore.createIndex('type-read', ['type', 'read']);
 
   const feedsStore = transaction.objectStore('feeds');

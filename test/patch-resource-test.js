@@ -6,11 +6,11 @@ import patchResource from '/src/db/patch-resource.js';
 import * as databaseUtils from '/test/database-utils.js';
 
 export default async function patch_resource_test() {
-  const database_name_prefix = 'patch-resource-test';
-  await databaseUtils.remove_databases_for_prefix(database_name_prefix);
-  const database_name = databaseUtils.create_unique_database_name(database_name_prefix);
+  const databaseNamePrefix = 'patch-resource-test';
+  await databaseUtils.removeDatbasesForPrefix(databaseNamePrefix);
+  const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
 
-  const conn = await databaseUtils.create_test_database(database_name);
+  const conn = await databaseUtils.createTestDatabase(databaseName);
 
   const id = await createResource(conn, { type: 'entry', read: 0 });
 

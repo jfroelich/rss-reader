@@ -1,81 +1,81 @@
 import archiveResourcesTest from '/test/archive-resources-test.js';
-import * as better_fetch_tests from '/test/better-fetch-tests.js';
-import coerce_element_test from '/test/coerce-element-test.js';
-import * as color_contrast_filter_tests from '/test/color-contrast-filter-test.js';
-import { color_test } from '/test/color-test.js';
-import count_resources_test from '/test/count-resources-test.js';
-import create_resource_test from '/test/create-resource-test.js';
-import delete_resource_test from '/test/delete-resource-test.js';
-import * as dom_filter_tests from '/test/dom-filter-tests.js';
-import export_opml_test from '/test/export-opml-test.js';
-import * as favicon_tests from '/test/favicon-tests.js';
-import { parse_feed_test } from '/test/feed-parser-test.js';
-import { fetch_html_test } from '/test/fetch-html-test.js';
-import { fetch_image_element_test } from '/test/fetch-image-element-test.js';
-import { filter_publisher_test } from '/test/filter-publisher-test.js';
-import * as filter_unprintables_tests from '/test/filter-unprintables-tests.js';
-import get_path_extension_test from '/test/get-path-extension-test.js';
-import get_resource_test from '/test/get-resource-test.js';
-import get_resources_test from '/test/get-resources-test.js';
-import * as image_size_filter_tests from '/test/image-dimensions-filter-tests.js';
-import * as import_entry_tests from '/test/import-entry-tests.js';
-import import_opml_test from '/test/import-opml-test.js';
-import * as indexedDBUtils_tests from '/test/indexeddb-utils-test.js';
-import * as migrations_tests from '/test/migrations-tests.js';
-import { mime_test } from '/test/mime-utils-test.js';
-import patch_resource_test from '/test/patch-resource-test.js';
-import put_resource_test from '/test/put-resource-test.js';
-import { remove_html_test } from '/test/remove-html-test.js';
-import * as resource_utils_tests from '/test/resource-utils-tests.js';
-import * as set_base_uri_tests from '/test/set-base-uri-tests.js';
-import { subscribe_test } from '/test/subscribe-test.js';
-import * as truncate_html_tests from '/test/truncate-html-tests.js';
-import * as unwrap_element_tests from '/test/unwrap-element-tests.js';
-import { url_sniffer_test } from '/test/url-sniffer-test.js';
+import * as betterFetchTests from '/test/better-fetch-tests.js';
+import coerceElementTest from '/test/coerce-element-test.js';
+import * as colorContrastFilterTests from '/test/color-contrast-filter-test.js';
+import colorTest from '/test/color-test.js';
+import countResourcesTest from '/test/count-resources-test.js';
+import createResourceTest from '/test/create-resource-test.js';
+import deleteResourceTest from '/test/delete-resource-test.js';
+import * as domFilterTests from '/test/dom-filter-tests.js';
+import exportOPMLTest from '/test/export-opml-test.js';
+import * as faviconTests from '/test/favicon-tests.js';
+import parseFeedTest from '/test/feed-parser-test.js';
+import fetchHTMLTest from '/test/fetch-html-test.js';
+import fetchImageElementTest from '/test/fetch-image-element-test.js';
+import filterPublisherTest from '/test/filter-publisher-test.js';
+import filterUnprintablesTest from '/test/filter-unprintables-tests.js';
+import getPathExtensionTest from '/test/get-path-extension-test.js';
+import getResourceTest from '/test/get-resource-test.js';
+import getResourcesTest from '/test/get-resources-test.js';
+import * as imageSizeFilterTests from '/test/image-dimensions-filter-tests.js';
+import importEntryTests from '/test/import-entry-tests.js';
+import importOPMLTest from '/test/import-opml-test.js';
+import * as indexedDBUtilsTests from '/test/indexeddb-utils-test.js';
+import * as migrationsTests from '/test/migrations-tests.js';
+import mimeUtilsTest from '/test/mime-utils-test.js';
+import patchResourceTest from '/test/patch-resource-test.js';
+import putResourceTest from '/test/put-resource-test.js';
+import removeHTMLTest from '/test/remove-html-test.js';
+import * as resourceUtilsTests from '/test/resource-utils-tests.js';
+import setBaseURITest from '/test/set-base-uri-test.js';
+import subscribeTest from '/test/subscribe-test.js';
+import * as truncateHTMLTests from '/test/truncate-html-tests.js';
+import * as unwrapElemenTests from '/test/unwrap-element-tests.js';
+import urlSnifferTest from '/test/url-sniffer-test.js';
 
 const registry = [];
 
 // db-resource ops tests
 registerTest(archiveResourcesTest);
-registerTest(count_resources_test);
-registerTest(create_resource_test);
-registerTest(delete_resource_test);
-registerTest(get_resource_test);
-registerTest(get_resources_test);
-registerTest(patch_resource_test);
-registerTest(put_resource_test);
+registerTest(countResourcesTest);
+registerTest(createResourceTest);
+registerTest(deleteResourceTest);
+registerTest(getResourceTest);
+registerTest(getResourcesTest);
+registerTest(patchResourceTest);
+registerTest(putResourceTest);
 
 // Other tests
-registerTest(coerce_element_test);
-registerModuleTests(color_contrast_filter_tests);
-registerTest(color_test);
-registerModuleTests(dom_filter_tests);
-registerTest(export_opml_test);
-registerModuleTests(favicon_tests);
-registerTest(fetch_html_test);
-registerTest(fetch_image_element_test);
-registerTest(filter_publisher_test);
-registerTest(get_path_extension_test);
-registerModuleTests(indexedDBUtils_tests);
-registerModuleTests(image_size_filter_tests);
-registerModuleTests(import_entry_tests);
-registerTest(import_opml_test);
-registerModuleTests(migrations_tests);
-registerTest(mime_test);
-registerModuleTests(better_fetch_tests);
-registerTest(parse_feed_test);
-registerTest(remove_html_test);
-registerModuleTests(resource_utils_tests);
-registerModuleTests(set_base_uri_tests);
-registerTest(url_sniffer_test);
-registerModuleTests(filter_unprintables_tests);
-registerTest(subscribe_test);
-registerModuleTests(truncate_html_tests);
-registerModuleTests(unwrap_element_tests);
+registerTest(coerceElementTest);
+registerModuleTests(colorContrastFilterTests);
+registerTest(colorTest);
+registerModuleTests(domFilterTests);
+registerTest(exportOPMLTest);
+registerModuleTests(faviconTests);
+registerTest(fetchHTMLTest);
+registerTest(fetchImageElementTest);
+registerTest(filterPublisherTest);
+registerTest(getPathExtensionTest);
+registerModuleTests(indexedDBUtilsTests);
+registerModuleTests(imageSizeFilterTests);
+registerTest(importEntryTests);
+registerTest(importOPMLTest);
+registerModuleTests(migrationsTests);
+registerTest(mimeUtilsTest);
+registerModuleTests(betterFetchTests);
+registerTest(parseFeedTest);
+registerTest(removeHTMLTest);
+registerModuleTests(resourceUtilsTests);
+registerModuleTests(setBaseURITest);
+registerTest(urlSnifferTest);
+registerModuleTests(filterUnprintablesTest);
+registerTest(subscribeTest);
+registerModuleTests(truncateHTMLTests);
+registerModuleTests(unwrapElemenTests);
 
 // On module load, expose console commands
-window.run = cli_run;
-window.print_tests = cliPrintTests;
+window.run = cliRun;
+window.printTests = cliPrintTests;
 
 // On module load, populate the tests menu
 populateTestListView();
@@ -105,8 +105,8 @@ function registerTest(fn) {
 
 // Wrap a call to a test function with some extra log messages. Impose an
 // optional deadline for the test to complete by specifying a timeout.
-async function runTimedTest(test_function, timeout = 0) {
-  console.log('%s: started', test_function.name);
+async function runTimedTest(testFunction, timeout = 0) {
+  console.log('%s: started', testFunction.name);
 
   // The test will fail either immediately when creating the promise, or later
   // when awaiting the promise when the test has rejected, or after the timeout
@@ -116,32 +116,34 @@ async function runTimedTest(test_function, timeout = 0) {
   // because promises are not cancelable.
 
   if (timeout) {
-    const test_promise = test_function();
-    const timeout_promise = deferred_rejection(test_function, timeout);
-    await Promise.race([test_promise, timeout_promise]);
+    const testPromise = testFunction();
+    const timeoutPromise = deferredRejectionPromise(testFunction, timeout);
+    await Promise.race([testPromise, timeoutPromise]);
   } else {
-    await test_function();
+    await testFunction();
   }
 
-  console.log('%s: completed', test_function.name);
+  console.log('%s: completed', testFunction.name);
 }
 
 // TODO: timeout parameter should be instanceof Deadline
-function deferred_rejection(test_function, time_ms) {
-  const test_name = test_function.name.replace(/_/g, '-');
-  const error = new Error(`Test "${test_name}" timed out`);
-  return new Promise((_, reject) => setTimeout(reject, time_ms, error));
+function deferredRejectionPromise(testFunction, timeMs) {
+  const testName = testFunction.name.replace(/_/g, '-');
+  const error = new Error(`Test "${testName}" timed out`);
+  return new Promise((_, reject) => setTimeout(reject, timeMs, error));
 }
 
 function findTestByName(name) {
   // Allow for either - or _ as separator and mixed case
-  const normal_test_name = name.replace(/-/g, '_').toLowerCase();
+  const normalTestName = name.replace(/-/g, '_').toLowerCase();
 
-  for (const test_function of registry) {
-    if (test_function.name === normal_test_name) {
-      return test_function;
+  for (const testFunction of registry) {
+    if (testFunction.name === normalTestName) {
+      return testFunction;
     }
   }
+
+  return undefined;
 }
 
 // Run one or more tests either all at once or one after the other. In either
@@ -153,7 +155,7 @@ function findTestByName(name) {
 // @param parallel {Boolean} optional, whether to run tests in parallel or
 // serial, defaults to false (serial)
 // TODO: use Deadline here
-async function cli_run(name, timeout = 10000, parallel = true) {
+async function cliRun(name, timeout = 10000, parallel = true) {
   // Either run one test, run the named tests, or run all tests
 
   let tests;
@@ -179,7 +181,7 @@ async function cli_run(name, timeout = 10000, parallel = true) {
   }
 
   console.log('Spawning %d test(s)', tests.length);
-  const start_time = new Date();
+  const startTime = new Date();
 
   if (parallel) {
     const promises = [];
@@ -189,41 +191,42 @@ async function cli_run(name, timeout = 10000, parallel = true) {
     await Promise.all(promises);
   } else {
     for (const test of tests) {
+      // eslint-disable-next-line no-await-in-loop
       await runTimedTest(test, timeout);
     }
   }
 
-  const end_time = new Date();
-  const duration_ms = end_time - start_time;
-  console.log('%d tests completed in %d ms', tests.length, duration_ms);
+  const endTime = new Date();
+  const durationMs = endTime - startTime;
+  console.log('%d tests completed in %d ms', tests.length, durationMs);
 }
 
 function cliPrintTests() {
-  register.map(test => test.name).forEach(console.log);
+  registry.map(test => test.name).forEach(console.log);
 }
 
-function handle_test_anchor_click(event) {
+function handleTestAnchorClick(event) {
   event.stopPropagation();
   const anchor = event.target;
-  const test_name = anchor.getAttribute('test-name');
-  const test_function = findTestByName(test_name);
-  runTimedTest(test_function).catch(console.error);
+  const testName = anchor.getAttribute('test-name');
+  const testFunction = findTestByName(testName);
+  runTimedTest(testFunction).catch(console.error);
   return false;
 }
 
 function populateTestListView() {
   registry.sort();
 
-  const test_list = document.getElementById('tests');
+  const testListElement = document.getElementById('tests');
   for (const test of registry) {
     const anchor = document.createElement('a');
     anchor.href = '#';
     anchor.setAttribute('test-name', test.name);
-    anchor.onclick = handle_test_anchor_click;
+    anchor.onclick = handleTestAnchorClick;
     anchor.append(test.name.replace(/_/g, '-').toLowerCase());
 
-    const list_item = document.createElement('li');
-    list_item.append(anchor);
-    test_list.append(list_item);
+    const listItemElement = document.createElement('li');
+    listItemElement.append(anchor);
+    testListElement.append(listItemElement);
   }
 }

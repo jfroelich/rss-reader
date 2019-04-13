@@ -5,16 +5,15 @@ import * as db from '/src/db/db.js';
 import * as databaseUtils from '/test/database-utils.js';
 
 // Exercise the typical usage of export-opml
-export default async function export_opml_test() {
-  const database_name_prefix = 'export-opml-test';
-  await databaseUtils.remove_databases_for_prefix(database_name_prefix);
-  const database_name = databaseUtils.create_unique_database_name(database_name_prefix);
-
-  const conn = await databaseUtils.create_test_database(database_name);
+export default async function exportOPMLTest() {
+  const databaseNamePrefix = 'export-opml-test';
+  await databaseUtils.removeDatbasesForPrefix(databaseNamePrefix);
+  const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
+  const conn = await databaseUtils.createTestDatabase(databaseName);
 
   // Insert some test feeds
   const resources = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 3; i += 1) {
     const resource = {};
     db.setURL(resource, new URL(`a://b.c${i}`));
     resource.type = 'feed';
@@ -33,8 +32,8 @@ export default async function export_opml_test() {
 
   // Practice similar steps to what the UI would do. Load the resources back
   // from the database and convert them into outlines
-  const read_resources = await db.getResources({ conn, mode: 'feeds' });
-  const outlines = read_resources.map((resource) => {
+  const readResources = await db.getResources({ conn, mode: 'feeds' });
+  const outlines = readResources.map((resource) => {
     const outline = new Outline();
     outline.type = resource.feed_format;
 
@@ -55,13 +54,13 @@ export default async function export_opml_test() {
   assert(document instanceof Document);
 
   // The title should be set if specified
-  const title_element = document.querySelector('title');
-  assert(title_element);
-  assert(title_element.textContent === 'test-title');
+  const titleElement = document.querySelector('title');
+  assert(titleElement);
+  assert(titleElement.textContent === 'test-title');
 
   // The correct number of outlines should have been generated
-  const outline_elements = document.querySelectorAll('outline');
-  assert(outline_elements.length === resources.length);
+  const outlineElements = document.querySelectorAll('outline');
+  assert(outlineElements.length === resources.length);
 
   // For each feed that has a url, it should have a corresponding outline based
   // on the outline's xmlurl attribute value.

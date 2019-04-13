@@ -12,7 +12,7 @@ export default function countResources(query) {
     const resourcesStore = transaction.objectStore('resources');
     const typeReadIndex = resourcesStore.index('type-read');
     const request = typeReadIndex.count(['entry', 0]);
-    request.onsuccess = _ => resolve(request.result);
-    request.onerror = _ => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
   });
 }

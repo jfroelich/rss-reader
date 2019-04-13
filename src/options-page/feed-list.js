@@ -84,11 +84,11 @@ FeedList.prototype.appendFeed = function feedListAppendFeed(feed) {
   // sorting order as the database would use when loading data in getResources
   const normalFeedTitle = feedTitle.toLowerCase();
   let inserted = false;
-  for (const child_node of (this.listElement.childNodes)) {
-    const sortKeyString = child_node.getAttribute('sort-key') || '';
+  for (const childNode of (this.listElement.childNodes)) {
+    const sortKeyString = childNode.getAttribute('sort-key') || '';
 
     if (indexedDB.cmp(normalFeedTitle, sortKeyString.toLowerCase()) < 1) {
-      this.listElement.insertBefore(itemElement, child_node);
+      this.listElement.insertBefore(itemElement, childNode);
       inserted = true;
       break;
     }
@@ -115,7 +115,7 @@ FeedList.prototype.itemOnclick = async function feedListItemOnclick(event) {
   const conn = await db.open();
   let feed = await db.getResource(
     {
-      conn, mode: 'id', id: feedId, keyOnly: false,
+      conn, mode: 'id', id: feedId, keyOnly: false
     },
   );
   conn.close();
@@ -162,7 +162,7 @@ FeedList.prototype.itemOnclick = async function feedListItemOnclick(event) {
   }
 };
 
-FeedList.prototype.unsubscribeButtonOnclick = async function feedListUnsubscribeButtonOnclick(event) {
+FeedList.prototype.unsubscribeButtonOnclick = async function (event) {
   const feedId = parseInt(event.target.value, 10);
 
   const conn = await db.open();

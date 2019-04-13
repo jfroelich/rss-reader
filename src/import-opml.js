@@ -1,4 +1,4 @@
-import { parseOPML } from '/lib/parse-opml.js';
+import parseOPML from '/lib/parse-opml.js';
 import * as db from '/src/db/db.js';
 
 // Create and store feed objects in the database based on urls extracted from
@@ -8,7 +8,8 @@ export default async function importOPML(conn, files) {
 
   // Grab urls from each of the files. Per-file errors, including assertion
   // errors, are logged not thrown.
-  const promises = Array.prototype.map.call(files, file => findURLsInFile(file).catch(console.warn));
+  const promises = Array.prototype.map.call(files,
+    file => findURLsInFile(file).catch(console.warn));
   const results = await Promise.all(promises);
 
   // Flatten results into a simple array of urls
@@ -89,7 +90,7 @@ function readFileFullTextAsync(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsText(file);
-    reader.onload = _ => resolve(reader.result);
-    reader.onerror = _ => reject(reader.error);
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
   });
 }

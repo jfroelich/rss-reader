@@ -8,7 +8,7 @@ import parseHTML from '/lib/parse-html.js';
 // elements and text nodes (surprises side effects)
 // TODO: test error cases? what errors? invalid input?
 
-export default function coerce_element_test() {
+export default function coerceElementTest() {
   const input = '<html><head></head><body><p></p><a></a></body></html>';
   const doc = parseHTML(input);
 

@@ -35,8 +35,8 @@ export function unwrap_element_test() {
 
   // Assert that no space is added when the node is not adjacent to text nodes
   doc = parseHTML(
-    '<html><head></head><body><p>before</p>'
-      + '<a>hello</a><p>after</p></body></html>',
+    '<html><head></head><body><p>before</p>' +
+      '<a>hello</a><p>after</p></body></html>',
   );
   element = doc.querySelector('a');
   unwrapElement(element);

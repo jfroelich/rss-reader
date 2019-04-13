@@ -8,110 +8,110 @@ import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 // matches browser functionality for the domain oracle.com. oracle.com for
 // some reason returns the content type "unknown" which was previously an
 // cause of failure for lookups.
-export async function favicon_oracle_test() {
-  const db_name = favicon_oracle_test.name;
-  await indexedDBUtils.remove(db_name);
-  const conn = await favicon.open(db_name);
+export async function faviconOracleTest() {
+  const databaseName = faviconOracleTest.name;
+  await indexedDBUtils.remove(databaseName);
+  const conn = await favicon.open(databaseName);
 
   const url = new URL('https://www.oracle.com');
   const request = new favicon.LookupRequest();
   request.conn = conn;
   request.url = url;
 
-  const result_url = await favicon.lookup(request);
-  const result_url_string = result_url ? result_url.href : undefined;
+  const resultURL = await favicon.lookup(request);
+  const resultURLString = resultURL ? resultURL.href : undefined;
   const expected = 'https://www.oracle.com/favicon.ico';
-  assert(result_url_string === expected);
+  assert(resultURLString === expected);
   conn.close();
-  await indexedDBUtils.remove(db_name);
+  await indexedDBUtils.remove(databaseName);
 }
 
-export async function favicon_cache_open_test() {
-  const db_name = favicon_cache_open_test.name;
-  await indexedDBUtils.remove(db_name);
-  const conn = await favicon.open(db_name);
+export async function faviconCacheOpenTest() {
+  const databaseName = faviconCacheOpenTest.name;
+  await indexedDBUtils.remove(databaseName);
+  const conn = await favicon.open(databaseName);
   assert(typeof conn === 'object');
   assert(typeof conn.close === 'function');
   conn.close();
-  await indexedDBUtils.remove(db_name);
+  await indexedDBUtils.remove(conn.name);
 }
 
-export async function favicon_cache_put_find_test() {
-  await indexedDBUtils.remove(favicon_cache_put_find_test.name);
-  const conn = await favicon.open(favicon_cache_put_find_test.name);
+export async function faviconCachePutFindTest() {
+  await indexedDBUtils.remove(faviconCachePutFindTest.name);
+  const conn = await favicon.open(faviconCachePutFindTest.name);
   const entry = new favicon.Entry();
   entry.hostname = 'www.example.com';
-  const put_result = await favicon.putEntry(conn, entry);
-  const found_entry = await favicon.findEntry(conn, new URL(`http://${entry.hostname}`));
-  assert(found_entry);
-  assert(found_entry.hostname === entry.hostname);
+  await favicon.putEntry(conn, entry);
+  const foundEntry = await favicon.findEntry(conn, new URL(`http://${entry.hostname}`));
+  assert(foundEntry);
+  assert(foundEntry.hostname === entry.hostname);
   conn.close();
-  await indexedDBUtils.remove(favicon_cache_put_find_test.name);
+  await indexedDBUtils.remove(faviconCachePutFindTest.name);
 }
 
-export async function favicon_cache_clear_test() {
-  await indexedDBUtils.remove(favicon_cache_clear_test.name);
-  const conn = await favicon.open(favicon_cache_clear_test.name);
+export async function faviconCacheClearTest() {
+  await indexedDBUtils.remove(faviconCacheClearTest.name);
+  const conn = await favicon.open(faviconCacheClearTest.name);
 
-  const num_inserted = 3;
-  const create_promises = [];
-  for (let i = 0; i < num_inserted; i++) {
+  const insertCount = 3;
+  const createPromises = [];
+  for (let i = 0; i < insertCount; i += 1) {
     const entry = new favicon.Entry();
     entry.hostname = `www.example${i}.com`;
-    create_promises.push(favicon.putEntry(conn, entry));
+    createPromises.push(favicon.putEntry(conn, entry));
   }
-  await Promise.all(create_promises);
+  await Promise.all(createPromises);
 
-  const pre_count = await count_entries(conn);
-  assert(pre_count === num_inserted);
+  const beforeClearCount = await countEntries(conn);
+  assert(beforeClearCount === insertCount);
   await favicon.clear(conn);
-  const post_count = await count_entries(conn);
-  assert(post_count === 0);
+  const afterClearCount = await countEntries(conn);
+  assert(afterClearCount === 0);
 
   conn.close();
-  await indexedDBUtils.remove(favicon_cache_clear_test.name);
+  await indexedDBUtils.remove(faviconCacheClearTest.name);
 }
 
 // Insert a mix of expired and non-expired entries. Then run compact and check
 // the expired entries are gone and the non-expired entries remain.
-export async function favicon_cache_compact_test() {
-  const db_name = favicon_cache_compact_test.name;
-  await indexedDBUtils.remove(db_name);
-  const conn = await favicon.open(db_name);
+export async function faviconCacheCompactTest() {
+  const databaseName = faviconCacheCompactTest.name;
+  await indexedDBUtils.remove(databaseName);
+  const conn = await favicon.open(databaseName);
 
-  const six_months = 1000 * 60 * 60 * 24 * 31 * 6;
+  const sixMonthsInMillis = 1000 * 60 * 60 * 24 * 31 * 6;
 
-  const create_promises = [];
-  for (let i = 0; i < 10; i++) {
+  const createPromises = [];
+  for (let i = 0; i < 10; i += 1) {
     const entry = new favicon.Entry();
     entry.hostname = `www.example${i}.com`;
 
     const now = new Date();
     if ((i % 2) === 0) {
-      entry.expires = new Date(now.getTime() - six_months);
+      entry.expires = new Date(now.getTime() - sixMonthsInMillis);
     } else {
-      entry.expires = new Date(now.getTime() + six_months);
+      entry.expires = new Date(now.getTime() + sixMonthsInMillis);
     }
 
     const promise = favicon.putEntry(conn, entry);
-    create_promises.push(promise);
+    createPromises.push(promise);
   }
 
-  await Promise.all(create_promises);
+  await Promise.all(createPromises);
   await favicon.compact(conn);
 
-  const find_promises = [];
-  for (let i = 0; i < 10; i++) {
+  const findPromises = [];
+  for (let i = 0; i < 10; i += 1) {
     const url = new URL(`http://www.example${i}.com`);
-    find_promises.push(favicon.findEntry(conn, url));
+    findPromises.push(favicon.findEntry(conn, url));
   }
-  const results = await Promise.all(find_promises);
-  for (let i = 0; i < 10; i++) {
+  const results = await Promise.all(findPromises);
+  for (let i = 0; i < 10; i += 1) {
     assert(i % 2 ? results[i] !== undefined : results[i] === undefined);
   }
 
   conn.close();
-  await indexedDBUtils.remove(db_name);
+  await indexedDBUtils.remove(databaseName);
 }
 
 // This is not part of the built in api. It would exist only for test purposes.
@@ -119,20 +119,20 @@ export async function favicon_cache_compact_test() {
 // which is allowed to know of internals. Keep in mind this may fail
 // unexpectedly whenever favicon.js is modified. I might move this into
 // favicon but am undecided.
-function count_entries(conn) {
+function countEntries(conn) {
   return new Promise((resolve, reject) => {
     const txn = conn.transaction('entries');
     txn.onerror = event => reject(event.target.error);
     const store = txn.objectStore('entries');
     const request = store.count();
-    request.onsuccess = _ => resolve(request.result);
+    request.onsuccess = () => resolve(request.result);
   });
 }
 
-export async function fetch_image_test() {
+export async function fetchImageTest() {
   let path = '/test/favicon-fetch-image-test.png';
-  let url_string = resolve_extension_path(path);
-  let url = new URL(url_string);
+  let urlString = resolveExtensionPath(path);
+  let url = new URL(urlString);
 
   // Test using explicit indefiniteness
   let options = { timeout: INDEFINITE };
@@ -147,8 +147,8 @@ export async function fetch_image_test() {
 
   // Test against a non-existent image
   path = '/src/lib/i-do-not-exist.png';
-  url_string = resolve_extension_path(path);
-  url = new URL(url_string);
+  urlString = resolveExtensionPath(path);
+  url = new URL(urlString);
   options = undefined; // reset for isolation, presumably indefinite default
   let error404;
   try {
@@ -173,6 +173,6 @@ export async function fetch_image_test() {
   assert(error404 instanceof NetworkError);
 }
 
-function resolve_extension_path(path) {
+function resolveExtensionPath(path) {
   return chrome.extension.getURL(path);
 }

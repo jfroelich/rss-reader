@@ -2,26 +2,25 @@ import assert from '/lib/assert.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 import countResources from '/src/db/count-resources.js';
 import createResource from '/src/db/create-resource.js';
-import * as resourceUtils from '/src/db/resource-utils.js';
 import * as databaseUtils from '/test/database-utils.js';
 
-export default async function count_resources_test() {
-  const database_name_prefix = 'count-resources-test';
-  await databaseUtils.remove_databases_for_prefix(database_name_prefix);
-  const database_name = databaseUtils.create_unique_database_name(database_name_prefix);
+export default async function countResourcesTest() {
+  const databaseNamePrefix = 'count-resources-test';
+  await databaseUtils.removeDatbasesForPrefix(databaseNamePrefix);
+  const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
 
-  const conn = await databaseUtils.create_test_database(database_name);
+  const conn = await databaseUtils.createTestDatabase(databaseName);
 
   // Verify counting nothing is 0
   let count = await countResources({ conn, read: 0, type: 'entry' });
   assert(count === 0);
 
-  const create_promises = [];
-  for (let i = 0; i < 8; i++) {
+  const createPromises = [];
+  for (let i = 0; i < 8; i += 1) {
     const resource = { read: (i > 2 ? 1 : 0), title: `test ${i}`, type: 'entry' };
-    create_promises.push(createResource(conn, resource));
+    createPromises.push(createResource(conn, resource));
   }
-  await Promise.all(create_promises);
+  await Promise.all(createPromises);
 
   count = await countResources({ conn, read: 0, type: 'entry' });
   assert(count === 3);

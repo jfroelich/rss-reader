@@ -87,7 +87,7 @@ export function getInaccessibleContentDescriptors() {
     { pattern: /productforums\.google\.com$/i, reason: 'script-generated' },
     { pattern: /groups\.google\.com$/i, reason: 'script-generated' },
     { pattern: /nytimes\.com$/i, reason: 'paywall' },
-    { pattern: /wsj\.com$/i, reason: 'paywall' },
+    { pattern: /wsj\.com$/i, reason: 'paywall' }
   ];
 }
 
@@ -153,7 +153,7 @@ const backgroundImageFilenames = [
   'subtle-patterns-soft-wallpaper.png',
   'subtle-patterns-white-wall.png',
   'subtle-patterns-witewall-3.png',
-  'thomas-zucx-noise-lines.png',
+  'thomas-zucx-noise-lines.png'
 ];
 
 // Default font names. These must correspond to the names used in CSS.
@@ -175,14 +175,14 @@ const defaultFontNames = [
   'Open Sans Regular',
   'PathwayGothicOne',
   'PlayfairDisplaySC',
-  'Roboto Regular',
+  'Roboto Regular'
 ];
 
 // The extension updated, or the background page was reloaded
-export function handleUpdate(event) {
+export function handleUpdate() {
   const deprecatedKeys = [
     'channel_name', 'db_name', 'db_open_timeout', 'db_version', 'debug',
-    'entry_title_max_length', 'refresh_badge_delay', 'last_poll_date',
+    'entry_title_max_length', 'refresh_badge_delay', 'last_poll_date'
   ];
 
   for (const key of deprecatedKeys) {
@@ -217,7 +217,7 @@ export function handleUpdate(event) {
   }
 }
 
-export function init(event) {
+export function init() {
   writeBoolean('reuse_newtab', true);
   writeBoolean('notifications_enabled', true);
   writeBoolean('only_poll_if_idle', true);
@@ -360,7 +360,7 @@ function pageStyleCreateEntryRule() {
   return buffer.join('');
 }
 
-function pageStyleCreateTitleRule(sheet) {
+function pageStyleCreateTitleRule() {
   const buffer = [];
   const fontSize = readInt('header_font_size');
   if (!isNaN(fontSize)) {
@@ -375,7 +375,7 @@ function pageStyleCreateTitleRule(sheet) {
   return buffer.join('');
 }
 
-function pageStyleCreateContentRule(sheet) {
+function pageStyleCreateContentRule() {
   const buffer = [];
   const fontSize = readInt('body_font_size');
   if (!isNaN(fontSize)) {
