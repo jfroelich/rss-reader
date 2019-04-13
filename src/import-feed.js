@@ -137,12 +137,11 @@ function importEntries(entries, args) {
     // TODO: decouple from config. In the interim I am loading from config here
     // in order to decouple import-empty from config.
     iea.filterOptions = {};
-    iea.filterOptions.contrast_matte = config.readInt('contrast_default_matte');
-    iea.filterOptions.contrast_ratio = config.readFloat('min_contrast_ratio');
-    // TODO: read from config (temporarily hardcoded due to a bug)
-    iea.filterOptions.set_image_sizes_timeout = new Deadline(7000);
-    // TODO: read from config (temporarily hardcoded due to a bug)
-    iea.filterOptions.setImageDimensionsTimeout = new Deadline(7000);
+    iea.filterOptions.contrastMatte = config.readInt('contrast_default_matte');
+    iea.filterOptions.contrastRatio = config.readFloat('min_contrast_ratio');
+    // TODO: read from config
+    iea.filterOptions.reachableImageFilterTimeout = new Deadline(7000);
+    iea.filterOptions.imageDimensionsFilterTimeout = new Deadline(7000);
     iea.filterOptions.tableScanMaxRows = config.readInt('table_scan_max_rows');
 
     const emphasisMaxLength = config.readInt('emphasis_max_length');
@@ -150,7 +149,7 @@ function importEntries(entries, args) {
       iea.filterOptions.emphasisMaxLength = emphasisMaxLength;
     }
 
-    iea.filterOptions.empty_frame_body_message = 'Unable to display document because it uses HTML frames';
+    iea.filterOptions.emptyFrameBodyMessage = 'Unable to display document because it uses HTML frames';
 
     return importEntryNoexcept(iea);
   });
