@@ -39,10 +39,10 @@ function requestOnsuccess(query, callback, event) {
   if (typeof result !== 'undefined') {
     if (query.keyOnly) {
       // key only match
-      callback({ id: event.target.result });
+      callback({ id: result });
     } else {
       // full match
-      callback(event.target.result);
+      callback(result);
     }
   } else {
     // no match

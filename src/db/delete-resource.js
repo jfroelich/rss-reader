@@ -17,9 +17,8 @@ function deleteResourceExecutor(conn, id, reason, resolve, reject) {
 
   const transaction = conn.conn.transaction('resources', 'readwrite');
   transaction.onerror = event => reject(event.target.error);
-  transaction.oncomplete = transactionOncomplete.bind(
-    transaction, id, reason, dependentIds, conn.channel, resolve,
-  );
+  transaction.oncomplete = transactionOncomplete.bind(transaction, id, reason, dependentIds,
+    conn.channel, resolve);
 
   const resourcesStore = transaction.objectStore('resources');
   resourcesStore.delete(id);
