@@ -1,8 +1,8 @@
-import assert from '/lib/assert.js';
-import * as indexedDBUtils from '/lib/indexeddb-utils.js';
-import * as db from '/src/db/db.js';
-import importOPML from '/src/import-opml.js';
 import * as databaseUtils from '/test/database-utils.js';
+import * as db from '/src/db/db.js';
+import * as indexedDBUtils from '/lib/indexeddb-utils.js';
+import assert from '/lib/assert.js';
+import importOPML from '/src/import-opml.js';
 
 export default async function importOPMLTest() {
   const databaseNamePrefix = 'import-opml-test';

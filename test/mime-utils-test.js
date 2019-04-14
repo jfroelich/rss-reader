@@ -1,5 +1,5 @@
-import assert from '/lib/assert.js';
 import * as mime from '/lib/mime-utils.js';
+import assert from '/lib/assert.js';
 
 export default function mimeUtilsTest() {
   const a = assert;

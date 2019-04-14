@@ -1,5 +1,5 @@
 // import assert from '/lib/assert.js';
-// import colorContrastFilter from '/lib/dom-filters/color-contrast-filter.js';
+// import colorContrastFilter from '/lib/dom-filters/color-contrast.js';
 import parseHTML from '/lib/parse-html.js';
 
 export function colorContrastFilterTest() {

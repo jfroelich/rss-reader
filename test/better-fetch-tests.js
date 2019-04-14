@@ -1,5 +1,5 @@
+import { AcceptError, NetworkError, betterFetch } from '/lib/better-fetch.js';
 import assert from '/lib/assert.js';
-import { AcceptError, betterFetch, NetworkError } from '/lib/better-fetch.js';
 
 export async function betterFetchOrdinaryTest() {
   // Exercise an ordinary case of the function on a local file and assert that

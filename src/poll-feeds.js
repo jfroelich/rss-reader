@@ -1,8 +1,8 @@
-import assert, { isAssertError } from '/lib/assert.js';
-import { Deadline } from '/lib/deadline.js';
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
-import { importFeed, ImportFeedArgs } from '/src/import-feed.js';
+import { Deadline } from '/lib/deadline.js';
+import { ImportFeedArgs, importFeed } from '/src/import-feed.js';
+import assert, { isAssertError } from '/lib/assert.js';
 import showNotification from '/src/show-notification.js';
 
 export function PollFeedsArgs() {

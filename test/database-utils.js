@@ -1,8 +1,8 @@
-import assert from '/lib/assert.js';
+import * as db from '/src/db/db.js';
 import { INDEFINITE } from '/lib/deadline.js';
 import { open, remove } from '/lib/indexeddb-utils.js';
-import * as db from '/src/db/db.js';
 import RecordingChannel from '/test/recording-channel.js';
+import assert from '/lib/assert.js';
 
 // A global counter that resides in memory.
 let nameCounter = 0;

@@ -1,6 +1,6 @@
+import * as resourceUtils from '/src/db/resource-utils.js';
 import assert from '/lib/assert.js';
 import filterEmptyProperties from '/lib/filter-empty-properties.js';
-import * as resourceUtils from '/src/db/resource-utils.js';
 
 // TODO: support new resource type "enclosure" that is child of type entry
 

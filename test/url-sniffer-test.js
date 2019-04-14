@@ -1,5 +1,5 @@
-import assert from '/lib/assert.js';
 import * as urlSniffer from '/lib/url-sniffer.js';
+import assert from '/lib/assert.js';
 
 export default function () {
   // Local aliases

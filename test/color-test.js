@@ -1,5 +1,5 @@
-import assert from '/lib/assert.js';
 import * as color from '/lib/color.js';
+import assert from '/lib/assert.js';
 
 export default function colorTest() {
   // Check the named colors are valid

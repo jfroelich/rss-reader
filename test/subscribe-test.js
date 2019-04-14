@@ -1,9 +1,9 @@
-import assert from '/lib/assert.js';
-import { INDEFINITE } from '/lib/deadline.js';
-import * as indexedDBUtils from '/lib/indexeddb-utils.js';
-import * as db from '/src/db/db.js';
-import subscribe from '/src/subscribe.js';
 import * as databaseUtils from '/test/database-utils.js';
+import * as db from '/src/db/db.js';
+import * as indexedDBUtils from '/lib/indexeddb-utils.js';
+import { INDEFINITE } from '/lib/deadline.js';
+import assert from '/lib/assert.js';
+import subscribe from '/src/subscribe.js';
 
 export default async function () {
   const databaseNamePrefix = 'subscribe-test';

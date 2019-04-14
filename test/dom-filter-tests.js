@@ -1,10 +1,10 @@
-import assert from '/lib/assert.js';
-import { INDEFINITE } from '/lib/deadline.js';
 import * as domFilters from '/lib/dom-filters/dom-filters.js';
-import removeEmptyAttributes from '/lib/dom-filters/remove-empty-attributes.js';
-import removeUnreachableImageElements from '/lib/dom-filters/remove-unreachable-image-elements.js';
+import { INDEFINITE } from '/lib/deadline.js';
+import assert from '/lib/assert.js';
 import parseHTML from '/lib/parse-html.js';
+import removeEmptyAttributes from '/lib/dom-filters/remove-empty-attributes.js';
 import removeOverEmphasis from '/lib/dom-filters/over-emphasis.js';
+import removeUnreachableImageElements from '/lib/dom-filters/remove-unreachable-image-elements.js';
 import transformLazilyLoadedImageElements from '/lib/dom-filters/lazily-loaded-images.js';
 
 // TODO: implement a simple straightforward test that exercises the normal cases.

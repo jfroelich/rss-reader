@@ -1,5 +1,5 @@
-import assert from '/lib/assert.js';
 import * as resourceUtils from '/src/db/resource-utils.js';
+import assert from '/lib/assert.js';
 
 export function isValidIdTest() {
   assert(!resourceUtils.isValidId(-1));

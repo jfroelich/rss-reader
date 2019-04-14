@@ -1,7 +1,7 @@
-import assert from '/lib/assert.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 import * as migrations from '/src/db/migrations.js';
 import RecordingChannel from '/test/recording-channel.js';
+import assert from '/lib/assert.js';
 
 // TODO: this should access migrations via db, not violate the API surface
 

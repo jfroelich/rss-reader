@@ -1,6 +1,6 @@
 import assert from '/lib/assert.js';
-import setAllImageElementDimensions from '/lib/dom-filters/set-all-image-element-dimensions.js';
 import parseHTML from '/lib/parse-html.js';
+import setAllImageElementDimensions from '/lib/dom-filters/set-all-image-element-dimensions.js';
 
 export async function cssOffsetPropertiesTest() {
   let input;

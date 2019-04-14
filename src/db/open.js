@@ -1,8 +1,8 @@
-import assert from '/lib/assert.js';
-import { Deadline } from '/lib/deadline.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
-import Connection from '/src/db/connection.js';
 import * as migrations from '/src/db/migrations.js';
+import { Deadline } from '/lib/deadline.js';
+import Connection from '/src/db/connection.js';
+import assert from '/lib/assert.js';
 
 export const defaultName = 'reader';
 export const defaultVersion = 35;

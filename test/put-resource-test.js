@@ -1,9 +1,9 @@
-import assert from '/lib/assert.js';
+import * as databaseUtils from '/test/database-utils.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
+import assert from '/lib/assert.js';
 import createResource from '/src/db/create-resource.js';
 import getResource from '/src/db/get-resource.js';
 import putResource from '/src/db/put-resource.js';
-import * as databaseUtils from '/test/database-utils.js';
 
 export default async function putResourceTest() {
   const databaseNamePrefix = 'put-resource-test';

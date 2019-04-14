@@ -1,8 +1,8 @@
-import assert from '/lib/assert.js';
-import { exportOPML, Outline } from '/lib/export-opml.js';
-import * as indexedDBUtils from '/lib/indexeddb-utils.js';
-import * as db from '/src/db/db.js';
 import * as databaseUtils from '/test/database-utils.js';
+import * as db from '/src/db/db.js';
+import * as indexedDBUtils from '/lib/indexeddb-utils.js';
+import { Outline, exportOPML } from '/lib/export-opml.js';
+import assert from '/lib/assert.js';
 
 // Exercise the typical usage of export-opml
 export default async function exportOPMLTest() {

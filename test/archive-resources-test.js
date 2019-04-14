@@ -1,9 +1,9 @@
-import assert from '/lib/assert.js';
+import * as databaseUtils from '/test/database-utils.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 import archiveResources from '/src/db/archive-resources.js';
+import assert from '/lib/assert.js';
 import createResource from '/src/db/create-resource.js';
 import getResources from '/src/db/get-resources.js';
-import * as databaseUtils from '/test/database-utils.js';
 
 // Exercise typical execution of archive-resources
 export default async function archiveResourcesTest() {

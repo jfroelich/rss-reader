@@ -1,7 +1,7 @@
-import * as favicon from '/lib/favicon.js';
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
-import { pollFeeds, PollFeedsArgs } from '/src/poll-feeds.js';
+import * as favicon from '/lib/favicon.js';
+import { PollFeedsArgs, pollFeeds } from '/src/poll-feeds.js';
 import refreshFeedIcons from '/src/refresh-feed-icons.js';
 
 const HALF_DAY_MINUTES = 60 * 12;

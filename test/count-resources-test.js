@@ -1,8 +1,8 @@
-import assert from '/lib/assert.js';
+import * as databaseUtils from '/test/database-utils.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
+import assert from '/lib/assert.js';
 import countResources from '/src/db/count-resources.js';
 import createResource from '/src/db/create-resource.js';
-import * as databaseUtils from '/test/database-utils.js';
 
 export default async function countResourcesTest() {
   const databaseNamePrefix = 'count-resources-test';

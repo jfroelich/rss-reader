@@ -1,19 +1,17 @@
-import assert from '/lib/assert.js';
+import * as databaseUtils from '/test/database-utils.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
+import assert from '/lib/assert.js';
 import createResource from '/src/db/create-resource.js';
 import getResource from '/src/db/get-resource.js';
 import patchResource from '/src/db/patch-resource.js';
-import * as databaseUtils from '/test/database-utils.js';
 
-export default async function patch_resource_test() {
+export default async function patchResourceTest() {
   const databaseNamePrefix = 'patch-resource-test';
   await databaseUtils.removeDatbasesForPrefix(databaseNamePrefix);
   const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
-
   const conn = await databaseUtils.createTestDatabase(databaseName);
 
   const id = await createResource(conn, { type: 'entry', read: 0 });
-
   let match = await getResource({ conn, mode: 'id', id });
   assert(match);
   assert(match.read === 0);

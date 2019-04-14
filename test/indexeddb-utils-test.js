@@ -1,5 +1,5 @@
-import assert from '/lib/assert.js';
 import { open, remove } from '/lib/indexeddb-utils.js';
+import assert from '/lib/assert.js';
 
 // Exercise a prototypical open, close, delete sequence. No errors should occur.
 export async function indexedDBUtilsBasicTest() {

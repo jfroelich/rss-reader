@@ -1,6 +1,6 @@
-import assert from '/lib/assert.js';
 import * as config from '/src/config.js';
 import { rewriteURL } from '/src/import-entry.js';
+import assert from '/lib/assert.js';
 
 // Exercise the rewrite-url helper
 export default async function importEntryTests() {

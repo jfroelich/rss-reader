@@ -1,8 +1,8 @@
-import assert from '/lib/assert.js';
-import { NetworkError } from '/lib/better-fetch.js';
-import { Deadline, INDEFINITE } from '/lib/deadline.js';
 import * as favicon from '/lib/favicon.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
+import { Deadline, INDEFINITE } from '/lib/deadline.js';
+import { NetworkError } from '/lib/better-fetch.js';
+import assert from '/lib/assert.js';
 
 // This is a very specific test that ensures favicon lookup functionality
 // matches browser functionality for the domain oracle.com. oracle.com for
