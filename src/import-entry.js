@@ -1,5 +1,5 @@
 import { INDEFINITE } from '/lib/deadline.js';
-import { compositeDocumentFilter } from '/lib/dom-filters/dom-filters.js';
+import { applyAllDOMFilters } from '/lib/dom-filters/dom-filters.js';
 import * as favicon from '/lib/favicon.js';
 import fetchHTML from '/lib/fetch-html.js';
 import parseHTML from '/lib/parse-html.js';
@@ -100,7 +100,7 @@ export async function importEntry(args) {
     }
   }
 
-  await compositeDocumentFilter(doc, args.filterOptions);
+  await applyAllDOMFilters(doc, args.filterOptions);
   entry.content = doc.documentElement.outerHTML;
 
   entry.type = 'entry';

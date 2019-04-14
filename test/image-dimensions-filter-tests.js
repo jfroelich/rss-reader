@@ -1,5 +1,5 @@
 import assert from '/lib/assert.js';
-import imageDimensionsFilter from '/lib/dom-filters/image-dimensions-filter.js';
+import setAllImageElementDimensions from '/lib/dom-filters/set-all-image-element-dimensions.js';
 import parseHTML from '/lib/parse-html.js';
 
 export async function cssOffsetPropertiesTest() {
@@ -9,7 +9,7 @@ export async function cssOffsetPropertiesTest() {
 
   input = '<img style="width: 1px; height: 1px;">';
   doc = parseHTML(input);
-  await imageDimensionsFilter(doc);
+  await setAllImageElementDimensions(doc);
   image = doc.querySelector('img');
 
   // It is very poorly documented, but there are in fact different behaviors
@@ -47,7 +47,7 @@ export async function cssOffsetPropertiesTest() {
   input = '<html><head><style>img{ width: 1px; height: 1px; }</style></head>' +
       '<body><img></body></html>';
   doc = parseHTML(input);
-  await imageDimensionsFilter(doc);
+  await setAllImageElementDimensions(doc);
   image = doc.querySelector('img');
   assert(image.width === 0);
   assert(image.height === 0);
@@ -80,13 +80,13 @@ export async function imageDimensionsFilterCSSTest() {
 
   input = '<img style="width: 1px; height: 1px;">';
   doc = parseHTML(input);
-  await imageDimensionsFilter(doc);
+  await setAllImageElementDimensions(doc);
   image = doc.querySelector('img');
   console.debug(image.outerHTML);
 
   input = '<img style="width: 100%; height: 100%;">';
   doc = parseHTML(input);
-  await imageDimensionsFilter(doc);
+  await setAllImageElementDimensions(doc);
   image = doc.querySelector('img');
   console.debug(image.outerHTML);
 }
@@ -96,7 +96,7 @@ export async function imageDimensionsFilterCSSTest() {
 export async function imageDimensionsFilterTest() {
   const input = '<img src="/test/basic-image.png">';
   const doc = parseHTML(input);
-  await imageDimensionsFilter(doc);
+  await setAllImageElementDimensions(doc);
   const image = doc.querySelector('img');
   assert(image.width === 16);
   assert(image.height === 12);
@@ -107,7 +107,7 @@ export async function imageDimensionsFilter404Test() {
   const input = '<img src="i-am-a-missing-image-example.gif">';
   const doc = parseHTML(input);
   // This should not throw
-  await imageDimensionsFilter(doc);
+  await setAllImageElementDimensions(doc);
   // The properties for the image should not be initialized.
   const image = doc.querySelector('img');
   assert(image.width === 0);
@@ -119,14 +119,14 @@ export async function imageDimensionsFilterTextOnlyTest() {
   const input = 'no images here';
   const doc = parseHTML(input);
   // should not throw
-  await imageDimensionsFilter(doc);
+  await setAllImageElementDimensions(doc);
 }
 
 export async function imageDimensionsFilterSourcelessTest() {
   const input = '<img title="missing src">';
   const doc = parseHTML(input);
   // This should not throw
-  await imageDimensionsFilter(doc);
+  await setAllImageElementDimensions(doc);
   // Properties should not be initialized
   const image = doc.querySelector('img');
   assert(image.width === 0);

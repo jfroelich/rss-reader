@@ -1,11 +1,13 @@
 import assert from '/lib/assert.js';
 import { INDEFINITE } from '/lib/deadline.js';
 import * as domFilters from '/lib/dom-filters/dom-filters.js';
-import imageReachableFilter from '/lib/dom-filters/image-reachable-filter.js';
+import removeEmptyAttributes from '/lib/dom-filters/remove-empty-attributes.js';
+import removeUnreachableImageElements from '/lib/dom-filters/remove-unreachable-image-elements.js';
 import parseHTML from '/lib/parse-html.js';
+import removeOverEmphasis from '/lib/dom-filters/over-emphasis.js';
+import transformLazilyLoadedImageElements from '/lib/dom-filters/lazily-loaded-images.js';
 
-// TODO: implement a simple straightforward test that exercises the normal
-// cases.
+// TODO: implement a simple straightforward test that exercises the normal cases.
 // TODO: implement tests for the abnormal cases
 // TODO: specifically test various threshold parameter values
 
@@ -16,13 +18,13 @@ export function emphasisFilterTest() {
   // Specifically test the nesting filter
   input = '<b><b>b</b></b>';
   doc = parseHTML(input);
-  domFilters.emphasisFilter(doc);
+  removeOverEmphasis(doc);
   assert(doc.querySelectorAll('b').length === 1);
 
   // In mixed, test inner child removed and outer parent remains
   input = '<b><strong>b-strong</strong></b>';
   doc = parseHTML(input);
-  domFilters.emphasisFilter(doc);
+  removeOverEmphasis(doc);
   assert(!doc.querySelector('strong'));
   assert(doc.querySelector('b'));
 }
@@ -36,34 +38,34 @@ export function anchorScriptFilterTest() {
   // A non-href non-javascript anchor should not be affected
   input = '<a>test</a>';
   doc = parseHTML(input);
-  domFilters.anchorScriptFilter(doc);
+  domFilters.unwrapAnchorElementsWithScriptURLs(doc);
   assert(doc.querySelector('a'));
 
   // An anchor with a relative href without a javascript protocol should not
   // be affected
   input = '<a href="foo.html">foo</a>';
   doc = parseHTML(input);
-  domFilters.anchorScriptFilter(doc);
+  domFilters.unwrapAnchorElementsWithScriptURLs(doc);
   assert(doc.querySelector('a'));
 
   // An anchor with an absolute href without a javascript protocol should not
   // be affected
   input = '<a href="http://www.example.com/foo.html">foo</a>';
   doc = parseHTML(input);
-  domFilters.anchorScriptFilter(doc);
+  domFilters.unwrapAnchorElementsWithScriptURLs(doc);
   assert(doc.querySelector('a'));
 
   // A well-formed javascript anchor should be removed
   input = '<a href="javascript:console.log(\'im in ur base\')">hax</a>';
   doc = parseHTML(input);
-  domFilters.anchorScriptFilter(doc);
+  domFilters.unwrapAnchorElementsWithScriptURLs(doc);
   assert(!doc.querySelector('a'));
 
   // A well-formed javascript anchor with leading space should still be removed,
   // because the spec says browsers should tolerate leading and trailing space
   input = '<a href=" javascript:console.log(\'im in ur base\')">hax</a>';
   doc = parseHTML(input);
-  domFilters.anchorScriptFilter(doc);
+  domFilters.unwrapAnchorElementsWithScriptURLs(doc);
   assert(!doc.querySelector('a'));
 
   // A malformed javascript anchor with space before colon should be unaffected
@@ -72,7 +74,7 @@ export function anchorScriptFilterTest() {
   // still match the base uri protocol after the filter.
   input = '<a href="javascript  :console.log(\'im in ur base\')">hax</a>';
   doc = parseHTML(input);
-  domFilters.anchorScriptFilter(doc);
+  domFilters.unwrapAnchorElementsWithScriptURLs(doc);
   assert(doc.querySelector('a'));
 }
 
@@ -80,14 +82,14 @@ export function attributeEmptyFilterTest() {
   // Simple empty non-boolean attribute in body
   let input = '<html><head></head><body><a name="">test</a></body></html>';
   let doc = parseHTML(input);
-  domFilters.attributeEmptyFilter(doc);
+  removeEmptyAttributes(doc);
   let output = '<html><head></head><body><a>test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);
 
   // boolean attribute with value in body
   input = '<html><head></head><body><a disabled="disabled">test</a></body></html>';
   doc = parseHTML(input);
-  domFilters.attributeEmptyFilter(doc);
+  removeEmptyAttributes(doc);
   output = '<html><head></head><body><a disabled="disabled">test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);
 
@@ -95,7 +97,7 @@ export function attributeEmptyFilterTest() {
   // TODO: is this right? not sure if ="" belongs
   input = '<html><head></head><body><a disabled="">test</a></body></html>';
   doc = parseHTML(input);
-  domFilters.attributeEmptyFilter(doc);
+  removeEmptyAttributes(doc);
   output = '<html><head></head><body><a disabled="">test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);
 
@@ -104,7 +106,7 @@ export function attributeEmptyFilterTest() {
   // Body element with attribute
   // input = '<html><head></head><body foo="">test</body></html>';
   // doc = parseHTML(input);
-  // domFilters.attributeEmptyFilter(doc);
+  // removeEmptyAttributes(doc);
   // output = '<html><head></head><body foo="">test</body></html>';
   // console.debug(doc.documentElement.outerHTML, output);
   // assert(doc.documentElement.outerHTML === output);
@@ -112,21 +114,21 @@ export function attributeEmptyFilterTest() {
   // Multiple elements with non-boolean attributes in body
   input = '<html><head></head><body><p id=""><a name="">test</a></p></body></html>';
   doc = parseHTML(input);
-  domFilters.attributeEmptyFilter(doc);
+  removeEmptyAttributes(doc);
   output = '<html><head></head><body><p><a>test</a></p></body></html>';
   assert(doc.documentElement.outerHTML === output);
 
   // Multiple non-boolean attributes in element in body
   input = '<html><head></head><body><a id="" name="">test</a></body></html>';
   doc = parseHTML(input);
-  domFilters.attributeEmptyFilter(doc);
+  removeEmptyAttributes(doc);
   output = '<html><head></head><body><a>test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);
 
   // Element with both non-boolean and boolean attribute in body
   input = '<html><head></head><body><a id="" disabled="">test</a></body></html>';
   doc = parseHTML(input);
-  domFilters.attributeEmptyFilter(doc);
+  removeEmptyAttributes(doc);
   output = '<html><head></head><body><a disabled="">test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);
 }
@@ -135,7 +137,7 @@ export function imageLazyFilterTest() {
   // Exercise the ordinary case of a substitution
   let input = '<img id="test" data-src="test.gif">';
   let doc = parseHTML(input);
-  domFilters.imageLazyFilter(doc);
+  transformLazilyLoadedImageElements(doc);
   let image = doc.querySelector('#test');
   assert(image);
   assert(image.getAttribute('src') === 'test.gif');
@@ -143,7 +145,7 @@ export function imageLazyFilterTest() {
   // An image with a src is not lazy and should not be overwritten
   input = '<img id="test" src="before.gif" lazy-src="after.gif">';
   doc = parseHTML(input);
-  domFilters.imageLazyFilter(doc);
+  transformLazilyLoadedImageElements(doc);
   image = doc.querySelector('#test');
   assert(image);
   assert(image.getAttribute('src') === 'before.gif');
@@ -152,7 +154,7 @@ export function imageLazyFilterTest() {
   // explicit listed attribute names are candidates
   input = '<img id="test" foo-bar-baz="test.gif">';
   doc = parseHTML(input);
-  domFilters.imageLazyFilter(doc);
+  transformLazilyLoadedImageElements(doc);
   image = doc.querySelector('#test');
   assert(image);
   let srcValue = image.getAttribute('src');
@@ -162,7 +164,7 @@ export function imageLazyFilterTest() {
   // bad value, should leave the source as is
   input = '<img id="test" lazy-src="bad value">';
   doc = parseHTML(input);
-  domFilters.imageLazyFilter(doc);
+  transformLazilyLoadedImageElements(doc);
   image = doc.querySelector('#test');
   assert(image);
   srcValue = image.getAttribute('src');
@@ -178,7 +180,7 @@ export async function imageReachableFilterTest() {
 
   assert(doc.querySelector('#unreachable'));
   assert(doc.querySelector('.reachable'));
-  await imageReachableFilter(doc, INDEFINITE);
+  await removeUnreachableImageElements(doc, INDEFINITE);
 
   let image = doc.querySelector('#unreachable');
   assert(!image);
