@@ -24,18 +24,13 @@ export function writeBoolean(key, value) {
   }
 }
 
-// TODO: drop support for fallback value
-export function readInt(key, fallbackValue) {
+export function readInt(key) {
   const stringValue = localStorage[key];
   if (stringValue) {
     const integerValue = parseInt(stringValue, 10);
     if (!isNaN(integerValue)) {
       return integerValue;
     }
-  }
-
-  if (Number.isInteger(fallbackValue)) {
-    return fallbackValue;
   }
 
   return NaN;

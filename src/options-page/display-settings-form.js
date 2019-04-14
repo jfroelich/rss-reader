@@ -30,7 +30,7 @@ DisplaySettingsForm.prototype.init = function (parent) {
   input.setAttribute('step', '1');
   input.onchange = this.entryMarginSliderOnchange.bind(this);
 
-  const currentEntryMargin = config.readInt('padding', 0);
+  const currentEntryMargin = config.readInt('padding');
   if (!isNaN(currentEntryMargin)) {
     input.value = currentEntryMargin;
   }
