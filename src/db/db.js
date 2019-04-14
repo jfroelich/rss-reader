@@ -1,16 +1,36 @@
-import * as databaseErrors from '/src/db/errors.js';
+// Rule 10.3 of airbnb style guide says we cannot use the export one-liner
 
-export { default as archiveResources } from '/src/db/archive-resources.js';
-export { default as Connection } from '/src/db/connection.js';
-export { default as countResources } from '/src/db/count-resources.js';
-export { default as createResource } from '/src/db/create-resource.js';
-export { default as deleteResource } from '/src/db/delete-resource.js';
-export { default as getResource } from '/src/db/get-resource.js';
-export { default as getResources } from '/src/db/get-resources.js';
-export { default as open, defaultUpgradeNeededHandler, defaultVersion } from '/src/db/open.js';
-export { default as patchResource } from '/src/db/patch-resource.js';
-export { default as putResource } from '/src/db/put-resource.js';
-export {
+import { ConstraintError, NotFoundError } from '/src/db/errors.js';
+import {
   getURL, getURLString, hasURL, isValidId, setURL
 } from '/src/db/resource-utils.js';
-export const errors = databaseErrors;
+import Connection from '/src/db/connection.js';
+import archiveResources from '/src/db/archive-resources.js';
+import countResources from '/src/db/count-resources.js';
+import createResource from '/src/db/create-resource.js';
+import deleteResource from '/src/db/delete-resource.js';
+import getResource from '/src/db/get-resource.js';
+import getResources from '/src/db/get-resources.js';
+import open, { defaultUpgradeNeededHandler, defaultVersion } from '/src/db/open.js';
+import patchResource from '/src/db/patch-resource.js';
+import putResource from '/src/db/put-resource.js';
+
+export { archiveResources };
+export { countResources };
+export { createResource };
+export { deleteResource };
+export { getResource };
+export { getResources };
+export { getURL };
+export { getURLString };
+export { hasURL };
+export { isValidId };
+export { open };
+export { defaultUpgradeNeededHandler };
+export { defaultVersion };
+export { patchResource };
+export { putResource };
+export { setURL };
+export { Connection };
+export { ConstraintError };
+export { NotFoundError };

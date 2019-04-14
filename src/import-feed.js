@@ -54,7 +54,7 @@ export async function importFeed(args) {
 
     if (existingFeed) {
       const message = `Already subscribed to redirected feed url ${responseURL.href}`;
-      throw new db.errors.ConstraintError(message);
+      throw new db.ConstraintError(message);
     }
   }
 
@@ -164,7 +164,7 @@ async function importEntryNoexcept(args) {
   } catch (error) {
     if (isAssertError(error)) {
       throw error;
-    } else if (error instanceof db.errors.ConstraintError) {
+    } else if (error instanceof db.ConstraintError) {
       // Ignore
     } else {
       // For debugging
@@ -205,7 +205,7 @@ async function validateFeedIsUnique(feed, conn) {
 
   if (existingFeed) {
     const message = `Already subscribed to feed with url ${url.href}`;
-    throw new db.errors.ConstraintError(message);
+    throw new db.ConstraintError(message);
   }
 }
 

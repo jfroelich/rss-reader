@@ -115,7 +115,7 @@ SubscriptionForm.prototype.onsubmit = async function (event) {
       throw error;
     }
 
-    if (error instanceof db.errors.ConstraintError) {
+    if (error instanceof db.ConstraintError) {
       console.debug('Already subscribed to feed', url.href);
       this.appendMonitorMessage(
         `Already subscribed to feed with similar url ${url.href}`,

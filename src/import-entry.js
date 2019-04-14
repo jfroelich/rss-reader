@@ -39,7 +39,7 @@ export async function importEntry(args) {
 
   if (existingEntry) {
     const message = `The entry with url ${afterRewriteURL.href} already exists.`;
-    throw new db.errors.ConstraintError(message);
+    throw new db.ConstraintError(message);
   }
 
   // Fetch the entry's full content. Rethrow any errors.
@@ -61,7 +61,7 @@ export async function importEntry(args) {
       });
       if (existingEntry) {
         const message = `The entry with url ${rewrittenURL.href} already exists.`;
-        throw new db.errors.ConstraintError(message);
+        throw new db.ConstraintError(message);
       }
     }
   }
