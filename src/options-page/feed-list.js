@@ -113,15 +113,10 @@ FeedList.prototype.itemOnclick = async function feedListItemOnclick(event) {
   const feedId = parseInt(itemElement.getAttribute('feed'), 10);
 
   const conn = await db.open();
-  let feed = await db.getResource(
-    {
-      conn, mode: 'id', id: feedId, keyOnly: false
-    },
-  );
+  const feed = await db.getResource({
+    conn, mode: 'id', id: feedId, keyOnly: false
+  });
   conn.close();
-
-  // TODO: i don't think this is needed anymore
-  feed = Object.assign({}, feed);
 
   const detailsTitleElement = document.getElementById('details-title');
   detailsTitleElement.textContent = feed.title || db.getURLString(feed);

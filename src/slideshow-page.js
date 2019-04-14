@@ -58,11 +58,9 @@ async function showNextSlide() {
     if (!isNaN(configLimit)) {
       limit = configLimit;
     }
-    entries = await db.getResources(
-      {
-        conn, mode, offset, limit
-      },
-    );
+    entries = await db.getResources({
+      conn, mode, offset, limit
+    });
   }
   conn.close();
 
@@ -1078,11 +1076,9 @@ async function initializeSlideshowPage() {
   showSplashElement();
 
   const conn = await db.open();
-  const getEntriesPromise = db.getResources(
-    {
-      conn, mode: 'viewable-entries', offset: 0, limit: 6
-    },
-  );
+  const getEntriesPromise = db.getResources({
+    conn, mode: 'viewable-entries', offset: 0, limit: 6
+  });
   const getFeedsPromise = db.getResources({ conn, mode: 'feeds', titleSort: true });
   conn.close();
 

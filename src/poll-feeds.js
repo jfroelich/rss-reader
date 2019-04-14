@@ -39,9 +39,7 @@ export async function pollFeeds(args) {
 
   localStorage.last_poll_timestamp = `${Date.now()}`;
 
-  const feeds = await db.getResources(
-    { conn: args.conn, mode: 'active-feeds', titleSort: false },
-  );
+  const feeds = await db.getResources({ conn: args.conn, mode: 'active-feeds', titleSort: false });
   console.debug('Loaded %d active feeds for polling', feeds.length);
 
   // Start concurrently polling each feed resource

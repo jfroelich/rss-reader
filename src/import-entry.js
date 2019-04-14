@@ -56,11 +56,9 @@ export async function importEntry(args) {
       const rewrittenURL = rewriteURL(responseURL, args.rewriteRules);
       db.setURL(entry, rewrittenURL);
 
-      const existingEntry = db.getResource(
-        {
-          conn: args.conn, mode: 'url', url: rewrittenURL, keyOnly: true
-        },
-      );
+      const existingEntry = db.getResource({
+        conn: args.conn, mode: 'url', url: rewrittenURL, keyOnly: true
+      });
       if (existingEntry) {
         const message = `The entry with url ${rewrittenURL.href} already exists.`;
         throw new db.errors.ConstraintError(message);
