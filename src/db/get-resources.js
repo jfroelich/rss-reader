@@ -1,10 +1,10 @@
 import assert from '/lib/assert.js';
 
-export default function getResources(query) {
-  return new Promise(getResourcesExecutor.bind(this, query));
+export default function getResources(conn, query) {
+  return new Promise(getResourcesExecutor.bind(this, conn, query));
 }
 
-function getResourcesExecutor(query, resolve, reject) {
+function getResourcesExecutor(conn, query, resolve, reject) {
   assert(query && typeof query === 'object');
 
   const modes = [
@@ -16,7 +16,7 @@ function getResourcesExecutor(query, resolve, reject) {
 
   const resources = [];
 
-  const transaction = query.conn.conn.transaction('resources');
+  const transaction = conn.conn.transaction('resources');
   transaction.oncomplete = transactionOncomplete.bind(transaction, resources, query, resolve);
   transaction.onerror = event => reject(event.target.error);
 

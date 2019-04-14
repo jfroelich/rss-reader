@@ -12,12 +12,12 @@ export default async function patchResourceTest() {
   const conn = await databaseUtils.createTestDatabase(databaseName);
 
   const id = await createResource(conn, { type: 'entry', read: 0 });
-  let match = await getResource({ conn, mode: 'id', id });
+  let match = await getResource(conn, { mode: 'id', id });
   assert(match);
   assert(match.read === 0);
 
   await patchResource(conn, { id, read: 1 });
-  match = await getResource({ conn, mode: 'id', id });
+  match = await getResource(conn, { mode: 'id', id });
   assert(match);
   assert(match.read === 1);
 

@@ -17,7 +17,7 @@ export default function FeedList() {
 
 FeedList.prototype.init = async function feedListInit(parent) {
   const conn = await db.open();
-  const feeds = await db.getResources({ conn, mode: 'feeds', titleSort: true });
+  const feeds = await db.getResources(conn, { mode: 'feeds', titleSort: true });
   conn.close();
 
   const listElement = document.createElement('ul');
@@ -113,9 +113,7 @@ FeedList.prototype.itemOnclick = async function feedListItemOnclick(event) {
   const feedId = parseInt(itemElement.getAttribute('feed'), 10);
 
   const conn = await db.open();
-  const feed = await db.getResource({
-    conn, mode: 'id', id: feedId, keyOnly: false
-  });
+  const feed = await db.getResource(conn, { mode: 'id', id: feedId, keyOnly: false });
   conn.close();
 
   const detailsTitleElement = document.getElementById('details-title');

@@ -58,9 +58,7 @@ async function showNextSlide() {
     if (!isNaN(configLimit)) {
       limit = configLimit;
     }
-    entries = await db.getResources({
-      conn, mode, offset, limit
-    });
+    entries = await db.getResources(conn, { mode, offset, limit });
   }
   conn.close();
 
@@ -445,7 +443,7 @@ function importOPMLPrompt() {
 async function handleExportButtonClick() {
   // Load all feeds from the database
   const conn = await db.open();
-  const resources = await db.getResources({ conn, mode: 'feeds' });
+  const resources = await db.getResources(conn, { mode: 'feeds' });
   conn.close();
 
   // Convert the loaded feeds into outlines
@@ -688,8 +686,7 @@ async function onmessage(event) {
     // logic.
 
     const conn = await db.open();
-    const entries = await db.getResources({
-      conn,
+    const entries = await db.getResources(conn, {
       mode: 'viewable-entries',
       offset: unreadSlideCount,
       limit: undefined
@@ -1076,10 +1073,10 @@ async function initializeSlideshowPage() {
   showSplashElement();
 
   const conn = await db.open();
-  const getEntriesPromise = db.getResources({
-    conn, mode: 'viewable-entries', offset: 0, limit: 6
+  const getEntriesPromise = db.getResources(conn, {
+    mode: 'viewable-entries', offset: 0, limit: 6
   });
-  const getFeedsPromise = db.getResources({ conn, mode: 'feeds', titleSort: true });
+  const getFeedsPromise = db.getResources(conn, { mode: 'feeds', titleSort: true });
   conn.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)

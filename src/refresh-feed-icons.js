@@ -2,7 +2,7 @@ import * as db from '/src/db/db.js';
 import lookupFeedFavicon from '/src/lookup-feed-favicon.js';
 
 export default async function refreshFeedIcons(conn, iconn) {
-  const feeds = await db.getResources({ conn, mode: 'active-feeds', titleSort: false });
+  const feeds = await db.getResources(conn, { mode: 'active-feeds', titleSort: false });
   const promises = [];
   for (const feed of feeds) {
     promises.push(refreshFeedIcon(feed, conn, iconn));

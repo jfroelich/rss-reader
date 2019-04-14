@@ -33,8 +33,8 @@ export async function importEntry(args) {
 
   // Check if the entry with the possibly rewritten url already exists
   const afterRewriteURL = db.getURL(entry);
-  const existingEntry = await db.getResource({
-    conn: args.conn, mode: 'url', url: afterRewriteURL, keyOnly: true
+  const existingEntry = await db.getResource(args.conn, {
+    mode: 'url', url: afterRewriteURL, keyOnly: true
   });
 
   if (existingEntry) {
@@ -56,8 +56,8 @@ export async function importEntry(args) {
       const rewrittenURL = rewriteURL(responseURL, args.rewriteRules);
       db.setURL(entry, rewrittenURL);
 
-      const existingEntry = db.getResource({
-        conn: args.conn, mode: 'url', url: rewrittenURL, keyOnly: true
+      const existingEntry = db.getResource(args.conn, {
+        mode: 'url', url: rewrittenURL, keyOnly: true
       });
       if (existingEntry) {
         const message = `The entry with url ${rewrittenURL.href} already exists.`;

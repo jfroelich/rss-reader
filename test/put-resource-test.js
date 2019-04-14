@@ -16,13 +16,13 @@ export default async function putResourceTest() {
   const id = await createResource(conn, {
     title: 'first', type: 'entry', parent: fakeParentResourceId
   });
-  let resource = await getResource({ conn, mode: 'id', id });
+  let resource = await getResource(conn, { mode: 'id', id });
   assert(resource);
   assert(resource.title === 'first');
 
   resource.title = 'second';
   await putResource(conn, resource);
-  resource = await getResource({ conn, mode: 'id', id });
+  resource = await getResource(conn, { mode: 'id', id });
   assert(resource);
   assert(resource.title === 'second');
 

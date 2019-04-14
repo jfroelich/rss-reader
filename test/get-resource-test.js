@@ -14,7 +14,7 @@ export default async function getResourceTest() {
   const resource = { type: 'entry', title: 'test' };
   const id = await createResource(conn, resource);
 
-  const match = await getResource({ conn, mode: 'id', id });
+  const match = await getResource(conn, { mode: 'id', id });
   assert(match);
 
   conn.close();

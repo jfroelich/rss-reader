@@ -19,7 +19,7 @@ export default async function deleteResourceTest() {
 
   await deleteResource(conn, feedId, 'test');
 
-  const match = await getResource({ conn, mode: 'id', id: feedId });
+  const match = await getResource(conn, { mode: 'id', id: feedId });
   assert(!match);
 
   assert(conn.channel.messages.length);

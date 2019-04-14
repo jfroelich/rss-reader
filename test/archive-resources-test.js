@@ -28,7 +28,7 @@ export default async function archiveResourcesTest() {
   const maxAge = 1;
   await archiveResources(conn, maxAge);
 
-  const resources = await getResources({ conn, mode: 'all' });
+  const resources = await getResources(conn, { mode: 'all' });
   assert(resources.length === 5);
 
   for (const resource of resources) {

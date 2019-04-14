@@ -48,8 +48,8 @@ export async function importFeed(args) {
 
   // Check if redirected
   if (args.create && fetchURL.href !== responseURL.href) {
-    const existingFeed = await db.getResource({
-      conn: args.conn, mode: 'url', url: responseURL, keyOnly: true
+    const existingFeed = await db.getResource(args.conn, {
+      mode: 'url', url: responseURL, keyOnly: true
     });
 
     if (existingFeed) {
@@ -201,9 +201,7 @@ function updateModelFeedFromParsedFeed(feed, parsedFeed) {
 async function validateFeedIsUnique(feed, conn) {
   const url = db.getURL(feed);
 
-  const existingFeed = await db.getResource({
-    conn, mode: 'url', url, keyOnly: true
-  });
+  const existingFeed = await db.getResource(conn, { mode: 'url', url, keyOnly: true });
 
   if (existingFeed) {
     const message = `Already subscribed to feed with url ${url.href}`;

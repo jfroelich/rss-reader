@@ -16,7 +16,7 @@ export default async function getResourcesTest() {
   }
   await Promise.all(createPromises);
 
-  const resources = await getResources({ conn, mode: 'all' });
+  const resources = await getResources(conn, { mode: 'all' });
   assert(resources.length === 5);
 
   conn.close();

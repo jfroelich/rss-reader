@@ -32,7 +32,7 @@ export default async function exportOPMLTest() {
 
   // Practice similar steps to what the UI would do. Load the resources back
   // from the database and convert them into outlines
-  const readResources = await db.getResources({ conn, mode: 'feeds' });
+  const readResources = await db.getResources(conn, { mode: 'feeds' });
   const outlines = readResources.map((resource) => {
     const outline = new Outline();
     outline.type = resource.feed_format;

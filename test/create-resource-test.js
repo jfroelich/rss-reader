@@ -20,14 +20,10 @@ export default async function createResourceTest() {
   const id = await createResource(conn, resource);
   assert(resourceUtils.isValidId(id));
 
-  let match = await getResource({
-    conn, mode: 'id', id, keyOnly: false
-  });
+  let match = await getResource(conn, { mode: 'id', id, keyOnly: false });
   assert(match);
 
-  match = await getResource({
-    conn, mode: 'url', url, keyOnly: true
-  });
+  match = await getResource(conn, { mode: 'url', url, keyOnly: true });
   assert(match);
 
   // Creating a feed without a url is an error

@@ -8,13 +8,12 @@ export default async function archiveResources(conn, maxAge = TWO_DAYS_MS) {
   assert(maxAge >= 0);
   const currentDate = new Date();
   const query = {
-    conn,
     mode: 'archivable-entries',
     offset: 0,
     limit: 100
   };
 
-  let resources = await getResources(query);
+  let resources = await getResources(conn, query);
 
   while (resources.length) {
     for (const resource of resources) {
@@ -38,7 +37,7 @@ export default async function archiveResources(conn, maxAge = TWO_DAYS_MS) {
     if (resources.length === query.limit) {
       query.offset += query.limit;
       // eslint-disable-next-line no-await-in-loop
-      resources = await getResources(query);
+      resources = await getResources(conn, query);
     } else {
       resources = [];
     }
