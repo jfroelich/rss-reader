@@ -6,8 +6,7 @@ import * as imageSizeFilterTests from '/test/image-dimensions-filter-tests.js';
 import * as indexedDBUtilsTests from '/test/indexeddb-utils-test.js';
 import * as migrationsTests from '/test/migrations-tests.js';
 import * as resourceUtilsTests from '/test/resource-utils-tests.js';
-import * as truncateHTMLTests from '/test/truncate-html-tests.js';
-import * as unwrapElemenTests from '/test/unwrap-element-tests.js';
+import * as unwrapElementTests from '/test/unwrap-element-tests.js';
 import archiveResourcesTest from '/test/archive-resources-test.js';
 import coerceElementTest from '/test/coerce-element-test.js';
 import colorTest from '/test/color-test.js';
@@ -31,6 +30,7 @@ import putResourceTest from '/test/put-resource-test.js';
 import removeHTMLTest from '/test/remove-html-test.js';
 import setBaseURITest from '/test/set-base-uri-test.js';
 import subscribeTest from '/test/subscribe-test.js';
+import truncateHTMLTest from '/test/truncate-html-tests.js';
 import urlSnifferTest from '/test/url-sniffer-test.js';
 
 const registry = [];
@@ -47,31 +47,80 @@ registerTest(putResourceTest);
 
 // Other tests
 registerTest(coerceElementTest);
-registerModuleTests(colorContrastFilterTests);
+registerTest(colorContrastFilterTests.colorContrastFilterTest);
+registerTest(colorContrastFilterTests.colorParseTypedCSSTest);
 registerTest(colorTest);
-registerModuleTests(domFilterTests);
+registerTest(domFilterTests.emphasisFilterTest);
+registerTest(domFilterTests.anchorScriptFilterTest);
+registerTest(domFilterTests.attributeEmptyFilterTest);
+registerTest(domFilterTests.imageLazyFilterTest);
+registerTest(domFilterTests.imageReachableFilterTest);
+registerTest(domFilterTests.condenseTagnamesFilterTest);
+
 registerTest(exportOPMLTest);
-registerModuleTests(faviconTests);
+
+registerTest(faviconTests.faviconOracleTest);
+registerTest(faviconTests.faviconCacheOpenTest);
+registerTest(faviconTests.faviconCachePutFindTest);
+registerTest(faviconTests.faviconCacheClearTest);
+registerTest(faviconTests.faviconCacheCompactTest);
+registerTest(faviconTests.fetchImageTest);
+
+
 registerTest(fetchHTMLTest);
 registerTest(fetchImageElementTest);
 registerTest(filterPublisherTest);
 registerTest(getPathExtensionTest);
-registerModuleTests(indexedDBUtilsTests);
-registerModuleTests(imageSizeFilterTests);
+
+registerTest(indexedDBUtilsTests.indexedDBUtilsBasicTest);
+registerTest(indexedDBUtilsTests.indexedDBUtilsOldVersionTest);
+registerTest(indexedDBUtilsTests.indexedDBUtilsUnnamedTest);
+registerTest(indexedDBUtilsTests.indexedDBUtilsBadVersionTest);
+registerTest(indexedDBUtilsTests.indexedDBUtilsFunctionObjectTest);
+
+registerTest(imageSizeFilterTests.cssOffsetPropertiesTest);
+registerTest(imageSizeFilterTests.pictureWithoutSrcAttributeTest);
+registerTest(imageSizeFilterTests.imageDimensionsFilterTest);
+registerTest(imageSizeFilterTests.imageDimensionsFilterTextOnlyTest);
+registerTest(imageSizeFilterTests.imageDimensionsFilterSourcelessTest);
+
 registerTest(importEntryTests);
 registerTest(importOPMLTest);
-registerModuleTests(migrationsTests);
+
+registerTest(migrationsTests.migrationsTests20);
+registerTest(migrationsTests.migrationsTests23);
+registerTest(migrationsTests.migrationsTests30);
+registerTest(migrationsTests.migrationsTests31);
+registerTest(migrationsTests.migrationsTests32);
+registerTest(migrationsTests.migrationsTests33);
+
+
 registerTest(mimeUtilsTest);
-registerModuleTests(betterFetchTests);
+
+registerTest(betterFetchTests.betterFetchOrdinaryTest);
+registerTest(betterFetchTests.betterFetchGoodTypeTest);
+registerTest(betterFetchTests.betterFetchBadTypeTest);
+registerTest(betterFetchTests.betterFetchLocal404Test);
+
 registerTest(parseFeedTest);
 registerTest(removeHTMLTest);
-registerModuleTests(resourceUtilsTests);
-registerModuleTests(setBaseURITest);
+
+registerTest(resourceUtilsTests.isValidIdTest);
+registerTest(resourceUtilsTests.appendURLTest);
+registerTest(resourceUtilsTests.normalizeResourceTest);
+registerTest(resourceUtilsTests.sanitizeTest);
+
+registerTest(setBaseURITest);
+
 registerTest(urlSnifferTest);
-registerModuleTests(filterUnprintablesTest);
+
+registerTest(filterUnprintablesTest);
+
 registerTest(subscribeTest);
-registerModuleTests(truncateHTMLTests);
-registerModuleTests(unwrapElemenTests);
+registerTest(truncateHTMLTest);
+
+registerTest(unwrapElementTests.unwrapElementTest);
+registerTest(unwrapElementTests.unwrapElementListTest);
 
 // On module load, expose console commands
 window.run = cliRun;
@@ -80,15 +129,6 @@ window.printTests = cliPrintTests;
 // On module load, populate the tests menu
 populateTestListView();
 
-function registerModuleTests(mod) {
-  for (const id in mod) {
-    // obj.prop notation does not work here
-    // TODO: switch to endsWith as a stricter condition?
-    if (typeof mod[id] === 'function' && id.includes('_test')) {
-      registerTest(mod[id]);
-    }
-  }
-}
 
 function registerTest(fn) {
   if (typeof fn !== 'function') {
@@ -126,19 +166,14 @@ async function runTimedTest(testFunction, timeout = 0) {
   console.log('%s: completed', testFunction.name);
 }
 
-// TODO: timeout parameter should be instanceof Deadline
 function deferredRejectionPromise(testFunction, timeMs) {
-  const testName = testFunction.name.replace(/_/g, '-');
-  const error = new Error(`Test "${testName}" timed out`);
+  const error = new Error(`Test "${testFunction.name}" timed out`);
   return new Promise((_, reject) => setTimeout(reject, timeMs, error));
 }
 
 function findTestByName(name) {
-  // Allow for either - or _ as separator and mixed case
-  const normalTestName = name.replace(/-/g, '_').toLowerCase();
-
   for (const testFunction of registry) {
-    if (testFunction.name === normalTestName) {
+    if (testFunction.name === name) {
       return testFunction;
     }
   }
@@ -210,6 +245,12 @@ function handleTestAnchorClick(event) {
   const anchor = event.target;
   const testName = anchor.getAttribute('test-name');
   const testFunction = findTestByName(testName);
+
+  if (!testFunction) {
+    console.error('Could not find test function', testName);
+    return false;
+  }
+
   runTimedTest(testFunction).catch(console.error);
   return false;
 }
@@ -223,7 +264,7 @@ function populateTestListView() {
     anchor.href = '#';
     anchor.setAttribute('test-name', test.name);
     anchor.onclick = handleTestAnchorClick;
-    anchor.append(test.name.replace(/_/g, '-').toLowerCase());
+    anchor.append(test.name);
 
     const listItemElement = document.createElement('li');
     listItemElement.append(anchor);

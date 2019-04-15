@@ -84,7 +84,7 @@ function escapeUnicodeString(string) {
   return string.replace(/[^\0-~]/g, ch => `\\u${(`000${ch.charCodeAt(0).toString(16)}`).slice(-4)}`);
 }
 
-export default function sanitizeTest() {
+export function sanitizeTest() {
   const resource = {};
   let content = 'hello world';
   resource.content = content;
