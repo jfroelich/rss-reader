@@ -4,6 +4,7 @@ import * as db from '/src/db/db.js';
 import * as favicon from '/src/lib/favicon.js';
 import { Deadline } from '/src/lib/deadline.js';
 import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
+import archiveResources from '/src/service/archive-resources.js';
 import refreshFeedIcons from '/src/service/refresh-feed-icons.js';
 import subscribe from '/src/service/subscribe.js';
 import unsubscribe from '/src/service/unsubscribe.js';
@@ -19,7 +20,7 @@ function getAllAlarms() {
 async function archiveResourcesCommand() {
   console.log('Archiving resources...');
   const conn = await db.open();
-  const resourceIds = await db.archiveResources(conn);
+  const resourceIds = await archiveResources(conn);
   conn.close();
   console.debug('Archived %d resources', resourceIds.length);
 }

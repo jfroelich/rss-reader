@@ -1,7 +1,7 @@
 import * as databaseUtils from '/src/test/database-utils.js';
 import * as indexedDBUtils from '/src/lib/indexeddb-utils.js';
 import TestRegistry from '/src/test/test-registry.js';
-import archiveResources from '/src/db/archive-resources.js';
+import archiveResources from '/src/service/archive-resources.js';
 import assert from '/src/lib/assert.js';
 import createResource from '/src/db/create-resource.js';
 import getResources from '/src/db/get-resources.js';

@@ -2,6 +2,7 @@ import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/lib/favicon.js';
 import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
+import archiveResources from '/src/service/archive-resources.js';
 import refreshFeedIcons from '/src/service/refresh-feed-icons.js';
 
 // TODO: split into cron service and cron control? or is this really just a control?
@@ -60,7 +61,7 @@ export async function alarmListener(alarm) {
 
   if (alarm.name === 'archive') {
     const conn = await db.open();
-    await db.archiveResources(conn);
+    await archiveResources(conn);
     conn.close();
   } else if (alarm.name === 'poll') {
     await handleAlarmPoll();

@@ -1,8 +1,5 @@
+import * as db from '/src/db/db.js';
 import assert from '/src/lib/assert.js';
-import getResources from '/src/db/get-resources.js';
-import patchResource from '/src/db/patch-resource.js';
-
-// TODO: now that this uses multiple transactions, consider moving it back to services layer
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
@@ -15,11 +12,14 @@ export default async function archiveResources(conn, maxAge = TWO_DAYS_MS) {
     limit: 100
   };
 
-  let resources = await getResources(conn, query);
+  const archivedResourceIds = [];
+
+  let resources = await db.getResources(conn, query);
 
   while (resources.length) {
     for (const resource of resources) {
       if (resource.created_date && (currentDate - resource.created_date > maxAge)) {
+        archivedResourceIds.push(resource.id);
         const deltaTransitions = {
           id: resource.id,
           title: undefined,
@@ -31,7 +31,7 @@ export default async function archiveResources(conn, maxAge = TWO_DAYS_MS) {
           archived: 1
         };
         // eslint-disable-next-line no-await-in-loop
-        await patchResource(conn, deltaTransitions);
+        await db.patchResource(conn, deltaTransitions);
       }
     }
 
@@ -39,9 +39,11 @@ export default async function archiveResources(conn, maxAge = TWO_DAYS_MS) {
     if (resources.length === query.limit) {
       query.offset += query.limit;
       // eslint-disable-next-line no-await-in-loop
-      resources = await getResources(conn, query);
+      resources = await db.getResources(conn, query);
     } else {
       resources = [];
     }
   }
+
+  return archivedResourceIds;
 }

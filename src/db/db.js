@@ -5,7 +5,6 @@ import {
   getURL, getURLString, hasURL, isValidId, setURL
 } from '/src/db/resource-utils.js';
 import Connection from '/src/db/connection.js';
-import archiveResources from '/src/db/archive-resources.js';
 import countResources from '/src/db/count-resources.js';
 import createResource from '/src/db/create-resource.js';
 import deleteResource from '/src/db/delete-resource.js';
@@ -15,7 +14,6 @@ import open, { defaultUpgradeNeededHandler, defaultVersion } from '/src/db/open.
 import patchResource from '/src/db/patch-resource.js';
 import putResource from '/src/db/put-resource.js';
 
-export { archiveResources };
 export { countResources };
 export { createResource };
 export { deleteResource };
