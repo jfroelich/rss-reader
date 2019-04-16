@@ -1,11 +1,11 @@
 import * as db from '/src/db/db.js';
-import * as favicon from '/lib/favicon.js';
-import * as urlSniffer from '/lib/url-sniffer.js';
-import { INDEFINITE } from '/lib/deadline.js';
-import { applyAllDOMFilters } from '/lib/dom-filters/dom-filters.js';
-import fetchHTML from '/lib/fetch-html.js';
-import parseHTML from '/lib/parse-html.js';
-import setBaseURI from '/lib/set-base-uri.js';
+import * as favicon from '/src/lib/favicon.js';
+import * as urlSniffer from '/src/lib/url-sniffer.js';
+import { INDEFINITE } from '/src/lib/deadline.js';
+import { applyAllDOMFilters } from '/src/lib/dom-filters/dom-filters.js';
+import fetchHTML from '/src/lib/fetch-html.js';
+import parseHTML from '/src/lib/parse-html.js';
+import setBaseURI from '/src/lib/set-base-uri.js';
 
 export function ImportEntryArgs() {
   this.entry = undefined;

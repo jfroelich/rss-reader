@@ -1,5 +1,5 @@
 import * as resourceUtils from '/src/db/resource-utils.js';
-import assert from '/lib/assert.js';
+import assert from '/src/lib/assert.js';
 
 // TODO: support deleting enclosures?
 

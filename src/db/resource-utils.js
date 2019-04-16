@@ -1,8 +1,8 @@
-import assert from '/lib/assert.js';
-import filterControls from '/lib/filter-controls.js';
-import filterUnprintables from '/lib/filter-unprintables.js';
-import removeHTML from '/lib/remove-html.js';
-import truncateHTML from '/lib/truncate-html.js';
+import assert from '/src/lib/assert.js';
+import filterControls from '/src/lib/filter-controls.js';
+import filterUnprintables from '/src/lib/filter-unprintables.js';
+import removeHTML from '/src/lib/remove-html.js';
+import truncateHTML from '/src/lib/truncate-html.js';
 
 const knownResourcePropertyNames = [
   'active',

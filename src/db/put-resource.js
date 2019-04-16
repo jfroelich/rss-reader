@@ -1,7 +1,7 @@
 import * as resourceUtils from '/src/db/resource-utils.js';
 import Connection from '/src/db/connection.js';
-import assert from '/lib/assert.js';
-import filterEmptyProperties from '/lib/filter-empty-properties.js';
+import assert from '/src/lib/assert.js';
+import filterEmptyProperties from '/src/lib/filter-empty-properties.js';
 
 export default function putResource(conn, resource) {
   return new Promise(putResourceExecutor.bind(this, conn, resource));

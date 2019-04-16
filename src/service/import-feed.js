@@ -1,10 +1,10 @@
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
-import * as feedParser from '/lib/feed-parser.js';
-import { Deadline, INDEFINITE } from '/lib/deadline.js';
+import * as feedParser from '/src/lib/feed-parser.js';
+import { Deadline, INDEFINITE } from '/src/lib/deadline.js';
 import { ImportEntryArgs, importEntry } from '/src/service/import-entry.js';
-import { betterFetch } from '/lib/better-fetch.js';
-import assert, { isAssertError } from '/lib/assert.js';
+import { betterFetch } from '/src/lib/better-fetch.js';
+import assert, { isAssertError } from '/src/lib/assert.js';
 import lookupFeedFavicon from '/src/service/utils/lookup-feed-favicon.js';
 
 export function ImportFeedArgs() {

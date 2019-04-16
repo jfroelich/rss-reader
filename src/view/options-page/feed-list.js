@@ -1,5 +1,5 @@
 import * as db from '/src/db/db.js';
-import assert from '/lib/assert.js';
+import assert from '/src/lib/assert.js';
 import unsubscribe from '/src/service/unsubscribe.js';
 
 export default function FeedList() {

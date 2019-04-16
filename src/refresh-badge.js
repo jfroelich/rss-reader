@@ -1,5 +1,5 @@
 import * as db from '/src/db/db.js';
-import { Deadline } from '/lib/deadline.js';
+import { Deadline } from '/src/lib/deadline.js';
 
 // TODO: implement BadgeControl, move this to control folder, rewire everything
 

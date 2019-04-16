@@ -1,5 +1,5 @@
 import * as db from '/src/db/db.js';
-import parseOPML from '/lib/parse-opml.js';
+import parseOPML from '/src/lib/parse-opml.js';
 
 // Create and store feed objects in the database based on urls extracted from
 // zero or more opml files. |files| should be a FileList or an Array.

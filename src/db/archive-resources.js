@@ -1,4 +1,4 @@
-import assert from '/lib/assert.js';
+import assert from '/src/lib/assert.js';
 import getResources from '/src/db/get-resources.js';
 import patchResource from '/src/db/patch-resource.js';
 

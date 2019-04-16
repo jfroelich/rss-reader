@@ -1,8 +1,8 @@
 import * as resourceUtils from '/src/db/resource-utils.js';
 import { NotFoundError } from '/src/db/errors.js';
 import Connection from '/src/db/connection.js';
-import assert from '/lib/assert.js';
-import filterEmptyProperties from '/lib/filter-empty-properties.js';
+import assert from '/src/lib/assert.js';
+import filterEmptyProperties from '/src/lib/filter-empty-properties.js';
 
 export default function patchResource(conn, props) {
   return new Promise(patchResourceExecutor.bind(this, conn, props));

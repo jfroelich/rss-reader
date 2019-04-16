@@ -1,7 +1,7 @@
 import * as db from '/src/db/db.js';
-import { Deadline, INDEFINITE } from '/lib/deadline.js';
-import { LookupRequest, lookup } from '/lib/favicon.js';
-import assert from '/lib/assert.js';
+import { Deadline, INDEFINITE } from '/src/lib/deadline.js';
+import { LookupRequest, lookup } from '/src/lib/favicon.js';
+import assert from '/src/lib/assert.js';
 
 // Return the {URL} url of the favicon associated with the given feed. Throws an
 // error if the feed has an invalid link property url, an invalid location

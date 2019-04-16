@@ -1,8 +1,8 @@
 import * as db from '/src/db/db.js';
-import * as favicon from '/lib/favicon.js';
-import { Deadline } from '/lib/deadline.js';
-import assert, { isAssertError } from '/lib/assert.js';
-import fadeElement from '/lib/fade-element.js';
+import * as favicon from '/src/lib/favicon.js';
+import { Deadline } from '/src/lib/deadline.js';
+import assert, { isAssertError } from '/src/lib/assert.js';
+import fadeElement from '/src/lib/fade-element.js';
 import subscribe from '/src/service/subscribe.js';
 
 export default function SubscriptionForm() {

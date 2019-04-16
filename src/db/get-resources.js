@@ -1,4 +1,4 @@
-import assert from '/lib/assert.js';
+import assert from '/src/lib/assert.js';
 
 export default function getResources(conn, query) {
   return new Promise(getResourcesExecutor.bind(this, conn, query));

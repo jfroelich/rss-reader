@@ -1,8 +1,8 @@
 import * as config from '/src/config.js';
 import * as cron from '/src/cron.js';
 import * as db from '/src/db/db.js';
-import * as favicon from '/lib/favicon.js';
-import { Deadline } from '/lib/deadline.js';
+import * as favicon from '/src/lib/favicon.js';
+import { Deadline } from '/src/lib/deadline.js';
 import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
 import refreshFeedIcons from '/src/service/refresh-feed-icons.js';
 import subscribe from '/src/service/subscribe.js';

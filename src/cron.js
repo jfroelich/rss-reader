@@ -1,6 +1,6 @@
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
-import * as favicon from '/lib/favicon.js';
+import * as favicon from '/src/lib/favicon.js';
 import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
 import refreshFeedIcons from '/src/service/refresh-feed-icons.js';
 

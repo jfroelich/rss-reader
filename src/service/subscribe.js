@@ -1,5 +1,5 @@
 import * as db from '/src/db/db.js';
-import { INDEFINITE } from '/lib/deadline.js';
+import { INDEFINITE } from '/src/lib/deadline.js';
 import { ImportFeedArgs, importFeed } from '/src/service/import-feed.js';
 import showNotification from '/src/show-notification.js';
 
