@@ -1,8 +1,10 @@
-// TODO: make urlString a parameter, and this can become a library
-
-// Open the slideshow view in a tab.
-export default async function openView(reuseNewtab) {
-  const urlString = chrome.extension.getURL('slideshow.html');
+// Opens a tab. If the tab is already open, then this focuses on that tab. If reuseNewtab is true
+// and the newtab is open in another tab, then this switches to that newtab tab and replaces it with
+// the given url. Otherwise, this creates a new tab with the given url.
+//
+// This implementation is tightly coupled to chrome extension apis.
+export default async function openTab(relativeURLString, reuseNewtab) {
+  const urlString = chrome.extension.getURL(relativeURLString);
   const viewTab = await findTab(urlString);
   if (viewTab) {
     chrome.tabs.update(viewTab.id, { active: true });
@@ -17,6 +19,7 @@ export default async function openView(reuseNewtab) {
     }
   }
 
+  // Try to minimize use of chrome api where possible.
   open(urlString, '_blank');
 }
 

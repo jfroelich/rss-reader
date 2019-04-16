@@ -1,5 +1,5 @@
 import * as config from '/src/config.js';
-import openView from '/src/open-view.js';
+import openTab from '/src/lib/open-tab.js';
 
 const defaultIcon = chrome.extension.getURL('/images/rss_icon_trans.gif');
 
@@ -24,6 +24,6 @@ export default function showNotification(message = '', icon = defaultIcon) {
     }
 
     const reuseNewtab = config.readBoolean('reuse_newtab');
-    openView(reuseNewtab).catch(console.warn);
+    openTab('slideshow.html', reuseNewtab).catch(console.warn);
   });
 }

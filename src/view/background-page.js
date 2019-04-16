@@ -2,7 +2,7 @@ import * as config from '/src/config.js';
 import * as cron from '/src/cron.js';
 import * as db from '/src/db/db.js';
 import { INDEFINITE } from '/src/lib/deadline.js';
-import openView from '/src/open-view.js';
+import openTab from '/src/lib/open-tab.js';
 import refreshBadge from '/src/refresh-badge.js';
 
 function addInstallListener(listener) {
@@ -81,5 +81,5 @@ addInstallListener(badgeInstallListener);
 
 addBadgeListener(() => {
   const reuseNewtab = config.readBoolean('reuse_newtab');
-  openView(reuseNewtab).catch(console.warn);
+  openTab('slideshow.html', reuseNewtab).catch(console.warn);
 });
