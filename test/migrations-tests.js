@@ -1,11 +1,11 @@
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 import * as migrations from '/src/db/migrations.js';
 import RecordingChannel from '/test/recording-channel.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 
 // TODO: this should access migrations via db, not violate the API surface
-
-export async function migrationsTests20() {
+async function migrationsTests20() {
   const databaseName = 'migrations-test-20-database';
   await indexedDBUtils.remove(databaseName);
 
@@ -40,7 +40,7 @@ export async function migrationsTests20() {
 }
 
 // Verify that migrating to 23 drops the title index on the feed store
-export async function migrationsTests23() {
+async function migrationsTests23() {
   const databaseName = 'migrations-tests-23';
   await indexedDBUtils.remove(databaseName);
 
@@ -77,7 +77,7 @@ export async function migrationsTests23() {
   await indexedDBUtils.remove(databaseName);
 }
 
-export async function migrationsTests30() {
+async function migrationsTests30() {
   const databaseName = 'migrations-tests-30';
   await indexedDBUtils.remove(databaseName);
 
@@ -137,7 +137,7 @@ export async function migrationsTests30() {
   await indexedDBUtils.remove(conn30.name);
 }
 
-export async function migrationsTests31() {
+async function migrationsTests31() {
   const databaseName = 'migrations-tests-31';
   await indexedDBUtils.remove(databaseName);
 
@@ -201,7 +201,7 @@ export async function migrationsTests31() {
   await indexedDBUtils.remove(databaseName);
 }
 
-export async function migrationsTests32() {
+async function migrationsTests32() {
   const databaseName = 'migrations-tests-32';
   await indexedDBUtils.remove(databaseName);
 
@@ -265,7 +265,7 @@ export async function migrationsTests32() {
   await indexedDBUtils.remove(databaseName);
 }
 
-export async function migrationsTests33() {
+async function migrationsTests33() {
   const databaseName = 'migrations-tests-33';
   await indexedDBUtils.remove(databaseName);
 
@@ -319,3 +319,10 @@ export async function migrationsTests33() {
   conn.close();
   await indexedDBUtils.remove(databaseName);
 }
+
+TestRegistry.registerTest(migrationsTests20);
+TestRegistry.registerTest(migrationsTests23);
+TestRegistry.registerTest(migrationsTests30);
+TestRegistry.registerTest(migrationsTests31);
+TestRegistry.registerTest(migrationsTests32);
+TestRegistry.registerTest(migrationsTests33);

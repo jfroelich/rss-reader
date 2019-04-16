@@ -2,13 +2,14 @@ import * as favicon from '/lib/favicon.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 import { Deadline, INDEFINITE } from '/lib/deadline.js';
 import { NetworkError } from '/lib/better-fetch.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 
 // This is a very specific test that ensures favicon lookup functionality
 // matches browser functionality for the domain oracle.com. oracle.com for
 // some reason returns the content type "unknown" which was previously an
 // cause of failure for lookups.
-export async function faviconOracleTest() {
+async function faviconOracleTest() {
   const databaseName = faviconOracleTest.name;
   await indexedDBUtils.remove(databaseName);
   const conn = await favicon.open(databaseName);
@@ -26,7 +27,7 @@ export async function faviconOracleTest() {
   await indexedDBUtils.remove(databaseName);
 }
 
-export async function faviconCacheOpenTest() {
+async function faviconCacheOpenTest() {
   const databaseName = faviconCacheOpenTest.name;
   await indexedDBUtils.remove(databaseName);
   const conn = await favicon.open(databaseName);
@@ -36,7 +37,7 @@ export async function faviconCacheOpenTest() {
   await indexedDBUtils.remove(conn.name);
 }
 
-export async function faviconCachePutFindTest() {
+async function faviconCachePutFindTest() {
   await indexedDBUtils.remove(faviconCachePutFindTest.name);
   const conn = await favicon.open(faviconCachePutFindTest.name);
   const entry = new favicon.Entry();
@@ -49,7 +50,7 @@ export async function faviconCachePutFindTest() {
   await indexedDBUtils.remove(faviconCachePutFindTest.name);
 }
 
-export async function faviconCacheClearTest() {
+async function faviconCacheClearTest() {
   await indexedDBUtils.remove(faviconCacheClearTest.name);
   const conn = await favicon.open(faviconCacheClearTest.name);
 
@@ -74,7 +75,7 @@ export async function faviconCacheClearTest() {
 
 // Insert a mix of expired and non-expired entries. Then run compact and check
 // the expired entries are gone and the non-expired entries remain.
-export async function faviconCacheCompactTest() {
+async function faviconCacheCompactTest() {
   const databaseName = faviconCacheCompactTest.name;
   await indexedDBUtils.remove(databaseName);
   const conn = await favicon.open(databaseName);
@@ -129,7 +130,7 @@ function countEntries(conn) {
   });
 }
 
-export async function fetchImageTest() {
+async function fetchImageTest() {
   let path = '/test/favicon-fetch-image-test.png';
   let urlString = resolveExtensionPath(path);
   let url = new URL(urlString);
@@ -176,3 +177,10 @@ export async function fetchImageTest() {
 function resolveExtensionPath(path) {
   return chrome.extension.getURL(path);
 }
+
+TestRegistry.registerTest(faviconOracleTest);
+TestRegistry.registerTest(faviconCacheOpenTest);
+TestRegistry.registerTest(faviconCachePutFindTest);
+TestRegistry.registerTest(faviconCacheClearTest);
+TestRegistry.registerTest(faviconCacheCompactTest);
+TestRegistry.registerTest(fetchImageTest);

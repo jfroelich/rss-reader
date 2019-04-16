@@ -1,7 +1,8 @@
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 import getPathExtension from '/lib/get-path-extension.js';
 
-export default function getPathExtensionTest() {
+function getPathExtensionTest() {
   // Exercise the normal case
   let result = getPathExtension('/b.html');
   assert(result === 'html', `result: ${result}`);
@@ -32,3 +33,5 @@ export default function getPathExtensionTest() {
   result = getPathExtension('/a.b/c');
   assert(!result, `result: ${result}`);
 }
+
+TestRegistry.registerTest(getPathExtensionTest);

@@ -1,15 +1,17 @@
 // import assert from '/lib/assert.js';
 // import colorContrastFilter from '/lib/dom-filters/color-contrast.js';
+import TestRegistry from '/test/test-registry.js';
 import parseHTML from '/lib/parse-html.js';
 
-export function colorContrastFilterTest() {
-  // TODO: implement
-}
+// function colorContrastFilterTest() {
+// TODO: implement (and register in test registry once implemented)
+// }
 
-export function colorParseTypedCSSTest() {
+function colorParseTypedCSSTest() {
   // TODO: expiriment with typed CSS OM
   // TODO: investigate element.computedStyleMap(), looks like it still does
   // not work with non-attached
+  // TODO: actually assert things of course
 
   const input = '<div style="background-color: #ffffff;">white</div>';
   const doc = parseHTML(input);
@@ -21,3 +23,5 @@ export function colorParseTypedCSSTest() {
   console.dir(map);
   console.debug(map.get('background-color'));
 }
+
+TestRegistry.registerTest(colorParseTypedCSSTest);

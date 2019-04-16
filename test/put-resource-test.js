@@ -7,7 +7,7 @@ import putResource from '/src/db/put-resource.js';
 
 export default async function putResourceTest() {
   const databaseNamePrefix = 'put-resource-test';
-  await databaseUtils.removeDatbasesForPrefix(databaseNamePrefix);
+  await databaseUtils.removeDatabasesForPrefix(databaseNamePrefix);
   const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
 
   const conn = await databaseUtils.createTestDatabase(databaseName);

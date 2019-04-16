@@ -1,7 +1,8 @@
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 import filterPublisher from '/lib/filter-publisher.js';
 
-export default function filterPublisherTest() {
+function filterPublisherTest() {
   const pairs = [];
 
   // normal use
@@ -64,3 +65,5 @@ export default function filterPublisherTest() {
     assert(filterPublisher(input) === output);
   }
 }
+
+TestRegistry.registerTest(filterPublisherTest);

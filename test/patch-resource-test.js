@@ -7,7 +7,7 @@ import patchResource from '/src/db/patch-resource.js';
 
 export default async function patchResourceTest() {
   const databaseNamePrefix = 'patch-resource-test';
-  await databaseUtils.removeDatbasesForPrefix(databaseNamePrefix);
+  await databaseUtils.removeDatabasesForPrefix(databaseNamePrefix);
   const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
   const conn = await databaseUtils.createTestDatabase(databaseName);
 

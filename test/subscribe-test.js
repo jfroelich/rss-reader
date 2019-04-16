@@ -7,7 +7,7 @@ import subscribe from '/src/subscribe.js';
 
 export default async function () {
   const databaseNamePrefix = 'subscribe-test';
-  await databaseUtils.removeDatbasesForPrefix(databaseNamePrefix);
+  await databaseUtils.removeDatabasesForPrefix(databaseNamePrefix);
   const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
 
   const conn = await databaseUtils.createTestDatabase(databaseName);

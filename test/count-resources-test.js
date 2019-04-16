@@ -1,14 +1,14 @@
 import * as databaseUtils from '/test/database-utils.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 import countResources from '/src/db/count-resources.js';
 import createResource from '/src/db/create-resource.js';
 
-export default async function countResourcesTest() {
+async function countResourcesTest() {
   const databaseNamePrefix = 'count-resources-test';
-  await databaseUtils.removeDatbasesForPrefix(databaseNamePrefix);
+  await databaseUtils.removeDatabasesForPrefix(databaseNamePrefix);
   const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
-
   const conn = await databaseUtils.createTestDatabase(databaseName);
 
   // Verify counting nothing is 0
@@ -28,3 +28,5 @@ export default async function countResourcesTest() {
   conn.close();
   await indexedDBUtils.remove(conn.conn.name);
 }
+
+TestRegistry.registerTest(countResourcesTest);

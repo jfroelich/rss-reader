@@ -20,7 +20,7 @@ export function createUniqueDatabaseName(prefix) {
 
 // Find any database names that start with the prefix and remove them. Returns
 // a promise that resolves when all remove operations complete.
-export function removeDatbasesForPrefix(prefix) {
+export function removeDatabasesForPrefix(prefix) {
   const previousNames = findDatabaseFullNames(prefix);
   const promises = previousNames.map((name) => {
     console.debug('Removing database with name', name);

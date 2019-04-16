@@ -1,15 +1,16 @@
 import { open, remove } from '/lib/indexeddb-utils.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 
 // Exercise a prototypical open, close, delete sequence. No errors should occur.
-export async function indexedDBUtilsBasicTest() {
+async function indexedDBUtilsBasicTest() {
   const conn = await open(indexedDBUtilsBasicTest.name);
   conn.close();
   await remove(indexedDBUtilsBasicTest.name);
 }
 
 // Assert that my understanding of old version is correct
-export async function indexedDBUtilsOldVersionTest() {
+async function indexedDBUtilsOldVersionTest() {
   let oldVersion;
   let newVersion;
 
@@ -34,7 +35,7 @@ export async function indexedDBUtilsOldVersionTest() {
 }
 
 // Calling open without a name should fail
-export async function indexedDBUtilsUnnamedTest() {
+async function indexedDBUtilsUnnamedTest() {
   // to be really clear, the name param is not set
   let undefinedName;
   let conn;
@@ -61,7 +62,7 @@ export async function indexedDBUtilsUnnamedTest() {
 }
 
 // does open behave as expected when given a kind of bad version
-export async function indexedDBUtilsBadVersionTest() {
+async function indexedDBUtilsBadVersionTest() {
   let expectedError;
   let conn;
 
@@ -88,7 +89,7 @@ export async function indexedDBUtilsBadVersionTest() {
 }
 
 // Verify how indexedDB stores function objects
-export async function indexedDBUtilsFunctionObjectTest() {
+async function indexedDBUtilsFunctionObjectTest() {
   // Really simple schema generator for test, never expects version change other
   // than the initial one
   const upgradeHandler = function (event) {
@@ -110,7 +111,7 @@ export async function indexedDBUtilsFunctionObjectTest() {
   };
 
   // Store a function object
-  const pp = new Promise((resolve, reject) => {
+  const putFunctionObjectPromise = new Promise((resolve, reject) => {
     try {
       const txn = conn.transaction('objects', 'readwrite');
       txn.onerror = (event) => {
@@ -131,14 +132,13 @@ export async function indexedDBUtilsFunctionObjectTest() {
 
   // Storing should not produce an error
   try {
-    await pp;
+    await putFunctionObjectPromise;
   } catch (error) {
-    console.warn(error);
     assert(false, error.message);
   }
 
   // Get the object (eventually)
-  const gp = new Promise((resolve, reject) => {
+  const getObjectPromise = new Promise((resolve, reject) => {
     const txn = conn.transaction('objects');
     const store = txn.objectStore('objects');
     const request = store.get(1);
@@ -148,12 +148,17 @@ export async function indexedDBUtilsFunctionObjectTest() {
 
   // Getting should not produce an error
   try {
-    await gp;
+    await getObjectPromise;
   } catch (error) {
-    console.warn(error);
     assert(false, error.message);
   }
 
   conn.close();
   await remove('indexeddb-utils-function-object-test');
 }
+
+TestRegistry.registerTest(indexedDBUtilsBasicTest);
+TestRegistry.registerTest(indexedDBUtilsOldVersionTest);
+TestRegistry.registerTest(indexedDBUtilsUnnamedTest);
+TestRegistry.registerTest(indexedDBUtilsBadVersionTest);
+TestRegistry.registerTest(indexedDBUtilsFunctionObjectTest);

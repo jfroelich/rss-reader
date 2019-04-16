@@ -1,7 +1,8 @@
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 import filterUnprintables from '/lib/filter-unprintables.js';
 
-export default function filterUnprintablesTest() {
+function filterUnprintablesTest() {
   for (let i = 0; i < 9; i += 1) {
     assert(filterUnprintables(String.fromCharCode(i)).length === 0);
   }
@@ -24,3 +25,5 @@ export default function filterUnprintablesTest() {
   assert(filterUnprintables('Hello\u0000World').length === 10);
   assert(filterUnprintables('<tag>text</t\u0005ag>').length === 15);
 }
+
+TestRegistry.registerTest(filterUnprintablesTest);

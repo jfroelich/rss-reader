@@ -1,8 +1,9 @@
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 import parseHTML from '/lib/parse-html.js';
 import setAllImageElementDimensions from '/lib/dom-filters/set-all-image-element-dimensions.js';
 
-export async function cssOffsetPropertiesTest() {
+async function cssOffsetPropertiesTest() {
   let input;
   let doc;
   let image;
@@ -52,8 +53,7 @@ export async function cssOffsetPropertiesTest() {
   assert(image.width === 0);
   assert(image.height === 0);
 
-  // getComputedStyle apparently is not available to us
-  // https://github.com/w3c/csswg-drafts/issues/1548
+  // getComputedStyle is not available, see https://github.com/w3c/csswg-drafts/issues/1548
 
   /*
     let typed_style = image.attributeStyleMap;
@@ -66,14 +66,14 @@ export async function cssOffsetPropertiesTest() {
 // Test with image.src is present in the case where there is a picture, a
 // source, and an image, all well-formed, but image has no src attribute. In
 // this case, src should not be provided.
-export async function pictureWithoutSrcAttributeTest() {
+async function pictureWithoutSrcAttributeTest() {
   const input = '<picture><source srcset="foo.gif"><img></picture>';
   const doc = parseHTML(input);
   const image = doc.querySelector('img');
   assert(!image.src);
 }
 
-export async function imageDimensionsFilterCSSTest() {
+async function imageDimensionsFilterCSSTest() {
   let input;
   let doc;
   let image;
@@ -93,7 +93,7 @@ export async function imageDimensionsFilterCSSTest() {
 
 // Exercise the ordinary case of a basic html document with an image with
 // unknown attributes
-export async function imageDimensionsFilterTest() {
+async function imageDimensionsFilterTest() {
   const input = '<img src="/test/basic-image.png">';
   const doc = parseHTML(input);
   await setAllImageElementDimensions(doc);
@@ -103,7 +103,7 @@ export async function imageDimensionsFilterTest() {
 }
 
 // Assert that fetching an image that does not exist skips over the image
-export async function imageDimensionsFilter404Test() {
+async function imageDimensionsFilter404Test() {
   const input = '<img src="i-am-a-missing-image-example.gif">';
   const doc = parseHTML(input);
   // This should not throw
@@ -114,15 +114,13 @@ export async function imageDimensionsFilter404Test() {
   assert(image.height === 0);
 }
 
-// Exercise running the function on a document without any images.
-export async function imageDimensionsFilterTextOnlyTest() {
-  const input = 'no images here';
-  const doc = parseHTML(input);
-  // should not throw
-  await setAllImageElementDimensions(doc);
+// Running the function on a document without any images should not throw
+async function imageDimensionsFilterTextOnlyTest() {
+  const document = parseHTML('no images here');
+  await setAllImageElementDimensions(document);
 }
 
-export async function imageDimensionsFilterSourcelessTest() {
+async function imageDimensionsFilterSourcelessTest() {
   const input = '<img title="missing src">';
   const doc = parseHTML(input);
   // This should not throw
@@ -132,3 +130,11 @@ export async function imageDimensionsFilterSourcelessTest() {
   assert(image.width === 0);
   assert(image.height === 0);
 }
+
+TestRegistry.registerTest(cssOffsetPropertiesTest);
+TestRegistry.registerTest(pictureWithoutSrcAttributeTest);
+TestRegistry.registerTest(imageDimensionsFilterCSSTest);
+TestRegistry.registerTest(imageDimensionsFilterTest);
+TestRegistry.registerTest(imageDimensionsFilter404Test);
+TestRegistry.registerTest(imageDimensionsFilterTextOnlyTest);
+TestRegistry.registerTest(imageDimensionsFilterSourcelessTest);

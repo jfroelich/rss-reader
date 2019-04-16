@@ -2,12 +2,13 @@ import * as databaseUtils from '/test/database-utils.js';
 import * as db from '/src/db/db.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 import { Outline, exportOPML } from '/lib/export-opml.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 
 // Exercise the typical usage of export-opml
-export default async function exportOPMLTest() {
+async function exportOPMLTest() {
   const databaseNamePrefix = 'export-opml-test';
-  await databaseUtils.removeDatbasesForPrefix(databaseNamePrefix);
+  await databaseUtils.removeDatabasesForPrefix(databaseNamePrefix);
   const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
   const conn = await databaseUtils.createTestDatabase(databaseName);
 
@@ -74,3 +75,5 @@ export default async function exportOPMLTest() {
   conn.close();
   await indexedDBUtils.remove(conn.conn.name);
 }
+
+TestRegistry.registerTest(exportOPMLTest);

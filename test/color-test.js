@@ -1,7 +1,8 @@
 import * as color from '/lib/color.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 
-export default function colorTest() {
+function colorTest() {
   // Check the named colors are valid
   assert(color.isValid(color.BLACK));
   assert(color.isValid(color.WHITE));
@@ -40,3 +41,5 @@ export default function colorTest() {
   // TODO: test lerp
   // TODO: test blend
 }
+
+TestRegistry.registerTest(colorTest);

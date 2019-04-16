@@ -1,3 +1,4 @@
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 import coerceElement from '/lib/coerce-element.js';
 import parseHTML from '/lib/parse-html.js';
@@ -8,7 +9,7 @@ import parseHTML from '/lib/parse-html.js';
 // elements and text nodes (surprises side effects)
 // TODO: test error cases? what errors? invalid input?
 
-export default function coerceElementTest() {
+function coerceElementTest() {
   const input = '<html><head></head><body><p></p><a></a></body></html>';
   const doc = parseHTML(input);
 
@@ -33,3 +34,5 @@ export default function coerceElementTest() {
   expected = '<html><head></head><body><p></p><c></c></body></html>';
   assert(doc.documentElement.outerHTML === expected);
 }
+
+TestRegistry.registerTest(coerceElementTest);

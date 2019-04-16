@@ -1,5 +1,6 @@
 import * as domFilters from '/lib/dom-filters/dom-filters.js';
 import { INDEFINITE } from '/lib/deadline.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 import parseHTML from '/lib/parse-html.js';
 import removeEmptyAttributes from '/lib/dom-filters/remove-empty-attributes.js';
@@ -7,11 +8,7 @@ import removeOverEmphasis from '/lib/dom-filters/over-emphasis.js';
 import removeUnreachableImageElements from '/lib/dom-filters/remove-unreachable-image-elements.js';
 import transformLazilyLoadedImageElements from '/lib/dom-filters/lazily-loaded-images.js';
 
-// TODO: implement a simple straightforward test that exercises the normal cases.
-// TODO: implement tests for the abnormal cases
-// TODO: specifically test various threshold parameter values
-
-export function emphasisFilterTest() {
+function emphasisFilterTest() {
   let input;
   let doc;
 
@@ -31,7 +28,7 @@ export function emphasisFilterTest() {
 
 // Check that the anchor-script-filter removes the anchors that should be
 // removed and retains the anchors that should be retained.
-export function anchorScriptFilterTest() {
+function anchorScriptFilterTest() {
   let input;
   let doc;
 
@@ -78,7 +75,7 @@ export function anchorScriptFilterTest() {
   assert(doc.querySelector('a'));
 }
 
-export function attributeEmptyFilterTest() {
+function attributeEmptyFilterTest() {
   // Simple empty non-boolean attribute in body
   let input = '<html><head></head><body><a name="">test</a></body></html>';
   let doc = parseHTML(input);
@@ -133,7 +130,7 @@ export function attributeEmptyFilterTest() {
   assert(doc.documentElement.outerHTML === output);
 }
 
-export function imageLazyFilterTest() {
+function imageLazyFilterTest() {
   // Exercise the ordinary case of a substitution
   let input = '<img id="test" data-src="test.gif">';
   let doc = parseHTML(input);
@@ -172,7 +169,7 @@ export function imageLazyFilterTest() {
 }
 
 // TODO: move to separate module
-export async function imageReachableFilterTest() {
+async function imageReachableFilterTest() {
   let input = '<img id="unreachable" src="not-reachable.gif">';
   // TODO: circular dependency?
   input += '<img class="reachable" src="/test/basic-image.png">';
@@ -192,7 +189,7 @@ export async function imageReachableFilterTest() {
   assert(image.hasAttribute('data-reachable-height'));
 }
 
-export function condenseTagnamesFilterTest() {
+function condenseTagnamesFilterTest() {
   const input = '<strong>test</strong>';
   let doc = parseHTML(input);
   assert(doc.querySelector('strong'));
@@ -207,3 +204,10 @@ export function condenseTagnamesFilterTest() {
   assert(!doc.querySelector('em'));
   assert(doc.querySelectorAll('i').length === 2);
 }
+
+TestRegistry.registerTest(emphasisFilterTest);
+TestRegistry.registerTest(anchorScriptFilterTest);
+TestRegistry.registerTest(attributeEmptyFilterTest);
+TestRegistry.registerTest(imageLazyFilterTest);
+TestRegistry.registerTest(imageReachableFilterTest);
+TestRegistry.registerTest(condenseTagnamesFilterTest);

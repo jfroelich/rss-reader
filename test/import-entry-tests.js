@@ -1,9 +1,10 @@
 import * as config from '/src/config.js';
 import { rewriteURL } from '/src/import-entry.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 
 // Exercise the rewrite-url helper
-export default async function importEntryTests() {
+async function importEntryTests() {
   const rules = config.getRewriteRules();
 
   let a = new URL('https://www.google.com');
@@ -25,3 +26,5 @@ export default async function importEntryTests() {
   b = rewriteURL(a, rules);
   assert(b.href === 'https://techcrunch.com/foo', `cyclical ${b.href}`);
 }
+
+TestRegistry.registerTest(importEntryTests);
