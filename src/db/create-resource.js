@@ -38,7 +38,8 @@ function createResourceExecutor(conn, resource, resolve, reject) {
   resourceUtils.validate(resource);
   filterEmptyProperties(resource);
 
-  console.debug('Creating resource', resource);
+  const debugInfo = { title: resource.title, url: resource.urls[resource.urls.length - 1] };
+  console.debug('Creating resource', debugInfo);
 
   const transaction = conn.conn.transaction('resources', 'readwrite');
   transaction.oncomplete = transactionOncomplete.bind(transaction, resource, conn.channel, resolve);
