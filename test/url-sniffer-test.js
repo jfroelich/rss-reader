@@ -1,7 +1,8 @@
 import * as urlSniffer from '/lib/url-sniffer.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 
-export default function () {
+function urlSnifferTest() {
   // Local aliases
   const { BINARY_CLASS } = urlSniffer;
   const { TEXT_CLASS } = urlSniffer;
@@ -87,3 +88,5 @@ export default function () {
   result = urlSniffer.mimeTypeIsBinary(input);
   assert(result === UNKNOWN_CLASS);
 }
+
+TestRegistry.registerTest(urlSnifferTest);

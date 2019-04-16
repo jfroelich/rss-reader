@@ -1,13 +1,13 @@
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 import removeHTML from '/lib/remove-html.js';
 
 // TODO: Text with an entity that is not kept
-
 // TODO: test malformed html that causes error
 // TODO: test text outside of body
 // TODO: whitespace normalization
 
-export default function () {
+function removeHTMLTest() {
   // No html tags or entities undergoes no change
   let input = 'some text without html';
   let output = removeHTML(input);
@@ -34,3 +34,5 @@ export default function () {
   output = removeHTML(input);
   assert(output === 'before©after');
 }
+
+TestRegistry.registerTest(removeHTMLTest);

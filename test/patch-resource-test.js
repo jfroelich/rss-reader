@@ -1,11 +1,12 @@
 import * as databaseUtils from '/test/database-utils.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 import createResource from '/src/db/create-resource.js';
 import getResource from '/src/db/get-resource.js';
 import patchResource from '/src/db/patch-resource.js';
 
-export default async function patchResourceTest() {
+async function patchResourceTest() {
   const databaseNamePrefix = 'patch-resource-test';
   await databaseUtils.removeDatabasesForPrefix(databaseNamePrefix);
   const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
@@ -24,3 +25,5 @@ export default async function patchResourceTest() {
   conn.close();
   await indexedDBUtils.remove(conn.conn.name);
 }
+
+TestRegistry.registerTest(patchResourceTest);

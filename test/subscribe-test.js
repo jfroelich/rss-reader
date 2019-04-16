@@ -2,10 +2,11 @@ import * as databaseUtils from '/test/database-utils.js';
 import * as db from '/src/db/db.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 import { INDEFINITE } from '/lib/deadline.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 import subscribe from '/src/subscribe.js';
 
-export default async function () {
+async function subscribeTest() {
   const databaseNamePrefix = 'subscribe-test';
   await databaseUtils.removeDatabasesForPrefix(databaseNamePrefix);
   const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
@@ -58,3 +59,5 @@ export default async function () {
   conn.close();
   await indexedDBUtils.remove(conn.conn.name);
 }
+
+TestRegistry.registerTest(subscribeTest);

@@ -1,7 +1,8 @@
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 import setBaseURI from '/lib/set-base-uri.js';
 
-export default function () {
+function setBaseURITest() {
   // If a document has no base elements, and overwrite is true, then this should
   // add a base element and that should become the baseURI value, and there
   // should only be one base element
@@ -66,3 +67,5 @@ export default function () {
   setBaseURI(doc, url);
   assert(doc.baseURI === 'http://www.example.com/foo%20%20bar');
 }
+
+TestRegistry.registerTest(setBaseURITest);

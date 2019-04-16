@@ -1,7 +1,8 @@
 import * as resourceUtils from '/src/db/resource-utils.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 
-export function isValidIdTest() {
+function isValidIdTest() {
   assert(!resourceUtils.isValidId(-1));
   assert(!resourceUtils.isValidId(0));
   assert(!resourceUtils.isValidId('hello'));
@@ -11,7 +12,7 @@ export function isValidIdTest() {
   assert(resourceUtils.isValidId(123456789));
 }
 
-export function appendURLTest() {
+function appendURLTest() {
   // Append a url
   const resource = {};
   let appended = resourceUtils.setURL(resource, new URL('a://b.c1'));
@@ -32,7 +33,7 @@ export function appendURLTest() {
   assert(resource.urls.length === 2);
 }
 
-export function normalizeResourceTest() {
+function normalizeResourceTest() {
   let resource = {};
   // test when missing fields
   resourceUtils.normalize(resource);
@@ -84,7 +85,7 @@ function escapeUnicodeString(string) {
   return string.replace(/[^\0-~]/g, ch => `\\u${(`000${ch.charCodeAt(0).toString(16)}`).slice(-4)}`);
 }
 
-export function sanitizeTest() {
+function sanitizeTest() {
   const resource = {};
   let content = 'hello world';
   resource.content = content;
@@ -98,3 +99,8 @@ export function sanitizeTest() {
   const expected = '<html><head></head><body>hello\nworld</body></html>';
   assert(resource.content === expected, resource.content);
 }
+
+TestRegistry.registerTest(isValidIdTest);
+TestRegistry.registerTest(appendURLTest);
+TestRegistry.registerTest(normalizeResourceTest);
+TestRegistry.registerTest(sanitizeTest);

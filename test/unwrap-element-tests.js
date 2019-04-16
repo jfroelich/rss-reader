@@ -1,8 +1,9 @@
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 import parseHTML from '/lib/parse-html.js';
 import unwrapElement from '/lib/unwrap-element.js';
 
-export function unwrapElementTest() {
+function unwrapElementTest() {
   // Assert the typical case of a simple straightforward unwrap call completes
   // as expected
   let doc = parseHTML('<html><head></head><body><div>hello</div></body></html>');
@@ -99,7 +100,7 @@ export function unwrapElementTest() {
   assert(actualState === expectedState);
 }
 
-export function unwrapElementListTest() {
+function unwrapElementListTest() {
   let doc = parseHTML('<html><body>1<ul><li>2</li><li>3</li></ul>4<body></html>');
   let element = doc.querySelector('ul');
   unwrapElement(element);
@@ -141,3 +142,6 @@ export function unwrapElementListTest() {
   actualState = actualState.replace(/\s/g, '');
   assert(actualState === expectedState);
 }
+
+TestRegistry.registerTest(unwrapElementTest);
+TestRegistry.registerTest(unwrapElementListTest);

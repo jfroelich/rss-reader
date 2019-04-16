@@ -46,7 +46,7 @@ async function runTimedTest(testFunction, timeout = 0) {
   console.log('%s: started', testFunction.name);
   if (timeout) {
     const testPromise = testFunction();
-    const timeoutPromise = deferredRejectionPromise(testFunction, timeout);
+    const timeoutPromise = watchdogWatch(testFunction, timeout);
     await Promise.race([testPromise, timeoutPromise]);
   } else {
     await testFunction();
@@ -54,7 +54,7 @@ async function runTimedTest(testFunction, timeout = 0) {
   console.log('%s: completed', testFunction.name);
 }
 
-function deferredRejectionPromise(testFunction, timeMs) {
+function watchdogWatch(testFunction, timeMs) {
   const error = new Error(`Test "${testFunction.name}" timed out`);
   return new Promise((_, reject) => setTimeout(reject, timeMs, error));
 }

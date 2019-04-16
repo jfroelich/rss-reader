@@ -5,10 +5,10 @@ export default function RecordingChannel() {
   this.name = 'recording-channel';
 }
 
-RecordingChannel.prototype.postMessage = function recordingChannelPostMessage(message) {
+RecordingChannel.prototype.postMessage = function (message) {
   this.messages.push(message);
 };
 
-RecordingChannel.prototype.close = function recordingChannelClose() {
+RecordingChannel.prototype.close = function () {
   // noop
 };

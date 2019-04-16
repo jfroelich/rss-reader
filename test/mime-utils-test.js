@@ -1,7 +1,8 @@
 import * as mime from '/lib/mime-utils.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 
-export default function mimeUtilsTest() {
+function mimeUtilsTest() {
   const a = assert;
   const pct = mime.parseContentType;
 
@@ -78,3 +79,5 @@ export default function mimeUtilsTest() {
   a(!mime.isValid('a b c / 123'));
   a(!mime.isValid('text\\xml'));
 }
+
+TestRegistry.registerTest(mimeUtilsTest);

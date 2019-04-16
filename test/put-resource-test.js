@@ -1,11 +1,12 @@
 import * as databaseUtils from '/test/database-utils.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
+import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 import createResource from '/src/db/create-resource.js';
 import getResource from '/src/db/get-resource.js';
 import putResource from '/src/db/put-resource.js';
 
-export default async function putResourceTest() {
+async function putResourceTest() {
   const databaseNamePrefix = 'put-resource-test';
   await databaseUtils.removeDatabasesForPrefix(databaseNamePrefix);
   const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
@@ -29,3 +30,5 @@ export default async function putResourceTest() {
   conn.close();
   await indexedDBUtils.remove(conn.conn.name);
 }
+
+TestRegistry.registerTest(putResourceTest);
