@@ -1,3 +1,5 @@
+// TODO: make urlString a parameter, and this can become a library
+
 // Open the slideshow view in a tab.
 export default async function openView(reuseNewtab) {
   const urlString = chrome.extension.getURL('slideshow.html');

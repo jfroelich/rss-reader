@@ -4,7 +4,7 @@ import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 import { INDEFINITE } from '/lib/deadline.js';
 import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
-import subscribe from '/src/subscribe.js';
+import subscribe from '/src/service/subscribe.js';
 
 async function subscribeTest() {
   const databaseNamePrefix = 'subscribe-test';

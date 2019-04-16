@@ -1,9 +1,9 @@
-import About from '/src/options-page/about.js';
-import DisplaySettingsForm from '/src/options-page/display-settings-form.js';
-import FeedList from '/src/options-page/feed-list.js';
-import GeneralSettingsForm from '/src/options-page/general-settings-form.js';
-import NavMenu from '/src/options-page/nav-menu.js';
-import SubscriptionForm from '/src/options-page/subscription-form.js';
+import About from '/src/view/options-page/about.js';
+import DisplaySettingsForm from '/src/view/options-page/display-settings-form.js';
+import FeedList from '/src/view/options-page/feed-list.js';
+import GeneralSettingsForm from '/src/view/options-page/general-settings-form.js';
+import NavMenu from '/src/view/options-page/nav-menu.js';
+import SubscriptionForm from '/src/view/options-page/subscription-form.js';
 import refreshBadge from '/src/refresh-badge.js';
 
 let currentSection;

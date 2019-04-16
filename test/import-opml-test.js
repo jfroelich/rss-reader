@@ -3,7 +3,7 @@ import * as db from '/src/db/db.js';
 import * as indexedDBUtils from '/lib/indexeddb-utils.js';
 import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
-import importOPML from '/src/import-opml.js';
+import importOPML from '/src/service/import-opml.js';
 
 async function importOPMLTest() {
   const databaseNamePrefix = 'import-opml-test';

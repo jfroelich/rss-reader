@@ -2,12 +2,12 @@ import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/lib/favicon.js';
 import { Outline, exportOPML } from '/lib/export-opml.js';
-import { PollFeedsArgs, pollFeeds } from '/src/poll-feeds.js';
+import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
 import assert from '/lib/assert.js';
 import downloadXMLDocument from '/lib/download-xml-document.js';
 import filterPublisher from '/lib/filter-publisher.js';
 import formatDate from '/lib/format-date.js';
-import importOPML from '/src/import-opml.js';
+import importOPML from '/src/service/import-opml.js';
 import refreshBadge from '/src/refresh-badge.js';
 
 const splashElement = document.getElementById('initial-loading-panel');

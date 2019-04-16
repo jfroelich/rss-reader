@@ -1,5 +1,5 @@
 import * as db from '/src/db/db.js';
-import lookupFeedFavicon from '/src/lookup-feed-favicon.js';
+import lookupFeedFavicon from '/src/service/lookup-feed-favicon.js';
 
 export default async function refreshFeedIcons(conn, iconn) {
   const feeds = await db.getResources(conn, { mode: 'active-feeds', titleSort: false });

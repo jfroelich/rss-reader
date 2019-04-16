@@ -1,5 +1,5 @@
 import * as config from '/src/config.js';
-import { rewriteURL } from '/src/import-entry.js';
+import { rewriteURL } from '/src/service/import-entry.js';
 import TestRegistry from '/test/test-registry.js';
 import assert from '/lib/assert.js';
 

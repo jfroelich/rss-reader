@@ -3,7 +3,7 @@ import * as favicon from '/lib/favicon.js';
 import { Deadline } from '/lib/deadline.js';
 import assert, { isAssertError } from '/lib/assert.js';
 import fadeElement from '/lib/fade-element.js';
-import subscribe from '/src/subscribe.js';
+import subscribe from '/src/service/subscribe.js';
 
 export default function SubscriptionForm() {
   // Default to a reasonable amount of time. The user can optionally override

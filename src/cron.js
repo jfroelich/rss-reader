@@ -1,8 +1,10 @@
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/lib/favicon.js';
-import { PollFeedsArgs, pollFeeds } from '/src/poll-feeds.js';
-import refreshFeedIcons from '/src/refresh-feed-icons.js';
+import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
+import refreshFeedIcons from '/src/service/refresh-feed-icons.js';
+
+// TODO: split into cron service and cron control? or is this really just a control?
 
 const HALF_DAY_MINUTES = 60 * 12;
 const ONE_WEEK_MINUTES = 60 * 24 * 7;

@@ -3,10 +3,10 @@ import * as cron from '/src/cron.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/lib/favicon.js';
 import { Deadline } from '/lib/deadline.js';
-import { PollFeedsArgs, pollFeeds } from '/src/poll-feeds.js';
-import refreshFeedIcons from '/src/refresh-feed-icons.js';
-import subscribe from '/src/subscribe.js';
-import unsubscribe from '/src/unsubscribe.js';
+import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
+import refreshFeedIcons from '/src/service/refresh-feed-icons.js';
+import subscribe from '/src/service/subscribe.js';
+import unsubscribe from '/src/service/unsubscribe.js';
 
 function clearAlarms() {
   return new Promise(resolve => chrome.alarms.clearAll(resolve));

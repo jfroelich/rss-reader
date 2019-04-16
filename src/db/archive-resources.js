@@ -2,6 +2,8 @@ import assert from '/lib/assert.js';
 import getResources from '/src/db/get-resources.js';
 import patchResource from '/src/db/patch-resource.js';
 
+// TODO: now that this uses multiple transactions, consider moving it back to services layer
+
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
 export default async function archiveResources(conn, maxAge = TWO_DAYS_MS) {

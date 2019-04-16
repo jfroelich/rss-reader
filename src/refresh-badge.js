@@ -1,6 +1,8 @@
 import * as db from '/src/db/db.js';
 import { Deadline } from '/lib/deadline.js';
 
+// TODO: implement BadgeControl, move this to control folder, rewire everything
+
 // Refreshes the unread count displayed on the badge in Chrome's toolbar
 export default async function refreshBadge() {
   // In the case of refreshing the badge, we want to use a larger timeout than
