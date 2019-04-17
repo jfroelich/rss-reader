@@ -1,6 +1,7 @@
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
 import * as feedParser from '/src/lib/feed-parser.js';
+import * as rss from '/src/service/resource-storage-service.js';
 import { Deadline, INDEFINITE } from '/src/lib/deadline.js';
 import { ImportEntryArgs, importEntry } from '/src/service/import-entry.js';
 import { betterFetch } from '/src/lib/better-fetch.js';
@@ -48,7 +49,7 @@ export async function importFeed(args) {
 
   // Check if redirected
   if (args.create && fetchURL.href !== responseURL.href) {
-    const existingFeed = await db.getResource(args.conn, {
+    const existingFeed = await rss.getFeed(args.conn, {
       mode: 'url', url: responseURL, keyOnly: true
     });
 
@@ -83,9 +84,9 @@ export async function importFeed(args) {
   }
 
   if (args.create) {
-    args.feed.id = await db.createResource(args.conn, args.feed);
+    args.feed.id = await rss.createFeed(args.conn, args.feed);
   } else {
-    await db.putResource(args.conn, args.feed);
+    await rss.putFeed(args.conn, args.feed);
   }
 
   // Early notify observer-caller if they are listening that we created the
@@ -201,7 +202,7 @@ function updateModelFeedFromParsedFeed(feed, parsedFeed) {
 async function validateFeedIsUnique(feed, conn) {
   const url = db.getURL(feed);
 
-  const existingFeed = await db.getResource(conn, { mode: 'url', url, keyOnly: true });
+  const existingFeed = await rss.getFeed(conn, { mode: 'url', url, keyOnly: true });
 
   if (existingFeed) {
     const message = `Already subscribed to feed with url ${url.href}`;

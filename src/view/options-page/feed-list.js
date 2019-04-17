@@ -1,4 +1,5 @@
 import * as db from '/src/db/db.js';
+import * as rss from '/src/service/resource-storage-service.js';
 import assert from '/src/lib/assert.js';
 import unsubscribe from '/src/service/unsubscribe.js';
 
@@ -15,9 +16,9 @@ export default function FeedList() {
   this.deactivateCallback = undefined;
 }
 
-FeedList.prototype.init = async function feedListInit(parent) {
-  const conn = await db.open();
-  const feeds = await db.getResources(conn, { mode: 'feeds', titleSort: true });
+FeedList.prototype.init = async function (parent) {
+  const conn = await rss.open();
+  const feeds = await rss.getFeeds(conn, { mode: 'feeds', titleSort: true });
   conn.close();
 
   const listElement = document.createElement('ul');
@@ -47,7 +48,7 @@ FeedList.prototype.init = async function feedListInit(parent) {
   parent.append(noFeedsElement);
 };
 
-FeedList.prototype.appendFeed = function feedListAppendFeed(feed) {
+FeedList.prototype.appendFeed = function (feed) {
   assert(feed && typeof feed === 'object');
   assert(this.listElement);
 
@@ -81,7 +82,8 @@ FeedList.prototype.appendFeed = function feedListAppendFeed(feed) {
   itemElement.append(titleElement);
 
   // Append the feed into the proper position in the feed list, using the same
-  // sorting order as the database would use when loading data in getResources
+  // sorting order as the database would use when loading data in getFeeds
+  // TODO: this violates service layer abstraction
   const normalFeedTitle = feedTitle.toLowerCase();
   let inserted = false;
   for (const childNode of (this.listElement.childNodes)) {
@@ -103,7 +105,7 @@ FeedList.prototype.appendFeed = function feedListAppendFeed(feed) {
   }
 };
 
-FeedList.prototype.count = function feedListCount() {
+FeedList.prototype.count = function () {
   return this.listElement.childElementCount;
 };
 
@@ -112,8 +114,8 @@ FeedList.prototype.itemOnclick = async function feedListItemOnclick(event) {
   const itemElement = event.currentTarget;
   const feedId = parseInt(itemElement.getAttribute('feed'), 10);
 
-  const conn = await db.open();
-  const feed = await db.getResource(conn, { mode: 'id', id: feedId, keyOnly: false });
+  const conn = await rss.open();
+  const feed = await rss.getFeed(conn, { mode: 'id', id: feedId, keyOnly: false });
   conn.close();
 
   const detailsTitleElement = document.getElementById('details-title');
@@ -158,7 +160,7 @@ FeedList.prototype.itemOnclick = async function feedListItemOnclick(event) {
 FeedList.prototype.unsubscribeButtonOnclick = async function (event) {
   const feedId = parseInt(event.target.value, 10);
 
-  const conn = await db.open();
+  const conn = await rss.open();
   await unsubscribe(conn, feedId);
   conn.close();
 
@@ -169,7 +171,7 @@ FeedList.prototype.unsubscribeButtonOnclick = async function (event) {
   }
 };
 
-FeedList.prototype.removeFeedById = function feedListRemoveFeedById(feedId) {
+FeedList.prototype.removeFeedById = function (feedId) {
   const itemElement = this.listElement.querySelector(`li[feed="${feedId}"]`);
   assert(itemElement);
 
@@ -189,11 +191,11 @@ FeedList.prototype.removeFeedById = function feedListRemoveFeedById(feedId) {
 // TODO: handling the event here may be wrong, it should be done in the
 // channel message handler. However, I am not sure how much longer the options
 // page is sticking around so defering this change
-FeedList.prototype.activateOnclick = async function feedListActivateOnclick(event) {
+FeedList.prototype.activateOnclick = async function (event) {
   const feedId = parseInt(event.target.value, 10);
 
-  const conn = await db.open();
-  await db.patchResource(conn, { id: feedId, active: 1 });
+  const conn = await rss.open();
+  await rss.patchFeed(conn, { id: feedId, active: 1 });
   conn.close();
 
   // Mark the corresponding feed element loaded in the view as active
@@ -209,11 +211,11 @@ FeedList.prototype.activateOnclick = async function feedListActivateOnclick(even
   }
 };
 
-FeedList.prototype.deactivateOnclick = async function feedListDeactivateOnclick(event) {
+FeedList.prototype.deactivateOnclick = async function (event) {
   const feedId = parseInt(event.target.value, 10);
-  const conn = await db.open();
+  const conn = await rss.open();
   const props = { id: feedId, active: 0, deactivation_reason: 'manual' };
-  await db.patchResource(conn, props);
+  await rss.patchFeed(conn, props);
   conn.close();
 
   // TODO: this should be done in the channel message handler instead of here

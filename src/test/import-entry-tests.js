@@ -5,7 +5,7 @@ import assert from '/src/lib/assert.js';
 
 // Exercise the rewrite-url helper
 async function importEntryTests() {
-  const rules = config.getRewriteRules();
+  const rules = config.readArray('rewrite_rules');
 
   let a = new URL('https://www.google.com');
   let b = rewriteURL(a, rules);

@@ -1,9 +1,10 @@
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
+import * as rss from '/src/service/resource-storage-service.js';
 import { Deadline } from '/src/lib/deadline.js';
 import { ImportFeedArgs, importFeed } from '/src/service/import-feed.js';
 import assert, { isAssertError } from '/src/lib/assert.js';
-import showNotification from '/src/show-notification.js';
+import showNotification from '/src/service/utils/show-notification.js';
 
 export function PollFeedsArgs() {
   this.ignoreRecencyCheck = false;
@@ -15,8 +16,8 @@ export function PollFeedsArgs() {
   this.notify = true;
   this.conn = undefined;
   this.iconn = undefined;
-  this.rewriteRules = config.getRewriteRules();
-  this.inaccessible_content_descriptors = config.getInaccessibleContentDescriptors();
+  this.rewriteRules = config.readArray('rewrite_rules');
+  this.inaccessible_content_descriptors = config.readArray('inaccessible_content_descriptors');
 }
 
 export async function pollFeeds(args) {
@@ -39,7 +40,7 @@ export async function pollFeeds(args) {
 
   localStorage.last_poll_timestamp = `${Date.now()}`;
 
-  const feeds = await db.getResources(args.conn, { mode: 'active-feeds', titleSort: false });
+  const feeds = await rss.getFeeds(args.conn, { mode: 'active-feeds', titleSort: false });
   console.debug('Loaded %d active feeds for polling', feeds.length);
 
   // Start concurrently polling each feed resource

@@ -1,10 +1,10 @@
 import About from '/src/view/options-page/about.js';
+import BrowserActionControl from '/src/control/browser-action-control.js';
 import DisplaySettingsForm from '/src/view/options-page/display-settings-form.js';
 import FeedList from '/src/view/options-page/feed-list.js';
 import GeneralSettingsForm from '/src/view/options-page/general-settings-form.js';
 import NavMenu from '/src/view/options-page/nav-menu.js';
 import SubscriptionForm from '/src/view/options-page/subscription-form.js';
-import refreshBadge from '/src/refresh-badge.js';
 
 let currentSection;
 
@@ -48,33 +48,9 @@ generalSettingsForm.init(document.getElementById('section-general-settings'));
 const about = new About();
 about.init(document.getElementById('about'));
 
-const channel = new BroadcastChannel('reader');
-channel.onmessage = function (event) {
-  if (!event.isTrusted) {
-    return;
-  }
 
-  const message = event.data;
-  if (!message) {
-    return;
-  }
-
-  const { type } = message;
-
-  if (type === 'resource-created') {
-    refreshBadge().catch(console.warn);
-  } else if (type === 'resource-updated') {
-    refreshBadge().catch(console.warn);
-  } else if (type === 'resource-deleted') {
-    refreshBadge().catch(console.warn);
-  } else {
-    console.warn('Unknown message type', type);
-  }
-};
-
-channel.onmessageerror = function (event) {
-  console.warn(event);
-};
+const browserActionControl = new BrowserActionControl();
+browserActionControl.init();
 
 function showSection(menuItemElement) {
   if (menuItemElement && menuItemElement !== navMenu.currentItem) {

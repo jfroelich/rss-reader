@@ -1,7 +1,7 @@
 import * as db from '/src/db/db.js';
 import { INDEFINITE } from '/src/lib/deadline.js';
 import { ImportFeedArgs, importFeed } from '/src/service/import-feed.js';
-import showNotification from '/src/show-notification.js';
+import showNotification from '/src/service/utils/show-notification.js';
 
 // Subscribes to a feed. Imports the feed and its entries into the database.
 // Throws an error if already subscribed or if something goes wrong. This

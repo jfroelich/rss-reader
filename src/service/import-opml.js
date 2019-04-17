@@ -1,4 +1,5 @@
 import * as db from '/src/db/db.js';
+import * as rss from '/src/service/resource-storage-service.js';
 import parseOPML from '/src/lib/parse-opml.js';
 
 // Create and store feed objects in the database based on urls extracted from
@@ -23,6 +24,7 @@ export default async function importOPML(conn, files) {
   }
 
   // Filter dups
+  // TODO: revert to using Set style
   const urlSet = [];
   const seenHrefs = [];
   for (const url of urls) {
@@ -40,13 +42,7 @@ export default async function importOPML(conn, files) {
     return feed;
   });
 
-  const createPromises = [];
-  for (const feed of feeds) {
-    console.debug('Creating resource', feed);
-    createPromises.push(db.createResource(conn, feed));
-  }
-
-  return Promise.all(createPromises);
+  return rss.createFeeds(conn, feeds);
 }
 
 // Return an array of outline urls (as URL objects) from OPML outline elements

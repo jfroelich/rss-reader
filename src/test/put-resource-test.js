@@ -10,21 +10,22 @@ async function putResourceTest() {
   const databaseNamePrefix = 'put-resource-test';
   await databaseUtils.removeDatabasesForPrefix(databaseNamePrefix);
   const databaseName = databaseUtils.createUniqueDatabaseName(databaseNamePrefix);
-
   const conn = await databaseUtils.createTestDatabase(databaseName);
 
-  const fakeParentResourceId = 1;
-  const id = await createResource(conn, {
-    title: 'first', type: 'entry', parent: fakeParentResourceId
-  });
-  let resource = await getResource(conn, { mode: 'id', id });
+  const title = 'first';
+  const type = 'entry';
+  const parent = 1; // fake parent resource id
+  const id = await createResource(conn, { title, type, parent });
+  const mode = 'id';
+  let resource = await getResource(conn, { mode, id });
   assert(resource);
   assert(resource.title === 'first');
 
   resource.title = 'second';
   await putResource(conn, resource);
-  resource = await getResource(conn, { mode: 'id', id });
+  resource = await getResource(conn, { mode, id });
   assert(resource);
+  assert(resource.id === id);
   assert(resource.title === 'second');
 
   conn.close();

@@ -12,7 +12,7 @@ async function countResourcesTest() {
   const conn = await databaseUtils.createTestDatabase(databaseName);
 
   // Verify counting nothing is 0
-  let count = await countResources({ conn, read: 0, type: 'entry' });
+  let count = await countResources(conn, { read: 0, type: 'entry' });
   assert(count === 0);
 
   const createPromises = [];
@@ -22,7 +22,7 @@ async function countResourcesTest() {
   }
   await Promise.all(createPromises);
 
-  count = await countResources({ conn, read: 0, type: 'entry' });
+  count = await countResources(conn, { read: 0, type: 'entry' });
   assert(count === 3);
 
   conn.close();

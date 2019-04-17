@@ -1,5 +1,5 @@
-import * as db from '/src/db/db.js';
+import * as rss from '/src/service/resource-storage-service.js';
 
 export default function unsubscribe(conn, feedId) {
-  return db.deleteResource(conn, feedId, 'unsubscribe');
+  return rss.deleteFeed(conn, feedId, 'unsubscribe');
 }

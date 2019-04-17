@@ -1,5 +1,10 @@
 import * as db from '/src/db/db.js';
+import * as rss from '/src/service/resource-storage-service.js';
 import assert from '/src/lib/assert.js';
+
+// TODO: now that this module lies within the services layer, it seems like it would be better to
+// name the module more specifically to its purpose, which is archiving entries, not all resources,
+// so rename this to archive-entries.
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
 
@@ -14,7 +19,7 @@ export default async function archiveResources(conn, maxAge = TWO_DAYS_MS) {
 
   const archivedResourceIds = [];
 
-  let resources = await db.getResources(conn, query);
+  let resources = await rss.getEntries(conn, query);
 
   while (resources.length) {
     for (const resource of resources) {
@@ -39,7 +44,7 @@ export default async function archiveResources(conn, maxAge = TWO_DAYS_MS) {
     if (resources.length === query.limit) {
       query.offset += query.limit;
       // eslint-disable-next-line no-await-in-loop
-      resources = await db.getResources(conn, query);
+      resources = await rss.getEntries(conn, query);
     } else {
       resources = [];
     }

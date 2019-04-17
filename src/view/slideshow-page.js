@@ -1,14 +1,22 @@
 import * as config from '/src/config.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/lib/favicon.js';
+import * as rss from '/src/service/resource-storage-service.js';
 import { Outline, exportOPML } from '/src/lib/export-opml.js';
 import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
+import BrowserActionControl from '/src/control/browser-action-control.js';
+import ThemeControl from '/src/control/theme-control.js';
 import assert from '/src/lib/assert.js';
 import downloadXMLDocument from '/src/lib/download-xml-document.js';
 import filterPublisher from '/src/lib/filter-publisher.js';
 import formatDate from '/src/lib/format-date.js';
 import importOPML from '/src/service/import-opml.js';
-import refreshBadge from '/src/refresh-badge.js';
+
+const browserActionControl = new BrowserActionControl();
+browserActionControl.init();
+
+const themeControl = new ThemeControl();
+themeControl.init();
 
 const splashElement = document.getElementById('initial-loading-panel');
 const feedsContainerElement = document.getElementById('feeds-container');
@@ -58,7 +66,7 @@ async function showNextSlide() {
     if (!isNaN(configLimit)) {
       limit = configLimit;
     }
-    entries = await db.getResources(conn, { mode, offset, limit });
+    entries = await rss.getEntries(conn, { mode, offset, limit });
   }
   conn.close();
 
@@ -202,7 +210,7 @@ async function slideOnclick(event) {
   // Mark the clicked slide as read. While these conditions are redundant with
   // the checks within markSlideReadStart, it avoids opening the connection.
   if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
-      !slide.hasAttribute('read-pending')) {
+    !slide.hasAttribute('read-pending')) {
     const conn = await db.open();
     await markSlideReadStart(conn, slide);
     conn.close();
@@ -266,7 +274,7 @@ function hideNoArticlesMessage() {
 // the database. This resolves before the view is fully updated.
 function markSlideReadStart(conn, slide) {
   const entryIdString = slide.getAttribute('entry');
-  const entryId = parseInt(entryIdString, 10);
+  const id = parseInt(entryIdString, 10);
 
   // Exit if prior call still in flight. Callers may naively make concurrent
   // calls to markSlideReadStart. This is routine, expected, and not an
@@ -291,7 +299,7 @@ function markSlideReadStart(conn, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  return db.patchResource(conn, { id: entryId, read: 1 });
+  return db.patchResource(conn, { id, read: 1 });
 }
 
 function removeSlide(slide) {
@@ -443,7 +451,7 @@ function importOPMLPrompt() {
 async function handleExportButtonClick() {
   // Load all feeds from the database
   const conn = await db.open();
-  const resources = await db.getResources(conn, { mode: 'feeds' });
+  const resources = await rss.getFeeds(conn, { mode: 'feeds' });
   conn.close();
 
   // Convert the loaded feeds into outlines
@@ -545,7 +553,7 @@ function headerFontMenuOnchange(event) {
 
   // HACK: dispatch a fake local change because storage change event listener
   // only fires if change made from other page
-  config.storageOnchange({
+  themeControl.storageOnchange({
     isTrusted: true,
     type: 'storage',
     key: 'header_font_family',
@@ -565,7 +573,7 @@ function bodyFontMenuOnchange(event) {
 
   // HACK: dispatch a fake local change because storage change event listener
   // only fires if change made from other page
-  config.storageOnchange({
+  themeControl.storageOnchange({
     isTrusted: true,
     type: 'storage',
     key: 'body_font_family',
@@ -585,7 +593,7 @@ function windowOnclick(event) {
   const avoidedZoneIds = ['main-menu-button', 'left-panel'];
 
   if (!avoidedZoneIds.includes(event.target.id) &&
-      !event.target.closest('[id="left-panel"]')) {
+    !event.target.closest('[id="left-panel"]')) {
     const leftPanelElement = document.getElementById('left-panel');
 
     if (leftPanelElement.style.marginLeft === '0px') {
@@ -621,7 +629,6 @@ function initChannel() {
   channel.onmessageerror = onmessageerror;
 }
 
-// React to an incoming message event to the channel
 async function onmessage(event) {
   if (!event.isTrusted) {
     return;
@@ -630,12 +637,6 @@ async function onmessage(event) {
   const message = event.data;
   if (!message) {
     return;
-  }
-
-  // Common behavior for type handlers related to updating the badge
-  const badgeMessageTypes = ['resource-created', 'resource-updated', 'resource-deleted'];
-  if (badgeMessageTypes.includes(message.type)) {
-    refreshBadge().catch(console.warn); // intentionally unawaited
   }
 
   if (message.type === 'resource-updated') {
@@ -686,7 +687,7 @@ async function onmessage(event) {
     // logic.
 
     const conn = await db.open();
-    const entries = await db.getResources(conn, {
+    const entries = await rss.getEntries(conn, {
       mode: 'viewable-entries',
       offset: unreadSlideCount,
       limit: undefined
@@ -1073,10 +1074,10 @@ async function initializeSlideshowPage() {
   showSplashElement();
 
   const conn = await db.open();
-  const getEntriesPromise = db.getResources(conn, {
+  const getEntriesPromise = rss.getEntries(conn, {
     mode: 'viewable-entries', offset: 0, limit: 6
   });
-  const getFeedsPromise = db.getResources(conn, { mode: 'feeds', titleSort: true });
+  const getFeedsPromise = rss.getFeeds(conn, { mode: 'feeds', titleSort: true });
   conn.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)
@@ -1091,7 +1092,7 @@ async function initializeSlideshowPage() {
   }
 
   // Hide the splash before feeds may have loaded. We start in the entries
-  // 'tab' so the fact that feeds are not yet loaded should not matter.
+  // view so the fact that feeds are not yet loaded should not matter.
   // NOTE: technically user can switch to feeds view before this completes.
   hideSplashElement();
 
@@ -1102,8 +1103,5 @@ async function initializeSlideshowPage() {
 }
 
 initChannel();
-addEventListener('storage', config.storageOnchange);
 addEventListener('keydown', onkeydown);
-document.addEventListener('DOMContentLoaded', config.domLoadListener);
-
 initializeSlideshowPage().catch(console.error);

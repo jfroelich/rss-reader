@@ -13,11 +13,14 @@ async function getResourcesTest() {
 
   const createPromises = [];
   for (let i = 0; i < 5; i += 1) {
-    createPromises.push(createResource(conn, { title: `test${i}`, type: 'entry' }));
+    const title = `test${i}`;
+    const type = 'entry';
+    createPromises.push(createResource(conn, { title, type }));
   }
   await Promise.all(createPromises);
 
-  const resources = await getResources(conn, { mode: 'all' });
+  const mode = 'all';
+  const resources = await getResources(conn, { mode });
   assert(resources.length === 5);
 
   conn.close();
