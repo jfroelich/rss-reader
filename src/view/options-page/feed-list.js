@@ -7,8 +7,8 @@ export default function FeedList() {
   this.listElement = undefined;
   this.noFeedsElement = undefined;
 
-  // Optional callback caller can specify that is called every time a feed
-  // is appended to the feed list with the appended feed object
+  // Optional callback caller can specify that is called every time a feed is appended to the feed
+  // list with the appended feed object
   this.onappendCallback = undefined;
 
   this.unsubscribeCallback = undefined;
@@ -81,8 +81,8 @@ FeedList.prototype.appendFeed = function (feed) {
   titleElement.textContent = feedTitle;
   itemElement.append(titleElement);
 
-  // Append the feed into the proper position in the feed list, using the same
-  // sorting order as the database would use when loading data in getFeeds
+  // Append the feed into the proper position in the feed list, using the same sorting order as the
+  // database would use when loading data in getFeeds
   // TODO: this violates service layer abstraction
   const normalFeedTitle = feedTitle.toLowerCase();
   let inserted = false;
@@ -188,9 +188,9 @@ FeedList.prototype.removeFeedById = function (feedId) {
   }
 };
 
-// TODO: handling the event here may be wrong, it should be done in the
-// channel message handler. However, I am not sure how much longer the options
-// page is sticking around so defering this change
+// TODO: handling the event here may be wrong, it should be done in the channel message handler.
+// However, I am not sure how much longer the options page is sticking around so defering this
+// change
 FeedList.prototype.activateOnclick = async function (event) {
   const feedId = parseInt(event.target.value, 10);
 

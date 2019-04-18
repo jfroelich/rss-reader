@@ -13,8 +13,8 @@ function createResourceExecutor(conn, resource, resolve, reject) {
   assert(resource.id === undefined);
   assert(resource.type === 'feed' || resource.type === 'entry');
 
-  // The model requires that that all feeds have a location, but entries are not
-  // required to have a url
+  // The model requires that that all feeds have a location, but entries are not required to have a
+  // url
   assert(resource.type === 'entry' || resourceUtils.hasURL(resource));
 
   // Feeds are by default active when created unless explicitly inactive

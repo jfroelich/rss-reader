@@ -42,8 +42,8 @@ function requestOnsuccess(context, event) {
 
   const resource = cursor.value;
 
-  // If the resource does not match the query then skip past it entirely. This
-  // does not contribute to the offset calculation.
+  // If the resource does not match the query then skip past it entirely. This does not contribute
+  // to the offset calculation.
   if (!resourceMatchesQuery(context.mode, resource)) {
     cursor.continue();
     return;
@@ -81,12 +81,12 @@ function resourceMatchesQuery(mode, resource) {
 
   if (mode === 'viewable-entries') {
     return resource.type === 'entry' && resource.archived === 0 &&
-        resource.read === 0;
+      resource.read === 0;
   }
 
   if (mode === 'archivable-entries') {
     return resource.type === 'entry' && resource.archived === 0 &&
-        resource.read === 1;
+      resource.read === 1;
   }
 
   if (mode === 'active-feeds') {
@@ -112,7 +112,7 @@ function openCursorRequest(query, store) {
   }
 
   if (query.mode === 'viewable-entries' ||
-      query.mode === 'archivable-entries') {
+    query.mode === 'archivable-entries') {
     const index = store.index('type');
     return index.openCursor('entry');
   }
@@ -136,10 +136,10 @@ function compareResourceTitles(a, b) {
 
 function isValidOffset(offset) {
   return offset === null || offset === undefined || isNaN(offset) ||
-      (Number.isInteger(offset) && offset >= 0);
+    (Number.isInteger(offset) && offset >= 0);
 }
 
 function isValidLimit(limit) {
   return limit === null || limit === undefined || isNaN(limit) ||
-      (Number.isInteger(limit) && limit >= 0);
+    (Number.isInteger(limit) && limit >= 0);
 }

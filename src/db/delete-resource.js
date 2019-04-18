@@ -3,9 +3,9 @@ import assert from '/src/lib/assert.js';
 
 // TODO: support deleting enclosures?
 
-// Deletes a resource and its immediate children. Note that grandchildren are
-// completely ignored (e.g. after this, grand child resources now have a parent
-// id property value that contains an outdated id value).
+// Deletes a resource and its immediate children. Note that grandchildren are completely ignored
+// (e.g. after this, grand child resources now have a parent id property value that contains an
+// outdated id value).
 export default function deleteResource(conn, id, reason) {
   return new Promise(deleteResourceExecutor.bind(this, conn, id, reason));
 }

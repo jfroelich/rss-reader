@@ -1,4 +1,4 @@
-// Rule 10.3 of airbnb style guide says we cannot use the export one-liner
+// Rule 10.3 of airbnb style guide says we should not use the export one-liner
 
 import { ConstraintError, NotFoundError } from '/src/db/errors.js';
 import {

@@ -1,42 +1,36 @@
 import filterEmptyProperties from '/src/lib/filter-empty-properties.js';
 
-// The migrations module provides transition functions that handle creating the
-// schema of the database or applying changes to it when the database version
-// changes.
+// The migrations module provides transition functions that handle creating the schema of the
+// database or applying changes to it when the database version changes.
 
-// Each migration function assumes it is always called when the database version
-// has changed, and includes logic to exit early when the particular migration
-// function is inapplicable. This way the caller can simply invoke all the
-// migration functions in order without expressing conditions that require
-// knowledge of whether the migration is applicable.
+// Each migration function assumes it is always called when the database version has changed, and
+// includes logic to exit early when the particular migration function is inapplicable. This way
+// the caller can simply invoke all the migration functions in order without expressing conditions
+// that require knowledge of whether the migration is applicable.
 
-// It is important to note a subtlety here in how migrations apply. A migration
-// does not apply to only the previous version of the database. It applies to
-// any prior state of the database. For example, a migration function that
-// migrates to version 3 may be applying to a database being created (there is
-// no version 1 and 2), it may be applying to 1 (version 2 was skipped), or it
-// may be applying to 2, the previous version.
+// It is important to note a subtlety here in how migrations apply. A migration does not apply to
+// only the previous version of the database. It applies to any prior state of the database. For
+// example, a migration function that migrates to version 3 may be applying to a database being
+// created (there is no version 1 and 2), it may be applying to 1 (version 2 was skipped), or it may
+// be applying to 2, the previous version.
 
-// Each migration function assumes that all other applicable migrations are
-// performed. For example, an upgrade to version 3 will assume that the
-// migration functions for upgrading to version 1 and version 2 will also be
-// running as a part of the same transaction and invoked prior.
+// Each migration function assumes that all other applicable migrations are performed. For example,
+// an upgrade to version 3 will assume that the migration functions for upgrading to version 1 and
+// version 2 will also be running as a part of the same transaction and invoked prior.
 
-// Each migration function receives two parameters, event and channel. The event
-// parameter provides access to the database and the upgrade transaction that is
-// occuring. The channel parameter is optional (it may not be set), and enables
-// each migration function to opt in to notifying observers of certain database
-// changes.
+// Each migration function receives two parameters, event and channel. The event parameter provides
+// access to the database and the upgrade transaction that is occuring. The channel parameter is
+// optional (it may not be set), and enables each migration function to opt in to notifying
+// observers of certain database changes.
 
 // Useful things to remember in implementation:
 // * event.target - grabs the database open request
 // * event.target.transaction - grabs the version change transaction
 // * event.target.result - grabs the database connection
-// * event.target.result.version - grabs the current version (being upgraded
-// to), this will always be a number greater than 0, this value corresponds to
-// the version parameter given to indexedDB.open
-// * event.oldVersion - grabs the old version, this is 0 when the database
-// is being created
+// * event.target.result.version - grabs the current version (being upgraded to), this will always
+// be a number greater than 0, this value corresponds to the version parameter given to
+// indexedDB.open
+// * event.oldVersion - grabs the old version, this is 0 when the database is being created
 
 // Migrate the database from any previous version to 20
 export function migrate20(event) {
@@ -63,12 +57,10 @@ export function migrate20(event) {
   entryStore.createIndex('urls', 'urls', { multiEntry: true, unique: true });
 }
 
-// TODO: deprecate, no longer care about entry.magic
 export function migrate21() {
   // deprecated
 }
 
-// TODO: deprecate, no longer care about feed.magic
 export function migrate22() {
   // deprecated
 }

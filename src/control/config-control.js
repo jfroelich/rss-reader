@@ -84,9 +84,8 @@ function initConfig() {
   config.writeBoolean('justify_text', false);
   config.writeArray('backgroundImageFilenames', backgroundImageFilenames);
 
-  // NOTE: this is within an init context, so we disregard any existing value
-  // and overwrite the value with the defaults. this will cause any custom
-  // registered fonts to no longer exist
+  // NOTE: this is within an init context, so we disregard any existing value and overwrite the
+  // value with the defaults. this will cause any custom registered fonts to no longer exist
   config.writeArray('fonts', defaultFontNames);
 }
 
