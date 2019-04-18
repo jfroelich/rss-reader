@@ -12,7 +12,9 @@ async function importOPMLTest() {
 
   const conn = await databaseUtils.createTestDatabase(databaseName);
 
-  const opmlString = '<opml version="2.0"><body><outline type="feed" xmlUrl="a://b/c"/></body></opml>';
+  const opmlString = `<opml version="2.0">
+    <body><outline type="feed" xmlUrl="a://b/c"/></body>
+    </opml>`;
 
   // Mimic a File by creating a Blob, as File implements the Blob interface
   const file = new Blob([opmlString], { type: 'application/xml' });

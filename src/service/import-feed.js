@@ -32,10 +32,9 @@ export async function importFeed(args) {
   console.debug('Importing feed', args.feed);
 
   if (args.create) {
-    // If we are creating a new feed, then verify that a similar feed does not
-    // already exist. While this is eventually guaranteed by the unique
-    // constraint in the database layer, it is better to redundantly check here
-    // to avoid network overhead, which is the bottleneck.
+    // If we are creating a new feed, then verify that a similar feed does not already exist. While
+    // this is eventually guaranteed by the uniqueness constraint in the database layer, it is
+    // better to redundantly check here to avoid network overhead.
     await validateFeedIsUnique(args.feed, args.conn);
   } else {
     assert(db.isValidId(args.feed.id));
@@ -69,8 +68,8 @@ export async function importFeed(args) {
   // Reset the error count when fetching and parsing were successful
   delete args.feed.errorCount;
 
-  // If creating, set the favicon. If updating, skip it because we leave that
-  // to refresh-feed-icons that amortizes this cost.
+  // If creating, set the favicon. If updating, skip it because we leave that to refresh-feed-icons
+  // that amortizes this cost.
   if (args.create && args.iconn) {
     const iconURL = await lookupFeedFavicon(args.feed, args.iconn);
     if (iconURL) {
@@ -89,10 +88,9 @@ export async function importFeed(args) {
     await rss.putFeed(args.conn, args.feed);
   }
 
-  // Early notify observer-caller if they are listening that we created the
-  // feed. This is useful, for example, to allow the subscription process to
-  // consider the user subscribed prior to waiting for all entries to be
-  // processed.
+  // Early notify observer-caller if they are listening that we created the feed. This is useful,
+  // for example, to allow the subscription process to consider the user subscribed prior to waiting
+  // for all entries to be processed.
   if (args.feedStoredCallback) {
     args.feedStoredCallback(args.feed);
   }
@@ -101,8 +99,8 @@ export async function importFeed(args) {
   const modelEntries = parsedFeed.entries.map(convertParsedEntryToModelEntry);
   const importEntriesResults = await importEntries(modelEntries, args);
 
-  // Filter out the invalid ids. We know invalid ids will be 0 or undefined,
-  // and that valid ids will be some positive integer.
+  // Filter out the invalid ids. We know invalid ids will be 0 or undefined, and that valid ids will
+  // be some positive integer.
   const validNewEntryIds = importEntriesResults.filter(id => id);
 
   const output = {};
@@ -111,12 +109,11 @@ export async function importFeed(args) {
   return output;
 }
 
-// Concurrently import an array of entry objects. Resolves when all entries
-// processed. Returns a promise that resolves when each individual import-entry
-// promise resolves, which then resolves to an array of new entry ids. For all
-// errors other than assertion errors, per-entry import errors are suppressed
-// and only logged. If there is an error importing an entry its output id will
-// be invalid.
+// Concurrently import an array of entry objects. Resolves when all entries processed. Returns a
+// promise that resolves when each individual import-entry promise resolves, which then resolves to
+// an array of new entry ids. For all errors other than assertion errors, per-entry import errors
+// are suppressed and only logged. If there is an error importing an entry its output id will be
+// invalid.
 function importEntries(entries, args) {
   // Map each entry into an import-entry promise
   const promises = entries.map((entry) => {
@@ -135,8 +132,8 @@ function importEntries(entries, args) {
     iea.inaccessibleContentDescriptors = args.inaccessibleContentDescriptors;
     iea.fetchHTMLTimeout = args.fetchHTMLTimeout;
 
-    // TODO: decouple from config. In the interim I am loading from config here
-    // in order to decouple import-empty from config.
+    // TODO: decouple from config. In the interim I am loading from config here in order to decouple
+    // import-empty from config.
     iea.filterOptions = {};
     iea.filterOptions.contrastMatte = config.readInt('contrast_default_matte');
     iea.filterOptions.contrastRatio = config.readFloat('min_contrast_ratio');
@@ -175,17 +172,17 @@ async function importEntryNoexcept(args) {
   return newEntryId;
 }
 
-// Copy over properties from the parsed feed and appropriately update the local
-// feed object with new data. Note that response url has already been appended,
-// and that the local feed may already have one or more urls.
+// Copy over properties from the parsed feed and appropriately update the local feed object with new
+// data. Note that response url has already been appended, and that the local feed may already have
+// one or more urls.
 function updateModelFeedFromParsedFeed(feed, parsedFeed) {
   feed.feed_format = parsedFeed.type;
   feed.title = parsedFeed.title;
   feed.description = parsedFeed.description;
   feed.published_date = parsedFeed.published_date;
 
-  // Try to normalize the new link value and overwrite. The link value comes
-  // from the raw data and we are not sure if it is valid.
+  // Try to normalize the new link value and overwrite. The link value comes from the raw data and
+  // we are not sure if it is valid.
   if (parsedFeed.link) {
     try {
       const linkURL = new URL(parsedFeed.link);
@@ -196,9 +193,8 @@ function updateModelFeedFromParsedFeed(feed, parsedFeed) {
   }
 }
 
-// Throw a constraint error if the feed exists in the database. Note that this
-// only checks against the tail url of the feed, so this result is unreliable
-// when there are multiple urls.
+// Throw a constraint error if the feed exists in the database. Note that this only checks against
+// the tail url of the feed, so this result is unreliable when there are multiple urls.
 async function validateFeedIsUnique(feed, conn) {
   const url = db.getURL(feed);
 

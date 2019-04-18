@@ -11,12 +11,14 @@ export function Outline() {
   this.htmlUrl = undefined;
 }
 
-// Returns an in memory OPML document object filled with the given outlines.
-// documentTitle is optional dom string.
+// Returns an in memory OPML document object filled with the given outlines. documentTitle is an
+// optional dom string.
 export async function exportOPML(outlines, documentTitle) {
+  // The line breaks are so that the exported file is easier to debug at a glance
+
   const doc = createOPMLDocument(documentTitle);
   const bodyElement = doc.querySelector('body');
-  bodyElement.append('\n'); // pretty print
+  bodyElement.append('\n');
 
   for (const outline of outlines) {
     const element = doc.createElement('outline');
@@ -26,7 +28,7 @@ export async function exportOPML(outlines, documentTitle) {
     maybeSet(element, 'description', outline.description);
     maybeSet(element, 'htmlUrl', outline.htmlUrl);
     bodyElement.append(element);
-    bodyElement.append('\n'); // pretty print
+    bodyElement.append('\n');
   }
 
   return doc;

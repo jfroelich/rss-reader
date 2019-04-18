@@ -1,7 +1,6 @@
 import unwrapElement from '/src/lib/unwrap-element.js';
 
-// Searches the document for misnested elements and tries to fix each
-// occurrence.
+// Searches the document for misnested elements and tries to fix each occurrence.
 export default function removeMisnestedElements(document) {
   // Remove horizontal rules embedded within lists
   const hrsWithinLists = document.querySelectorAll('ul > hr, ol > hr, dl > hr');

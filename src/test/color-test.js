@@ -29,8 +29,7 @@ function colorTest() {
   value = color.pack(r, g, b, a);
   assert(color.isValid(value));
 
-  // unpacking of non-zero values should be lossless and produce valid
-  // components
+  // unpacking of non-zero values should be lossless and produce valid components
   assert(color.getRed(value) === r);
   assert(color.getBlue(value) === b);
   assert(color.getGreen(value) === g);

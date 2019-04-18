@@ -91,8 +91,6 @@ async function fetchRootIcon(request) {
   } = request;
   const rootIcon = new URL(`${url.origin}/favicon.ico`);
 
-  // NOTE: oracle.com returns "unknown" as the content type, which is why this
-  // is not restricted by content-type, despite my preference.
   const fetchOptions = { method: 'head', timeout };
 
   // Call without catching errors
@@ -108,10 +106,14 @@ async function fetchRootIcon(request) {
     }
   }
 
+  // NOTE: the subtle check is for whether mimeType is defined. parseContentType returns undefined
+  // instead of throwing an error if the specified response type is not well-formed. Essentially
+  // we are only restricting type when type is valid, and allow all unspecified or not well-formed
+  // types through.
+
   const acceptedMimeTypes = [
-    'application/octet-stream', 'image/x-icon', 'image/jpeg', 'image/gif',
-    'image/png', 'image/svg+xml', 'image/tiff', 'image/webp',
-    'image/vnd.microsoft.icon'
+    'application/octet-stream', 'image/x-icon', 'image/jpeg', 'image/gif', 'image/png',
+    'image/svg+xml', 'image/tiff', 'image/webp', 'image/vnd.microsoft.icon'
   ];
 
   const contentType = response.headers.get('Content-Type');
@@ -123,17 +125,17 @@ async function fetchRootIcon(request) {
   return response;
 }
 
-// Returns a URL (not a url string). Currently this is naive and just returns
-// the first one found in document order. For convenience, this accepts an
-// undefined document and simply exits if undefined.
+// Returns a URL (not a url string). Currently this is naive and just returns the first one found in
+// document order. For convenience, this accepts an undefined document and simply exits if
+// undefined.
 // TODO: stricter is better, require document to be defined
 function searchDocument(document) {
   if (!document || !document.head) {
     return undefined;
   }
 
-  // TODO: assert that the document has a custom base uri, perhaps by asserting
-  // that there is a valid base element present?
+  // TODO: assert that the document has a custom base uri, perhaps by asserting that there is a
+  // valid base element present?
 
   const selector = [
     'link[rel="icon"][href]', 'link[rel="shortcut icon"][href]',
@@ -143,9 +145,8 @@ function searchDocument(document) {
   const links = document.head.querySelectorAll(selector);
 
   if (links.length > 1) {
-    // TODO: review whether it is possible to access link.href which implicitly
-    // is the absolute url that uses baseURI
-
+    // TODO: review whether it is possible to access link.href which implicitly is the absolute url
+    // that uses baseURI
     return new URL(links[0].getAttribute('href'), document.baseURI);
   }
 
@@ -218,9 +219,8 @@ export function compact(conn) {
   });
 }
 
-// Find and return an entry corresponding to the given url. This does
-// not check if the entry is expired. |conn| is optional and must be either
-// undefined or of type IDBDatabase. |url| is type URL.
+// Find and return an entry corresponding to the given url. This does not check if the entry is
+// expired. conn is optional and must be either undefined or of type IDBDatabase. url is type URL.
 export function findEntry(conn, url) {
   return new Promise((resolve, reject) => {
     if (conn) {

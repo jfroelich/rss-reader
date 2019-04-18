@@ -18,9 +18,8 @@ export function ImportEntryArgs() {
   this.fetchHTMLTimeout = INDEFINITE;
 }
 
-// Imports the entry into the model if it does not already exist. Returns
-// undefined if the entry exists. Returns the new entry's id if the entry was
-// added.
+// Imports the entry into the model if it does not already exist. Returns the new entry's id if the
+// entry was added. Throws a NotFoundError if the entry exists.
 export async function importEntry(args) {
   const { entry } = args;
 
@@ -67,9 +66,9 @@ export async function importEntry(args) {
     }
   }
 
-  // Get the full text as a Document. Favor the fetched full text over the
-  // in-feed-xml summary. We do this before the favicon lookup so as to provide
-  // favicon lookup the ability to inspect the document header.
+  // Get the full text as a Document. Favor the fetched full text over the in-feed-xml summary. We
+  // do this before the favicon lookup so as to provide favicon lookup the ability to inspect the
+  // document header.
   let doc;
   if (response) {
     const fullText = await response.text();
@@ -78,20 +77,18 @@ export async function importEntry(args) {
     doc = parseHTML(entry.content || '');
   }
 
-  // This must occur before doing favicon lookups because the lookup may inspect
-  // the document and expects DOM element property getters like image.src to
-  // have the proper base uri set.
+  // This must occur before doing favicon lookups because the lookup may inspect the document and
+  // expects DOM element property getters like image.src to have the proper base uri set.
   setBaseURI(doc, db.getURL(entry));
 
   if (args.iconn) {
-    // Only provide if doc came from remote. If it came from feed-xml then it
-    // will not have embedded favicon link.
+    // Only provide if doc came from remote. If it came from feed-xml then it will not have embedded
+    // favicon link.
     const lookupDocument = response ? doc : undefined;
     await setEntryFavicon(entry, args.iconn, lookupDocument);
   }
 
-  // If title was not present in the feed xml, try and pull it from fetched
-  // content
+  // If title was not present in the feed xml, try and pull it from fetched content
   if (!entry.title && response && doc) {
     const titleElement = doc.querySelector('html > head > title');
     if (titleElement) {

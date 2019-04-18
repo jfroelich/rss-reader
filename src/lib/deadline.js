@@ -1,11 +1,9 @@
 import assert from '/src/lib/assert.js';
 
-// A deadline represents the latest time by which something should be completed,
-// such as a timeout value. A deadline can also represent an initial delay
-// before starting something.
+// A deadline represents the latest time by which something should be completed, such as a timeout
+// value. A deadline can also represent an initial delay before starting something.
 export class Deadline {
-  // |value| should be a positive integer representing an amount of time in
-  // milliseconds units
+  // value should be a positive integer representing an amount of time in milliseconds
   constructor(value) {
     assert(Number.isInteger(value));
     assert(value >= 0);

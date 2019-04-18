@@ -104,9 +104,8 @@ const EXTENSION_TYPE_MAP = {
   zip: 'application/zip'
 };
 
-// Classifies a resource as binary, text, or unknown. Returns unknown when not
-// confident in the results. Guesses the class of the resource purely by looking
-// at its url.
+// Classifies a resource as binary, text, or unknown. Returns unknown when not confident in the
+// results. Guesses the class of the resource purely by looking at its url.
 export function classify(url) {
   assert(url instanceof URL);
 
@@ -170,9 +169,8 @@ export function mimeTypeIsBinary(mimeType) {
   assert(mime.isValid(mimeType));
 
   const applicationTextMimeTypes = [
-    'application/atom+xml', 'application/javascript', 'application/json',
-    'application/rdf+xml', 'application/rss+xml',
-    'application/vnd.mozilla.xul+xml', 'application/xhtml+xml',
+    'application/atom+xml', 'application/javascript', 'application/json', 'application/rdf+xml',
+    'application/rss+xml', 'application/vnd.mozilla.xul+xml', 'application/xhtml+xml',
     'application/xml'
   ];
 
@@ -181,8 +179,7 @@ export function mimeTypeIsBinary(mimeType) {
 
   switch (superMimeType) {
     case 'application':
-      return applicationTextMimeTypes.includes(mimeType) ? TEXT_CLASS :
-        BINARY_CLASS;
+      return applicationTextMimeTypes.includes(mimeType) ? TEXT_CLASS : BINARY_CLASS;
     case 'text':
       return TEXT_CLASS;
     case 'audio':

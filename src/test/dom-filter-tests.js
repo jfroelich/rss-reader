@@ -26,8 +26,8 @@ function emphasisFilterTest() {
   assert(doc.querySelector('b'));
 }
 
-// Check that the anchor-script-filter removes the anchors that should be
-// removed and retains the anchors that should be retained.
+// Check that the anchor-script-filter removes the anchors that should be removed and retains the
+// anchors that should be retained.
 function anchorScriptFilterTest() {
   let input;
   let doc;
@@ -38,15 +38,13 @@ function anchorScriptFilterTest() {
   domFilters.unwrapAnchorElementsWithScriptURLs(doc);
   assert(doc.querySelector('a'));
 
-  // An anchor with a relative href without a javascript protocol should not
-  // be affected
+  // An anchor with a relative href without a javascript protocol should not be affected
   input = '<a href="foo.html">foo</a>';
   doc = parseHTML(input);
   domFilters.unwrapAnchorElementsWithScriptURLs(doc);
   assert(doc.querySelector('a'));
 
-  // An anchor with an absolute href without a javascript protocol should not
-  // be affected
+  // An anchor with an absolute href without a javascript protocol should not be affected
   input = '<a href="http://www.example.com/foo.html">foo</a>';
   doc = parseHTML(input);
   domFilters.unwrapAnchorElementsWithScriptURLs(doc);
@@ -58,17 +56,17 @@ function anchorScriptFilterTest() {
   domFilters.unwrapAnchorElementsWithScriptURLs(doc);
   assert(!doc.querySelector('a'));
 
-  // A well-formed javascript anchor with leading space should still be removed,
-  // because the spec says browsers should tolerate leading and trailing space
+  // A well-formed javascript anchor with leading space should still be removed, because the spec
+  // says browsers should tolerate leading and trailing space
   input = '<a href=" javascript:console.log(\'im in ur base\')">hax</a>';
   doc = parseHTML(input);
   domFilters.unwrapAnchorElementsWithScriptURLs(doc);
   assert(!doc.querySelector('a'));
 
   // A malformed javascript anchor with space before colon should be unaffected
-  // NOTE: browser will treat this as a relative url, the spaces through the
-  // entire href value will each get encoded as %20, the anchor's protocol will
-  // still match the base uri protocol after the filter.
+  // NOTE: browser will treat this as a relative url, the spaces through the entire href value will
+  // each get encoded as %20, the anchor's protocol will still match the base uri protocol after the
+  // filter.
   input = '<a href="javascript  :console.log(\'im in ur base\')">hax</a>';
   doc = parseHTML(input);
   domFilters.unwrapAnchorElementsWithScriptURLs(doc);
@@ -98,8 +96,7 @@ function attributeEmptyFilterTest() {
   output = '<html><head></head><body><a disabled="">test</a></body></html>';
   assert(doc.documentElement.outerHTML === output);
 
-  // TODO: for some reason this now fails. revisit and learn why. disabled for
-  // now.
+  // TODO: for some reason this now fails. revisit and learn why. disabled for now.
   // Body element with attribute
   // input = '<html><head></head><body foo="">test</body></html>';
   // doc = parseHTML(input);
@@ -147,8 +144,8 @@ function imageLazyFilterTest() {
   assert(image);
   assert(image.getAttribute('src') === 'before.gif');
 
-  // An image with an unrecognized attribute shouldn't affect src, only those
-  // explicit listed attribute names are candidates
+  // An image with an unrecognized attribute shouldn't affect src, only those explicit listed
+  // attribute names are candidates
   input = '<img id="test" foo-bar-baz="test.gif">';
   doc = parseHTML(input);
   transformLazilyLoadedImageElements(doc);
@@ -157,8 +154,8 @@ function imageLazyFilterTest() {
   let srcValue = image.getAttribute('src');
   assert(srcValue === null || srcValue === undefined);
 
-  // An image with a valid candidate that looks lazy, but the candidate has a
-  // bad value, should leave the source as is
+  // An image with a valid candidate that looks lazy, but the candidate has a bad value, should
+  // leave the source as is
   input = '<img id="test" lazy-src="bad value">';
   doc = parseHTML(input);
   transformLazilyLoadedImageElements(doc);

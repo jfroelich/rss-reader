@@ -22,8 +22,7 @@ feedList.onappendCallback = function feedListOnappendCallback() {
 
 feedList.onclickCallback = function feedListOnclickCallback() {
   showSectionByElementId('mi-feed-details');
-  // For longer feed lists, details will be out of view, so we need to scroll
-  // back to the top
+  // For longer feed lists, details will be out of view, so we need to scroll back to the top
   scrollTo(0, 0);
 };
 

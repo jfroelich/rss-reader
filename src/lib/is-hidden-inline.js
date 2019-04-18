@@ -1,7 +1,7 @@
 import assert from '/src/lib/assert.js';
 
-// Returns true if an element is hidden. This function is inexact and inspects
-// various element properties to make a guess.
+// Returns true if an element is hidden. This function is inexact and inspects various element
+// properties to make a guess.
 export default function isHiddenElement(element) {
   if (element.matches('input[type="hidden"]')) {
     return true;
@@ -15,12 +15,11 @@ export default function isHiddenElement(element) {
   // TODO: do not hardcode the minimum, it should be a parameter
   const minOpacity = new CSSUnitValue(0.3, 'number');
   return style.display === 'none' || style.visibility === 'hidden' ||
-      elementIsNearTransparent(element, minOpacity) ||
-      elementIsOffscreen(element);
+    elementIsNearTransparent(element, minOpacity) ||
+    elementIsOffscreen(element);
 }
 
-// Returns true if the element's opacity is specified inline and less than the
-// threshold.
+// Returns true if the element's opacity is specified inline and less than the threshold.
 // TODO: explicitly test
 export function elementIsNearTransparent(element, minOpacity) {
   assert(minOpacity instanceof CSSUnitValue);
@@ -28,9 +27,9 @@ export function elementIsNearTransparent(element, minOpacity) {
   return opacity && opacity <= minOpacity;
 }
 
-// Returns true if the element is positioned off screen. Heuristic guess.
-// Probably several false negatives, and a few false positives. The cost of
-// guessing wrong is not too high. This is inaccurate.
+// Returns true if the element is positioned off screen. Heuristic guess. Probably several false
+// negatives, and a few false positives. The cost of guessing wrong is not too high. This is
+// inaccurate.
 // TODO: write tests that verify this behavior, this feels really inaccurate
 export function elementIsOffscreen(element) {
   const { style } = element;

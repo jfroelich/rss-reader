@@ -5,10 +5,9 @@ import { NetworkError } from '/src/lib/better-fetch.js';
 import TestRegistry from '/src/test/test-registry.js';
 import assert from '/src/lib/assert.js';
 
-// This is a very specific test that ensures favicon lookup functionality
-// matches browser functionality for the domain oracle.com. oracle.com for
-// some reason returns the content type "unknown" which was previously an
-// cause of failure for lookups.
+// This is a very specific test that ensures favicon lookup functionality matches browser
+// functionality for the domain oracle.com. oracle.com for some reason returns the content type
+// "unknown" which was previously an cause of failure for lookups.
 async function faviconOracleTest() {
   const databaseName = faviconOracleTest.name;
   await indexedDBUtils.remove(databaseName);
@@ -73,8 +72,8 @@ async function faviconCacheClearTest() {
   await indexedDBUtils.remove(faviconCacheClearTest.name);
 }
 
-// Insert a mix of expired and non-expired entries. Then run compact and check
-// the expired entries are gone and the non-expired entries remain.
+// Insert a mix of expired and non-expired entries. Then run compact and check the expired entries
+// are gone and the non-expired entries remain.
 async function faviconCacheCompactTest() {
   const databaseName = faviconCacheCompactTest.name;
   await indexedDBUtils.remove(databaseName);
@@ -115,11 +114,10 @@ async function faviconCacheCompactTest() {
   await indexedDBUtils.remove(databaseName);
 }
 
-// This is not part of the built in api. It would exist only for test purposes.
-// So I violate abstraction here to get it. I think that is ok in test context
-// which is allowed to know of internals. Keep in mind this may fail
-// unexpectedly whenever favicon.js is modified. I might move this into
-// favicon but am undecided.
+// This is not part of the built in api. It would exist only for test purposes. So I violate
+// abstraction here to get it. I think that is ok in test context which is allowed to know of
+// internals. Keep in mind this may fail unexpectedly whenever favicon.js is modified. I might move
+// this into favicon but am undecided.
 function countEntries(conn) {
   return new Promise((resolve, reject) => {
     const txn = conn.transaction('entries');
@@ -140,8 +138,7 @@ async function fetchImageTest() {
   let response = await favicon.fetchImage(url, options);
   assert(response);
 
-  // Test with an explicit definite timeout that should never happen
-  // in test context
+  // Test with an explicit definite timeout that should never happen in test context
   options = { timeout: new Deadline(100000) };
   response = await favicon.fetchImage(url, options);
   assert(response);

@@ -6,14 +6,14 @@ import fadeElement from '/src/lib/fade-element.js';
 import subscribe from '/src/service/subscribe.js';
 
 export default function SubscriptionForm() {
-  // Default to a reasonable amount of time. The user can optionally override
-  // this. Use Deadline(0) or undefined to not impose a time limit.
+  // Default to a reasonable amount of time. The user can optionally override this. Use Deadline(0)
+  // or undefined to not impose a time limit.
   this.fetchFeedTimeout = new Deadline(8000);
 
   this.urlElement = undefined;
   this.monitorElement = undefined;
-  // Optional callback that is invoked with the subscribed feed, prior to all
-  // entries being imported.
+  // Optional callback that is invoked with the subscribed feed, prior to all entries being
+  // imported.
   this.onsubscribe = undefined;
 }
 

@@ -218,8 +218,8 @@ FeedList.prototype.deactivateOnclick = async function (event) {
   await rss.patchFeed(conn, props);
   conn.close();
 
-  // TODO: this should be done in the channel message handler instead of here
   // Deactivate the corresponding element in the view
+  // TODO: this should be done in the channel message handler instead of here
   const itemElement = this.listElement.querySelector(`li[feed="${feedId}"]`);
   if (itemElement) {
     itemElement.setAttribute('inactive', 'true');

@@ -29,8 +29,7 @@ async function subscribeTest() {
   const fetchFeedTimeout = INDEFINITE;
   const notify = false;
 
-  // Rethrow subscribe exceptions just like assertion failures by omitting
-  // try/catch.
+  // Rethrow subscribe exceptions just like assertion failures by omitting try/catch.
   const resource = await subscribe(conn, iconn, url, fetchFeedTimeout, notify, feedStoredCallback);
 
   // subscribe should yield a resource object
@@ -45,8 +44,8 @@ async function subscribeTest() {
   // subscribe should have invoked the feed-created callback
   assert(callbackCalled);
 
-  // The created resource should contain one or more urls, including the initial
-  // url input to subscribe
+  // The created resource should contain one or more urls, including the initial url input to
+  // subscribe
   assert(resource.urls.length);
   assert(resource.urls.includes(url.href));
 

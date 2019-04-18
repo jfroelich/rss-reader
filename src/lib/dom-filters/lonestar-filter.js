@@ -2,8 +2,8 @@ import * as imageUtils from '/src/lib/image-utils.js';
 import assert from '/src/lib/assert.js';
 import isHiddenElement from '/src/lib/is-hidden-inline.js';
 
-// The lonestar filter is tasked with jamming radars. A guide to anti-telemetry
-// can be found here: https://youtu.be/rGvblGCD7qM
+// The lonestar filter is tasked with jamming radars. A guide to anti-telemetry can be found here:
+// https://youtu.be/rGvblGCD7qM
 
 const hostPatterns = [
   /\/\/.*2o7\.net\//i,

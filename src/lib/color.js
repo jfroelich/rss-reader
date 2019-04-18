@@ -47,8 +47,7 @@ export function premultiply(color) {
     const green = getGreen(color);
     const blue = getBlue(color);
 
-    // In the new color output, we replace alpha with 255 (as in, 100%).
-
+    // In the new color output, we replace alpha with 255 (as in, 100%)
     return pack(red * ratio, green * ratio, blue * ratio, 255);
   }
 
@@ -65,8 +64,8 @@ export function blend(colors, baseColor = WHITE) {
   return output;
 }
 
-// Combine the 4 components of RGBA into a single number. This stores alpha
-// component in the upper bits so this is technically ARGB.
+// Combine the 4 components of RGBA into a single number. This stores alpha component in the upper
+// bits so this is technically ARGB.
 export function pack(r, g, b, a = 255) {
   return (a & 0xff) << 24 | (r & 0xff) << 16 | (g & 0xff) << 8 | (b & 0xff);
 }
@@ -91,8 +90,8 @@ export function getBlue(c) {
   return c & 0xff;
 }
 
-// Calculate the luminance of a color. The formula is defined in detail in the
-// spec: http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
+// Calculate the luminance of a color. The formula is defined in detail in the spec:
+// http://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
 export function getLuminance(color) {
   const rr = getRed(color) / 255;
   const rg = getGreen(color) / 255;

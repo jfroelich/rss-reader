@@ -34,14 +34,12 @@ import '/src/test/unwrap-element-tests.js';
 import '/src/test/url-sniffer-test.js';
 import TestRegistry from '/src/test/test-registry.js';
 
-// Wrap a call to a test function with some extra log messages. Impose an
-// optional deadline for the test to complete by specifying a timeout.
-// The test will fail either immediately when creating the promise, or later
-// when awaiting the promise when the test has rejected, or after the timeout
-// occurred. We throw an error in all 3 cases. Note that in the timeout case
-// we ignore the test result (pass or error) and throw a timeout error
-// instead. Also note that in the case of a timeout, we do not abort the test,
-// because promises are not cancelable.
+// Wrap a call to a test function with some extra log messages. Impose an optional deadline for the
+// test to complete by specifying a timeout. The test will fail either immediately when creating the
+// promise, or later when awaiting the promise when the test has rejected, or after the timeout
+// occurred. We throw an error in all 3 cases. Note that in the timeout case we ignore the test
+// result (pass or error) and throw a timeout error instead. Also note that in the case of a
+// timeout, we do not abort the test, because promises are not cancelable.
 async function runTimedTest(testFunction, timeout = 0) {
   console.log('%s: started', testFunction.name);
   if (timeout) {
@@ -59,14 +57,12 @@ function watchdogWatch(testFunction, timeMs) {
   return new Promise((_, reject) => setTimeout(reject, timeMs, error));
 }
 
-// Run one or more tests either all at once or one after the other. In either
-// case, if any test fails, the function exits (but tests may still run
-// indefinitely).
-// @param name {String} optional, name of test to run, if not specified then all
-// tests run
+// Run one or more tests either all at once or one after the other. In either case, if any test
+// fails, the function exits (but tests may still run indefinitely).
+// @param name {String} optional, name of test to run, if not specified then all tests run
 // @param timeout {Number} optional, ms, per-test timeout value
-// @param parallel {Boolean} optional, whether to run tests in parallel or
-// serial, defaults to false (serial)
+// @param parallel {Boolean} optional, whether to run tests in parallel or serial, defaults to
+// false (serial)
 async function cliRun(name, timeout = 10000, parallel = true) {
   // Either run one test, run the named tests, or run all tests
 

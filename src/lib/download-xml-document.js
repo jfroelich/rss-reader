@@ -1,5 +1,5 @@
-// Given an opml document, converts it into a file and then triggers the
-// download of that file in the browser.
+// Given an opml document, converts it into a file and then triggers the download of that file in
+// the browser.
 export default function downloadXMLDocument(xmlDocument, fileName) {
   const serializer = new XMLSerializer();
   const xmlString = serializer.serializeToString(xmlDocument);

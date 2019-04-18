@@ -9,8 +9,8 @@ import parseHTML from '/src/lib/parse-html.js';
 
 function colorParseTypedCSSTest() {
   // TODO: expiriment with typed CSS OM
-  // TODO: investigate element.computedStyleMap(), looks like it still does
-  // not work with non-attached
+  // TODO: investigate element.computedStyleMap(), looks like it still does not work with
+  // non-attached
   // TODO: actually assert things of course
 
   const input = '<div style="background-color: #ffffff;">white</div>';

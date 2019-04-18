@@ -23,8 +23,7 @@ function removeHTMLTest() {
   output = removeHTML(input);
   assert(output === 'bold afterspace');
 
-  // Text with an entity that is lost by transformation. &#32; represents a
-  // space.
+  // Text with an entity that is lost by transformation. &#32; represents a space.
   input = 'before&#32;after';
   output = removeHTML(input);
   assert(output === 'before after');

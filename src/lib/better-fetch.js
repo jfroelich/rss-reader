@@ -2,9 +2,9 @@ import * as mime from '/src/lib/mime-utils.js';
 import { Deadline, INDEFINITE } from '/src/lib/deadline.js';
 import assert, { isAssertError } from '/src/lib/assert.js';
 
-// Extends native fetch with a timeout, response type checking, explicit options
-// set for privacy, and translates the TypeError that native fetch throws when
-// the network is unavailable into a custom NetworkError error type.
+// Extends native fetch with a timeout, response type checking, explicit options set for privacy,
+// and translates the TypeError that native fetch throws when the network is unavailable into a
+// custom NetworkError error type.
 export async function betterFetch(url, options = {}) {
   assert(url instanceof URL);
   assert(options && typeof options === 'object');
@@ -51,15 +51,13 @@ export async function betterFetch(url, options = {}) {
     if (isAssertError(error)) {
       throw error;
     } else {
-      // fetch throws a TypeError when offline (network unreachable), which
-      // we translate into a network error. This should not be confused with
-      // a 404 error, where the network works but the server returns 404
+      // fetch throws a TypeError when offline (network unreachable), which we translate into a
+      // network error. This should not be confused with a 404 error.
       throw new NetworkError(error.message);
     }
   }
 
-  // response is defined when fetch wins the race, and undefined when
-  // timedResolve wins the race.
+  // response is defined when fetch wins the race, and undefined when timedResolve wins the race
   if (!response) {
     throw new TimeoutError(`Timed out trying to fetch ${url.href}`);
   }
@@ -92,8 +90,8 @@ export class NetworkError extends Error {
   }
 }
 
-// This error indicates the response was not successful (returned something not
-// in the [200-299] status range).
+// This error indicates the response was not successful (returned something not in the [200-299]
+// status range).
 export class FetchError extends Error {
   constructor(message = 'Error fetching url') {
     super(message);

@@ -1,19 +1,18 @@
 // Replace an element with its child nodes in the DOM. Returns undefined.
 //
-// If the element is an orphan, where an orphan is defined as a node without a
-// parent, then this is a noop.
+// If the element is an orphan, where an orphan is defined as a node without a parent, then this is
+// a noop.
 //
-// The algorithm tries to consider the effect on whitespace as a result of
-// removing the element. It takes a few shortcuts so it is somewhat imperfect.
-// Some whitespace may be inserted before and after the child nodes in order
-// prevent merging of adjacent text nodes that were previously non-adjacent.
+// The algorithm tries to consider the effect on whitespace as a result of removing the element. It
+// takes a few shortcuts so it is somewhat imperfect. Some whitespace may be inserted before and
+// after the child nodes in order prevent merging of adjacent text nodes that were previously
+// non-adjacent.
 //
-// Special handling is provided for tables and lists but not other elements that
-// involve 'semantic distance' between child nodes and the input element's
-// parent.
+// Special handling is provided for tables and lists but not other elements that involve 'semantic
+// distance' between child nodes and the input element's parent.
 //
-// Regarding performance, the algorithm considers whether the document is
-// implicitly live-flagged. However, recursive application is not optimized.
+// Regarding performance, the algorithm considers whether the document is implicitly live-flagged.
+// However, recursive application is not optimized.
 export default function unwrapElement(element) {
   if (!element.parentNode) {
     return;
@@ -51,9 +50,8 @@ export default function unwrapElement(element) {
       }
     }
   } else if (isListElement) {
-    // NOTE: we move along items using sibling chain, because we are moving
-    // around the content within items, not the items themselves. Previously
-    // this was a bug.
+    // NOTE: we move along items using sibling chain, because we are moving around the content
+    // within items, not the items themselves. Previously this was a bug.
     let item = element.firstChild;
     const listItemElementNames = ['dd', 'dt', 'li'];
     while (item) {
@@ -66,9 +64,8 @@ export default function unwrapElement(element) {
         // Advance after, since we can, and it is simpler
         item = item.nextSibling;
       } else {
-        // Advance before, because we are moving the whole thing, and the
-        // nextSibling link will be broken by the move. Memoize the link before
-        // however so we can move it after advance.
+        // Advance before, because we are moving the whole thing, and the nextSibling link will be
+        // broken by the move. Memoize the link before however so we can move it after advance.
         const prev = item;
         item = item.nextSibling;
         // For non-item child node of list element, move the entire thing

@@ -1,5 +1,4 @@
-// A simple mock implementation of a channel that just records locally sent
-// messages
+// A simple mock implementation of a channel that just records locally sent messages
 export default function RecordingChannel() {
   this.messages = [];
   this.name = 'recording-channel';

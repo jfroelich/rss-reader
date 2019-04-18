@@ -11,9 +11,8 @@ NavMenu.prototype.init = function () {
   }
 };
 
-// The listener is attached to the item, but that may not be what triggered
-// the click event of event.target, so use currentTarget to get the element
-// where the listener is attached
+// The listener is attached to the item, but that may not be what triggered the click event of
+// event.target, so use currentTarget to get the element where the listener is attached
 NavMenu.prototype.itemOnclick = function (event) {
   this.onclick(event.currentTarget);
 };

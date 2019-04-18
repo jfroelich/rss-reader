@@ -1,10 +1,9 @@
 import * as config from '/src/config.js';
 
-export default function DisplaySettingsForm() {}
+export default function DisplaySettingsForm() { }
 
 DisplaySettingsForm.prototype.init = function (parent) {
-  // TODO: setting class on every td is redundant, much simpler to specify
-  // "table td" rule in CSS
+  // TODO: setting class on every td is redundant, much simpler to specify "table td" rule in CSS
 
   const heading = document.createElement('h1');
   heading.textContent = 'Display Settings';

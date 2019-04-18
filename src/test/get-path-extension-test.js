@@ -22,10 +22,9 @@ function getPathExtensionTest() {
   result = getPathExtension('/.htaccess');
   assert(result === 'htaccess');
 
-  // Should fail without error when the extension has too many characters,
-  // here we use the explicit value despite it being equal to the default for
-  // the moment, to insulate against change to the default and use express
-  // expression
+  // Should fail without error when the extension has too many characters, here we use the explicit
+  // value despite it being equal to the default for the moment, to insulate against change to the
+  // default and use express expression
   result = getPathExtension('/b.01234567890123456789asdf', 10);
   assert(!result);
 

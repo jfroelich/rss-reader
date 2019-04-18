@@ -33,13 +33,13 @@ const elementAttributeMap = {
   video: 'src'
 };
 
-// Resolves all element attribute values that contain urls in |document|.
-// Assumes the document has a valid base uri.
+// Resolves all element attribute values that contain urls in document. Assumes the document has a
+// valid base uri.
 export default function filter(document) {
   const baseURL = new URL(document.baseURI);
 
-  // In the first pass, select all mapped elements present anywhere in the
-  // document, and resolve attribute values per element
+  // In the first pass, select all mapped elements present anywhere in the document, and resolve
+  // attribute values per element
   const keys = Object.keys(elementAttributeMap);
   const selector = keys.map(key => `${key}[${elementAttributeMap[key]}]`).join(',');
   const elements = document.querySelectorAll(selector);

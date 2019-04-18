@@ -27,8 +27,8 @@ async function indexedDBUtilsOldVersionTest() {
   // When creating the database for the first time, the old version will be 0
   assert(oldVersion === 0);
 
-  // When creating the database for the first time without specifying a version,
-  // the new version will be 1
+  // When creating the database for the first time without specifying a version, the new version
+  // will be 1
   assert(newVersion === 1);
 
   await remove(indexedDBUtilsOldVersionTest.name);
@@ -56,8 +56,8 @@ async function indexedDBUtilsUnnamedTest() {
     }
   }
 
-  // open should have produced some kind of error. do not care what kind of
-  // error, just that it exists.
+  // open should have produced some kind of error. do not care what kind of error, just that it
+  // exists.
   assert(expectedError);
 }
 
@@ -80,18 +80,17 @@ async function indexedDBUtilsBadVersionTest() {
     }
   }
 
-  // expected error should be something like the following: "TypeError: Failed
-  // to execute 'open' on 'IDBFactory': Value is outside the 'unsigned long
-  // long' value range." TypeError is a descendant of Error. I want to be a bit
-  // more specific than defined object, but less specific that a particular kind
-  // of error, in an (possibly futile) attempt to stay agnostic.
+  // expected error should be something like the following: "TypeError: Failed to execute 'open' on
+  // 'IDBFactory': Value is outside the 'unsigned long long' value range." TypeError is a descendant
+  // of Error. I want to be a bit more specific than defined object, but less specific that a
+  // particular kind of error, in an (possibly futile) attempt to stay agnostic.
   assert(expectedError instanceof Error);
 }
 
 // Verify how indexedDB stores function objects
 async function indexedDBUtilsFunctionObjectTest() {
-  // Really simple schema generator for test, never expects version change other
-  // than the initial one
+  // Really simple schema generator for test, never expects version change other than the initial
+  // one
   const upgradeHandler = function (event) {
     const db = event.target.result;
     db.createObjectStore('objects', { keyPath: 'id', autoIncrement: true });

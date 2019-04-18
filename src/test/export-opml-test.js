@@ -32,8 +32,8 @@ async function exportOPMLTest() {
   }
   await Promise.all(promises);
 
-  // Practice similar steps to what the UI would do. Load the resources back
-  // from the database and convert them into outlines
+  // Practice similar steps to what the UI would do. Load the resources back from the database and
+  // convert them into outlines
   const readResources = await rss.getFeeds(conn, { mode: 'feeds' });
   const outlines = readResources.map((resource) => {
     const outline = new Outline();
@@ -64,8 +64,8 @@ async function exportOPMLTest() {
   const outlineElements = document.querySelectorAll('outline');
   assert(outlineElements.length === resources.length);
 
-  // For each feed that has a url, it should have a corresponding outline based
-  // on the outline's xmlurl attribute value.
+  // For each feed that has a url, it should have a corresponding outline based on the outline's
+  // xmlurl attribute value.
   for (const feed of resources) {
     const url = db.getURL(feed);
     const selector = `outline[xmlUrl="${url.href}"]`;

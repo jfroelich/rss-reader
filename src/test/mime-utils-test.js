@@ -6,8 +6,7 @@ function mimeUtilsTest() {
   const a = assert;
   const pct = mime.parseContentType;
 
-  // constants tests
-  // (compensate for lack of static assertions in js)
+  // constants tests (compensate for lack of static assertions)
   a(mime.MIN_LENGTH < mime.MAX_LENGTH);
   a(mime.MIN_LENGTH >= 0);
   a(mime.MAX_LENGTH >= 0);
@@ -40,8 +39,8 @@ function mimeUtilsTest() {
   // no semicolon, no character encoding
   a(pct('text/html') === 'text/html');
 
-  // TODO: if header values in http responses are supposed to be a single line,
-  // then maybe it is more correct to not support line breaks
+  // TODO: if header values in http responses are supposed to be a single line, then maybe it is
+  // more correct to not support line breaks
 
   // extra trimmable whitespace
   a(pct(' \t\ntext/html  \n\t  ') === 'text/html');
@@ -59,13 +58,13 @@ function mimeUtilsTest() {
   a(pct('foofoo/barbar') === 'foofoo/barbar');
 
   // duplicate slash
-  // TODO: eventually the parse function should be revised to return undefined
-  // for now this test just documents this pathological case
+  // TODO: eventually the parse function should be revised to return undefined, for now this test
+  // just documents this pathological case
   a(pct('text/src/lib/html/foo') === 'text/src/lib/html/foo');
 
   // duplicate semicolon
-  // TODO: eventually the parse function should be revised to return undefined
-  // for now just document this case
+  // TODO: eventually the parse function should be revised to return undefined, for now just
+  // document this case
   a(pct('text/html;;charset=UTF-8') === 'text/html');
 
   // isValid tests

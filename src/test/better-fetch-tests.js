@@ -3,8 +3,8 @@ import TestRegistry from '/src/test/test-registry.js';
 import assert from '/src/lib/assert.js';
 
 async function betterFetchOrdinaryTest() {
-  // Exercise an ordinary case of the function on a local file and assert that
-  // it basically runs without error.
+  // Exercise an ordinary case of the function on a local file and assert that it basically runs
+  // without error.
   const path = '/src/test/better-fetch-test.html';
   const urlString = chrome.extension.getURL(path);
   const url = new URL(urlString);
@@ -14,8 +14,8 @@ async function betterFetchOrdinaryTest() {
   assert(fullText === 'Hello World\n', fullText);
 }
 
-// Verify that fetching a file of a particular type along with a response type
-// constraint on that type succeeds
+// Verify that fetching a file of a particular type along with a response type constraint on that
+// type succeeds
 async function betterFetchGoodTypeTest() {
   const path = '/src/test/better-fetch-test.html';
   const urlString = chrome.extension.getURL(path);
@@ -27,8 +27,8 @@ async function betterFetchGoodTypeTest() {
   await betterFetch(url, options);
 }
 
-// Verify that fetching with a response type constraint that does not allow for
-// the given type produces the expected error
+// Verify that fetching with a response type constraint that does not allow for the given type
+// produces the expected error
 async function betterFetchBadTypeTest() {
   const path = '/src/test/better-fetch-test.html';
   const urlString = chrome.extension.getURL(path);
@@ -47,8 +47,7 @@ async function betterFetchBadTypeTest() {
   assert(fetchError instanceof AcceptError);
 }
 
-// Verify that fetching a local file that does not exist produces a network
-// error
+// Verify that fetching a local file that does not exist produces a network error
 async function betterFetchLocal404Test() {
   const path = '/src/src/lib/this-file-does-not-exist.html';
   const urlString = chrome.extension.getURL(path);

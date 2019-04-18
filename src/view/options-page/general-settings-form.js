@@ -1,6 +1,6 @@
 import * as config from '/src/config.js';
 
-export default function GeneralSettingsForm() {}
+export default function GeneralSettingsForm() { }
 
 GeneralSettingsForm.prototype.init = async function (parent) {
   const heading = document.createElement('h1');
@@ -38,10 +38,10 @@ GeneralSettingsForm.prototype.init = async function (parent) {
   input.setAttribute('type', 'checkbox');
   input.setAttribute('id', 'enable-background');
 
-  // background is configured as an optional permission in the extension's
-  // manifest, so it is addable and removable
-  // TODO: this should be using a configuration variable and instead the
-  // permission should be permanently defined.
+  // background is configured as an optional permission in the extension's manifest, so it is
+  // addable and removable
+  // TODO: this should be using a configuration variable and instead the permission should be
+  // permanently defined.
   input.checked = await hasPermission('background');
   input.onclick = (event) => {
     if (event.target.checked) {

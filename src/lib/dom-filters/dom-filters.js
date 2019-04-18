@@ -19,9 +19,8 @@ import unwrapElement from '/src/lib/unwrap-element.js';
 import unwrapSingleItemListElements from '/src/lib/dom-filters/single-item-lists.js';
 
 
-// Applies several content filters to a document. The filters are applied in a
-// logical order that tries to minimize the amount of work done, and to preserve
-// correctness.
+// Applies several content filters to a document. The filters are applied in a logical order that
+// tries to minimize the amount of work done, and to preserve correctness.
 export async function applyAllDOMFilters(doc, options = {}) {
   assert(doc instanceof Document);
   assert(typeof options === 'object');
@@ -88,17 +87,15 @@ export function unwrapFormattingAnchorElements(doc) {
   }
 }
 
-// Anchors that the browser recognizes as javascript executors will have the
-// javascript: protocol. Note the browser tolerates some loose syntax such as
-// having leading spaces before the protocol, but does not tolerate space
-// between the protocol and its colon. Our goal is performance and to match
-// browser behavior. In comparison to other strategies such as using a
-// regular expression or CSS starts-with, it is faster and more accurate to
-// rely on the browser's native behavior.
+// Anchors that the browser recognizes as javascript executors will have the javascript: protocol.
+// Note the browser tolerates some loose syntax such as having leading spaces before the protocol,
+// but does not tolerate space between the protocol and its colon. Our goal is performance and to
+// match browser behavior. In comparison to other strategies such as using a regular expression or
+// CSS starts-with, it is faster and more accurate to rely on the browser's native behavior.
 //
-// The browser recognizes the protocol correctly regardless of the document's
-// baseURI, so there is no concern here regarding when this runs in relation to
-// other filters, or whether the baseURI was properly initialized.
+// The browser recognizes the protocol correctly regardless of the document's baseURI, so there is
+// no concern here regarding when this runs in relation to other filters, or whether the baseURI was
+// properly initialized.
 export function unwrapAnchorElementsWithScriptURLs(doc) {
   const anchors = doc.querySelectorAll('a[href]');
   for (const anchor of anchors) {
@@ -109,9 +106,8 @@ export function unwrapAnchorElementsWithScriptURLs(doc) {
   }
 }
 
-// Removes certain attributes from all elements in a document. |allowedAttributes| is
-// an object map where each key is element name and each value is array of
-// names of retainable attributes.
+// Removes certain attributes from all elements in a document. allowedAttributes is an object map
+// where each key is element name and each value is array of names of retainable attributes.
 export function removeForbiddenAttributeNames(doc, allowedAttributes) {
   assert(typeof allowedAttributes === 'object');
   const elements = doc.getElementsByTagName('*');
@@ -259,9 +255,9 @@ export function unwrapFormattingElements(doc) {
   }
 }
 
-// Filters certain horizontal rule elements from document content
-// Look for all <hr><hr> sequences and remove the second one. Naive in that it
-// does not fully account for new document state as hrs removed.
+// Filters certain horizontal rule elements from document content. Look for all <hr><hr> sequences
+// and remove the second one. Naive in that it does not fully account for new document state as hrs
+// removed.
 export function transformHorizontalRuleElements(doc) {
   if (doc.body) {
     const hrs = doc.body.querySelectorAll('hr + hr');
@@ -291,16 +287,16 @@ export function removeSourcelessImageElements(doc) {
 export function removeImageElementsByDimensions(doc) {
   const images = doc.querySelectorAll('img');
   for (const image of images) {
-    // For large images, remove explicit dimensions to allow for natural
-    // dimension precedence and avoid scaling issues in the UI
+    // For large images, remove explicit dimensions to allow for natural dimension precedence and
+    // avoid scaling issues in the UI
     if (image.width > 1024 || image.height > 1024) {
       image.removeAttribute('width');
       image.removeAttribute('height');
     } else if (
       image.width > 2 && image.width < 33 && image.height > 2 &&
-        image.height < 33) {
-      // Remove small images because we assume those images are probably
-      // boilerplate, part of a site's template, or telemetry.
+      image.height < 33) {
+      // Remove small images because we assume those images are probably boilerplate, part of a
+      // site's template, or telemetry.
       imageUtils.removeImage(image);
     }
   }

@@ -80,8 +80,7 @@ async function pollFeedsCommand() {
   args.conn = conn;
   args.iconn = iconn;
 
-  // The user is expressing explicit intent to poll, so disregard whenever the
-  // last poll ran.
+  // The user is expressing explicit intent to poll, so disregard whenever the last poll ran.
   args.ignoreRecencyCheck = true;
 
   await pollFeeds(args);
@@ -160,8 +159,8 @@ async function unsubscribeCommand(urlString) {
 
   const conn = await db.open();
 
-  // unsubscribe does not check whether the feed actually exists, but we want
-  // to know if that is the case in order to provide more information.
+  // unsubscribe does not check whether the feed actually exists, but we want to know if that is the
+  // case in order to provide more information.
   const feed = await rss.getFeed(conn, { mode: 'url', url, keyOnly: true });
 
   if (feed) {

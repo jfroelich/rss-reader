@@ -1,20 +1,20 @@
 import assert from '/src/lib/assert.js';
 
-// TODO: export a function like block-is-boilerplate or block-is-content instead
-// of exporting this raw score. I prefer score to be as opaque as possible and
-// exporting this is just too low level, the api is too technical as a result.
+// TODO: export a function like block-is-boilerplate or block-is-content instead of exporting this
+// raw score. I prefer score to be as opaque as possible and exporting this is just too low level,
+// the api is too technical as a result.
 export const neutralScore = 50;
 
-// Given a dataset representing content sections of a document, produce a scored
-// dataset indicating which elements in the dataset are boilerplate.
+// Given a dataset representing content sections of a document, produce a scored dataset indicating
+// which elements in the dataset are boilerplate.
 //
 // Options:
-// - tailSize {Number} optional, should be in range [0..0.5), determines what
-// percentage of content blocks fall into header and footer sections
-// - documentArea {Number} optional, the default dimensions of a document to
-// use when determining the proportional size of content blocks
-// - minimumContentThreshold {Number} optional, should be in range 0-100,
-// indicating minimum desired percentage of content vs. boilerplate
+// - tailSize {Number} optional, should be in range [0..0.5), determines what percentage of content
+// blocks fall into header and footer sections
+// - documentArea {Number} optional, the default dimensions of a document to use when determining
+// the proportional size of content blocks
+// - minimumContentThreshold {Number} optional, should be in range 0-100, indicating minimum desired
+// percentage of content vs. boilerplate
 export function classify(dataset, scoreBlock, options = {}) {
   assert(Array.isArray(dataset));
 
@@ -158,11 +158,10 @@ export function adjustScores(blocks, options) {
   return blocks;
 }
 
-// Get the total length of non-boilerplate content. This works
-// counter-intuitively by finding the disjoint set of boilerplate blocks,
-// summing their lengths, and substracting that from document length. This
-// strange way of doing this avoids issues with double counting lengths of
-// nested non-boilerplate blocks.
+// Get the total length of non-boilerplate content. This works counter-intuitively by finding the
+// disjoint set of boilerplate blocks, summing their lengths, and substracting that from document
+// length. This strange way of doing this avoids issues with double counting lengths of nested
+// non-boilerplate blocks.
 export function getContentLength(blocks, documentLength, threshold) {
   // Assume documentLength is >= 0.
 
@@ -174,7 +173,7 @@ export function getContentLength(blocks, documentLength, threshold) {
   let length = 0;
   for (const block of blocks) {
     if (block.score < threshold &&
-        !hasBoilerplateAncestor(blocks, block, threshold)) {
+      !hasBoilerplateAncestor(blocks, block, threshold)) {
       length += block.textLength;
     }
   }
@@ -182,10 +181,9 @@ export function getContentLength(blocks, documentLength, threshold) {
   return documentLength - length;
 }
 
-// Given a block, check its ancestors. If any ancestor is boilerplate, return
-// true. Otherwise, return false. The block itself is not considered.
-// TODO: should block be the first parameter since that is what this primarily
-// operates on?
+// Given a block, check its ancestors. If any ancestor is boilerplate, return true. Otherwise,
+// return false. The block itself is not considered.
+// TODO: should block be the first parameter since that is what this primarily operates on?
 // TODO: is threshold an ambiguous name for a parameter?
 function hasBoilerplateAncestor(blocks, block, threshold) {
   // We assume blocks is a defined array of blocks with at least one block.
@@ -208,19 +206,16 @@ function hasBoilerplateAncestor(blocks, block, threshold) {
   return false;
 }
 
-// TODO: score should not be a built in property. a block is only concerned with
-// representing the parsed featured of a block, not its derived features,
-// whether those derived features are variables for later heuristics or the
-// final classification. this also means that initial score should not be a
-// parameter.
+// TODO: score should not be a built in property. a block is only concerned with representing the
+// parsed featured of a block, not its derived features, whether those derived features are
+// variables for later heuristics or the final classification. this also means that initial score
+// should not be a parameter.
 
-// A block is a representation of a portion of a document's content along with
-// some derived properties.
+// A block is a representation of a portion of a document's content along with some derived
+// properties.
 //
-// @param element {Element} a live reference to the element in a document that
-// this block represents
-// @param elementIndex {Number} the index of the block in the all-body-elements
-// array
+// @param element {Element} a live reference to the element in a document that this block represents
+// @param elementIndex {Number} the index of the block in the all-body-elements array
 export function Block(element, initialScore = 0, elementIndex = -1) {
   this.element = element;
   this.elementIndex = elementIndex;
@@ -240,14 +235,12 @@ export function Block(element, initialScore = 0, elementIndex = -1) {
 
 // Blocks are distinguishable areas of content
 // NOTE: lists (ol/ul/dl) excluded at the moment due to bad scoring
-// TODO: i need to somehow reintroduce support for treating lists as
-// distinguishable blocks. For example, <ul old-id="breadcrumbs"></ul> is a
-// standalone section of content that should be removable
+// TODO: i need to somehow reintroduce support for treating lists as distinguishable blocks. For
+// example, <ul old-id="breadcrumbs"></ul> is a standalone section of content that should be
+// removable
 // NOTE: <code> excluded at the moment, maybe permanently
-
-// TODO: I would prefer that neutralScore not be a parameter. but right now
-// it is needed to properly initialize blocks. so i need to change block
-// constructor first then remove it here.
+// TODO: I would prefer that neutralScore not be a parameter. but right now it is needed to properly
+// initialize blocks. so i need to change block constructor first then remove it here.
 
 // Given a document, produce an array of blocks
 export function parseBlocks(doc, neutralScore) {
@@ -261,11 +254,10 @@ export function parseBlocks(doc, neutralScore) {
     'table', 'td', 'tr'
   ];
 
-  // NOTE: while it is tempting to use a selector that traverses only those
-  // elements that are block candidates, this would deny us from tracking the
-  // proper index into a collection of all dom elements. We need to track the
-  // all-elements index so that we can find which element corresponds to which
-  // block later (if and once I remove the element property from a block).
+  // NOTE: while it is tempting to use a selector that traverses only those elements that are block
+  // candidates, this would deny us from tracking the proper index into a collection of all dom
+  // elements. We need to track the all-elements index so that we can find which element corresponds
+  // to which block later (if, and once, I remove the element property from a block).
 
   const elements = doc.body.getElementsByTagName('*');
   const blocks = [];
@@ -282,12 +274,10 @@ export function parseBlocks(doc, neutralScore) {
   return blocks;
 }
 
-// TODO: this should be composable, like find-parent + set-parent-prop, not this
-// compound verb
+// TODO: this should be composable, like find-parent + set-parent-prop, not this compound verb
 function findAndSetParent(blocks, block, element) {
-  // We walk backwards because the parent is most likely to be the preceding
-  // block (the last block in the array) at the time this is called.
-
+  // We walk backwards because the parent is most likely to be the preceding block (the last block
+  // in the array)
   for (let index = blocks.length - 1; index > -1; index -= 1) {
     if (blocks[index].element.contains(element)) {
       block.parentBlockIndex = index;
@@ -296,13 +286,13 @@ function findAndSetParent(blocks, block, element) {
   }
 }
 
-// This module focuses on setting derived properties of blocks in the dataset
-// by analyzing the content of each block.
+// This module focuses on setting derived properties of blocks in the dataset by analyzing the
+// content of each block.
 // TODO: maybe specifying the Block type was bad, I should simply use a generic
 // dictionary
 
-// TODO: the main export is public facing, so it would be appropriate to use
-// an assertion or two to check against bad parameters (TypeErrors).
+// TODO: the main export is public facing, so it would be appropriate to use an assertion or two to
+// check against bad parameters (TypeErrors).
 
 // TODO: for now this will directly set pre-existing properties of block
 // objects. However that may be the wrong coupling. It could be better if the
@@ -370,9 +360,8 @@ function getNodeDepth(node) {
   return depth;
 }
 
-// Find the count of characters in anchors that are anywhere in the descendant
-// hierarchy of this element. This assumes anchors do not contain each other
-// (e.g. not misnested).
+// Find the count of characters in anchors that are anywhere in the descendant hierarchy of this
+// element. This assumes anchors do not contain each other (e.g. not misnested).
 function getAnchorTextLength(element) {
   const anchors = element.querySelectorAll('a[href]');
   let anchorLength = 0;
@@ -638,17 +627,15 @@ export function scoreBlock(block, info, neutralScore) {
   return Math.max(minScore, Math.min(score, maxScore));
 }
 
-// Calculates a bias that should increase or decrease an element's boilerplate
-// score based on the element's depth. The general heuristic is that the deeper
-// the node, the greater the probability it is boilerplate. There is no risk
-// of the document element or the body element from being scored because
-// analysis starts from within body, so depth values 0 and 1 are grouped into
-// the first bin and do not get any explicit treatment.
+// Calculates a bias that should increase or decrease an element's boilerplate score based on the
+// element's depth. The general heuristic is that the deeper the node, the greater the probability
+// it is boilerplate. There is no risk of the document element or the body element from being scored
+// because analysis starts from within body, so depth values 0 and 1 are grouped into the first bin
+// and do not get any explicit treatment.
 function deriveDepthBias(depth) {
-  // NOTE: the coefficient used here was chosen empirically, need to do actual
-  // analysis using something like linear regression, i am not even sure depth
-  // is a great independent variable, this is also why i capped it to limit its
-  // impact
+  // NOTE: the coefficient was chosen empirically, need to do actual analysis using something like
+  // regression, I am not even sure depth is a great independent variable, this is also why I capped
+  // it to limit its impact
   const slope = -4;
   let bias = slope * depth + 10;
   bias = Math.max(-5, Math.min(5, bias));
@@ -660,9 +647,8 @@ function deriveElementTypeBias(elementType, weights) {
   return bias || 0;
 }
 
-// Calculate a bias for an element's score based on the amount of text it
-// contains relative to the overall amount of text in the document. Generally,
-// large blocks of text are not boilerplate.
+// Calculate a bias for an element's score based on the amount of text it contains relative to the
+// overall amount of text in the document. Generally, large blocks of text are not boilerplate.
 function deriveTextLengthBias(blockTextLength, documentTextLength) {
   if (!documentTextLength) {
     return 0;
@@ -683,13 +669,13 @@ function deriveTextLengthBias(blockTextLength, documentTextLength) {
   return bias | 0;
 }
 
-// Text with lots of lines and a short amount of text per line is probably
-// boilerplate, whereas text with lots of text per line are probably content.
+// Text with lots of lines and a short amount of text per line is probably boilerplate, whereas text
+// with lots of text per line are probably content.
 // TODO: use a coefficient instead instead of bin thresholds
 function deriveLineCountBias(textLength, lineCount) {
   // Calculate the typical text length of the lines of the block
-  // TODO: the rounding can occur on the bias value after applying the
-  // coefficient, we don't need to round lines here
+  // TODO: the rounding can occur on the bias value after applying the coefficient, we don't need to
+  // round lines here
   const lineLength = (textLength / (lineCount || 1)) | 0;
 
   if (lineLength > 100) {
@@ -719,9 +705,9 @@ function deriveAnchorDensityBias(anchorTextLength, textLength) {
   return 0;
 }
 
-// TODO: this should not depend on element, somehow, maybe use a block_type
-// that is a category of tags (e.g. list, container). This should only depend
-// on features. Even if I just add an 'is-list' feature, that is an improvement
+// TODO: this should not depend on element, somehow, maybe use a block_type that is a category of
+// tags (e.g. list, container). This should only depend on features. Even if I just add an 'is-list'
+// feature, that is an improvement.
 function deriveListBias(element, listItemCount) {
   // Do not punish lists themselves
   if (['ol', 'ul', 'dl'].includes(element.localName)) {
@@ -751,8 +737,8 @@ function derivePositionBias(index, frontMax, endMin) {
   return 0;
 }
 
-// Look at the values of attributes of a block element to indicate whether a
-// block represents boilerplate
+// Look at the values of attributes of a block element to indicate whether a block represents
+// boilerplate
 function deriveAttributeBias(tokens, tokenWeights) {
   let bias = 0;
   for (const token of tokens) {
@@ -761,8 +747,8 @@ function deriveAttributeBias(tokens, tokenWeights) {
   return bias;
 }
 
-// Return an approximate count of the characters in a string. This ignores outer
-// whitespace and excessive inner whitespace.
+// Return an approximate count of the characters in a string. This ignores outer whitespace and
+// excessive inner whitespace.
 export function computeTextLength(text) {
   return text.trim().replace(/\s\s+/g, ' ').length;
 }

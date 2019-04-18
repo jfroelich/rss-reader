@@ -22,8 +22,8 @@ async function migrationsTests20() {
   // The specified version is expected to be the actual version
   assert(conn.version === version);
 
-  // The database should now have a feed store (these throw uncaught exceptions
-  // if that is not the case)
+  // The database should now have a feed store (these throw uncaught exceptions if that is not the
+  // case)
   const transaction = conn.transaction('feed');
   const feedStore = transaction.objectStore('feed');
 
@@ -51,8 +51,8 @@ async function migrationsTests23() {
     migrations.migrate23(event);
   };
 
-  // It should not contain title index initially, because the index is no longer
-  // created, because the migration function was modified
+  // It should not contain title index initially, because the index is no longer created, because
+  // the migration function was modified
   let conn = await indexedDBUtils.open(databaseName, 20, handler);
   let transaction = conn.transaction('feed');
   let store = transaction.objectStore('feed');
@@ -60,13 +60,12 @@ async function migrationsTests23() {
   transaction.abort();
   conn.close();
 
-  // It should no longer contain it (and it should not produce an error). Note
-  // that this test exposed a bug that was since fixed. The migration to 23
-  // assumed that the index exists, and called deleteIndex naively, which then
-  // produced an error about unable to delete non-existent index. Now the 23
-  // migration checks for the presence of the index. Therefore, this test is
-  // not only testing that the index is gone, it is also just exercising the
-  // migration and testing that it runs without error.
+  // It should no longer contain it (and it should not produce an error). Note that this test
+  // exposed a bug that was since fixed. The migration to 23 assumed that the index exists, and
+  // called deleteIndex naively, which then produced an error about unable to delete non-existent
+  // index. Now the 23 migration checks for the presence of the index. Therefore, this test is not
+  // only testing that the index is gone, it is also just exercising the migration and testing that
+  // it runs without error.
   conn = await indexedDBUtils.open(databaseName, 23, handler);
   transaction = conn.transaction('feed');
   store = transaction.objectStore('feed');
@@ -171,9 +170,8 @@ async function migrationsTests31() {
 
   conn = await indexedDBUtils.open(databaseName, 31, handler);
 
-  // Verify the entry store has some of the appropriate indices (we can infer
-  // that if a few worked the rest worked). Create a temporary transaction and
-  // cancel it later.
+  // Verify the entry store has some of the appropriate indices (we can infer that if a few worked
+  // the rest worked). Create a temporary transaction and cancel it later.
   const transaction = conn.transaction('entries');
   const entryStore = transaction.objectStore('entries');
   assert(entryStore.indexNames.contains('feed-read_state-date_published'));
@@ -181,8 +179,8 @@ async function migrationsTests31() {
   assert(entryStore.indexNames.contains('read_state'));
   transaction.abort();
 
-  // Read back the feed that underwent migration. We only inserted 1 so we
-  // cheat and just grab feed with id 1
+  // Read back the feed that underwent migration. We only inserted 1 so we cheat and just grab feed
+  // with id 1
   const modifiedFeed = await new Promise((resolve, reject) => {
     const transaction = conn.transaction('feeds');
     const store = transaction.objectStore('feeds');
@@ -238,9 +236,8 @@ async function migrationsTests32() {
 
   conn = await indexedDBUtils.open(databaseName, 32, handler);
 
-  // Verify the entry store has some of the appropriate indices (we can infer
-  // that if a few worked the rest worked). Create a temporary transaction and
-  // cancel it later.
+  // Verify the entry store has some of the appropriate indices (we can infer that if a few worked
+  // the rest worked). Create a temporary transaction and cancel it later.
   const transaction = conn.transaction('entries');
   const entryStore = transaction.objectStore('entries');
   assert(!entryStore.indexNames.contains('feed-date_published'));
@@ -311,8 +308,8 @@ async function migrationsTests33() {
 
   transaction.abort();
 
-  // Attempting to reference the non-existent index should result in an error,
-  // and the index should be undefined
+  // Attempting to reference the non-existent index should result in an error, and the index should
+  // be undefined
   assert(!feedIndex);
   assert(expectedError instanceof DOMException);
 

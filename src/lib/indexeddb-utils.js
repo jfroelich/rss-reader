@@ -1,16 +1,15 @@
 import { Deadline, INDEFINITE } from '/src/lib/deadline.js';
 import assert from '/src/lib/assert.js';
 
-// Opens a connection to an indexedDB database. The primary benefits over using
-// indexedDB.open directly are that this works as a promise, enables a timeout,
-// and translates blocked events into errors (and still closes if ever open).
+// Opens a connection to an indexedDB database. The primary benefits over using indexedDB.open
+// directly are that this works as a promise, enables a timeout, and translates blocked events into
+// errors (and still closes if ever open).
 //
-// An upgrade can still happen in the event of a rejection. For now, I am not
-// trying to prevent that as an implicit side effect, although it is possible to
-// abort the versionchange transaction from within the upgrade listener. If I
-// wanted to do that I would wrap the call to the listener here with a function
-// that first checks if blocked/timedOut and if so aborts the transaction and
-// closes, otherwise forwards to the listener.
+// WARNING: An upgrade can still happen in the event of a rejection. For now, I am not trying to
+// prevent that as an implicit side effect, although it is possible to abort the versionchange
+// transaction from within the upgrade listener. If I wanted to do that I would wrap the call to the
+// listener here with a function that first checks if blocked/timedOut and if so aborts the
+// transaction and closes, otherwise forwards to the listener.
 export async function open(name, version, onupgrade, timeout = INDEFINITE) {
   assert(typeof name === 'string');
   assert(timeout instanceof Deadline);
@@ -26,11 +25,12 @@ export async function open(name, version, onupgrade, timeout = INDEFINITE) {
     request.onsuccess = function (event) {
       const conn = event.target.result;
 
-      // If we blocked, we rejected the promise earlier so just exit. The extra
-      // rejection here is irrelevant.
+      // If we blocked, we rejected the promise earlier so just exit. The extra rejection here is
+      // irrelevant.
       if (blocked) {
         console.debug('Closing connection "%s" that unblocked', conn.name);
         conn.close();
+        reject();
         return;
       }
 

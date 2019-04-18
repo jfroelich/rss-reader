@@ -13,21 +13,19 @@ async function cssOffsetPropertiesTest() {
   await setAllImageElementDimensions(doc);
   image = doc.querySelector('img');
 
-  // It is very poorly documented, but there are in fact different behaviors
-  // regarding the DOM based on whether a document is "live". In fact, without
-  // any explicit property anywhere in the API, a document is privately flagged
-  // as either live or inert. For example of a difference, some properties
-  // produce uninitialized values in an inert document.
+  // It is very poorly documented, but there are in fact different behaviors regarding the DOM based
+  // on whether a document is "live". In fact, without any explicit property anywhere in the API, a
+  // document is privately flagged as either live or inert. For example of a difference, some
+  // properties produce uninitialized values in an inert document.
 
-  // An inert document is created in the routine operation of an app that does
-  // dom processing. Specifically, there are two common methods by which to
-  // create an inert document:
+  // An inert document is created in the routine operation of an app that does dom processing.
+  // Specifically, there are two common methods by which to create an inert document:
   // 1) via window.implementation
   // 2) via XMLHttpRequest
 
-  // Confirm that in the context of an inert document, offset width and height
-  // are undefined. Therefore, any suggestion of using them is misguided and
-  // uninformed. This is also why the jquery approach fails on inert docs.
+  // Confirm that in the context of an inert document, offset width and height are undefined.
+  // Therefore, any suggestion of using them is misguided and uninformed. This is also why the
+  // jquery approach fails on inert docs.
   assert(image.offsetWidth === 0);
   assert(image.offsetHeight === 0);
 
@@ -35,18 +33,17 @@ async function cssOffsetPropertiesTest() {
   assert(image.naturalWidth === 0);
   assert(image.naturalHeight === 0);
 
-  // However, some properties may be initialized, such as width and height
-  // based on the css (even in the absence of attributes).
-  // TODO: I removed the style heuristic from the filter. These assertions are
-  // no longer true apparently. So maybe the above conclusion is incorrect. I
-  // am disabling these for now to get the test passing again and I need to
-  // revisit this.
+  // However, some properties may be initialized, such as width and height based on the css (even in
+  // the absence of attributes).
+  // TODO: I removed the style heuristic from the filter. These assertions are no longer true
+  // apparently. So maybe the above conclusion is incorrect. I am disabling these for now to get the
+  // test passing again and I need to revisit this.
   // assert(image.width === 1);
   // assert(image.height === 1);
 
   // Test when specified only via style element, not style attribute
   input = '<html><head><style>img{ width: 1px; height: 1px; }</style></head>' +
-      '<body><img></body></html>';
+    '<body><img></body></html>';
   doc = parseHTML(input);
   await setAllImageElementDimensions(doc);
   image = doc.querySelector('img');
@@ -63,9 +60,8 @@ async function cssOffsetPropertiesTest() {
   */
 }
 
-// Test with image.src is present in the case where there is a picture, a
-// source, and an image, all well-formed, but image has no src attribute. In
-// this case, src should not be provided.
+// Test with image.src is present in the case where there is a picture, a source, and an image, all
+// well-formed, but image has no src attribute. In this case, src should not be provided.
 async function pictureWithoutSrcAttributeTest() {
   const input = '<picture><source srcset="foo.gif"><img></picture>';
   const doc = parseHTML(input);
@@ -91,8 +87,7 @@ async function imageDimensionsFilterCSSTest() {
   console.debug(image.outerHTML);
 }
 
-// Exercise the ordinary case of a basic html document with an image with
-// unknown attributes
+// Exercise the ordinary case of a basic html document with an image with unknown attributes
 async function imageDimensionsFilterTest() {
   const input = '<img src="/src/test/basic-image.png">';
   const doc = parseHTML(input);

@@ -2,13 +2,13 @@ import * as db from '/src/db/db.js';
 import * as rss from '/src/service/resource-storage-service.js';
 import parseOPML from '/src/lib/parse-opml.js';
 
-// Create and store feed objects in the database based on urls extracted from
-// zero or more opml files. |files| should be a FileList or an Array.
+// Create and store feed objects in the database based on urls extracted from zero or more opml
+// files. files should be a FileList or an Array.
 export default async function importOPML(conn, files) {
   console.log('Importing %d OPML files', files.length);
 
-  // Grab urls from each of the files. Per-file errors, including assertion
-  // errors, are logged not thrown.
+  // Grab urls from each of the files. Per-file errors, including assertion errors, are logged not
+  // thrown.
   const promises = Array.prototype.map.call(files,
     file => findURLsInFile(file).catch(console.warn));
   const results = await Promise.all(promises);
@@ -45,25 +45,23 @@ export default async function importOPML(conn, files) {
   return rss.createFeeds(conn, feeds);
 }
 
-// Return an array of outline urls (as URL objects) from OPML outline elements
-// found in the plaintext representation of the given file
+// Return an array of outline urls (as URL objects) from OPML outline elements found in the
+// plaintext representation of the given file
 async function findURLsInFile(file) {
   return findOutlineURLs(parseOPML(await readFileFullTextAsync(file)));
 }
 
-// Return an array of outline urls (as URL objects) from outlines found in an
-// OPML document
+// Return an array of outline urls (as URL objects) from outlines found in an OPML document
 function findOutlineURLs(doc) {
-  // Assume the document is semi-well-formed. As a compromise between a deep
-  // strict validation and no validation at all, use the CSS restricted-parent
-  // selector syntax. We also do some filtering of outlines here up front to
-  // only those with a type attribute because it is slightly better performance
-  // and less code.
+  // Assume the document is semi-well-formed. As a compromise between a deep strict validation and
+  // no validation at all, use the CSS restricted-parent selector syntax. We also do some filtering
+  // of outlines here up front to only those with a type attribute because it is slightly better
+  // performance and less code.
   const outlines = doc.querySelectorAll('opml > body > outline[type]');
 
-  // Although I've never seen it in the wild, apparently OPML outline elements
-  // can represent non-feed data. Use this pattern to restrict the outlines
-  // considered to those properly configured.
+  // Although I've never witnessed it in the wild, apparently OPML outline elements can represent
+  // non-feed data. Use this pattern to restrict the outlines considered to those properly
+  // configured.
   const feedFormatPattern = /^\s*(rss|rdf|feed)\s*$/i;
 
   const urls = [];
