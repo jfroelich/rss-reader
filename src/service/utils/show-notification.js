@@ -1,4 +1,4 @@
-import * as config from '/src/config.js';
+import * as config from '/src/lib/config.js';
 import openTab from '/src/lib/open-tab.js';
 
 const defaultIcon = chrome.extension.getURL('/images/rss_icon_trans.gif');

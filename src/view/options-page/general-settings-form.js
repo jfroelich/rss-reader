@@ -1,4 +1,4 @@
-import * as config from '/src/config.js';
+import * as config from '/src/lib/config.js';
 
 export default function GeneralSettingsForm() { }
 

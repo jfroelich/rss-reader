@@ -1,5 +1,5 @@
 import * as color from '/src/lib/color.js';
-import * as config from '/src/config.js';
+import * as config from '/src/lib/config.js';
 
 const backgroundImageFilenames = [
   'bgfons-paper_texture318.jpg',

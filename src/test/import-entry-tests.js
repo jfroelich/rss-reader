@@ -1,4 +1,4 @@
-import * as config from '/src/config.js';
+import * as config from '/src/lib/config.js';
 import { rewriteURL } from '/src/service/import-entry.js';
 import TestRegistry from '/src/test/test-registry.js';
 import assert from '/src/lib/assert.js';

@@ -1,4 +1,4 @@
-import * as config from '/src/config.js';
+import * as config from '/src/lib/config.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as rss from '/src/service/resource-storage-service.js';
 import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';

@@ -1,4 +1,4 @@
-import * as config from '/src/config.js';
+import * as config from '/src/lib/config.js';
 import * as rss from '/src/service/resource-storage-service.js';
 import { INDEFINITE } from '/src/lib/deadline.js';
 import openTab from '/src/lib/open-tab.js';
