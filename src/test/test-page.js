@@ -34,12 +34,12 @@ import '/src/test/unwrap-element-tests.js';
 import '/src/test/url-sniffer-test.js';
 import TestRegistry from '/src/test/test-registry.js';
 
-// Wrap a call to a test function with some extra log messages. Impose an optional deadline for the
-// test to complete by specifying a timeout. The test will fail either immediately when creating the
-// promise, or later when awaiting the promise when the test has rejected, or after the timeout
-// occurred. We throw an error in all 3 cases. Note that in the timeout case we ignore the test
-// result (pass or error) and throw a timeout error instead. Also note that in the case of a
-// timeout, we do not abort the test, because promises are not cancelable.
+// Call the given test function with some extra log messages and with an optional timeout. The test
+// will fail either (1) immediately (in the same tick) when calling the test, or (2) later when
+// awaiting the promise when the test has rejected prior to the test timing out, or (3) after the
+// timeout occurred. We throw an error in all 3 cases. In the timeout case we ignore the test result
+// and throw a timeout error. In the timeout case we do not abort the test because promises are not
+// cancelable. In any error case there is no guarantee a test cleans up after itself.
 async function runTimedTest(testFunction, timeout = 0) {
   console.log('%s: started', testFunction.name);
   if (timeout) {
@@ -59,54 +59,62 @@ function watchdogWatch(testFunction, timeMs) {
 
 // Run one or more tests either all at once or one after the other. In either case, if any test
 // fails, the function exits (but tests may still run indefinitely).
-// @param name {String} optional, name of test to run, if not specified then all tests run
-// @param timeout {Number} optional, ms, per-test timeout value
-// @param parallel {Boolean} optional, whether to run tests in parallel or serial, defaults to
-// false (serial)
+// @param name {Any} optional, name of test to run, or an array of names of tests to run, or, if not
+// specified then all tests run
+// @param timeout {Number} optional, ms, per test timeout value
+// @param parallel {Boolean} optional, defaults to true, if true then when running multiple tests
+// the tests all run at the same time, if false then the each test waits for the previous test to
+// complete before starting
 async function cliRun(name, timeout = 10000, parallel = true) {
-  // Either run one test, run the named tests, or run all tests
-
-  let tests;
+  let testFunctions = [];
   if (typeof name === 'string') {
-    const test = TestRegistry.findTestByName(name);
-    if (!test) {
+    // run the one named test
+    const testFunction = TestRegistry.findTestByName(name);
+    if (!testFunction) {
       console.warn('Test not found', name);
       return;
     }
-    tests = [test];
+    testFunctions.push(testFunction);
   } else if (Array.isArray(name)) {
-    tests = [];
-    for (const n of name) {
-      const test = TestRegistry.findTestByName(n);
-      if (test) {
-        tests.push(test);
+    // run the named tests in the array
+    for (const testName of name) {
+      const testFunction = TestRegistry.findTestByName(testName);
+      if (testFunction) {
+        testFunctions.push(testFunction);
       } else {
         console.warn('Test not found', name);
+        // Continue
       }
     }
   } else {
-    tests = TestRegistry.getTests();
+    // run all tests
+    testFunctions = TestRegistry.getTests();
   }
 
-  console.log('Spawning %d test(s)', tests.length);
+  console.log('Spawning %d test(s)', testFunctions.length);
   const startTime = new Date();
 
   if (parallel) {
+    // Start all tests in order. Each consecutively started test does not wait until the previous
+    // test has completed to start.
     const promises = [];
-    for (const test of tests) {
-      promises.push(runTimedTest(test, timeout));
+    for (const testFunction of testFunctions) {
+      promises.push(runTimedTest(testFunction, timeout));
     }
+    // Wait for all outstanding tests to complete.
     await Promise.all(promises);
   } else {
-    for (const test of tests) {
+    // Start tests one a time, in order. Each consecutively started test waits until the prior test
+    // completes before starting.
+    for (const testFunction of testFunctions) {
       // eslint-disable-next-line no-await-in-loop
-      await runTimedTest(test, timeout);
+      await runTimedTest(testFunction, timeout);
     }
   }
 
   const endTime = new Date();
   const durationMs = endTime - startTime;
-  console.log('%d tests completed in %d ms', tests.length, durationMs);
+  console.log('%d tests completed in %d ms', testFunctions.length, durationMs);
 }
 
 function printTestsCommand() {
