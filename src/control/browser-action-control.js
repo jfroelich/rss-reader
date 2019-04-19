@@ -1,4 +1,4 @@
-import * as config from '/src/lib/config.js';
+import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 import * as rss from '/src/service/resource-storage-service.js';
 import { INDEFINITE } from '/src/lib/deadline.js';
 import openTab from '/src/lib/open-tab.js';
@@ -26,7 +26,7 @@ BrowserActionControl.prototype.init = function (bindOnclicked, bindOnInstalled, 
 };
 
 BrowserActionControl.prototype.onClicked = function () {
-  const reuseNewtab = config.readBoolean('reuse_newtab');
+  const reuseNewtab = localStorageUtils.readBoolean('reuse_newtab');
   openTab('slideshow.html', reuseNewtab).catch(console.warn);
 };
 

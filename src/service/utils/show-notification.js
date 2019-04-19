@@ -1,10 +1,12 @@
-import * as config from '/src/lib/config.js';
+import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 import openTab from '/src/lib/open-tab.js';
+
+// TODO: decouple from local storage utils, accept reuseNewtab as a parameter
 
 const defaultIcon = chrome.extension.getURL('/images/rss_icon_trans.gif');
 
 export default function showNotification(message = '', icon = defaultIcon) {
-  const enabled = config.readBoolean('notifications_enabled');
+  const enabled = localStorageUtils.readBoolean('notifications_enabled');
   if (!enabled) {
     return;
   }
@@ -23,7 +25,7 @@ export default function showNotification(message = '', icon = defaultIcon) {
       return;
     }
 
-    const reuseNewtab = config.readBoolean('reuse_newtab');
+    const reuseNewtab = localStorageUtils.readBoolean('reuse_newtab');
     openTab('slideshow.html', reuseNewtab).catch(console.warn);
   });
 }

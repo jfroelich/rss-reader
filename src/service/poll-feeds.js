@@ -1,5 +1,4 @@
-import * as config from '/src/lib/config.js';
-import * as db from '/src/db/db.js';
+import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 import * as rss from '/src/service/resource-storage-service.js';
 import { Deadline } from '/src/lib/deadline.js';
 import { ImportFeedArgs, importFeed } from '/src/service/import-feed.js';
@@ -16,8 +15,8 @@ export function PollFeedsArgs() {
   this.notify = true;
   this.conn = undefined;
   this.iconn = undefined;
-  this.rewriteRules = config.readArray('rewrite_rules');
-  this.inaccessible_content_descriptors = config.readArray('inaccessible_content_descriptors');
+  this.rewriteRules = localStorageUtils.readArray('rewrite_rules');
+  this.inaccessible_content_descriptors = localStorageUtils.readArray('inaccessible_content_descriptors');
 }
 
 export async function pollFeeds(args) {

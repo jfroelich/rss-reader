@@ -1,11 +1,11 @@
-import * as config from '/src/lib/config.js';
+import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 import { rewriteURL } from '/src/service/import-entry.js';
 import TestRegistry from '/src/test/test-registry.js';
 import assert from '/src/lib/assert.js';
 
 // Exercise the rewrite-url helper
 async function importEntryTests() {
-  const rules = config.readArray('rewrite_rules');
+  const rules = localStorageUtils.readArray('rewrite_rules');
 
   let a = new URL('https://www.google.com');
   let b = rewriteURL(a, rules);

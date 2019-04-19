@@ -1,4 +1,4 @@
-import * as config from '/src/lib/config.js';
+import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 
 export default function GeneralSettingsForm() { }
 
@@ -19,10 +19,10 @@ GeneralSettingsForm.prototype.init = async function (parent) {
   input.setAttribute('id', 'enable-notifications');
 
   input.onclick = function inputOnclick(event) {
-    config.writeBoolean('notifications_enabled', event.target.checked);
+    localStorageUtils.writeBoolean('notifications_enabled', event.target.checked);
   };
 
-  input.checked = config.readBoolean('notifications_enabled');
+  input.checked = localStorageUtils.readBoolean('notifications_enabled');
 
   let label = document.createTextNode('Enable notifications');
   cell.append(input);
@@ -65,8 +65,8 @@ GeneralSettingsForm.prototype.init = async function (parent) {
   input.setAttribute('type', 'checkbox');
   input.setAttribute('id', 'enable-idle-check');
 
-  input.checked = config.readBoolean('only_poll_if_idle');
-  input.onclick = event => config.writeBoolean('only_poll_if_idle', event.target.checked);
+  input.checked = localStorageUtils.readBoolean('only_poll_if_idle');
+  input.onclick = event => localStorageUtils.writeBoolean('only_poll_if_idle', event.target.checked);
 
   label = document.createTextNode('Only check for updates when my device is idle');
   cell.append(input);

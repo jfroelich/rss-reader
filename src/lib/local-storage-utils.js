@@ -1,4 +1,4 @@
-// TODO: move to lib, rename to local-storage-utils
+// TODO: get rid of the hacks, libraries are not supposed to be app specific
 
 export function rename(oldName, newName) {
   const value = readString(oldName);

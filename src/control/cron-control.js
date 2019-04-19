@@ -1,5 +1,5 @@
-import * as config from '/src/lib/config.js';
 import * as favicon from '/src/lib/favicon.js';
+import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 import * as rss from '/src/service/resource-storage-service.js';
 import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
 import archiveResources from '/src/service/archive-resources.js';
@@ -34,7 +34,7 @@ CronControl.prototype.init = function () {
 
 CronControl.prototype.onAlarm = async function (alarm) {
   console.debug('Alarm wokeup:', alarm.name);
-  config.writeString('last_alarm', alarm.name);
+  localStorageUtils.writeString('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
     const conn = await rss.open();
@@ -58,9 +58,9 @@ CronControl.prototype.onAlarm = async function (alarm) {
 };
 
 CronControl.prototype.onPollAlarm = async function () {
-  const idlePollSeconds = config.readInt('idle_poll_secs');
+  const idlePollSeconds = localStorageUtils.readInt('idle_poll_secs');
   if (Number.isInteger(idlePollSeconds) && idlePollSeconds > 0 &&
-    config.readBoolean('only_poll_if_idle')) {
+    localStorageUtils.readBoolean('only_poll_if_idle')) {
     const idleStates = ['locked', 'idle'];
     const idleState = await queryIdleState(idlePollSeconds);
     if (!idleStates.includes(idleState)) {

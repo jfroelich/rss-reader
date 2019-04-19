@@ -1,6 +1,6 @@
-import * as config from '/src/lib/config.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/lib/favicon.js';
+import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 import * as rss from '/src/service/resource-storage-service.js';
 import { Deadline } from '/src/lib/deadline.js';
 import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
@@ -115,7 +115,7 @@ async function refreshFaviconsCommand() {
 function registerFontCommand(newFontName) {
   console.log('Registering font', newFontName);
 
-  const fonts = config.readArray('fonts');
+  const fonts = localStorageUtils.readArray('fonts');
 
   const normalizedNewFontName = newFontName.toLowerCase();
 

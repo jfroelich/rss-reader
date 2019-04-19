@@ -1,17 +1,17 @@
-import * as config from '/src/lib/config.js';
+import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 
 export default function ThemeControl() { }
 
 ThemeControl.prototype.init = function () {
   addEventListener('storage', this.storageOnchange.bind(this));
 
-  // Create the dynamic rules based on properties loaded from config
+  // Create the dynamic rules based on properties loaded from local storage
   const sheet = document.styleSheets[0];
   sheet.addRule('.entry', createEntryRule());
   sheet.addRule('.entry .entry-title', createTitleRule());
   sheet.addRule('.entry .entry-content', createContentRule());
 
-  const padding = config.readInt('padding');
+  const padding = localStorageUtils.readInt('padding');
   if (!isNaN(padding)) {
     sheet.addRule('.slide-padding-wrapper', `padding: ${padding}px`);
   }
@@ -104,8 +104,8 @@ ThemeControl.prototype.storageOnchange = function (event) {
 function createEntryRule() {
   const buffer = [];
 
-  const path = config.readString('bg_image');
-  const backgroundColor = config.readString('bg_color');
+  const path = localStorageUtils.readString('bg_image');
+  const backgroundColor = localStorageUtils.readString('bg_color');
 
   if (path) {
     buffer.push(`background: url("/images/${path}");`);
@@ -118,12 +118,12 @@ function createEntryRule() {
 
 function createTitleRule() {
   const buffer = [];
-  const fontSize = config.readInt('header_font_size');
+  const fontSize = localStorageUtils.readInt('header_font_size');
   if (!isNaN(fontSize)) {
     buffer.push(`font-size: ${fontSize}px;`);
   }
 
-  const fontFamily = config.readString('header_font_family');
+  const fontFamily = localStorageUtils.readString('header_font_family');
   if (fontFamily) {
     buffer.push(`font-family: ${fontFamily};`);
   }
@@ -133,26 +133,26 @@ function createTitleRule() {
 
 function createContentRule() {
   const buffer = [];
-  const fontSize = config.readInt('body_font_size');
+  const fontSize = localStorageUtils.readInt('body_font_size');
   if (!isNaN(fontSize)) {
     buffer.push(`font-size: ${fontSize}px;`);
   }
 
-  if (config.readBoolean('justify_text')) {
+  if (localStorageUtils.readBoolean('justify_text')) {
     buffer.push('text-align: justify;');
   }
 
-  const fontFamily = config.readString('body_font_family');
+  const fontFamily = localStorageUtils.readString('body_font_family');
   if (fontFamily) {
     buffer.push(`font-family: ${fontFamily};`);
   }
 
-  const lineHeight = config.readInt('body_line_height');
+  const lineHeight = localStorageUtils.readInt('body_line_height');
   if (!isNaN(lineHeight)) {
     buffer.push(`line-height: ${lineHeight}px;`);
   }
 
-  const columnCount = config.readInt('column_count');
+  const columnCount = localStorageUtils.readInt('column_count');
   if (columnCount === 2 || columnCount === 3) {
     buffer.push(`column-count: ${columnCount};`);
     buffer.push('column-gap: 30px;');

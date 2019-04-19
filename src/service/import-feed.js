@@ -1,6 +1,6 @@
-import * as config from '/src/lib/config.js';
 import * as db from '/src/db/db.js';
 import * as feedParser from '/src/lib/feed-parser.js';
+import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 import * as rss from '/src/service/resource-storage-service.js';
 import { Deadline, INDEFINITE } from '/src/lib/deadline.js';
 import { ImportEntryArgs, importEntry } from '/src/service/import-entry.js';
@@ -132,17 +132,16 @@ function importEntries(entries, args) {
     iea.inaccessibleContentDescriptors = args.inaccessibleContentDescriptors;
     iea.fetchHTMLTimeout = args.fetchHTMLTimeout;
 
-    // TODO: decouple from config. In the interim I am loading from config here in order to decouple
-    // import-empty from config.
+    // TODO: decouple from local storage
     iea.filterOptions = {};
-    iea.filterOptions.contrastMatte = config.readInt('contrast_default_matte');
-    iea.filterOptions.contrastRatio = config.readFloat('min_contrast_ratio');
-    // TODO: read from config
+    iea.filterOptions.contrastMatte = localStorageUtils.readInt('contrast_default_matte');
+    iea.filterOptions.contrastRatio = localStorageUtils.readFloat('min_contrast_ratio');
+    // TODO: decouple from local storage, but also do not hardcode
     iea.filterOptions.reachableImageFilterTimeout = new Deadline(7000);
     iea.filterOptions.imageDimensionsFilterTimeout = new Deadline(7000);
-    iea.filterOptions.tableScanMaxRows = config.readInt('table_scan_max_rows');
+    iea.filterOptions.tableScanMaxRows = localStorageUtils.readInt('table_scan_max_rows');
 
-    const emphasisMaxLength = config.readInt('emphasis_max_length');
+    const emphasisMaxLength = localStorageUtils.readInt('emphasis_max_length');
     if (!isNaN(emphasisMaxLength)) {
       iea.filterOptions.emphasisMaxLength = emphasisMaxLength;
     }

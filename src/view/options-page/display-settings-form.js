@@ -1,4 +1,4 @@
-import * as config from '/src/lib/config.js';
+import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 
 export default function DisplaySettingsForm() { }
 
@@ -29,7 +29,7 @@ DisplaySettingsForm.prototype.init = function (parent) {
   input.setAttribute('step', '1');
   input.onchange = this.entryMarginSliderOnchange.bind(this);
 
-  const currentEntryMargin = config.readInt('padding');
+  const currentEntryMargin = localStorageUtils.readInt('padding');
   if (!isNaN(currentEntryMargin)) {
     input.value = currentEntryMargin;
   }
@@ -55,8 +55,8 @@ DisplaySettingsForm.prototype.init = function (parent) {
   option.textContent = 'Use background color';
   backgroundImageSelect.append(option);
 
-  const currentBackgroundImagePath = config.readString('bg_image');
-  const backgroundImagePaths = config.readArray('background_images');
+  const currentBackgroundImagePath = localStorageUtils.readString('bg_image');
+  const backgroundImagePaths = localStorageUtils.readArray('background_images');
   for (const backgroundImagePath of backgroundImagePaths) {
     const option = document.createElement('option');
     option.value = backgroundImagePath;
@@ -80,7 +80,7 @@ DisplaySettingsForm.prototype.init = function (parent) {
   input.setAttribute('type', 'color');
   input.oninput = this.entryBackgroundColorOninput.bind(this);
 
-  const backgroundColor = config.readString('bg_color');
+  const backgroundColor = localStorageUtils.readString('bg_color');
   if (backgroundColor) {
     input.value = backgroundColor;
   }
@@ -106,7 +106,7 @@ DisplaySettingsForm.prototype.init = function (parent) {
 
   input.onchange = this.headerFontSizeOnchange.bind(this);
 
-  const headerFontSize = config.readInt('header_font_size');
+  const headerFontSize = localStorageUtils.readInt('header_font_size');
   if (!isNaN(headerFontSize)) {
     input.value = headerFontSize;
   }
@@ -128,7 +128,7 @@ DisplaySettingsForm.prototype.init = function (parent) {
   input.setAttribute('step', '1');
   input.onchange = this.bodyFontSizeOnchange.bind(this);
 
-  const bodyFontSize = config.readInt('body_font_size');
+  const bodyFontSize = localStorageUtils.readInt('body_font_size');
   if (!isNaN(bodyFontSize)) {
     input.value = bodyFontSize;
   }
@@ -144,7 +144,7 @@ DisplaySettingsForm.prototype.init = function (parent) {
   input.setAttribute('id', 'justify-text');
   input.style.width = '20px';
   input.onchange = this.justifyTextOnchange.bind(this);
-  input.checked = config.readBoolean('justify_text');
+  input.checked = localStorageUtils.readBoolean('justify_text');
 
   cell.append(input);
   cell.append('Justify text');
@@ -166,7 +166,7 @@ DisplaySettingsForm.prototype.init = function (parent) {
 
   input.oninput = this.bodyLineHeightOninput.bind(this);
 
-  const bodyLineHeight = config.readInt('body_line_height');
+  const bodyLineHeight = localStorageUtils.readInt('body_line_height');
   if (!isNaN(bodyLineHeight)) {
     input.value = bodyLineHeight;
   }
@@ -185,7 +185,7 @@ DisplaySettingsForm.prototype.init = function (parent) {
   select.onchange = this.columnCountOnchange.bind(this);
 
   const columnCountOptions = [1, 2, 3];
-  const currentColumnCount = config.readInt('column_count');
+  const currentColumnCount = localStorageUtils.readInt('column_count');
   for (const columnCount of columnCountOptions) {
     const option = document.createElement('option');
     option.value = columnCount;
@@ -203,66 +203,66 @@ DisplaySettingsForm.prototype.init = function (parent) {
 DisplaySettingsForm.prototype.entryMarginSliderOnchange = function (event) {
   const margin = event.target.value;
   if (margin) {
-    config.writeString('padding', margin);
+    localStorageUtils.writeString('padding', margin);
   } else {
-    config.remove('padding');
+    localStorageUtils.remove('padding');
   }
 };
 
 DisplaySettingsForm.prototype.backgroundImageOnChange = function (event) {
   const path = event.target.value;
   if (path) {
-    config.writeString('bg_image', path);
+    localStorageUtils.writeString('bg_image', path);
   } else {
-    config.remove('bg_image');
+    localStorageUtils.remove('bg_image');
   }
 };
 
 DisplaySettingsForm.prototype.entryBackgroundColorOninput = function (event) {
   const color = event.target.value;
   if (color) {
-    config.writeString('bg_color', color);
+    localStorageUtils.writeString('bg_color', color);
   } else {
-    config.remove('bg_color');
+    localStorageUtils.remove('bg_color');
   }
 };
 
 DisplaySettingsForm.prototype.headerFontSizeOnchange = function (event) {
   const size = event.target.value;
   if (size) {
-    config.writeString('header_font_size', size);
+    localStorageUtils.writeString('header_font_size', size);
   } else {
-    config.remove('header_font_size');
+    localStorageUtils.remove('header_font_size');
   }
 };
 
 DisplaySettingsForm.prototype.bodyFontSizeOnchange = function (event) {
   const size = event.target.value;
   if (size) {
-    config.writeString('body_font_size', size);
+    localStorageUtils.writeString('body_font_size', size);
   } else {
-    config.remove('body_font_size');
+    localStorageUtils.remove('body_font_size');
   }
 };
 
 DisplaySettingsForm.prototype.justifyTextOnchange = function (event) {
-  config.writeBoolean('justify_text', event.target.checked);
+  localStorageUtils.writeBoolean('justify_text', event.target.checked);
 };
 
 DisplaySettingsForm.prototype.bodyLineHeightOninput = function (event) {
   const height = event.target.value;
   if (height) {
-    config.writeString('body_line_height', height);
+    localStorageUtils.writeString('body_line_height', height);
   } else {
-    config.remove('body_line_height');
+    localStorageUtils.remove('body_line_height');
   }
 };
 
 DisplaySettingsForm.prototype.columnCountOnchange = function (event) {
   const count = event.target.value;
   if (count) {
-    config.writeString('column_count', count);
+    localStorageUtils.writeString('column_count', count);
   } else {
-    config.remove('column_count');
+    localStorageUtils.remove('column_count');
   }
 };

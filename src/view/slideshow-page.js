@@ -1,6 +1,6 @@
-import * as config from '/src/lib/config.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/lib/favicon.js';
+import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 import * as rss from '/src/service/resource-storage-service.js';
 import { Outline, exportOPML } from '/src/lib/export-opml.js';
 import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
@@ -30,7 +30,7 @@ if (feedsContainerElement) {
 let transitionDuration;
 function initTransitionDuration() {
   const defaultDuration = 0.16;
-  const durationFloat = config.readFloat('slide_transition_duration');
+  const durationFloat = localStorageUtils.readFloat('slide_transition_duration');
   transitionDuration = isNaN(durationFloat) ? defaultDuration : durationFloat;
 }
 initTransitionDuration();
@@ -62,7 +62,7 @@ async function showNextSlide() {
     const mode = 'viewable-entries';
     const offset = slideUnreadCount;
     let limit;
-    const configLimit = config.readInt('initial_entry_load_limit');
+    const configLimit = localStorageUtils.readInt('initial_entry_load_limit');
     if (!isNaN(configLimit)) {
       limit = configLimit;
     }
@@ -494,7 +494,7 @@ async function optionsMenuOnclick(event) {
 function headerFontMenuInit(fonts) {
   const menu = document.getElementById('header-font-menu');
   menu.onchange = headerFontMenuOnchange;
-  const currentHeaderFontName = config.readString('header_font_family');
+  const currentHeaderFontName = localStorageUtils.readString('header_font_family');
   const defaultOption = document.createElement('option');
   defaultOption.value = '';
   defaultOption.textContent = 'Header Font';
@@ -514,7 +514,7 @@ function headerFontMenuInit(fonts) {
 function bodyFontMenuInit(fonts) {
   const menu = document.getElementById('body-font-menu');
   menu.onchange = bodyFontMenuOnchange;
-  const currentBodyFont = config.readString('body_font_family');
+  const currentBodyFont = localStorageUtils.readString('body_font_family');
   const defaultOption = document.createElement('option');
   defaultOption.value = '';
   defaultOption.textContent = 'Body Font';
@@ -533,11 +533,11 @@ function bodyFontMenuInit(fonts) {
 
 function headerFontMenuOnchange(event) {
   const fontName = event.target.value;
-  const oldValue = config.readString('header_font_family');
+  const oldValue = localStorageUtils.readString('header_font_family');
   if (fontName) {
-    config.writeString('header_font_family', fontName);
+    localStorageUtils.writeString('header_font_family', fontName);
   } else {
-    config.remove('header_font_family');
+    localStorageUtils.remove('header_font_family');
   }
 
   // HACK: dispatch a fake local change because storage change event listener, only fires if change
@@ -553,11 +553,11 @@ function headerFontMenuOnchange(event) {
 
 function bodyFontMenuOnchange(event) {
   const fontName = event.target.value;
-  const oldValue = config.readString('body_font_family');
+  const oldValue = localStorageUtils.readString('body_font_family');
   if (fontName) {
-    config.writeString('body_font_family', fontName);
+    localStorageUtils.writeString('body_font_family', fontName);
   } else {
-    config.remove('body_font_family');
+    localStorageUtils.remove('body_font_family');
   }
 
   // HACK: dispatch a fake local change because storage change event listener, only fires if change
@@ -597,7 +597,7 @@ function initLeftPanel() {
   menuOptions.onclick = optionsMenuOnclick;
 
   // Load fonts from configuration once for both init helpers
-  const fonts = config.readArray('fonts');
+  const fonts = localStorageUtils.readArray('fonts');
   headerFontMenuInit(fonts);
   bodyFontMenuInit(fonts);
 
@@ -645,7 +645,7 @@ async function onmessage(event) {
   if (message.type === 'resource-created') {
     // Determine whether new articles should be loaded as a result of new articles being added to
     // the database.
-    // TODO: this should come from config
+    // TODO: this should come from local storage
     const maxUnreadSlideCountBeforeSuppressLoading = 3;
     const unreadSlideCount = countUnreadSlides();
     // If there are already enough unread articles loaded, do nothing.
