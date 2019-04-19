@@ -5,11 +5,16 @@ export default function ThemeControl() { }
 ThemeControl.prototype.init = function () {
   addEventListener('storage', this.storageOnchange.bind(this));
 
-  // TODO: if this is called within the context of a module, I do not see the need to explicitly
-  // wait until the DOM is loaded. Module code all runs after the dom is loaded. So this should
-  // instead just directly initialize, like just directly call this.onload().
+  // Create the dynamic rules based on properties loaded from config
+  const sheet = document.styleSheets[0];
+  sheet.addRule('.entry', createEntryRule());
+  sheet.addRule('.entry .entry-title', createTitleRule());
+  sheet.addRule('.entry .entry-content', createContentRule());
 
-  document.addEventListener('DOMContentLoaded', this.onDOMContentLoaded.bind(this));
+  const padding = config.readInt('padding');
+  if (!isNaN(padding)) {
+    sheet.addRule('.slide-padding-wrapper', `padding: ${padding}px`);
+  }
 };
 
 // React to a localStorage property change. Note that this is only fired when another page changes
@@ -93,19 +98,6 @@ ThemeControl.prototype.storageOnchange = function (event) {
     } else {
       rule.style.columnCount = '';
     }
-  }
-};
-
-ThemeControl.prototype.onDOMContentLoaded = function () {
-  // Initialize DOM CSS properties with settings loaded from config.
-  const sheet = document.styleSheets[0];
-  sheet.addRule('.entry', createEntryRule());
-  sheet.addRule('.entry .entry-title', createTitleRule());
-  sheet.addRule('.entry .entry-content', createContentRule());
-
-  const padding = config.readInt('padding');
-  if (!isNaN(padding)) {
-    sheet.addRule('.slide-padding-wrapper', `padding: ${padding}px`);
   }
 };
 
