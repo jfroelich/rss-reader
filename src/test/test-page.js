@@ -123,7 +123,7 @@ function printTestsCommand() {
   });
 }
 
-function handleTestAnchorClick(event) {
+async function handleTestAnchorClick(event) {
   event.stopPropagation();
   const anchor = event.target;
   const testName = anchor.getAttribute('test-name');
@@ -131,11 +131,10 @@ function handleTestAnchorClick(event) {
 
   if (!testFunction) {
     console.error('Could not find test function', testName);
-    return false;
+    return;
   }
 
-  runTimedTest(testFunction).catch(console.error);
-  return false;
+  await runTimedTest(testFunction, 10000);
 }
 
 // Compare two test functions for purposes of sorting. This is a simple lexicographic sort
