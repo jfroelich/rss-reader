@@ -1,6 +1,6 @@
+import * as DBService from '/src/service/db-service.js';
 import * as databaseUtils from '/src/test/database-utils.js';
 import * as indexedDBUtils from '/src/lib/indexeddb-utils.js';
-import * as rss from '/src/service/resource-storage-service.js';
 import TestRegistry from '/src/test/test-registry.js';
 import archiveResources from '/src/service/archive-resources.js';
 import assert from '/src/lib/assert.js';
@@ -18,7 +18,7 @@ async function archiveResourcesTest() {
     const resource = {
       title: `title ${i}`, content: 'foo', read: 1, type: 'entry'
     };
-    createPromises.push(rss.createEntry(conn, resource));
+    createPromises.push(DBService.createEntry(conn, resource));
   }
 
   const ids = await Promise.all(createPromises);
@@ -37,7 +37,7 @@ async function archiveResourcesTest() {
 
   await archiveResources(conn, batchSize, maxAge);
 
-  const resources = await rss.getEntries(conn, { mode: 'all' });
+  const resources = await DBService.getEntries(conn, { mode: 'all' });
   assert(resources.length === 5);
 
   for (const resource of resources) {

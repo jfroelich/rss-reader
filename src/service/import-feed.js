@@ -1,7 +1,7 @@
+import * as DBService from '/src/service/db-service.js';
 import * as db from '/src/db/db.js';
 import * as feedParser from '/src/lib/feed-parser.js';
 import * as localStorageUtils from '/src/lib/local-storage-utils.js';
-import * as rss from '/src/service/resource-storage-service.js';
 import { Deadline, INDEFINITE } from '/src/lib/deadline.js';
 import { ImportEntryArgs, importEntry } from '/src/service/import-entry.js';
 import { betterFetch } from '/src/lib/better-fetch.js';
@@ -48,7 +48,7 @@ export async function importFeed(args) {
 
   // Check if redirected
   if (args.create && fetchURL.href !== responseURL.href) {
-    const existingFeed = await rss.getFeed(args.conn, {
+    const existingFeed = await DBService.getFeed(args.conn, {
       mode: 'url', url: responseURL, keyOnly: true
     });
 
@@ -83,9 +83,9 @@ export async function importFeed(args) {
   }
 
   if (args.create) {
-    args.feed.id = await rss.createFeed(args.conn, args.feed);
+    args.feed.id = await DBService.createFeed(args.conn, args.feed);
   } else {
-    await rss.putFeed(args.conn, args.feed);
+    await DBService.putFeed(args.conn, args.feed);
   }
 
   // Early notify observer-caller if they are listening that we created the feed. This is useful,
@@ -197,7 +197,7 @@ function updateModelFeedFromParsedFeed(feed, parsedFeed) {
 async function validateFeedIsUnique(feed, conn) {
   const url = new URL(feed.urls[feed.urls.length - 1]);
 
-  const existingFeed = await rss.getFeed(conn, { mode: 'url', url, keyOnly: true });
+  const existingFeed = await DBService.getFeed(conn, { mode: 'url', url, keyOnly: true });
 
   if (existingFeed) {
     const message = `Already subscribed to feed with url ${url.href}`;

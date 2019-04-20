@@ -1,5 +1,5 @@
+import * as DBService from '/src/service/db-service.js';
 import * as db from '/src/db/db.js';
-import * as rss from '/src/service/resource-storage-service.js';
 import parseOPML from '/src/lib/parse-opml.js';
 
 // Create and store feed objects in the database based on urls extracted from zero or more opml
@@ -42,7 +42,7 @@ export default async function importOPML(conn, files) {
     return feed;
   });
 
-  return rss.createFeeds(conn, feeds);
+  return DBService.createFeeds(conn, feeds);
 }
 
 // Return an array of outline urls (as URL objects) from OPML outline elements found in the

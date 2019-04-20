@@ -1,6 +1,6 @@
+import * as DBService from '/src/service/db-service.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as localStorageUtils from '/src/lib/local-storage-utils.js';
-import * as rss from '/src/service/resource-storage-service.js';
 import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
 import archiveResources from '/src/service/archive-resources.js';
 import refreshFeedIcons from '/src/service/refresh-feed-icons.js';
@@ -37,13 +37,13 @@ CronControl.prototype.onAlarm = async function (alarm) {
   localStorageUtils.writeString('last_alarm', alarm.name);
 
   if (alarm.name === 'archive') {
-    const conn = await rss.open();
+    const conn = await DBService.open();
     await archiveResources(conn);
     conn.close();
   } else if (alarm.name === 'poll') {
     await this.onPollAlarm();
   } else if (alarm.name === 'refresh-feed-icons') {
-    const proms = [rss.open(), favicon.open()];
+    const proms = [DBService.open(), favicon.open()];
     const [conn, iconn] = await Promise.all(proms);
     await refreshFeedIcons(conn, iconn);
     conn.close();
@@ -69,7 +69,7 @@ CronControl.prototype.onPollAlarm = async function () {
     }
   }
 
-  const promises = [rss.open(), favicon.open()];
+  const promises = [DBService.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(promises);
   const pollArgs = new PollFeedsArgs();
   pollArgs.conn = conn;

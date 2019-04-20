@@ -1,5 +1,5 @@
 import * as localStorageUtils from '/src/lib/local-storage-utils.js';
-import * as rss from '/src/service/resource-storage-service.js';
+import * as DBService from '/src/service/db-service.js';
 import { INDEFINITE } from '/src/lib/deadline.js';
 import openTab from '/src/lib/open-tab.js';
 
@@ -31,7 +31,7 @@ BrowserActionControl.prototype.onClicked = function () {
 };
 
 BrowserActionControl.prototype.onStartup = async function () {
-  const conn = await rss.open(INDEFINITE);
+  const conn = await DBService.open(INDEFINITE);
   await this.refreshBadge(conn);
   conn.close();
 };
@@ -42,7 +42,7 @@ BrowserActionControl.prototype.onInstalled = async function () {
   // extension is updated, there is also a separate kind of update that happens when the
   // background page is reloaded (through the extensions manager inspector) that without this
   // handler causes the text to be unset.
-  const conn = await rss.open(INDEFINITE);
+  const conn = await DBService.open(INDEFINITE);
   await this.refreshBadge(conn);
   conn.close();
 };
@@ -59,7 +59,7 @@ BrowserActionControl.prototype.onMessage = async function (event) {
   if ((message.type === 'resource-created' && message.resourceType === 'entry') ||
     (message.type === 'resource-updated' && message.resourceType === 'entry') ||
     message.type === 'resource-deleted') {
-    const conn = await rss.open(INDEFINITE);
+    const conn = await DBService.open(INDEFINITE);
     await this.refreshBadge(conn);
     conn.close();
   }
@@ -70,7 +70,7 @@ BrowserActionControl.prototype.onMessageError = function (event) {
 };
 
 BrowserActionControl.prototype.refreshBadge = async function (conn) {
-  const count = await rss.countUnreadEntries(conn);
+  const count = await DBService.countUnreadEntries(conn);
   const text = count > 999 ? '1k+' : `${count}`;
   chrome.browserAction.setBadgeText({ text });
 };

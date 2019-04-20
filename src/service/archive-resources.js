@@ -1,5 +1,5 @@
 import * as db from '/src/db/db.js';
-import * as rss from '/src/service/resource-storage-service.js';
+import * as DBService from '/src/service/db-service.js';
 import assert from '/src/lib/assert.js';
 
 const TWO_DAYS_MS = 1000 * 60 * 60 * 24 * 2;
@@ -40,7 +40,7 @@ export default async function archiveResources(conn, batchSize = 100, maxAge = T
   // separation of concerns.
 
   const query = { mode: 'archivable-entries', offset: 0, limit: batchSize };
-  let resources = await rss.getEntries(conn, query);
+  let resources = await DBService.getEntries(conn, query);
 
   while (resources.length) {
     const batchPatchPromises = [];
@@ -81,7 +81,7 @@ export default async function archiveResources(conn, batchSize = 100, maxAge = T
       query.offset += unpatchedCandidateResourcesCount;
 
       // eslint-disable-next-line no-await-in-loop
-      resources = await rss.getEntries(conn, query);
+      resources = await DBService.getEntries(conn, query);
     } else {
       // Set resources.length to 0 in a nice way to naturally exit the loop
       // We know resources.length > 0 from the loop entry condition

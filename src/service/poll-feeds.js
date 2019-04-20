@@ -1,5 +1,5 @@
+import * as DBService from '/src/service/db-service.js';
 import * as localStorageUtils from '/src/lib/local-storage-utils.js';
-import * as rss from '/src/service/resource-storage-service.js';
 import { Deadline } from '/src/lib/deadline.js';
 import { ImportFeedArgs, importFeed } from '/src/service/import-feed.js';
 import assert, { isAssertError } from '/src/lib/assert.js';
@@ -39,7 +39,7 @@ export async function pollFeeds(args) {
 
   localStorage.last_poll_timestamp = `${Date.now()}`;
 
-  const feeds = await rss.getFeeds(args.conn, { mode: 'active-feeds', titleSort: false });
+  const feeds = await DBService.getFeeds(args.conn, { mode: 'active-feeds', titleSort: false });
   console.debug('Loaded %d active feeds for polling', feeds.length);
 
   // Start concurrently polling each feed resource

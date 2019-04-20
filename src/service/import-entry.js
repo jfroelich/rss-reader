@@ -1,6 +1,6 @@
+import * as DBService from '/src/service/db-service.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/lib/favicon.js';
-import * as rss from '/src/service/resource-storage-service.js';
 import * as urlSniffer from '/src/lib/url-sniffer.js';
 import { INDEFINITE } from '/src/lib/deadline.js';
 import { applyAllDOMFilters } from '/src/lib/dom-filters/dom-filters.js';
@@ -33,7 +33,7 @@ export async function importEntry(args) {
 
   // Check if the entry with the possibly rewritten url already exists
   const afterRewriteURL = new URL(entry.urls[entry.urls.length - 1]);
-  const existingEntry = await rss.getEntry(args.conn, {
+  const existingEntry = await DBService.getEntry(args.conn, {
     mode: 'url', url: afterRewriteURL, keyOnly: true
   });
 
@@ -56,7 +56,7 @@ export async function importEntry(args) {
       const rewrittenURL = rewriteURL(responseURL, args.rewriteRules);
       db.setURL(entry, rewrittenURL);
 
-      const existingEntry = rss.getEntry(args.conn, {
+      const existingEntry = DBService.getEntry(args.conn, {
         mode: 'url', url: rewrittenURL, keyOnly: true
       });
       if (existingEntry) {

@@ -1,7 +1,7 @@
+import * as DBService from '/src/service/db-service.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as localStorageUtils from '/src/lib/local-storage-utils.js';
-import * as rss from '/src/service/resource-storage-service.js';
 import { Outline, exportOPML } from '/src/lib/export-opml.js';
 import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
 import BrowserActionControl from '/src/control/browser-action-control.js';
@@ -62,7 +62,7 @@ async function showNextSlide() {
     if (!isNaN(configLimit)) {
       limit = configLimit;
     }
-    entries = await rss.getEntries(conn, { mode, offset, limit });
+    entries = await DBService.getEntries(conn, { mode, offset, limit });
   }
   conn.close();
 
@@ -436,7 +436,7 @@ function importOPMLPrompt() {
 async function handleExportButtonClick() {
   // Load all feeds from the database
   const conn = await db.open();
-  const resources = await rss.getFeeds(conn, { mode: 'feeds' });
+  const resources = await DBService.getFeeds(conn, { mode: 'feeds' });
   conn.close();
 
   // Convert the loaded feeds into outlines
@@ -672,7 +672,7 @@ async function onmessage(event) {
     // logic.
 
     const conn = await db.open();
-    const entries = await rss.getEntries(conn, {
+    const entries = await DBService.getEntries(conn, {
       mode: 'viewable-entries',
       offset: unreadSlideCount,
       limit: undefined
@@ -1049,10 +1049,10 @@ async function initializeSlideshowPage() {
   showSplashElement();
 
   const conn = await db.open();
-  const getEntriesPromise = rss.getEntries(conn, {
+  const getEntriesPromise = DBService.getEntries(conn, {
     mode: 'viewable-entries', offset: 0, limit: 6
   });
-  const getFeedsPromise = rss.getFeeds(conn, { mode: 'feeds', titleSort: true });
+  const getFeedsPromise = DBService.getFeeds(conn, { mode: 'feeds', titleSort: true });
   conn.close();
 
   // Wait for entries to finish loading (without regard to feeds loading)

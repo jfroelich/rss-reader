@@ -1,7 +1,7 @@
+import * as DBService from '/src/service/db-service.js';
 import * as databaseUtils from '/src/test/database-utils.js';
 import * as db from '/src/db/db.js';
 import * as indexedDBUtils from '/src/lib/indexeddb-utils.js';
-import * as rss from '/src/service/resource-storage-service.js';
 import { Outline, exportOPML } from '/src/lib/export-opml.js';
 import TestRegistry from '/src/test/test-registry.js';
 import assert from '/src/lib/assert.js';
@@ -19,7 +19,7 @@ async function exportOPMLTest() {
     const resource = {};
     db.setURL(resource, new URL(`a://b.c${i}`));
     resource.type = 'feed';
-    resource.feed_format = 'rss';
+    resource.feed_format = 'DBService';
     resource.title = `feed-title-${i}`;
     resource.description = `feed-description-${i}`;
     resource.link = `https://www.example.com/${i}`;
@@ -28,13 +28,13 @@ async function exportOPMLTest() {
 
   const promises = [];
   for (const resource of resources) {
-    promises.push(rss.createFeed(conn, resource));
+    promises.push(DBService.createFeed(conn, resource));
   }
   await Promise.all(promises);
 
   // Practice similar steps to what the UI would do. Load the resources back from the database and
   // convert them into outlines
-  const readResources = await rss.getFeeds(conn, { mode: 'feeds' });
+  const readResources = await DBService.getFeeds(conn, { mode: 'feeds' });
   const outlines = readResources.map((resource) => {
     const outline = new Outline();
     outline.type = resource.feed_format;

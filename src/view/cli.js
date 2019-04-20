@@ -1,7 +1,7 @@
+import * as DBService from '/src/service/db-service.js';
 import * as db from '/src/db/db.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as localStorageUtils from '/src/lib/local-storage-utils.js';
-import * as rss from '/src/service/resource-storage-service.js';
 import { Deadline } from '/src/lib/deadline.js';
 import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
 import CronControl from '/src/control/cron-control.js';
@@ -162,7 +162,7 @@ async function unsubscribeCommand(urlString) {
 
   // unsubscribe does not check whether the feed actually exists, but we want to know if that is the
   // case in order to provide more information.
-  const feed = await rss.getFeed(conn, { mode: 'url', url, keyOnly: true });
+  const feed = await DBService.getFeed(conn, { mode: 'url', url, keyOnly: true });
 
   if (feed) {
     await unsubscribe(conn, feed.id);

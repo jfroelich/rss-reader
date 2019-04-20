@@ -1,5 +1,4 @@
-import * as db from '/src/db/db.js';
-import * as rss from '/src/service/resource-storage-service.js';
+import * as DBService from '/src/service/db-service.js';
 import assert from '/src/lib/assert.js';
 import unsubscribe from '/src/service/unsubscribe.js';
 
@@ -17,8 +16,8 @@ export default function FeedList() {
 }
 
 FeedList.prototype.init = async function (parent) {
-  const conn = await rss.open();
-  const feeds = await rss.getFeeds(conn, { mode: 'feeds', titleSort: true });
+  const conn = await DBService.open();
+  const feeds = await DBService.getFeeds(conn, { mode: 'feeds', titleSort: true });
   conn.close();
 
   const listElement = document.createElement('ul');
@@ -114,8 +113,8 @@ FeedList.prototype.itemOnclick = async function feedListItemOnclick(event) {
   const itemElement = event.currentTarget;
   const feedId = parseInt(itemElement.getAttribute('feed'), 10);
 
-  const conn = await rss.open();
-  const feed = await rss.getFeed(conn, { mode: 'id', id: feedId, keyOnly: false });
+  const conn = await DBService.open();
+  const feed = await DBService.getFeed(conn, { mode: 'id', id: feedId, keyOnly: false });
   conn.close();
 
   const detailsTitleElement = document.getElementById('details-title');
@@ -160,7 +159,7 @@ FeedList.prototype.itemOnclick = async function feedListItemOnclick(event) {
 FeedList.prototype.unsubscribeButtonOnclick = async function (event) {
   const feedId = parseInt(event.target.value, 10);
 
-  const conn = await rss.open();
+  const conn = await DBService.open();
   await unsubscribe(conn, feedId);
   conn.close();
 
@@ -194,8 +193,8 @@ FeedList.prototype.removeFeedById = function (feedId) {
 FeedList.prototype.activateOnclick = async function (event) {
   const feedId = parseInt(event.target.value, 10);
 
-  const conn = await rss.open();
-  await rss.patchFeed(conn, { id: feedId, active: 1 });
+  const conn = await DBService.open();
+  await DBService.patchFeed(conn, { id: feedId, active: 1 });
   conn.close();
 
   // Mark the corresponding feed element loaded in the view as active
@@ -213,9 +212,9 @@ FeedList.prototype.activateOnclick = async function (event) {
 
 FeedList.prototype.deactivateOnclick = async function (event) {
   const feedId = parseInt(event.target.value, 10);
-  const conn = await rss.open();
+  const conn = await DBService.open();
   const props = { id: feedId, active: 0, deactivation_reason: 'manual' };
-  await rss.patchFeed(conn, props);
+  await DBService.patchFeed(conn, props);
   conn.close();
 
   // Deactivate the corresponding element in the view
