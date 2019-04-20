@@ -20,11 +20,7 @@ themeControl.init();
 
 const splashElement = document.getElementById('initial-loading-panel');
 const feedsContainerElement = document.getElementById('feeds-container');
-if (feedsContainerElement) {
-  feedsContainerElement.onclick = feedsContainerOnclick;
-} else {
-  console.warn('could not find feeds-container');
-}
+feedsContainerElement.onclick = feedsContainerOnclick;
 
 // Slide animation speed (smaller is faster), floating point
 let transitionDuration;

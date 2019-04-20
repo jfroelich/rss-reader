@@ -32,7 +32,7 @@ BrowserActionControl.prototype.onClicked = function () {
 
 BrowserActionControl.prototype.onStartup = async function () {
   const conn = await rss.open(INDEFINITE);
-  this.refreshBadge(conn).catch(console.warn);
+  await this.refreshBadge(conn);
   conn.close();
 };
 
@@ -43,7 +43,7 @@ BrowserActionControl.prototype.onInstalled = async function () {
   // background page is reloaded (through the extensions manager inspector) that without this
   // handler causes the text to be unset.
   const conn = await rss.open(INDEFINITE);
-  this.refreshBadge(conn).catch(console.warn);
+  await this.refreshBadge(conn);
   conn.close();
 };
 
@@ -63,7 +63,7 @@ BrowserActionControl.prototype.onMessage = async function (event) {
 };
 
 BrowserActionControl.prototype.onMessageError = function (event) {
-  console.warn('Message error event:', event);
+  console.warn(event);
 };
 
 BrowserActionControl.prototype.refreshBadge = async function (conn) {
