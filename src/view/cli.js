@@ -1,5 +1,4 @@
 import * as DBService from '/src/service/db-service.js';
-import * as db from '/src/db/db.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 import { Deadline } from '/src/lib/deadline.js';
@@ -20,7 +19,7 @@ function getAllAlarms() {
 
 async function archiveResourcesCommand() {
   console.log('Archiving resources...');
-  const conn = await db.open();
+  const conn = await DBService.open();
   const resourceIds = await archiveResources(conn);
   conn.close();
   console.debug('Archived %d resources', resourceIds.length);
@@ -73,7 +72,7 @@ async function lookupFaviconCommand(urlString, cached) {
 async function pollFeedsCommand() {
   console.log('Polling feeds...');
 
-  const proms = [db.open(), favicon.open()];
+  const proms = [DBService.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(proms);
 
   const args = new PollFeedsArgs();
@@ -103,7 +102,7 @@ async function printAlarmsCommand() {
 
 async function refreshFaviconsCommand() {
   console.log('Refreshing favicons for feeds...');
-  const proms = [db.open(), favicon.open()];
+  const proms = [DBService.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(proms);
   const updateResults = await refreshFeedIcons(conn, iconn);
   conn.close();
@@ -128,7 +127,7 @@ function registerFontCommand(newFontName) {
   }
 
   fonts.push(newFontName);
-  config.writeArray('fonts', fonts);
+  localStorageUtils.writeArray('fonts', fonts);
   console.log('Registered font', newFontName);
 }
 
@@ -143,7 +142,7 @@ async function subscribeCommand(urlString) {
     console.debug('Stored new feed, now storing entries...');
   }
 
-  const proms = [db.open(), favicon.open()];
+  const proms = [DBService.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(proms);
   const feed = await subscribe(conn, iconn, url, timeout, notify, callback);
   conn.close();
@@ -158,7 +157,7 @@ async function unsubscribeCommand(urlString) {
 
   const url = new URL(urlString);
 
-  const conn = await db.open();
+  const conn = await DBService.open();
 
   // unsubscribe does not check whether the feed actually exists, but we want to know if that is the
   // case in order to provide more information.

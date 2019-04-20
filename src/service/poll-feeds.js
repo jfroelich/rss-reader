@@ -24,7 +24,7 @@ export async function pollFeeds(args) {
 
   // Cancel the run if the last run was too recent
   if (args.recencyPeriod && !args.ignoreRecencyCheck) {
-    const stamp = config.readInt('last_poll_timestamp');
+    const stamp = localStorageUtils.readInt('last_poll_timestamp');
     if (!isNaN(stamp)) {
       const now = new Date();
       const stampDate = new Date(stamp);

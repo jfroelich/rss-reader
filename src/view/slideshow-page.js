@@ -49,7 +49,7 @@ async function showNextSlide() {
     return;
   }
 
-  const conn = await db.open();
+  const conn = await DBService.open();
   await markSlideReadStart(conn, currentSlide);
 
   const slideUnreadCount = countUnreadSlides();
@@ -204,7 +204,7 @@ async function slideOnclick(event) {
   // markSlideReadStart, it avoids opening the connection.
   if (!slide.hasAttribute('stale') && !slide.hasAttribute('read') &&
     !slide.hasAttribute('read-pending')) {
-    const conn = await db.open();
+    const conn = await DBService.open();
     await markSlideReadStart(conn, slide);
     conn.close();
   }
@@ -321,7 +321,7 @@ async function refreshButtonOnclick(event) {
 
   refreshInProgress = true;
 
-  const promises = [db.open(), favicon.open()];
+  const promises = [DBService.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(promises);
   const args = new PollFeedsArgs();
   args.conn = conn;
@@ -426,7 +426,7 @@ function importOPMLPrompt() {
     // For unknown reason we must grab this before the await, otherwise error. This behavior changed
     // sometime around Chrome 72 without notice
     const { files } = event.target;
-    const conn = await db.open();
+    const conn = await DBService.open();
     await importOPML(conn, files);
     conn.close();
   };
@@ -435,7 +435,7 @@ function importOPMLPrompt() {
 
 async function handleExportButtonClick() {
   // Load all feeds from the database
-  const conn = await db.open();
+  const conn = await DBService.open();
   const resources = await DBService.getFeeds(conn, { mode: 'feeds' });
   conn.close();
 
@@ -671,7 +671,7 @@ async function onmessage(event) {
     // just inventing an approach that doesn't run headfirst into this crappy
     // logic.
 
-    const conn = await db.open();
+    const conn = await DBService.open();
     const entries = await DBService.getEntries(conn, {
       mode: 'viewable-entries',
       offset: unreadSlideCount,
@@ -1048,7 +1048,7 @@ function hideSplashElement() {
 async function initializeSlideshowPage() {
   showSplashElement();
 
-  const conn = await db.open();
+  const conn = await DBService.open();
   const getEntriesPromise = DBService.getEntries(conn, {
     mode: 'viewable-entries', offset: 0, limit: 6
   });
