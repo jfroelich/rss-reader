@@ -4,10 +4,10 @@ import assert from '/src/lib/assert.js';
 import filterEmptyProperties from '/src/lib/filter-empty-properties.js';
 
 export default function putResource(conn, resource) {
-  return new Promise(putResourceExecutor.bind(this, conn, resource));
+  return new Promise(executor.bind(this, conn, resource));
 }
 
-function putResourceExecutor(conn, resource, resolve, reject) {
+function executor(conn, resource, resolve, reject) {
   assert(conn instanceof Connection);
   assert(resource && typeof resource === 'object');
   assert(resourceUtils.isValidId(resource.id));
@@ -24,14 +24,16 @@ function putResourceExecutor(conn, resource, resolve, reject) {
   const transaction = conn.conn.transaction('resources', 'readwrite');
   transaction.oncomplete = transactionOncomplete.bind(transaction, resource, conn.channel, resolve);
   transaction.onerror = event => reject(event.target.error);
-
-  const resourcesStore = transaction.objectStore('resources');
-  resourcesStore.put(resource);
+  transaction.objectStore('resources').put(resource);
 }
 
 function transactionOncomplete(resource, channel, callback) {
   if (channel) {
-    channel.postMessage({ type: 'resource-updated', id: resource.id });
+    channel.postMessage({
+      type: 'resource-updated',
+      id: resource.id,
+      resourceType: resource.type
+    });
   }
   callback(resource);
 }

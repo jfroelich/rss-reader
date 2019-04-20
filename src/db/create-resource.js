@@ -4,18 +4,24 @@ import filterEmptyProperties from '/src/lib/filter-empty-properties.js';
 
 // TODO: support new resource type "enclosure" that is child of type entry
 
+// Store a new object in the database and get its key path. Returns a promise that resolves to the
+// new, automatically-generated unique id of the resource.
+//
+// Throws various errors such as when passed invalid input, or when there was problem communicating
+// with the database.
 export default function createResource(conn, resource) {
-  return new Promise(createResourceExecutor.bind(null, conn, resource));
+  return new Promise(executor.bind(null, conn, resource));
 }
 
-function createResourceExecutor(conn, resource, resolve, reject) {
+function executor(conn, resource, resolve, reject) {
   assert(resource && typeof resource === 'object');
   assert(resource.id === undefined);
   assert(resource.type === 'feed' || resource.type === 'entry');
 
-  // The model requires that that all feeds have a location, but entries are not required to have a
-  // url
-  assert(resource.type === 'entry' || resourceUtils.hasURL(resource));
+  // Feed resources must have at least one url.
+  if (resource.type === 'feed') {
+    assert(resource.urls && resource.urls.length);
+  }
 
   // Feeds are by default active when created unless explicitly inactive
   if (resource.type === 'feed' && resource.active === undefined) {
@@ -38,12 +44,6 @@ function createResourceExecutor(conn, resource, resolve, reject) {
   resourceUtils.validate(resource);
   filterEmptyProperties(resource);
 
-  const debugInfo = {
-    title: resource.title,
-    url: resource.urls ? resource.urls[resource.urls.length - 1] : undefined
-  };
-  console.debug('Creating resource', debugInfo);
-
   const transaction = conn.conn.transaction('resources', 'readwrite');
   transaction.oncomplete = transactionOncomplete.bind(transaction, resource, conn.channel, resolve);
   transaction.onerror = event => reject(event.target.error);
@@ -57,7 +57,12 @@ function createResourceExecutor(conn, resource, resolve, reject) {
 
 function transactionOncomplete(resource, channel, callback) {
   if (channel) {
-    channel.postMessage({ type: 'resource-created', id: resource.id });
+    channel.postMessage({
+      type: 'resource-created',
+      id: resource.id,
+      resourceType: resource.type
+    });
   }
+
   callback(resource.id);
 }

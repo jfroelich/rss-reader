@@ -123,18 +123,22 @@ function printTestsCommand() {
   });
 }
 
-async function handleTestAnchorClick(event) {
+function handleTestAnchorClick(event) {
   event.stopPropagation();
+
   const anchor = event.target;
   const testName = anchor.getAttribute('test-name');
   const testFunction = TestRegistry.findTestByName(testName);
 
   if (!testFunction) {
     console.error('Could not find test function', testName);
-    return;
+    return false;
   }
 
-  await runTimedTest(testFunction, 10000);
+  runTimedTest(testFunction, 10000).catch(console.warn);
+
+  // Prevent click causing scroll to top
+  return false;
 }
 
 // Compare two test functions for purposes of sorting. This is a simple lexicographic sort

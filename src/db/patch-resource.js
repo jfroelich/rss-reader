@@ -5,45 +5,60 @@ import assert from '/src/lib/assert.js';
 import filterEmptyProperties from '/src/lib/filter-empty-properties.js';
 
 export default function patchResource(conn, props) {
-  return new Promise(patchResourceExecutor.bind(this, conn, props));
+  return new Promise(executor.bind(this, conn, props));
 }
 
-function patchResourceExecutor(conn, props, resolve, reject) {
+function executor(conn, props, resolve, reject) {
   assert(conn instanceof Connection);
-  assert(conn.conn instanceof IDBDatabase);
   assert(props && typeof props === 'object');
   assert(resourceUtils.isValidId(props.id));
+
+  // resource.type is immutable from the POV of patching
+  assert(!('type' in props));
 
   resourceUtils.normalize(props);
   resourceUtils.sanitize(props);
   resourceUtils.validate(props);
 
+  const resourceTypeInfo = { type: undefined };
+
   const transaction = conn.conn.transaction('resources', 'readwrite');
-  transaction.oncomplete = transactionOncomplete.bind(transaction, props.id, conn.channel, resolve);
+  transaction.oncomplete = transactionOncomplete.bind(transaction, props.id, resourceTypeInfo,
+    conn.channel, resolve);
   transaction.onerror = event => reject(event.target.error);
 
   const resourcesStore = transaction.objectStore('resources');
   const getRequest = resourcesStore.get(props.id);
-  getRequest.onsuccess = getRequestOnsuccess.bind(getRequest, props, reject);
+  getRequest.onsuccess = getRequestOnsuccess.bind(getRequest, props, resourceTypeInfo, reject);
 }
 
-function transactionOncomplete(id, channel, callback) {
+function transactionOncomplete(id, resourceTypeInfo, channel, callback) {
   if (channel) {
-    channel.postMessage({ type: 'resource-updated', id });
+    channel.postMessage({
+      id,
+      type: 'resource-updated',
+      resourceType: resourceTypeInfo.type
+    });
   }
 
   callback();
 }
 
-function getRequestOnsuccess(props, reject, event) {
+
+function getRequestOnsuccess(props, resourceTypeInfo, reject, event) {
+  // Note that throwing from this scope is problematic because it leads to uncaught exceptions,
+  // so explicitly reject instead.
+
   const resource = event.target.result;
 
-  // NOTE: throwing would be an uncaught exception
   if (!resource) {
     const message = `No resource found for id ${props.id}`;
     reject(new NotFoundError(message));
     return;
   }
+
+  // Upon loading the matching resource from the database we now can learn its type
+  resourceTypeInfo.type = resource.type;
 
   // Transform props producing noop transitions
   if (props.read === resource.read) {
@@ -79,7 +94,10 @@ function getRequestOnsuccess(props, reject, event) {
   }
 
   // Apply transitions
-  const immutablePropertyNames = ['id', 'updated_date'];
+
+  // These properties are not modifiable.
+  const immutablePropertyNames = ['id', 'updated_date', 'type'];
+
   let dirtiedPropertyCount = 0;
 
   for (const prop in props) {
@@ -93,6 +111,7 @@ function getRequestOnsuccess(props, reject, event) {
     } else {
       resource[prop] = value;
     }
+
     dirtiedPropertyCount += 1;
   }
 

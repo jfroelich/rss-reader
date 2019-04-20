@@ -52,10 +52,13 @@ BrowserActionControl.prototype.onMessage = async function (event) {
     return;
   }
 
-  // TODO: the model should broadcast the resource type, and this should only handle the situation
-  // where the resource type is 'entry'
-  const types = ['resource-created', 'resource-updated', 'resource-deleted'];
-  if (types.includes(event.data.type)) {
+  const message = event.data;
+
+  // If the message indicates the number of unread entries was possibly modified then update. There
+  // is no resource type information available when deleting.
+  if ((message.type === 'resource-created' && message.resourceType === 'entry') ||
+    (message.type === 'resource-updated' && message.resourceType === 'entry') ||
+    message.type === 'resource-deleted') {
     const conn = await rss.open(INDEFINITE);
     await this.refreshBadge(conn);
     conn.close();
@@ -68,7 +71,6 @@ BrowserActionControl.prototype.onMessageError = function (event) {
 
 BrowserActionControl.prototype.refreshBadge = async function (conn) {
   const count = await rss.countUnreadEntries(conn);
-
   const text = count > 999 ? '1k+' : `${count}`;
   chrome.browserAction.setBadgeText({ text });
 };
