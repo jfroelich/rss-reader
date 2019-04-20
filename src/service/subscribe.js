@@ -23,7 +23,7 @@ export default async function subscribe(conn, iconn, url, timeout = INDEFINITE, 
   await importFeed(args);
 
   if (notify) {
-    const feedTitle = resource.title || db.getURL(resource);
+    const feedTitle = resource.title || resource.urls[resource.urls.length - 1];
     showNotification(`Subscribed to ${feedTitle}`, resource.favicon_url);
   }
 

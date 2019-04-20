@@ -12,7 +12,7 @@ function executor(conn, resource, resolve, reject) {
   assert(resource && typeof resource === 'object');
   assert(resourceUtils.isValidId(resource.id));
   assert(resource.type === 'feed' || resource.type === 'entry');
-  assert(resource.type === 'entry' || resourceUtils.hasURL(resource));
+  assert(resource.type === 'entry' || (resource.urls && resource.urls.length));
   assert(resource.type === 'feed' || resourceUtils.isValidId(resource.parent));
 
   resourceUtils.normalize(resource);

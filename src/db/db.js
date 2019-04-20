@@ -1,9 +1,7 @@
 // Rule 10.3 of airbnb style guide says we should not use the export one-liner
 
 import { ConstraintError, NotFoundError } from '/src/db/errors.js';
-import {
-  getURL, getURLString, hasURL, isValidId, setURL
-} from '/src/db/resource-utils.js';
+import { isValidId, setURL } from '/src/db/resource-utils.js';
 import Connection from '/src/db/connection.js';
 import countResources from '/src/db/count-resources.js';
 import createResource from '/src/db/create-resource.js';
@@ -19,9 +17,6 @@ export { createResource };
 export { deleteResource };
 export { getResource };
 export { getResources };
-export { getURL };
-export { getURLString };
-export { hasURL };
 export { isValidId };
 export { open };
 export { defaultUpgradeNeededHandler };

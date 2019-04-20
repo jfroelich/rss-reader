@@ -82,7 +82,9 @@ async function pollFeedNoexcept(importFeedArgs) {
     if (isAssertError(error)) {
       throw error;
     } else {
-      console.warn('Error polling feed', db.getURLString(importFeedArgs.feed), error);
+      const { feed } = importFeedArgs;
+      const url = feed.urls[feed.urls.length - 1];
+      console.warn('Error polling feed', url, error);
       return 0;
     }
   }

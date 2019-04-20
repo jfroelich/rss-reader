@@ -132,7 +132,8 @@ SubscriptionForm.prototype.onsubmit = async function (event) {
 };
 
 SubscriptionForm.prototype.onFeedStored = function (feed) {
-  this.appendMonitorMessage(`Subscribed to ${db.getURLString(feed)}`);
+  const finalURLString = feed.urls[feed.urls.length - 1];
+  this.appendMonitorMessage(`Subscribed to ${finalURLString}`);
   this.hideMonitor();
   if (this.onsubscribe) {
     this.onsubscribe(feed);

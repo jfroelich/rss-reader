@@ -149,7 +149,8 @@ async function subscribeCommand(urlString) {
   conn.close();
   iconn.close();
 
-  console.log('Subscribed to feed', db.getURLString(feed));
+  const currentURLString = feed.urls[feed.urls.length - 1];
+  console.log('Subscribed to feed', currentURLString);
 }
 
 async function unsubscribeCommand(urlString) {

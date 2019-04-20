@@ -76,7 +76,7 @@ FeedList.prototype.appendFeed = function (feed) {
   }
 
   const titleElement = document.createElement('span');
-  const feedTitle = feed.title || db.getURLString(feed);
+  const feedTitle = feed.title || feed.urls[feed.urls.length - 1];
   // Title is automatically truncated via CSS so just produce the full value
   titleElement.textContent = feedTitle;
   itemElement.append(titleElement);
@@ -119,7 +119,7 @@ FeedList.prototype.itemOnclick = async function feedListItemOnclick(event) {
   conn.close();
 
   const detailsTitleElement = document.getElementById('details-title');
-  detailsTitleElement.textContent = feed.title || db.getURLString(feed);
+  detailsTitleElement.textContent = feed.title || feed.urls[feed.urls.length - 1];
 
   const detailsFaviconElement = document.getElementById('details-favicon');
   if (feed.favicon_url) {
@@ -133,7 +133,7 @@ FeedList.prototype.itemOnclick = async function feedListItemOnclick(event) {
   detailsDescriptionElement.textContent = feed.description || '';
 
   const feedURLElement = document.getElementById('details-feed-url');
-  feedURLElement.textContent = db.getURLString(feed);
+  feedURLElement.textContent = feed.urls[feed.urls.length - 1];
 
   const feedLinkElement = document.getElementById('details-feed-link');
   feedLinkElement.textContent = feed.link || '';

@@ -39,8 +39,10 @@ async function exportOPMLTest() {
     const outline = new Outline();
     outline.type = resource.feed_format;
 
-    if (db.hasURL(resource)) {
-      outline.xmlUrl = db.getURLString(resource);
+    // Although the model dictates all feeds have a url, make no assumption here. Grab the last url
+    // of the array as the representation of the resource's current url.
+    if (resource.urls && resource.urls.length) {
+      outline.xmlUrl = resource.urls[resource.urls.length - 1];
     }
 
     outline.title = resource.title;
@@ -67,7 +69,7 @@ async function exportOPMLTest() {
   // For each feed that has a url, it should have a corresponding outline based on the outline's
   // xmlurl attribute value.
   for (const feed of resources) {
-    const url = db.getURL(feed);
+    const url = new URL(feed.urls[feed.urls.length - 1]);
     const selector = `outline[xmlUrl="${url.href}"]`;
     const outline = document.querySelector(selector);
     assert(outline instanceof Element);

@@ -27,12 +27,12 @@ export async function importEntry(args) {
 
   // Rewrite the entry's url. This is always done before processing, so there
   // no need to check whether the original url exists in the database.
-  const originalURL = db.getURL(entry);
+  const originalURL = new URL(entry.urls[entry.urls.length - 1]);
   const rewrittenURL = rewriteURL(originalURL, args.rewriteRules);
   db.setURL(entry, rewrittenURL);
 
   // Check if the entry with the possibly rewritten url already exists
-  const afterRewriteURL = db.getURL(entry);
+  const afterRewriteURL = new URL(entry.urls[entry.urls.length - 1]);
   const existingEntry = await rss.getEntry(args.conn, {
     mode: 'url', url: afterRewriteURL, keyOnly: true
   });
@@ -43,7 +43,7 @@ export async function importEntry(args) {
   }
 
   // Fetch the entry's full content. Rethrow any errors.
-  const fetchURL = db.getURL(entry);
+  const fetchURL = new URL(entry.urls[entry.urls.length - 1]);
   const response = await fetchEntryHTML(fetchURL, args.fetchHTMLTimeout,
     args.inaccessibleContentDescriptors);
 
@@ -79,7 +79,7 @@ export async function importEntry(args) {
 
   // This must occur before doing favicon lookups because the lookup may inspect the document and
   // expects DOM element property getters like image.src to have the proper base uri set.
-  setBaseURI(doc, db.getURL(entry));
+  setBaseURI(doc, new URL(entry.urls[entry.urls.length - 1]));
 
   if (args.iconn) {
     // Only provide if doc came from remote. If it came from feed-xml then it will not have embedded
@@ -105,7 +105,7 @@ export async function importEntry(args) {
 
 async function setEntryFavicon(entry, conn, doc) {
   const request = new favicon.LookupRequest();
-  request.url = db.getURL(entry);
+  request.url = new URL(entry.urls[entry.urls.length - 1]);
   request.conn = conn;
   request.document = doc;
   const iconURL = await favicon.lookup(request);

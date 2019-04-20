@@ -17,14 +17,14 @@ function appendURLTest() {
   const resource = {};
   let appended = resourceUtils.setURL(resource, new URL('a://b.c1'));
   assert(appended === true);
-  assert(resourceUtils.hasURL(resource));
+  assert(resource.urls);
   assert(resource.urls.length === 1);
 
   // Append a second url
   const url2 = new URL('a://b.c2');
   appended = resourceUtils.setURL(resource, url2);
   assert(appended);
-  assert(resourceUtils.hasURL(resource));
+  assert(resource.urls);
   assert(resource.urls.length === 2);
 
   // Append a duplicate

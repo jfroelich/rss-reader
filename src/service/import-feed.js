@@ -41,7 +41,7 @@ export async function importFeed(args) {
   }
 
   // Fetch the feed
-  const fetchURL = db.getURL(args.feed);
+  const fetchURL = new URL(args.feed.urls[args.feed.urls.length - 1]);
   const fetchOptions = { timeout: args.fetchFeedTimeout };
   const response = await betterFetch(fetchURL, fetchOptions);
   const responseURL = new URL(response.url);
@@ -195,7 +195,7 @@ function updateModelFeedFromParsedFeed(feed, parsedFeed) {
 // Throw a constraint error if the feed exists in the database. Note that this only checks against
 // the tail url of the feed, so this result is unreliable when there are multiple urls.
 async function validateFeedIsUnique(feed, conn) {
-  const url = db.getURL(feed);
+  const url = new URL(feed.urls[feed.urls.length - 1]);
 
   const existingFeed = await rss.getFeed(conn, { mode: 'url', url, keyOnly: true });
 

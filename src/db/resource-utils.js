@@ -31,14 +31,15 @@ const knownResourcePropertyNames = [
   'urls'
 ];
 
+// Return true if value represents a well-formed resource identifier. This does not warrant the id
+// exists in the database.
 export function isValidId(value) {
   return Number.isInteger(value) && value > 0;
 }
 
-// If a {URL} url is distinct from a resource's other urls, append the url to
-// the resource. Returns whether appended. This accepts a url object instead
-// of a string to ensure the url is well-formed, absolute, and canonical,
-// although the url is recorded in string form in the resource's urls list.
+// If a {URL} url is distinct from a resource's other urls, append the url to the resource. Returns
+// whether appended. This accepts a url object instead of a string to ensure the url is well-formed,
+// absolute, and canonical, although the url is recorded in string form in the resource's urls list.
 export function setURL(resource, url) {
   const urlString = url.href;
   if (resource.urls) {
@@ -54,27 +55,9 @@ export function setURL(resource, url) {
   return true;
 }
 
-export function hasURL(resource) {
-  return resource.urls && resource.urls.length;
-}
-
-// Returns the last url in the resource's list of urls as a url string. Throws
-// an error if the resource object is not a resource or has no urls.
-export function getURLString(resource) {
-  assert(hasURL(resource));
-  return resource.urls[resource.urls.length - 1];
-}
-
-// Returns the last url in the resource's url list as a URL object. Throws an
-// error if the resource is invalid or if the resource has no urls or if the
-// url is malformed.
-export function getURL(resource) {
-  return new URL(getURLString(resource));
-}
-
-// Mutate the input resource object such that its properties are normalized. For
-// example, strings with different unicode encodings become canonical. This does
-// not normalize urls. See https://unicode.org/reports/tr15/ for more info.
+// Mutate the input resource object such that its properties are normalized. For example, strings
+// with different unicode encodings become canonical. This does not normalize urls. See
+// https://unicode.org/reports/tr15/.
 export function normalize(resource) {
   if (resource.author) {
     resource.author = resource.author.normalize();
@@ -94,10 +77,28 @@ export function normalize(resource) {
 }
 
 export function sanitize(resource, options = {}) {
+  // Whine about unknown properties to discourage use
   for (const prop in resource) {
     if (!knownResourcePropertyNames.includes(prop)) {
       console.warn('Unknown resource property not sanitized:', prop);
     }
+  }
+
+  // Remove type-specific properties specified for the wrong type, and whine about it. This is not
+  // exhaustive at the moment.
+
+  if (resource.type === 'feed' && 'archived_date' in resource) {
+    console.warn('Removing entry-only property from resource:', resource);
+    delete resource.archived_date;
+  }
+
+  if (resource.type === 'entry' && 'active' in resource) {
+    console.warn('Removing feed-only property from resource:', resource);
+    delete resource.active;
+  }
+
+  if (resource.type === 'entry' && 'feed_format' in resource) {
+    console.warn('Removing feed-only property "%s" from resource:', 'feed_format', resource);
   }
 
   const maxTitleLength = isNaN(options.maxTitleLength) ? 1024 : options.maxTitleLength;
@@ -121,18 +122,18 @@ export function sanitize(resource, options = {}) {
   }
 
   if (resource.description) {
-    let desc = resource.description;
-    desc = filterControls(desc);
+    let { description } = resource;
+    description = filterControls(description);
 
     try {
-      desc = removeHTML(desc);
+      description = removeHTML(description);
     } catch (error) {
-      desc = 'Unsafe html';
+      description = 'Unsafe html';
     }
 
-    desc = condenseWhitespace(desc);
-    desc = truncateHTML(desc, maxDescriptionLength, '');
-    resource.description = desc;
+    description = condenseWhitespace(description);
+    description = truncateHTML(description, maxDescriptionLength, '');
+    resource.description = description;
   }
 
   if (resource.author) {
@@ -165,10 +166,9 @@ export function validate(resource) {
   assert(resource && typeof resource === 'object');
   const now = new Date();
 
-  // TODO: eventually improve this. we have to support undefined to support the
-  // patch-resource use case where there is no delta property for type set, but
-  // validate is called on the delta itself. but in reality all resources should
-  // have a valid type.
+  // TODO: eventually improve validation of the type property. we have to support undefined to
+  // support the patch-resource use case where there is no delta property for type set, but validate
+  // is called on the delta itself. but in reality all resources should have a valid type.
   vassert(resource.type === 'entry' || resource.type === 'feed' || resource.type === undefined);
   vassert(resource.favicon_url === undefined || typeof resource.favicon_url === 'string');
   vassert(resource.active === undefined || resource.active === 1 || resource.active === 0);

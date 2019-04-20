@@ -444,8 +444,10 @@ async function handleExportButtonClick() {
     const outline = new Outline();
     outline.type = resource.feed_format;
 
-    if (db.hasURL(resource)) {
-      outline.xmlUrl = db.getURLString(resource);
+    // Feeds should have one or more urls as a rule enforced by the model but we make no assumptions
+    // here. The last url of the url array represents the feed's current url.
+    if (resource.urls && resource.urls.length) {
+      outline.xmlUrl = resource.urls[resource.urls.length - 1];
     }
 
     outline.title = resource.title;
