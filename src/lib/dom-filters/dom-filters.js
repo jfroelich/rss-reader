@@ -179,10 +179,14 @@ export function transformBreakruleElements(doc) {
 }
 
 // Removes all HTML comment nodes from the document
-export function removeCommentNodes(doc) {
-  const it = doc.createNodeIterator(doc.documentElement, NodeFilter.SHOW_COMMENT);
-  for (let node = it.nextNode(); node; node = it.nextNode()) {
-    node.remove();
+export function removeCommentNodes(document) {
+  // NOTE: use the document itself rather than document.documentElement to also filter comments
+  // located outside of documentElement. createNodeIterator still works. Other filters avoid the
+  // issue by only using nodes within document.body, but this filter should not rely on that.
+  const rootNode = document;
+  const iterator = document.createNodeIterator(rootNode, NodeFilter.SHOW_COMMENT);
+  for (let commentNode = iterator.nextNode(); commentNode; commentNode = iterator.nextNode()) {
+    commentNode.remove();
   }
 }
 
