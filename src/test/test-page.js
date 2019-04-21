@@ -5,6 +5,7 @@ import '/src/test/color-contrast-filter-test.js';
 import '/src/test/color-test.js';
 import '/src/test/count-resources-test.js';
 import '/src/test/create-resource-test.js';
+import '/src/test/css-background-image-filter-test.js';
 import '/src/test/delete-resource-test.js';
 import '/src/test/dom-filter-tests.js';
 import '/src/test/export-opml-test.js';

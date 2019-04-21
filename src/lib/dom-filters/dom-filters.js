@@ -1,6 +1,7 @@
 import * as boilerplate from '/src/lib/boilerplate.js';
 import * as imageUtils from '/src/lib/image-utils.js';
 import assert from '/src/lib/assert.js';
+import backgroundImageFilter from '/src/lib/dom-filters/css-background-image-filter.js';
 import coerceElement from '/src/lib/coerce-element.js';
 import colorContrastFilter from '/src/lib/dom-filters/color-contrast.js';
 import isHiddenElement from '/src/lib/is-hidden-inline.js';
@@ -40,6 +41,9 @@ export async function applyAllDOMFilters(doc, options = {}) {
   removeForbiddenElements(doc, forbiddenElementNames);
 
   removeScriptElements(doc);
+
+  backgroundImageFilter(doc);
+
   transformLazilyLoadedImageElements(doc);
   resolveAllElementAttributeURLs(doc);
   transformResponsiveImageElements(doc);
