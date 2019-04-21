@@ -1,3 +1,11 @@
+// TODO: now that this is a library, this module is a misnomer. It is not exporting anything. It is
+// simply generating a document. This should be renamed to something like createOPMLDocument, and
+// helper function that currently occupies that name should either be inlined or renamed to
+// something like createOPMLDocumentTemplate.
+// TODO: I think the main function should be the default export. Outline is an optional type that
+// the caller may not even care to use. Or, this should be exporting a class, and Outline should be
+// a static (in the java sense not the c sense) member class.
+
 export function Outline() {
   // The feed type (e.g. rss/atom)
   this.type = undefined;
