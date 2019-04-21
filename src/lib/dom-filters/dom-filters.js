@@ -145,7 +145,7 @@ export function removeForbiddenElements(doc, blacklist) {
   }
 }
 
-function ensureBodyElement(doc) {
+export function ensureBodyElement(doc) {
   if (!doc.body) {
     const message = 'This document has no content';
     const errorNode = doc.createTextNode(message);
