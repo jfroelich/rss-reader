@@ -106,6 +106,10 @@ export function findBlockElement(doc, block) {
 }
 
 export function adjustScores(blocks, options) {
+  // TODO: review this behavior regarding document length. if document length is 0, why do anything?
+  // this kind of thing where i return to the code later and wonder why it works this way should be
+  // obvious, so this really needs to be rewritten.
+
   let { documentLength } = options;
   if (documentLength === undefined) {
     documentLength = 0;
@@ -115,12 +119,12 @@ export function adjustScores(blocks, options) {
 
   let { delta } = options;
   if (delta === undefined) {
-    delta = 1;
+    delta = 3;
   }
 
   let { maxIterations } = options;
   if (maxIterations === undefined) {
-    maxIterations = 20;
+    maxIterations = 30;
   }
 
   let { contentThreshold } = options;
@@ -140,10 +144,14 @@ export function adjustScores(blocks, options) {
     let adjustmentPerIteration = 0;
 
     for (const block of blocks) {
-      if (block.score < contentThreshold) {
-        block.score += delta;
-        adjustmentPerIteration += delta;
-      }
+      // if (block.score < contentThreshold) {
+      //   block.score += delta;
+      //   adjustmentPerIteration += delta;
+      // }
+
+      // Adjust all blocks
+      block.score += delta;
+      adjustmentPerIteration += delta;
     }
 
     if (adjustmentPerIteration === 0) {
@@ -442,7 +450,16 @@ function getFieldCount(element) {
 
 // Get the total area of all descendant images
 function getDescendantImageArea(element) {
-  const images = element.getElementsByTagName('img');
+  // TODO: this needs to be improved in the following case. It is missing this, and the outer div is
+  // getting a bad score.
+  //
+  // <div class="featured-image" score="45" boilerplate="high"><div
+  // style="background-image: url(typical-url-here);" class="img
+  // attachment-post-thumbnail wp-post-image article-image fs-ll"
+  // score="95" boilerplate="lowest"><a
+  // href="link-to-image-url"></a></div> </div>
+
+  const images = element.querySelectorAll('img');
   let area = 0;
   for (const image of images) {
     area += image.width * image.height;
@@ -489,6 +506,7 @@ const tokenWeights = {
   advertisement: -50,
   article: 30,
   author: -10,
+  billboard: -20,
   bio: -20,
   body: 20,
   bottom: -10,
@@ -503,6 +521,7 @@ const tokenWeights = {
   comment: -40,
   comments: -50,
   contact: -10,
+  container: 20, // typical for ancestor of main content
   content: 20,
   contentpane: 50,
   cookie: -10,
@@ -514,6 +533,9 @@ const tokenWeights = {
   dsq: -30, // disqus abbreviation
   entry: 10,
   fb: -5, // facebook
+  // TODO: if tokenize splits by - then this is wrong?
+  'featured-image': 20,
+  featured: 5,
   figure: 10,
   fixture: -5,
   footer: -40,
@@ -521,6 +543,8 @@ const tokenWeights = {
   gutter: -30,
   header: -10,
   headline: -5,
+  // TODO: if tokenize splits by - then this is wrong?
+  'inner-content': 20,
   keywords: -10,
   left: -20,
   links: -10,
@@ -537,6 +561,7 @@ const tokenWeights = {
   newsarticle: 50,
   newsletter: -20,
   page: 10,
+  pnav: -30,
   popular: -30,
   post: 20,
   primary: 10,
@@ -552,12 +577,14 @@ const tokenWeights = {
   rel: -50,
   relate: -50,
   related: -50,
+  replies: -20,
   right: -50,
   rightcolumn: -20,
   secondary: -20,
   share: -20,
   side: -5,
   sidebar: -20,
+  sidebars: -30,
   sign: -10,
   signup: -30,
   skip: -5,
@@ -622,6 +649,8 @@ export function scoreBlock(block, info, neutralScore) {
   score += derivePositionBias(block.elementIndex, info.frontMax, info.endMin);
   score += deriveAttributeBias(block.attributeTokens, tokenWeights);
 
+  score += deriveDescendantBias(block.element);
+
   const minScore = 0;
   const maxScore = 100;
   return Math.max(minScore, Math.min(score, maxScore));
@@ -645,6 +674,23 @@ function deriveDepthBias(depth) {
 function deriveElementTypeBias(elementType, weights) {
   const bias = weights[elementType];
   return bias || 0;
+}
+
+// This is a hacky heuristic at the moment, extremely rough draft. The basic idea is that if an
+// block contains descendant elements that are pretty high value, the block itself is much less
+// likely to be boilerplate. The targeted case is container elements that wrap the main content.
+// We really want to avoid the case where the block is a container but gets a low score, because
+// this unfortunately excludes the content. This is happening right now with winteriscoming.net.
+// This +20 fixes it in a rough way. This should eventually be more well thought out. There is the
+// separate issue that the minimum content length adjustment is not adjusting well enough.
+function deriveDescendantBias(element) {
+  if (element.localName === 'div') {
+    if (element.querySelector('article')) {
+      return 20;
+    }
+  }
+
+  return 0;
 }
 
 // Calculate a bias for an element's score based on the amount of text it contains relative to the
