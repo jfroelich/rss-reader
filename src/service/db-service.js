@@ -1,11 +1,7 @@
+// TODO: deprecate, I don't like this, feels wrong, this is introducing indirection without value
+
 import * as db from '/src/db/db.js';
 import assert from '/src/lib/assert.js';
-
-// TODO: migrate all higher layer clients of db.js to use this module instead
-// TODO: consider moving normalization to here
-// TODO: consider moving sanitization to here
-// TODO: consider moving message broadcasting to here
-// TODO: for decorators that do not alter behavior just export directly
 
 export const { open } = db;
 export const { countEntries } = db;
