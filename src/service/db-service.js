@@ -1,27 +1,20 @@
 import * as db from '/src/db/db.js';
 import assert from '/src/lib/assert.js';
 
-// TODOS:
-// Migrate all clients of db that do feed related calls to instead use this
-// Move normalization and sanitization to here from db layer, but keep validation there for now
-// Move broadcasting to here (e.g. db.open returns first class IDBDatabase instance that is not
-// wrapped just to stash the channel property, instead the channel property is generated here).
+// TODO: migrate all higher layer clients of db.js to use this module instead
+// TODO: consider moving normalization to here
+// TODO: consider moving sanitization to here
+// TODO: consider moving message broadcasting to here
+// TODO: for decorators that do not alter behavior just export directly
 
-export function open(timeout) {
-  return db.open(timeout);
-}
-
-export function countEntries(conn, query) {
-  return db.countResources(conn, query);
-}
+export const { open } = db;
+export const { countEntries } = db;
+export const { createEntry } = db;
+export const { ConstraintError } = db;
 
 export function countUnreadEntries(conn) {
   const query = { type: 'entry', read: 0 };
   return db.countResources(conn, query);
-}
-
-export function createEntry(conn, entry) {
-  return db.createResource(conn, entry);
 }
 
 // Creates a feed in the database. Returns a promise that resolves once the feed is committed. For
@@ -33,22 +26,7 @@ export function createFeed(conn, feed) {
     feed.type = 'feed';
   }
 
-  // Feeds must have a url
-  // TODO: remove the corresponding sanity check that happens within createResource once all
-  // clients use this function instead
   assert(Array.isArray(feed.urls) && feed.urls.length);
-
-  // TODO: impute things like active.
-  // TODO: remove the corresponding imputation from createResource once all clients migrated
-  // to using this function instead
-
-  // TODO: normalize, sanitize, validate, filter empty properties, etc.
-  // Although maybe empty property filtering actually does belong in db layer only.
-  // Or maybe validation still occurs at db layer but sanitization and normalization occur here?
-
-  // TODO: instead of returning a promise, await this, then do channel broadcast, then
-  // return. move the channel broadcasting out of create-resource. also, reintroduce
-  // the feed-specific message type 'feed-created'.
 
   return db.createResource(conn, feed);
 }

@@ -81,21 +81,20 @@ CronControl.prototype.onPollAlarm = async function () {
   iconn.close();
 };
 
-CronControl.prototype.onInstalled = async function (event) {
+CronControl.prototype.onInstalled = function (event) {
   if (event.reason === 'install') {
     this.createAlarms();
   } else {
-    const promises = [];
     for (const name of deprecatedAlarmNames) {
-      promises.push(removeAlarm(name));
-    }
-
-    try {
-      await Promise.all(promises);
-    } catch (error) {
-      console.warn(error);
+      this.removeAlarm(name).catch(console.warn);
     }
   }
+};
+
+CronControl.prototype.removeAlarm = function (name) {
+  return new Promise((resolve) => {
+    chrome.alarms.clear(name, (cleared) => { resolve({ name, cleared }); });
+  });
 };
 
 CronControl.prototype.createAlarms = function () {
@@ -106,12 +105,4 @@ CronControl.prototype.createAlarms = function () {
 
 function queryIdleState(seconds) {
   return new Promise(resolve => chrome.idle.queryState(seconds, resolve));
-}
-
-function removeAlarm(name) {
-  return new Promise((resolve) => {
-    chrome.alarms.clear(name, (cleared) => {
-      resolve({ name, cleared });
-    });
-  });
 }

@@ -21,11 +21,8 @@ export function ImportFeedArgs() {
 }
 
 export async function importFeed(args) {
-  assert(typeof db.Connection === 'function');
-
   assert(args instanceof ImportFeedArgs);
   assert(args.feed && typeof args.feed === 'object');
-  assert(args.conn instanceof db.Connection);
   assert(args.iconn === undefined || args.iconn instanceof IDBDatabase);
   assert(args.fetchFeedTimeout instanceof Deadline);
 
@@ -54,7 +51,7 @@ export async function importFeed(args) {
 
     if (existingFeed) {
       const message = `Already subscribed to redirected feed url ${responseURL.href}`;
-      throw new db.ConstraintError(message);
+      throw new DBService.ConstraintError(message);
     }
   }
 
@@ -161,7 +158,7 @@ async function importEntryNoexcept(args) {
   } catch (error) {
     if (isAssertError(error)) {
       throw error;
-    } else if (error instanceof db.ConstraintError) {
+    } else if (error instanceof DBService.ConstraintError) {
       // Ignore
     } else {
       // For debugging
@@ -201,7 +198,7 @@ async function validateFeedIsUnique(feed, conn) {
 
   if (existingFeed) {
     const message = `Already subscribed to feed with url ${url.href}`;
-    throw new db.ConstraintError(message);
+    throw new DBService.ConstraintError(message);
   }
 }
 

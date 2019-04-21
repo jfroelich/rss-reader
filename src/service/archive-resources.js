@@ -1,4 +1,3 @@
-import * as db from '/src/db/db.js';
 import * as DBService from '/src/service/db-service.js';
 import assert from '/src/lib/assert.js';
 
@@ -43,7 +42,7 @@ export default async function archiveResources(conn, batchSize = 100, maxAge = T
   let resources = await DBService.getEntries(conn, query);
 
   while (resources.length) {
-    const batchPatchPromises = [];
+    const patchPromises = [];
 
     for (const resource of resources) {
       if (resource.created_date && (currentDate - resource.created_date > maxAge)) {
@@ -59,13 +58,13 @@ export default async function archiveResources(conn, batchSize = 100, maxAge = T
           archived: 1
         };
 
-        batchPatchPromises.push(db.patchResource(conn, delta));
+        patchPromises.push(DBService.patchEntry(conn, delta));
       }
     }
 
     // Wait for all changes to this batch to settle before continuing
     // eslint-disable-next-line no-await-in-loop
-    await Promise.all(batchPatchPromises);
+    await Promise.all(patchPromises);
 
     // Only load another batch if we managed to fill the current batch
     if (resources.length === batchSize) {
@@ -77,7 +76,7 @@ export default async function archiveResources(conn, batchSize = 100, maxAge = T
       // them (which we will because unpatch count will equal batch size so next offset will be the
       // first of the next batch). If we patched only some, then we want to skip over the unpatched
       // ones, so we do not reload them and waste processing or get stuck in an infinite loop.
-      const unpatchedCandidateResourcesCount = batchSize - batchPatchPromises.length;
+      const unpatchedCandidateResourcesCount = batchSize - patchPromises.length;
       query.offset += unpatchedCandidateResourcesCount;
 
       // eslint-disable-next-line no-await-in-loop

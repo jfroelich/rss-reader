@@ -1,4 +1,4 @@
-import * as db from '/src/db/db.js';
+import * as DBService from '/src/service/db-service.js';
 import * as favicon from '/src/lib/favicon.js';
 import { Deadline } from '/src/lib/deadline.js';
 import assert, { isAssertError } from '/src/lib/assert.js';
@@ -6,8 +6,7 @@ import fadeElement from '/src/lib/fade-element.js';
 import subscribe from '/src/service/subscribe.js';
 
 export default function SubscriptionForm() {
-  // Default to a reasonable amount of time. The user can optionally override this. Use Deadline(0)
-  // or undefined to not impose a time limit.
+  // Default to a reasonable amount of time
   this.fetchFeedTimeout = new Deadline(8000);
 
   this.urlElement = undefined;
@@ -17,16 +16,7 @@ export default function SubscriptionForm() {
   this.onsubscribe = undefined;
 }
 
-async function subscriptionFormHideMonitor() {
-  assert(this.monitorElement);
-  const durationSeconds = 2;
-  const delaySeconds = 1;
-  await fadeElement(this.monitorElement, durationSeconds, delaySeconds);
-  this.monitorElement.remove();
-  this.monitorElement = undefined;
-}
-
-SubscriptionForm.prototype.init = function subscriptionFormInit(parent) {
+SubscriptionForm.prototype.init = function (parent) {
   const heading = document.createElement('h1');
   heading.textContent = 'Add a subscription';
   parent.append(heading);
@@ -100,14 +90,11 @@ SubscriptionForm.prototype.onsubmit = async function (event) {
   this.showMonitor();
   this.appendMonitorMessage(`Subscribing to ${url.href}`);
 
-  const promises = [db.open(), favicon.open()];
+  const promises = [DBService.open(), favicon.open()];
   const [conn, iconn] = await Promise.all(promises);
 
   try {
-    await subscribe(
-      conn, iconn, url, this.fetchFeedTimeout, true,
-      this.onFeedStored.bind(this),
-    );
+    await subscribe(conn, iconn, url, this.fetchFeedTimeout, true, this.onFeedStored.bind(this));
   } catch (error) {
     console.debug(error);
 
@@ -115,11 +102,9 @@ SubscriptionForm.prototype.onsubmit = async function (event) {
       throw error;
     }
 
-    if (error instanceof db.ConstraintError) {
+    if (error instanceof DBService.ConstraintError) {
       console.debug('Already subscribed to feed', url.href);
-      this.appendMonitorMessage(
-        `Already subscribed to feed with similar url ${url.href}`,
-      );
+      this.appendMonitorMessage(`Already subscribed to feed with similar url ${url.href}`);
       this.hideMonitor();
     } else {
       console.debug(error);
@@ -140,4 +125,11 @@ SubscriptionForm.prototype.onFeedStored = function (feed) {
   }
 };
 
-SubscriptionForm.prototype.hideMonitor = subscriptionFormHideMonitor;
+SubscriptionForm.prototype.hideMonitor = async function () {
+  assert(this.monitorElement);
+  const durationSeconds = 2;
+  const delaySeconds = 1;
+  await fadeElement(this.monitorElement, durationSeconds, delaySeconds);
+  this.monitorElement.remove();
+  this.monitorElement = undefined;
+};

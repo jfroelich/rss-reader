@@ -1,5 +1,4 @@
 import * as DBService from '/src/service/db-service.js';
-import * as db from '/src/db/db.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 import { Outline, exportOPML } from '/src/lib/export-opml.js';
@@ -288,7 +287,7 @@ function markSlideReadStart(conn, slide) {
   // Signal to future calls that this is now in progress
   slide.setAttribute('read-pending', '');
 
-  return db.patchResource(conn, { id, read: 1 });
+  return DBService.patchEntry(conn, { id, read: 1 });
 }
 
 function removeSlide(slide) {
