@@ -23,7 +23,8 @@ export function ImportEntryArgs() {
 export async function importEntry(args) {
   const { entry } = args;
 
-  console.debug('Importing entry', entry);
+  console.debug('Importing entry', (entry.urls && entry.urls.length) ?
+    entry.urls[entry.urls.length - 1] : entry.title);
 
   // Rewrite the entry's url. This is always done before processing, so there
   // no need to check whether the original url exists in the database.

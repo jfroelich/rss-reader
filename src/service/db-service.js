@@ -5,12 +5,15 @@ import assert from '/src/lib/assert.js';
 
 export const { open } = db;
 export const { countEntries } = db;
-export const { createEntry } = db;
 export const { ConstraintError } = db;
 
 export function countUnreadEntries(conn) {
   const query = { type: 'entry', read: 0 };
   return db.countResources(conn, query);
+}
+
+export function createEntry(conn, entry) {
+  return db.createResource(conn, entry);
 }
 
 // Creates a feed in the database. Returns a promise that resolves once the feed is committed. For
