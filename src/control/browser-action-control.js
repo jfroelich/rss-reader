@@ -1,80 +1,72 @@
-import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 import * as DBService from '/src/service/db-service.js';
+import * as localStorageUtils from '/src/lib/local-storage-utils.js';
 import { INDEFINITE } from '/src/lib/deadline.js';
 import openTab from '/src/lib/open-tab.js';
 
-export default function BrowserActionControl() {
-  this.channel = undefined;
-}
-
-BrowserActionControl.prototype.init = function (bindOnclicked, bindOnInstalled, bindOnStartup) {
-  this.channel = new BroadcastChannel('reader');
-  this.channel.addEventListener('message', this.onMessage.bind(this));
-  this.channel.addEventListener('messageerror', this.onMessageError.bind(this));
-
-  if (bindOnclicked) {
-    chrome.browserAction.onClicked.addListener(this.onClicked.bind(this));
+export default class BrowserActionControl {
+  static onClicked() {
+    const reuseNewtab = localStorageUtils.readBoolean('reuse_newtab');
+    openTab('slideshow.html', reuseNewtab).catch(console.warn);
   }
 
-  if (bindOnInstalled) {
-    chrome.runtime.onInstalled.addListener(this.onInstalled.bind(this));
-  }
-
-  if (bindOnStartup) {
-    chrome.runtime.onStartup.addListener(this.onStartup.bind(this));
-  }
-};
-
-BrowserActionControl.prototype.onClicked = function () {
-  const reuseNewtab = localStorageUtils.readBoolean('reuse_newtab');
-  openTab('slideshow.html', reuseNewtab).catch(console.warn);
-};
-
-BrowserActionControl.prototype.onStartup = async function () {
-  const conn = await DBService.open(INDEFINITE);
-  await this.refreshBadge(conn);
-  conn.close();
-};
-
-BrowserActionControl.prototype.onInstalled = async function () {
-  // This does not distinguish between install and update event types. While it would seem like we
-  // only need to initialize the badge text on install, and update the unread count when the
-  // extension is updated, there is also a separate kind of update that happens when the
-  // background page is reloaded (through the extensions manager inspector) that without this
-  // handler causes the text to be unset.
-  const conn = await DBService.open(INDEFINITE);
-  await this.refreshBadge(conn);
-  conn.close();
-};
-
-BrowserActionControl.prototype.onMessage = async function (event) {
-  if (!event.isTrusted || !event.data) {
-    return;
-  }
-
-  const message = event.data;
-
-  // If the message indicates the number of unread entries was possibly modified then update. There
-  // is no resource type information available when deleting.
-  if ((message.type === 'resource-created' && message.resourceType === 'entry') ||
-    (message.type === 'resource-updated' && message.resourceType === 'entry') ||
-    message.type === 'resource-deleted') {
+  static async onStartup() {
     const conn = await DBService.open(INDEFINITE);
-    await this.refreshBadge(conn);
+    await BrowserActionControl.refreshBadge(conn);
     conn.close();
   }
-};
 
-BrowserActionControl.prototype.onMessageError = function (event) {
-  console.warn(event);
-};
+  static async onInstalled() {
+    const conn = await DBService.open(INDEFINITE);
+    await BrowserActionControl.refreshBadge(conn);
+    conn.close();
+  }
 
-BrowserActionControl.prototype.refreshBadge = async function (conn) {
-  const count = await DBService.countUnreadEntries(conn);
-  const text = count > 999 ? '1k+' : `${count}`;
-  chrome.browserAction.setBadgeText({ text });
-};
+  static async onMessage(event) {
+    if (event.isTrusted && event.data) {
+      const message = event.data;
+      if ((message.type === 'resource-created' && message.resourceType === 'entry') ||
+        (message.type === 'resource-updated' && message.resourceType === 'entry') ||
+        message.type === 'resource-deleted') {
+        const conn = await DBService.open(INDEFINITE);
+        await BrowserActionControl.refreshBadge(conn);
+        conn.close();
+      }
+    }
+  }
 
-BrowserActionControl.prototype.closeChannel = function () {
-  this.channel.close();
-};
+  static onMessageError(event) {
+    console.warn(event);
+  }
+
+  static async refreshBadge(conn) {
+    const count = await DBService.countUnreadEntries(conn);
+    const text = count > 999 ? '1k+' : `${count}`;
+    chrome.browserAction.setBadgeText({ text });
+  }
+
+  constructor() {
+    this.channel = undefined;
+  }
+
+  init(bindOnclicked, bindOnInstalled, bindOnStartup) {
+    this.channel = new BroadcastChannel('reader');
+    this.channel.addEventListener('message', BrowserActionControl.onMessage);
+    this.channel.addEventListener('messageerror', BrowserActionControl.onMessageError);
+
+    if (bindOnclicked) {
+      chrome.browserAction.onClicked.addListener(BrowserActionControl.onClicked);
+    }
+
+    if (bindOnInstalled) {
+      chrome.runtime.onInstalled.addListener(BrowserActionControl.onInstalled);
+    }
+
+    if (bindOnStartup) {
+      chrome.runtime.onStartup.addListener(BrowserActionControl.onStartup);
+    }
+  }
+
+  closeChannel() {
+    this.channel.close();
+  }
+}
