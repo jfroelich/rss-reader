@@ -1,7 +1,7 @@
 import * as DBService from '/src/service/db-service.js';
 import * as favicon from '/src/lib/favicon.js';
 import * as localStorageUtils from '/src/lib/local-storage-utils.js';
-import { Outline, exportOPML } from '/src/lib/export-opml.js';
+import * as opml from '/src/lib/opml.js';
 import { PollFeedsArgs, pollFeeds } from '/src/service/poll-feeds.js';
 import BrowserActionControl from '/src/control/browser-action-control.js';
 import ThemeControl from '/src/control/theme-control.js';
@@ -433,18 +433,17 @@ function importOPMLPrompt() {
 }
 
 async function handleExportButtonClick() {
+  const document = opml.createDocument('Subscriptions');
+
   // Load all feeds from the database
   const conn = await DBService.open();
-  const resources = await DBService.getFeeds(conn, { mode: 'feeds' });
+  const feeds = await DBService.getFeeds(conn, { mode: 'feeds' });
   conn.close();
 
-  // Convert the loaded feeds into outlines
-  const outlines = resources.map((resource) => {
-    const outline = new Outline();
+  const outlines = feeds.map((resource) => {
+    const outline = {};
     outline.type = resource.feed_format;
 
-    // Feeds should have one or more urls as a rule enforced by the model but we make no assumptions
-    // here. The last url of the url array represents the feed's current url.
     if (resource.urls && resource.urls.length) {
       outline.xmlUrl = resource.urls[resource.urls.length - 1];
     }
@@ -455,7 +454,7 @@ async function handleExportButtonClick() {
     return outline;
   });
 
-  const document = await exportOPML(outlines, 'Subscriptions');
+  opml.appendOutlines(document, outlines);
   downloadXMLDocument(document, 'subscriptions.xml');
 }
 

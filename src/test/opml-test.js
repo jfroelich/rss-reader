@@ -2,7 +2,7 @@ import * as DBService from '/src/service/db-service.js';
 import * as databaseUtils from '/src/test/database-utils.js';
 import * as db from '/src/db/db.js';
 import * as indexedDBUtils from '/src/lib/indexeddb-utils.js';
-import { Outline, exportOPML } from '/src/lib/export-opml.js';
+import * as opml from '/src/lib/opml.js';
 import TestRegistry from '/src/test/test-registry.js';
 import assert from '/src/lib/assert.js';
 
@@ -36,7 +36,7 @@ async function exportOPMLTest() {
   // convert them into outlines
   const readResources = await DBService.getFeeds(conn, { mode: 'feeds' });
   const outlines = readResources.map((resource) => {
-    const outline = new Outline();
+    const outline = {};
     outline.type = resource.feed_format;
 
     // Although the model dictates all feeds have a url, make no assumption here. Grab the last url
@@ -52,7 +52,8 @@ async function exportOPMLTest() {
   });
 
   // It is implied but this should not throw an exception
-  const document = await exportOPML(outlines, 'test-title');
+  const document = await opml.createDocument('test-title');
+  opml.appendOutlines(document, outlines);
 
   // export-opml should generate a Document object
   assert(document instanceof Document);
